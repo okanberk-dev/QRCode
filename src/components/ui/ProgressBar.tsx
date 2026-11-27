@@ -10,7 +10,7 @@ interface ProgressBarProps {
 export function ProgressBar({
   value,
   max = 100,
-  color = "#0A0A0A",
+  color = "var(--color-pn-ink)",
   height = 6,
   className = "",
   ariaLabel,
@@ -21,7 +21,7 @@ export function ProgressBar({
       className={className}
       style={{
         height,
-        background: "#EDEDED",
+        background: "var(--color-pn-line)",
         borderRadius: height / 2,
         overflow: "hidden",
       }}

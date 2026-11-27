@@ -240,7 +240,7 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
       <div>
         <Link
           href={base}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-[#0A0A0A] sm:min-h-0 sm:text-[12px]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-pn-ink sm:min-h-0 sm:text-[12px]"
         >
           <ArrowLeft size={13} aria-hidden="true" /> {isTr ? 'Denetim Merkezi' : 'Audit Center'}
         </Link>
@@ -391,7 +391,7 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
           {heading}
         </h2>
         {template.questions.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#FAFAFA] px-4 py-5 text-center text-[13px] text-[#737373]">
+          <p className="rounded-[20px] border border-dashed border-pn-line-strong bg-pn-canvas px-4 py-5 text-center text-[13px] text-[#737373]">
             {isTr ? 'Henüz madde yok.' : 'No items yet.'}
           </p>
         ) : (
@@ -400,14 +400,14 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
               {visibleQuestions.map((q, i) => (
                 <li
                   key={q.id}
-                  className="flex items-start gap-2.5 rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5"
+                  className="flex items-start gap-2.5 rounded-[20px] border border-pn-line bg-white px-3 py-2.5"
                 >
-                  <span className="bz-mono mt-0.5 w-5 shrink-0 text-right text-[12px] text-[#737373]">
+                  <span className="tabular-nums mt-0.5 w-5 shrink-0 text-right text-[12px] text-[#737373]">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="break-words text-[14px] leading-snug text-[#0A0A0A]">{q.prompt}</p>
-                    <p className="mt-1 text-[11.5px] text-[#737373]">
+                    <p className="break-words text-[14px] leading-snug text-pn-ink">{q.prompt}</p>
+                    <p className="mt-1 text-[12px] text-[#737373]">
                       {humanQuestionType(q.type, locale)}
                       {!q.isRequired && (isTr ? ' · zorunlu değil' : ' · not required')}
                     </p>
@@ -441,7 +441,7 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
           {isTr ? 'Son yanıtlar' : 'Recent responses'}
         </h2>
         {recentResponses.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#FAFAFA] px-4 py-5 text-center text-[13px] text-[#737373]">
+          <p className="rounded-[20px] border border-dashed border-pn-line-strong bg-pn-canvas px-4 py-5 text-center text-[13px] text-[#737373]">
             {isTr ? 'Henüz yanıt yok.' : 'No responses yet.'}
           </p>
         ) : (
@@ -451,10 +451,10 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
                 <li key={r.id}>
                   <Link
                     href={`${base}/${template.id}/responses/${r.id}`}
-                    className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 hover:bg-[#FAFAFA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]"
+                    className="flex min-h-11 items-center justify-between gap-3 rounded-[20px] border border-pn-line bg-white px-3 py-2.5 hover:bg-pn-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-accent"
                   >
                     <span className="min-w-0">
-                      <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">
+                      <span className="block truncate text-[14px] font-medium text-pn-ink">
                         {r.respondentName?.trim() || (isTr ? 'Anonim' : 'Anonymous')}
                       </span>
                       <span className="block text-[12px] text-[#737373]">
@@ -467,7 +467,7 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
                           {r.passed ? (isTr ? 'Geçti' : 'Passed') : isTr ? 'Kaldı' : 'Failed'}
                         </Badge>
                       )}
-                      <span className="bz-mono text-[13px] text-[#0A0A0A]">
+                      <span className="tabular-nums text-[13px] text-pn-ink">
                         {r.score !== null ? `${Math.round(r.score)}/100` : '—'}
                       </span>
                       <ChevronRight size={14} aria-hidden="true" className="text-[#A3A3A3]" />
@@ -481,7 +481,7 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
             {template._count.responses > recentResponses.length && (
               <Link
                 href={resultsHref}
-                className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-[#0A0A0A] hover:underline sm:min-h-9"
+                className="inline-flex min-h-11 items-center gap-1 text-[13px] font-medium text-pn-ink hover:underline sm:min-h-9"
               >
                 {isTr
                   ? `Tüm yanıtlar (${template._count.responses})`

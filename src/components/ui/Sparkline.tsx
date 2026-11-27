@@ -50,7 +50,7 @@ export function monotonePath(pts: Array<[number, number]>): string {
   return d;
 }
 
-export function Sparkline({ values, w = 80, h = 24, color = "#0A0A0A", className = "" }: SparklineProps) {
+export function Sparkline({ values, w = 80, h = 24, color = "var(--color-pn-ink)", className = "" }: SparklineProps) {
   if (!values?.length) return null;
   const min = Math.min(...values);
   const max = Math.max(...values);

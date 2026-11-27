@@ -243,7 +243,7 @@ export function QRCard({
             {item.name}
           </div>
           {showBranch && (
-            <div className="mt-1 text-[11px] text-[#737373] truncate">{item.branch}</div>
+            <div className="mt-1 text-[12px] text-[#737373] truncate">{item.branch}</div>
           )}
         </div>
         <PulseMenu
@@ -283,7 +283,7 @@ export function QRCard({
           response ≤ 5 KB. Lazy-loaded; off-screen card'lar initial paint'i
           bloklamaz. */}
       <div
-        className="flex justify-center rounded-xl border border-[#EDEDED] bg-white p-3"
+        className="flex justify-center rounded-[20px] border border-pn-line bg-white p-3"
         aria-label={isTr ? "QR önizlemesi" : "QR preview"}
       >
         <img
@@ -299,7 +299,7 @@ export function QRCard({
 
       {/* Platform binding + created date. The table is already in the
           card name, so it is not repeated here. */}
-      <div className="mt-3 flex items-center gap-2 rounded-lg bg-[#FAFAFA] px-2.5 py-2">
+      <div className="mt-3 flex items-center gap-2 rounded-[14px] bg-pn-canvas px-2.5 py-2">
         <ArrowUpRight size={12} className="shrink-0 text-[#737373]" />
         {platformChip ? (
           <>
@@ -314,7 +314,7 @@ export function QRCard({
           </span>
         )}
         <span
-          className="ml-auto shrink-0 text-[11.5px] text-[#737373]"
+          className="ml-auto shrink-0 text-[12px] text-[#737373]"
           title={isTr ? "Oluşturulma tarihi" : "Created"}
         >
           {createdLabel}
@@ -326,13 +326,13 @@ export function QRCard({
           aynı plain PNG + browser print → Save as PDF. Pulse Lime hero
           frame YOK (kullanıcı talebi). html-to-image + jsPDF kaldırıldı
           (PR #656 + #658 cleanup). */}
-      <div className="mt-3.5 border-t border-[#EDEDED] pt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3.5 border-t border-pn-line pt-3 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={downloadPng}
           disabled={downloadingPng}
           aria-label={isTr ? "QR'ı PNG olarak indir" : "Download QR as PNG"}
-          className="bz-btn-lime inline-flex h-10 w-full items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60"
+          className="bz-btn-lime inline-flex h-10 w-full items-center justify-center gap-1.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {downloadingPng ? (
             <Loader2 size={14} className="animate-spin" />
@@ -346,7 +346,7 @@ export function QRCard({
           onClick={printPdf}
           disabled={printingPdf}
           aria-label={isTr ? "QR'ı PDF olarak yazdır" : "Print QR as PDF"}
-          className="bz-btn-ghost inline-flex h-10 w-full items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60"
+          className="bz-btn-ghost inline-flex h-10 w-full items-center justify-center gap-1.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {printingPdf ? (
             <Loader2 size={14} className="animate-spin" />
@@ -356,11 +356,11 @@ export function QRCard({
           {isTr ? "PDF yazdır" : "Print PDF"}
         </button>
         {downloadError && (
-          <p role="alert" className="col-span-2 -mt-1 text-[11.5px] text-[#991B1B]">
+          <p role="alert" className="col-span-2 -mt-1 text-[12px] text-[#991B1B]">
             {downloadError}
           </p>
         )}
-        <p aria-live="polite" className="col-span-2 -mt-1 text-[11.5px] text-[#3F6212] empty:hidden">
+        <p aria-live="polite" className="col-span-2 -mt-1 text-[12px] text-[#3F6212] empty:hidden">
           {copied ? (isTr ? "Bağlantı kopyalandı." : "Link copied.") : ""}
         </p>
       </div>

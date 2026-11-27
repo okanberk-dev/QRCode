@@ -50,17 +50,17 @@ export default function EmbedBrowserPreview({
     <div>
       {/* Device toggle */}
       <div
-        className="mb-3 inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1"
+        className="mb-3 inline-flex items-center gap-1 rounded-full border border-pn-line p-1"
         role="group"
         aria-label={isTr ? 'Cihaz önizlemesi' : 'Device preview'}
       >
         <button
           type="button"
           onClick={() => setDevice('mobile')}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-full transition-colors ${
             device === 'mobile'
-              ? 'bg-[#0A0A0A] text-white'
-              : 'text-[#525252] hover:bg-[#F5F5F5]'
+              ? 'bg-pn-ink text-white'
+              : 'text-[#525252] hover:bg-pn-canvas'
           }`}
           aria-pressed={device === 'mobile'}
         >
@@ -70,10 +70,10 @@ export default function EmbedBrowserPreview({
         <button
           type="button"
           onClick={() => setDevice('desktop')}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-full transition-colors ${
             device === 'desktop'
-              ? 'bg-[#0A0A0A] text-white'
-              : 'text-[#525252] hover:bg-[#F5F5F5]'
+              ? 'bg-pn-ink text-white'
+              : 'text-[#525252] hover:bg-pn-canvas'
           }`}
           aria-pressed={device === 'desktop'}
         >
@@ -83,20 +83,20 @@ export default function EmbedBrowserPreview({
       </div>
 
       {/* Browser frame */}
-      <div className="bz-card-soft overflow-hidden rounded-2xl">
+      <div className="bz-card-soft overflow-hidden rounded-[24px]">
         <div
           className="mx-auto transition-all duration-300"
           style={{ maxWidth: containerMaxWidth }}
         >
           {/* Chrome-like address bar */}
-          <div className="flex items-center gap-2 border-b border-[#EDEDED] bg-[#F5F5F5] px-3 py-2">
+          <div className="flex items-center gap-2 border-b border-pn-line bg-pn-canvas px-3 py-2">
             <span className="flex gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" aria-hidden />
               <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" aria-hidden />
               <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" aria-hidden />
             </span>
             <div
-              className="ml-2 flex-1 truncate rounded-md bg-white px-2.5 py-1 text-[11px] text-[#525252]"
+              className="ml-2 flex-1 truncate rounded-[10px] bg-white px-2.5 py-1 text-[12px] text-[#525252]"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
               🔒 {websiteDomain}
@@ -106,9 +106,9 @@ export default function EmbedBrowserPreview({
           {/* Mock parent site content */}
           <div className="bg-white p-5">
             {/* Mock nav */}
-            <div className="mb-4 flex items-center justify-between border-b border-[#EDEDED] pb-3">
+            <div className="mb-4 flex items-center justify-between border-b border-pn-line pb-3">
               <div className="bz-h-tight text-[14px]">{businessName}</div>
-              <div className="flex gap-3 text-[11px] text-[#737373]">
+              <div className="flex gap-3 text-[12px] text-[#737373]">
                 <span>{isTr ? 'Anasayfa' : 'Home'}</span>
                 <span>{isTr ? 'Menü' : 'Menu'}</span>
                 <span>{isTr ? 'Hakkımızda' : 'About'}</span>
@@ -144,7 +144,7 @@ export default function EmbedBrowserPreview({
       </div>
 
       {/* Disclaimer */}
-      <p className="mt-2 text-[11px] text-[#737373]">
+      <p className="mt-2 text-[12px] text-[#737373]">
         {isTr
           ? 'Bu örnek bir sayfa içinde önizlemedir; gerçek görünüm sitenizin tasarımına göre değişebilir.'
           : 'This is a sample-page preview; actual look depends on your site design.'}

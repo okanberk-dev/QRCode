@@ -405,12 +405,6 @@ export default function NotificationBell({
     return annNew + lowUnreadCount;
   }, [announcements, lastViewedAt, lowUnreadCount, totalCount]);
 
-  const badgeText = useMemo(() => {
-    if (unreadCount === 0) return '';
-    if (unreadCount > 99) return '99+';
-    return String(unreadCount);
-  }, [unreadCount]);
-
   // Stage 60 §38.141 — Mobile bottom nav badge sync. NotificationBell
   // unreadCount değiştiğinde global custom event yayınlar; mobile bottom
   // nav (UserDashboardShell + AdminMobileNav) listener consume eder.
@@ -451,23 +445,15 @@ export default function NotificationBell({
         }
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+        className="pn-icon-btn"
       >
         <Bell
-          size={16}
-          strokeWidth={2}
-          className={iconColor ? '' : 'text-[#0A0A0A]'}
+          size={19}
+          className={iconColor ? '' : 'text-pn-ink'}
           style={iconColor ? { color: iconColor } : undefined}
         />
-        {unreadCount > 0 && (
-          <span
-            aria-hidden
-            className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] h-[16px] items-center justify-center rounded-full bg-[#DC2626] px-1 text-[9px] font-semibold text-white"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            {badgeText}
-          </span>
-        )}
+        {/* Pano: a red dot (the count is in the aria-label and the panel). */}
+        {unreadCount > 0 && <span aria-hidden className="pn-dot" />}
       </button>
 
       {open && (
@@ -494,20 +480,20 @@ export default function NotificationBell({
             // phones; body{overflow-x:hidden} then clipped it instead of scrolling, so the
             // leading icon column of every row was cut off. Below sm it becomes a
             // viewport-anchored sheet instead of an anchored popover.
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(92vw,360px)] origin-top-right rounded-2xl border border-[#EDEDED] bg-white bz-elev-3 animate-slide-in max-sm:fixed max-sm:inset-x-3 max-sm:top-16 max-sm:w-auto"
+            className="absolute right-0 top-[calc(100%+12px)] z-50 w-[min(92vw,380px)] origin-top-right overflow-hidden rounded-[20px] border border-pn-line bg-white bz-elev-3 animate-slide-in max-sm:fixed max-sm:inset-x-3 max-sm:top-[80px] max-sm:w-auto"
           >
             {/* Header */}
-            <div className="flex items-center justify-between gap-3 border-b border-[#EDEDED] px-4 py-3">
+            <div className="flex items-center justify-between gap-3 border-b border-pn-line px-4 py-3">
               <div className="flex items-center gap-2">
-                <Bell size={14} strokeWidth={2} className="text-[#0A0A0A]" />
+                <Bell size={14} strokeWidth={2} className="text-pn-ink" />
                 <span
-                  className="text-[14px] font-semibold text-[#0A0A0A] tracking-[-0.01em]"
+                  className="text-[14px] font-medium text-pn-ink tracking-[-0.01em]"
                   style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   {isTr ? 'Bildirimler' : 'Notifications'}
                 </span>
                 {totalCount > 0 && (
-                  <span className="pulse-eyebrow text-[#737373]">{totalCount}</span>
+                  <span className="text-[13px] font-medium text-[#737373]">{totalCount}</span>
                 )}
               </div>
               <div className="flex items-center gap-1.5">
@@ -516,7 +502,7 @@ export default function NotificationBell({
                     type="button"
                     onClick={() => void markAllFeedbackRead()}
                     disabled={markingAllRead}
-                    className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-2.5 text-[11px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#C6F24E] disabled:opacity-60"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full border border-pn-line bg-white px-2.5 text-[12px] font-medium text-pn-ink transition-colors hover:border-pn-accent disabled:opacity-60"
                   >
                     {markingAllRead ? (
                       <Loader2 size={12} className="animate-spin" />
@@ -531,7 +517,7 @@ export default function NotificationBell({
                     href={settingsLink}
                     onClick={() => setOpen(false)}
                     aria-label={isTr ? 'Bildirim ayarları' : 'Notification settings'}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-pn-canvas hover:text-pn-ink"
                   >
                     <Settings size={13} strokeWidth={2} />
                   </Link>
@@ -545,7 +531,7 @@ export default function NotificationBell({
               {announcements.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-1.5">
-                    <span className="pulse-eyebrow text-[#A8D62E]">
+                    <span className="text-[13px] font-medium text-pn-accent-ink">
                       {isTr ? 'DUYURULAR' : 'ANNOUNCEMENTS'}
                     </span>
                     {/* The owner announcements archive page had no entry
@@ -553,7 +539,7 @@ export default function NotificationBell({
                     <Link
                       href={`${base}/announcements`}
                       onClick={() => setOpen(false)}
-                      className="text-[11px] font-medium text-[#737373] hover:text-[#0A0A0A] hover:underline"
+                      className="text-[12px] font-medium text-[#737373] hover:text-pn-ink hover:underline"
                     >
                       {isTr ? 'Tümünü gör' : 'View all'}
                     </Link>
@@ -565,19 +551,19 @@ export default function NotificationBell({
                           <Link
                             href={a.ctaLink}
                             onClick={() => setOpen(false)}
-                            className="block rounded-xl px-3 py-2.5 transition-colors hover:bg-[#FAFAFA]"
+                            className="block rounded-[20px] px-3 py-2.5 transition-colors hover:bg-pn-canvas"
                           >
                             <NotificationItem
-                              icon={<Megaphone size={14} className="text-[#0A0A0A]" />}
+                              icon={<Megaphone size={14} className="text-pn-ink" />}
                               title={a.title}
                               message={a.message}
                               isLink
                             />
                           </Link>
                         ) : (
-                          <div className="block rounded-xl px-3 py-2.5">
+                          <div className="block rounded-[20px] px-3 py-2.5">
                             <NotificationItem
-                              icon={<Megaphone size={14} className="text-[#0A0A0A]" />}
+                              icon={<Megaphone size={14} className="text-pn-ink" />}
                               title={a.title}
                               message={a.message}
                             />
@@ -593,7 +579,7 @@ export default function NotificationBell({
               {(loading || attention.length > 0) && (
                 <div>
                   <div className="px-4 pt-3 pb-1.5 flex items-center justify-between">
-                    <span className="pulse-eyebrow text-[#DC2626]">
+                    <span className="text-[13px] font-medium text-[#DC2626]">
                       {isTr ? 'DİKKAT GEREKEN YORUMLAR' : 'ATTENTION REVIEWS'}
                     </span>
                     {loading && <Loader2 size={12} className="animate-spin text-[#737373]" />}
@@ -607,7 +593,7 @@ export default function NotificationBell({
                             setOpen(false);
                             void markFeedbackRead(f.id);
                           }}
-                          className="block rounded-xl px-3 py-2.5 transition-colors hover:bg-[#FAFAFA]"
+                          className="block rounded-[20px] px-3 py-2.5 transition-colors hover:bg-pn-canvas"
                         >
                           <NotificationItem
                             icon={
@@ -635,13 +621,13 @@ export default function NotificationBell({
               {/* Empty state */}
               {!loading && announcements.length === 0 && attention.length === 0 && (
                 <div className="px-4 py-10 text-center">
-                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF9B8]">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-pn-accent-soft">
                     <CheckCircle2 size={18} className="text-[#16A34A]" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#0A0A0A]">
+                  <p className="text-[13px] font-medium text-pn-ink">
                     {isTr ? 'Yeni bildirim yok' : 'No new notifications'}
                   </p>
-                  <p className="mt-1 text-[11px] text-[#737373]">
+                  <p className="mt-1 text-[12px] text-[#737373]">
                     {isTr
                       ? 'Sistem duyuruları ve dikkat gereken yorumlar burada görünür.'
                       : 'System announcements and attention reviews appear here.'}
@@ -651,11 +637,11 @@ export default function NotificationBell({
             </div>
 
             {/* Footer */}
-            <div className="border-t border-[#EDEDED] px-4 py-2.5 flex items-center justify-between gap-2">
+            <div className="border-t border-pn-line px-4 py-2.5 flex items-center justify-between gap-2">
               <Link
                 href={reviewsLink}
                 onClick={() => setOpen(false)}
-                className="inline-flex items-center gap-1 text-[12px] font-medium text-[#0A0A0A] hover:underline"
+                className="inline-flex items-center gap-1 text-[12px] font-medium text-pn-ink hover:underline"
               >
                 {isTr ? 'Tüm yorumlar' : 'All reviews'}
                 <ExternalLink size={11} strokeWidth={2} />
@@ -664,7 +650,7 @@ export default function NotificationBell({
                 <Link
                   href={settingsLink}
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center gap-1 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
+                  className="inline-flex items-center gap-1 text-[13px] font-medium text-[#737373] hover:text-pn-ink transition-colors"
                 >
                   {isTr ? 'AYARLAR' : 'SETTINGS'}
                 </Link>
@@ -690,13 +676,13 @@ function NotificationItem({
 }) {
   return (
     <div className="flex items-start gap-2.5">
-      <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#F5F5F5]">
+      <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-pn-canvas">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
         <p
           className={`text-[13px] leading-[1.35] tracking-[-0.01em] ${
-            isLink ? 'text-[#0A0A0A] font-semibold' : 'text-[#0A0A0A] font-medium'
+            isLink ? 'text-pn-ink font-medium' : 'text-pn-ink font-medium'
           }`}
         >
           {title}

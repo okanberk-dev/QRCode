@@ -225,7 +225,7 @@ export default function AdminAuditLogsPage() {
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM KAYITLARI"
-        eyebrowColor="#C6F24E"
+        eyebrowColor="#D7FE03"
         title="Denetim kayıtları"
         description="Paneldeki tüm işlemlerin zaman damgalı kaydı. IP adresi tutulmaz, e-posta ve telefon gizlenir. Filtrele, ayrıntıyı aç, CSV olarak indir."
         actions={
@@ -275,15 +275,15 @@ export default function AdminAuditLogsPage() {
       {/* Filter toolbar */}
       <div className="bz-card p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-white p-1 pulse-eyebrow">
+          <div className="inline-flex rounded-[20px] border border-pn-line bg-white p-1 text-[13px] font-medium">
             {(['7d', '30d', '90d'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
-                className={`rounded-lg px-3 py-1.5 transition-all ${
+                className={`rounded-[14px] px-3 py-1.5 transition-all ${
                   range === r
-                    ? 'bg-[#0A0A0A] text-white shadow-sm'
-                    : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
+                    ? 'bg-pn-ink text-white '
+                    : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {r === '7d' ? 'Son 7 gün' : r === '30d' ? 'Son 30 gün' : 'Son 90 gün'}
@@ -321,7 +321,7 @@ export default function AdminAuditLogsPage() {
           {actorIdFilter && (
             <button
               onClick={() => setActorId('')}
-              className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252]"
+              className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-3 py-1.5 text-[12px] font-medium text-[#525252]"
             >
               <UserIcon size={12} strokeWidth={2} />
               Aktör: {actorIdFilter.slice(0, 12)}…
@@ -331,7 +331,7 @@ export default function AdminAuditLogsPage() {
           {targetIdFilter && (
             <button
               onClick={() => setTargetId('')}
-              className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252]"
+              className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-3 py-1.5 text-[12px] font-medium text-[#525252]"
             >
               Hedef: {targetIdFilter.slice(0, 12)}…
               <span className="text-[#A3A3A3]">×</span>
@@ -344,7 +344,7 @@ export default function AdminAuditLogsPage() {
       <div className="bz-card overflow-hidden p-0">
         {loading && !data ? (
           <div className="flex items-center justify-center p-16">
-            <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
+            <Loader2 size={22} className="animate-spin text-pn-ink" />
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
@@ -366,20 +366,20 @@ export default function AdminAuditLogsPage() {
                 return (
                   <div key={entry.id} className="bz-card p-3.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[13px] font-semibold text-[#0A0A0A] truncate">
+                      <span className="text-[13px] font-medium text-pn-ink truncate">
                         {entry.actor?.label || entry.actorId}
                       </span>
                       <Badge kind={sourceMeta.kind}>{sourceMeta.label}</Badge>
                     </div>
                     {entry.actor?.email && (
-                      <div className="mt-0.5 text-[11px] text-[#737373] font-mono truncate">
+                      <div className="mt-0.5 text-[12px] text-[#737373] font-mono truncate">
                         {entry.actor.email}
                       </div>
                     )}
-                    <div className="mt-2 text-[12px] font-medium text-[#0A0A0A]">
+                    <div className="mt-2 text-[12px] font-medium text-pn-ink">
                       {describeAction(entry.action)}
                     </div>
-                    <div className="mt-1 flex items-center gap-2 flex-wrap text-[11px] text-[#737373]">
+                    <div className="mt-1 flex items-center gap-2 flex-wrap text-[12px] text-[#737373]">
                       <span className="font-mono text-[#A3A3A3]">{entry.action}</span>
                       <span className="text-[#A3A3A3]">·</span>
                       <span className="tabular-nums">{dateLabel(entry.createdAt)}</span>
@@ -397,14 +397,14 @@ export default function AdminAuditLogsPage() {
                         type="button"
                         onClick={() => setExpandedRow(isExpanded ? null : entry.id)}
                         aria-expanded={isExpanded}
-                        className="mt-2 text-[11px] text-[#525252] hover:text-[#0A0A0A] underline"
+                        className="mt-2 text-[12px] text-[#525252] hover:text-pn-ink underline"
                       >
                         {isExpanded ? 'Ayrıntıyı gizle' : 'Ayrıntıyı göster'}
                       </button>
                     )}
                     {isExpanded && entry.payload != null && (
                       <pre
-                        className="mt-2 overflow-x-auto rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-3 text-[11px] text-[#262626]"
+                        className="mt-2 overflow-x-auto rounded-[14px] border border-pn-line bg-pn-canvas p-3 text-[12px] text-[#262626]"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       >
                         {JSON.stringify(entry.payload, null, 2)}
@@ -418,8 +418,8 @@ export default function AdminAuditLogsPage() {
             {/* Desktop table */}
             <div className="overflow-x-auto hidden lg:block">
               <table className="w-full text-left text-[13px]" style={{ minWidth: 900 }}>
-                <thead className="bg-[#FAFAFA] border-b border-[#EDEDED]">
-                  <tr className="pulse-eyebrow text-[#737373]">
+                <thead className="bg-pn-canvas border-b border-pn-line">
+                  <tr className="text-[13px] font-medium text-[#737373]">
                     <th className="px-4 py-3" style={{ width: 160 }}>
                       Tarih
                     </th>
@@ -436,24 +436,24 @@ export default function AdminAuditLogsPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#EDEDED]">
+                <tbody className="divide-y divide-pn-line">
                   {rows.map((entry) => {
                     const isExpanded = expandedRow === entry.id;
                     const sourceMeta =
                       SOURCE_BADGE[entry.actorSource] || { label: entry.actorSource, kind: 'ghost' as BadgeKind };
                     return (
                       <Fragment key={entry.id}>
-                        <tr className="hover:bg-[#FAFAFA]/60">
+                        <tr className="hover:bg-pn-canvas/60">
                           <td className="px-4 py-3 text-[12px] text-[#525252] tabular-nums">
                             {dateLabel(entry.createdAt)}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[13px] font-semibold text-[#0A0A0A]">
+                              <span className="text-[13px] font-medium text-pn-ink">
                                 {entry.actor?.label || entry.actorId}
                               </span>
                               {entry.actor?.email && (
-                                <span className="text-[11px] text-[#737373] font-mono truncate max-w-[200px]">
+                                <span className="text-[12px] text-[#737373] font-mono truncate max-w-[200px]">
                                   {entry.actor.email}
                                 </span>
                               )}
@@ -464,21 +464,21 @@ export default function AdminAuditLogsPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[13px] font-medium text-[#0A0A0A]">
+                              <span className="text-[13px] font-medium text-pn-ink">
                                 {describeAction(entry.action)}
                               </span>
-                              <span className="text-[10px] text-[#A3A3A3] font-mono">
+                              <span className="text-[12px] text-[#A3A3A3] font-mono">
                                 {entry.action}
                               </span>
                             </div>
                           </td>
                           <td className="px-4 py-3">
                             {entry.targetId ? (
-                              <span className="text-[11px] font-mono text-[#525252] truncate max-w-[120px] block">
+                              <span className="text-[12px] font-mono text-[#525252] truncate max-w-[120px] block">
                                 {entry.targetId}
                               </span>
                             ) : (
-                              <span className="text-[11px] text-[#A3A3A3]">—</span>
+                              <span className="text-[12px] text-[#A3A3A3]">—</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-right">
@@ -489,20 +489,20 @@ export default function AdminAuditLogsPage() {
                                   setExpandedRow(isExpanded ? null : entry.id)
                                 }
                                 aria-expanded={isExpanded}
-                                className="text-[11px] text-[#525252] hover:text-[#0A0A0A] underline"
+                                className="text-[12px] text-[#525252] hover:text-pn-ink underline"
                               >
                                 {isExpanded ? 'Gizle' : 'Göster'}
                               </button>
                             ) : (
-                              <span className="text-[11px] text-[#A3A3A3]">—</span>
+                              <span className="text-[12px] text-[#A3A3A3]">—</span>
                             )}
                           </td>
                         </tr>
                         {isExpanded && entry.payload != null && (
-                          <tr className="bg-[#FAFAFA]/40">
+                          <tr className="bg-pn-canvas/40">
                             <td colSpan={6} className="px-4 py-3">
                               <pre
-                                className="overflow-x-auto rounded-lg bg-white p-3 text-[11px] text-[#262626] border border-[#EDEDED]"
+                                className="overflow-x-auto rounded-[14px] bg-white p-3 text-[12px] text-[#262626] border border-pn-line"
                                 style={{ fontFamily: 'var(--font-mono)' }}
                               >
                                 {JSON.stringify(entry.payload, null, 2)}
@@ -518,22 +518,22 @@ export default function AdminAuditLogsPage() {
             </div>
 
             {pagination && (
-              <div className="flex flex-col items-start gap-3 border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="pulse-eyebrow text-[#6B7280]">
+              <div className="flex flex-col items-start gap-3 border-t border-pn-line bg-pn-canvas px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[13px] font-medium text-[#6B7280]">
                   Sayfa {data?.page ?? 1} / {totalPages} · Toplam {data?.total ?? 0}
                 </p>
                 <div className="flex flex-wrap items-center gap-1">
                   <button
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page <= 1 || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white p-2 hover:bg-[#FAFAFA] disabled:opacity-40"
+                    className="rounded-[14px] border border-pn-line bg-white p-2 hover:bg-pn-canvas disabled:opacity-40"
                     aria-label="Önceki sayfa"
                   >
                     <ChevronLeft size={14} strokeWidth={2} />
                   </button>
                   {pagination.map((p, i) =>
                     p === '…' ? (
-                      <span key={`gap-${i}`} className="px-2 text-[11px] text-[#737373]">
+                      <span key={`gap-${i}`} className="px-2 text-[12px] text-[#737373]">
                         …
                       </span>
                     ) : (
@@ -541,10 +541,10 @@ export default function AdminAuditLogsPage() {
                         key={p}
                         onClick={() => setPage(p)}
                         disabled={loading}
-                        className={`min-w-[32px] rounded-lg px-2 py-1.5 text-[12px] font-medium ${
+                        className={`min-w-[32px] rounded-[14px] px-2 py-1.5 text-[12px] font-medium ${
                           p === page
-                            ? 'bg-[#0A0A0A] text-white'
-                            : 'border border-[#EDEDED] bg-white text-[#1A1A1A] hover:bg-[#FAFAFA]'
+                            ? 'bg-pn-ink text-white'
+                            : 'border border-pn-line bg-white text-pn-ink-2 hover:bg-pn-canvas'
                         }`}
                       >
                         {p}
@@ -554,7 +554,7 @@ export default function AdminAuditLogsPage() {
                   <button
                     onClick={() => setPage(Math.min(totalPages, page + 1))}
                     disabled={page >= totalPages || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white p-2 hover:bg-[#FAFAFA] disabled:opacity-40"
+                    className="rounded-[14px] border border-pn-line bg-white p-2 hover:bg-pn-canvas disabled:opacity-40"
                     aria-label="Sonraki sayfa"
                   >
                     <ChevronRight size={14} strokeWidth={2} />

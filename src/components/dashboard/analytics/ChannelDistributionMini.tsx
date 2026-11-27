@@ -42,7 +42,7 @@ export function ChannelDistributionMini({
   return (
     <section className={`bz-card p-5 sm:p-6 ${className}`}>
       <header className="mb-3.5">
-        <span className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Kanal dağılımı' : 'Channels'}</span>
+        <span className="text-[13px] font-medium text-[#525252]">{isTr ? 'Kanal dağılımı' : 'Channels'}</span>
         {caption && <p className="mt-1 text-[12px] text-[#737373]">{caption}</p>}
       </header>
       <ul className="flex flex-col gap-2.5">
@@ -55,16 +55,16 @@ export function ChannelDistributionMini({
                 className="shrink-0 inline-block h-2 w-2 rounded-full"
                 style={{ background: c.color }}
               />
-              <span className="text-[12.5px] font-medium text-[#0A0A0A] min-w-[100px] truncate">
+              <span className="text-[13px] font-medium text-pn-ink min-w-[100px] truncate">
                 {c.label}
               </span>
-              <div className="flex-1 h-1.5 rounded-full bg-[#F5F5F5] overflow-hidden">
+              <div className="flex-1 h-1.5 rounded-full bg-pn-canvas overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.max(2, pct)}%`, background: c.color }}
                 />
               </div>
-              <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[78px] text-right">
+              <span className="tabular-nums text-[12px] text-[#737373] tabular-nums shrink-0 w-[78px] text-right">
                 {c.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')} ·{' '}
                 {isTr ? `%${Math.round(pct)}` : `${Math.round(pct)}%`}
               </span>

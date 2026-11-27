@@ -334,7 +334,7 @@ function AuditQuestionEditorBody({
                         checked={checked}
                         disabled={locked}
                         onChange={() => toggleMultiCorrect(opt)}
-                        className="h-4 w-4 accent-[#0A0A0A]"
+                        className="h-4 w-4 accent-pn-ink"
                       />
                       {opt}
                     </label>
@@ -411,8 +411,8 @@ function AuditQuestionEditorBody({
           />
         </Field>
 
-        <details className="group rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3">
-          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between text-[13px] font-semibold text-[#0A0A0A] sm:min-h-[36px] [&::-webkit-details-marker]:hidden">
+        <details className="group rounded-[20px] border border-pn-line bg-pn-canvas px-3">
+          <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between text-[13px] font-medium text-pn-ink sm:min-h-[36px] [&::-webkit-details-marker]:hidden">
             {isTr ? 'Daha fazla ayar' : 'More options'}
             <span aria-hidden="true" className="text-[#737373] transition-transform group-open:rotate-180">
               ▾

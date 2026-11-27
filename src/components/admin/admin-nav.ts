@@ -24,8 +24,8 @@ import {
 import type { AdminAction, AdminResource } from '@/lib/rbac-constants';
 
 /**
- * Single source of truth for the admin panel navigation. The sidebar, the
- * mobile bottom bar and the Cmd+K palette all read this list — they used to
+ * Single source of truth for the admin panel navigation. The Pano top bar,
+ * the mobile drawer (AdminPanoChrome) and the Cmd+K palette all read this list — they used to
  * keep three hand-synced copies, which drifted (the bottom bar had no entry
  * for `staff`, the palette and the bottom bar were Turkish-only).
  *
@@ -309,24 +309,6 @@ export const ADMIN_NAV: readonly AdminNavEntry[] = [
   },
 ];
 
-/**
- * Pages offered in the mobile bottom bar, in priority order. The bar shows
- * the first {@link ADMIN_MOBILE_NAV_SLOTS} the admin is allowed to open, so a
- * staff admin gets the pages their grants unlock instead of an empty bar.
- */
-const MOBILE_PRIORITY: readonly string[] = [
-  '/admin/dashboard',
-  '/admin/restaurants',
-  '/admin/reviews',
-  '/admin/qr',
-  '/admin/analytics',
-  '/admin/members',
-  '/admin/customers',
-  '/admin/blog',
-  '/admin/profile',
-];
-export const ADMIN_MOBILE_NAV_SLOTS = 5;
-
 export function toAdminNavRole(value: unknown): AdminNavRole {
   return value === 'superadmin' || value === 'staff' ? value : 'manager';
 }
@@ -369,20 +351,6 @@ export function getAdminNavLeaves(
   return getAdminNav(role, permissions).flatMap((entry) =>
     entry.type === 'item' ? [entry] : [...entry.children],
   );
-}
-
-export function getAdminMobileNav(
-  role: AdminNavRole,
-  permissions: ReadonlySet<string>,
-): AdminNavLeaf[] {
-  const byHref = new Map(getAdminNavLeaves(role, permissions).map((leaf) => [leaf.href, leaf]));
-  const picked: AdminNavLeaf[] = [];
-  for (const href of MOBILE_PRIORITY) {
-    const leaf = byHref.get(href);
-    if (leaf) picked.push(leaf);
-    if (picked.length === ADMIN_MOBILE_NAV_SLOTS) break;
-  }
-  return picked;
 }
 
 /**

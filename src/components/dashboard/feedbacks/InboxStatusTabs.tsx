@@ -85,7 +85,7 @@ export function InboxStatusTabs({
           ? 'bg-white/15 text-white'
           : tab.tone === 'danger' && (tab.count ?? 0) > 0
             ? 'bg-[#FEE2E2] text-[#991B1B]'
-            : 'bg-[#F5F5F5] text-[#525252]';
+            : 'bg-pn-canvas text-[#525252]';
         return (
           <button
             key={tab.id}
@@ -100,16 +100,16 @@ export function InboxStatusTabs({
             title={tab.title}
             onClick={() => onChange(tab.id)}
             onKeyDown={(e) => onKeyDown(e, index)}
-            className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 sm:h-9 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+            className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 sm:h-9 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 ${
               selected
-                ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#D4D4D4] hover:text-[#0A0A0A]'
+                ? 'border-pn-ink bg-pn-ink text-white'
+                : 'border-pn-line bg-white text-[#525252] hover:border-pn-line-strong hover:text-pn-ink'
             }`}
           >
             <span>{tab.label}</span>
             {showCount && (
               <span
-                className={`min-w-[20px] rounded-full px-1.5 text-center text-[11px] leading-[18px] tabular-nums ${countTone}`}
+                className={`min-w-[20px] rounded-full px-1.5 text-center text-[12px] leading-[18px] tabular-nums ${countTone}`}
               >
                 {tab.count}
               </span>

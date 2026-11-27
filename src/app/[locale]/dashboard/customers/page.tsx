@@ -534,7 +534,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           info={isTr ? '5 ya da daha fazla değerlendirme ve ortalama 4★ ve üstü.' : '5 or more ratings and an average of 4★ or higher.'}
           isTr={isTr}
           value={vipCount.toLocaleString(intLocale)}
-          icon={<Crown size={14} className="text-[#A8D62E]" />}
+          icon={<Crown size={14} className="text-pn-accent-ink" />}
           delta={
             totalCustomers > 0
               ? isTr
@@ -647,7 +647,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       type="checkbox"
                       data-select-all
                       aria-label={isTr ? 'Tümünü seç' : 'Select all'}
-                      className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
+                      className="h-4 w-4 cursor-pointer accent-pn-ink"
                     />
                   </th>
                   <th className="text-left sticky left-10 z-10 bg-white">
@@ -672,9 +672,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   // §38.36 — Sentiment-based avatar bg (tasarım line 131-134).
                   const avatarBg =
                     r.sentiment === 'neg' ? '#FEF2F2'
-                    : r.sentiment === 'pos' ? '#EAF9B8'
+                    : r.sentiment === 'pos' ? '#F3FDC4'
                     : '#F5F5F5';
-                  const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#0A0A0A';
+                  const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#000000';
                   // Score 0-100 (avgRating × 20, clamped).
                   const sentScore =
                     r.avg_rating != null
@@ -685,15 +685,15 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                     // utility'leri ezip sticky hücreleri yarı saydam yapıyordu
                     // (yatay scroll'da alttaki içerik görünüyordu).
                     <tr key={detailKey} className={`group bz-tr-hover ${r.archived ? 'opacity-60' : ''}`}>
-                      <td className="w-10 sticky left-0 z-10 !bg-white group-hover:!bg-[#FAFAFA]">
+                      <td className="w-10 sticky left-0 z-10 !bg-white group-hover:!bg-pn-canvas">
                         <input
                           type="checkbox"
                           data-customer-key={detailKey}
                           aria-label={isTr ? 'Bu satırı seç' : 'Select row'}
-                          className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
+                          className="h-4 w-4 cursor-pointer accent-pn-ink"
                         />
                       </td>
-                      <td className="sticky left-10 z-10 !bg-white group-hover:!bg-[#FAFAFA]">
+                      <td className="sticky left-10 z-10 !bg-white group-hover:!bg-pn-canvas">
                         <div className="flex items-center gap-3">
                           <div
                             className="bz-avatar h-8 w-8 text-[12px]"
@@ -705,18 +705,18 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                             <Link
                               href={detailHref}
                               scroll={false}
-                              className="block truncate text-[13px] font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                              className="block truncate text-[13px] font-medium text-pn-ink hover:text-pn-accent-ink transition-colors"
                               aria-label={`${r.name || 'Anonim'} — ${isTr ? 'detayı aç' : 'open detail'}`}
                             >
                               {r.name || (isTr ? 'Anonim' : 'Anonymous')}
                             </Link>
                             {r.email && (
-                              <div className="bz-mono text-[11px] text-[#737373] truncate max-w-[220px]">
+                              <div className="tabular-nums text-[12px] text-[#737373] truncate max-w-[220px]">
                                 {r.email}
                               </div>
                             )}
                             {((showBusinessName && r.restaurant_name) || r.branch) && (
-                              <div className="text-[11px] text-[#737373] truncate">
+                              <div className="text-[12px] text-[#737373] truncate">
                                 {[showBusinessName ? r.restaurant_name : null, r.branch]
                                   .filter(Boolean)
                                   .join(' · ')}
@@ -729,12 +729,12 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         <SegmentChip segment={r.segment} locale={locale} />
                       </td>
                       <td className="text-right">
-                        <span className="bz-mono tabular-nums text-[13px] font-semibold text-[#0A0A0A]">
+                        <span className="tabular-nums tabular-nums text-[13px] font-medium text-pn-ink">
                           {r.feedback_count}
                         </span>
                       </td>
                       <td className="text-right">
-                        <span className="bz-mono tabular-nums text-[12.5px] font-semibold text-[#0A0A0A]">
+                        <span className="tabular-nums tabular-nums text-[13px] font-medium text-pn-ink">
                           {r.avg_rating != null
                             ? r.avg_rating.toLocaleString(intLocale, { maximumFractionDigits: 1, minimumFractionDigits: 1 })
                             : '—'}
@@ -746,12 +746,12 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         </span>
                       </td>
                       <td>
-                        <span className="bz-mono text-[11px] inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252] whitespace-nowrap">
+                        <span className="tabular-nums text-[12px] inline-flex items-center rounded-full bg-pn-canvas px-2 py-0.5 text-[#525252] whitespace-nowrap">
                           {r.last_channel}
                         </span>
                       </td>
                       <td className="text-right">
-                        <span className="bz-mono text-[11.5px] text-[#737373]">
+                        <span className="tabular-nums text-[12px] text-[#737373]">
                           {fmtDate(r.last_at)}
                         </span>
                       </td>
@@ -777,9 +777,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
               const detailHref = buildHref({ detail: detailKey });
               const avatarBg =
                 r.sentiment === 'neg' ? '#FEF2F2'
-                : r.sentiment === 'pos' ? '#EAF9B8'
+                : r.sentiment === 'pos' ? '#F3FDC4'
                 : '#F5F5F5';
-              const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#0A0A0A';
+              const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#000000';
               const displayName = r.name || (isTr ? 'Anonim' : 'Anonymous');
               const subline = [r.email || r.phone, showBusinessName ? r.restaurant_name : null, r.branch]
                 .filter(Boolean)
@@ -787,7 +787,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
               return (
                 <div
                   key={detailKey}
-                  className={`bz-card relative p-4 transition-colors hover:border-[#D4D4D4] ${r.archived ? 'opacity-60' : ''}`}
+                  className={`bz-card relative p-4 transition-colors hover:border-pn-line-strong ${r.archived ? 'opacity-60' : ''}`}
                 >
                   <div className="flex items-start gap-3">
                     <label className="relative z-10 -my-2.5 -ml-2.5 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
@@ -795,7 +795,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         type="checkbox"
                         data-customer-key={detailKey}
                         aria-label={isTr ? `${displayName} seç` : `Select ${displayName}`}
-                        className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
+                        className="h-4 w-4 cursor-pointer accent-pn-ink"
                       />
                     </label>
                     <div
@@ -810,7 +810,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         <Link
                           href={detailHref}
                           scroll={false}
-                          className="min-w-0 truncate text-[14px] font-semibold text-[#0A0A0A] after:absolute after:inset-0 after:rounded-[12px] after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-[#C6F24E]"
+                          className="min-w-0 truncate text-[14px] font-medium text-pn-ink after:absolute after:inset-0 after:rounded-[12px] after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-pn-accent"
                         >
                           {displayName}
                         </Link>
@@ -865,7 +865,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   className="bz-card flex flex-col gap-2.5 p-3 sm:flex-row sm:items-center sm:justify-between"
                   aria-label={isTr ? 'Sayfalar' : 'Pagination'}
                 >
-                  <span className="bz-mono text-[11.5px] text-[#737373] tabular-nums">
+                  <span className="tabular-nums text-[12px] text-[#737373] tabular-nums">
                     {isTr
                       ? `${startRow.toLocaleString(intLocale)}–${endRow.toLocaleString(intLocale)} / ${total.toLocaleString(intLocale)} misafir`
                       : `${startRow.toLocaleString(intLocale)}–${endRow.toLocaleString(intLocale)} of ${total.toLocaleString(intLocale)} guests`}
@@ -891,7 +891,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       p === '…' ? (
                         <span
                           key={`ellipsis-${i}`}
-                          className="bz-mono text-[11px] text-[#A3A3A3] px-1"
+                          className="tabular-nums text-[12px] text-[#A3A3A3] px-1"
                           aria-hidden
                         >
                           …
@@ -903,10 +903,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                           aria-current={p === page ? 'page' : undefined}
                           // §38.74 — Mobile WCAG 2.5.5 (44x44 touch target).
                           // Mobile h-11 w-11 (44px); sm:+ h-8 (32px) compact.
-                          className={`min-w-[44px] h-11 sm:min-w-[32px] sm:h-8 inline-flex items-center justify-center rounded-md px-2 text-[12px] font-medium tabular-nums transition-colors ${
+                          className={`min-w-[44px] h-11 sm:min-w-[32px] sm:h-8 inline-flex items-center justify-center rounded-full px-2 text-[12px] font-medium tabular-nums transition-colors ${
                             p === page
-                              ? 'bg-[#0A0A0A] text-white'
-                              : 'text-[#525252] hover:bg-[#F5F5F5]'
+                              ? 'bg-pn-ink text-white'
+                              : 'text-[#525252] hover:bg-pn-canvas'
                           }`}
                         >
                           {p}

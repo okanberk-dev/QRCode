@@ -37,7 +37,7 @@ export default function Loading() {
             <SkBox className="h-4 w-64 max-w-full" />
           </div>
           <div className="bz-card p-5 flex items-center gap-4">
-            <SkBox className="h-[52px] w-[52px] rounded-xl" />
+            <SkBox className="h-[52px] w-[52px] rounded-[20px]" />
             <div className="space-y-2 flex-1">
               <SkBox className="h-5 w-40" />
               <SkBox className="h-3 w-52 max-w-full" />

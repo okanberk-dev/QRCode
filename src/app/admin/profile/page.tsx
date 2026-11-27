@@ -185,11 +185,11 @@ export default function AdminProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5 lg:gap-7">
         {/* Sidebar info */}
         <aside className="bz-card p-5 sm:p-6 self-start">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A0A0A]">
-            <ShieldCheck size={26} className="text-[#C6F24E]" strokeWidth={2} />
+          <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-pn-ink">
+            <ShieldCheck size={26} className="text-pn-accent" strokeWidth={2} />
           </div>
           <div className="mt-4">
-            <p className="pulse-eyebrow text-[#737373]">HESAP</p>
+            <p className="text-[13px] font-medium text-[#737373]">HESAP</p>
             <div className="bz-h-tight mt-1 truncate" style={{ fontSize: 16 }}>
               {profile?.username}
             </div>
@@ -198,11 +198,11 @@ export default function AdminProfilePage() {
               {isEnvAdmin && ' · Varsayılan hesap'}
             </div>
           </div>
-          <div className="mt-5 rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3.5">
-            <p className="text-[11px] font-semibold text-[#0A0A0A] mb-1">
+          <div className="mt-5 rounded-[20px] bg-pn-canvas border border-pn-line p-3.5">
+            <p className="text-[12px] font-medium text-pn-ink mb-1">
               Güvenlik ipucu
             </p>
-            <p className="text-[11px] leading-[1.55] text-[#525252]">
+            <p className="text-[12px] leading-[1.55] text-[#525252]">
               Şifreni düzenli aralıklarla değiştir. En az 8 karakter olsun; en az bir harf ve
               bir rakam içersin.
             </p>
@@ -214,7 +214,7 @@ export default function AdminProfilePage() {
           {/* E-mail card */}
           <section className="bz-card p-5 sm:p-7">
             <div className="flex items-center gap-2.5 mb-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EAF9B8]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[14px] bg-pn-accent-soft">
                 <Mail size={16} strokeWidth={2} />
               </span>
               <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
@@ -230,7 +230,7 @@ export default function AdminProfilePage() {
               <div className="space-y-1.5">
                 <label
                   htmlFor="admin-recovery-email"
-                  className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                  className="text-[12px] font-medium text-[#737373]"
                 >
                   E-posta
                 </label>
@@ -247,11 +247,11 @@ export default function AdminProfilePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
-                <p className="text-[11px] text-[#737373]">
+                <p className="text-[12px] text-[#737373]">
                   {profile?.recoveryEmail ? (
                     <>
                       Mevcut:{' '}
-                      <span className="font-mono text-[#0A0A0A]">{profile.recoveryEmail}</span>
+                      <span className="font-mono text-pn-ink">{profile.recoveryEmail}</span>
                     </>
                   ) : (
                     'Henüz e-posta kayıtlı değil.'
@@ -284,7 +284,7 @@ export default function AdminProfilePage() {
               )}
 
               {isEnvAdmin && (
-                <div className="flex items-start gap-2 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] px-3 py-2 text-[12px] text-[#92400E]">
+                <div className="flex items-start gap-2 rounded-[14px] bg-[#FFFBEB] border border-[#FDE68A] px-3 py-2 text-[12px] text-[#92400E]">
                   <AlertCircle size={13} className="shrink-0 mt-0.5" strokeWidth={2} />
                   <span>
                     Varsayılan sistem hesabının bilgileri buradan değiştirilemez. Kurtarma e-postası
@@ -298,7 +298,7 @@ export default function AdminProfilePage() {
           {/* Account info card */}
           <section className="bz-card p-5 sm:p-7">
             <div className="flex items-center gap-2.5 mb-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAFAFA] border border-[#EDEDED]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[14px] bg-pn-canvas border border-pn-line">
                 <User size={16} strokeWidth={2} />
               </span>
               <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
@@ -306,11 +306,11 @@ export default function AdminProfilePage() {
               </h3>
             </div>
             <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+              <p className="text-[12px] font-medium text-[#737373]">
                 Kullanıcı adı
               </p>
               <div
-                className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[14px] font-medium text-[#0A0A0A]"
+                className="rounded-[24px] border border-pn-line bg-pn-canvas px-4 py-3 text-[14px] font-medium text-pn-ink"
               >
                 {profile?.username}
                 {isEnvAdmin && ' (varsayılan — değiştirilemez)'}
@@ -326,7 +326,7 @@ export default function AdminProfilePage() {
               (superadmin / manager / restaurant_owner / staff). */}
           <section className="bz-card p-5 sm:p-7">
             <div className="flex items-center gap-2.5 mb-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAFAFA] border border-[#EDEDED]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[14px] bg-pn-canvas border border-pn-line">
                 <Globe size={16} strokeWidth={2} />
               </span>
               <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
@@ -342,7 +342,7 @@ export default function AdminProfilePage() {
               <div className="space-y-1.5 flex-1">
                 <label
                   htmlFor="admin-locale-select"
-                  className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                  className="text-[12px] font-medium text-[#737373]"
                 >
                   {isTr ? 'Arayüz dili' : 'Interface language'}
                 </label>
@@ -357,9 +357,9 @@ export default function AdminProfilePage() {
                   <option value="en">English (EN)</option>
                 </select>
               </div>
-              <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] px-3 py-2 text-[11px] text-[#525252] sm:max-w-[200px]">
+              <div className="rounded-[20px] bg-pn-canvas border border-pn-line px-3 py-2 text-[12px] text-[#525252] sm:max-w-[200px]">
                 <span>{isTr ? 'Şu anki dil:' : 'Current:'}</span>{' '}
-                <span className="font-mono font-semibold text-[#0A0A0A]">
+                <span className="font-mono font-medium text-pn-ink">
                   {locale.toUpperCase()}
                 </span>
               </div>
@@ -369,7 +369,7 @@ export default function AdminProfilePage() {
           {/* Password change card */}
           <section className="bz-card p-5 sm:p-7">
             <div className="flex items-center gap-2.5 mb-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAFAFA] border border-[#EDEDED]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[14px] bg-pn-canvas border border-pn-line">
                 <Key size={16} strokeWidth={2} />
               </span>
               <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
@@ -381,7 +381,7 @@ export default function AdminProfilePage() {
               <div className="space-y-1.5">
                 <label
                   htmlFor="admin-current-password"
-                  className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                  className="text-[12px] font-medium text-[#737373]"
                 >
                   Mevcut şifre
                 </label>
@@ -403,7 +403,7 @@ export default function AdminProfilePage() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="admin-new-password"
-                    className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                    className="text-[12px] font-medium text-[#737373]"
                   >
                     Yeni şifre
                   </label>
@@ -425,7 +425,7 @@ export default function AdminProfilePage() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="admin-confirm-password"
-                    className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                    className="text-[12px] font-medium text-[#737373]"
                   >
                     Şifreyi tekrarla
                   </label>

@@ -13,7 +13,7 @@ function CardHead({ withToggle = false }: { withToggle?: boolean }) {
         <SkBox className="h-6 w-44" />
         <SkBox className="h-3 w-72 max-w-full" />
       </div>
-      {withToggle && <SkBox className="h-9 w-32 rounded-xl" />}
+      {withToggle && <SkBox className="h-9 w-32 rounded-[20px]" />}
     </div>
   );
 }
@@ -43,8 +43,8 @@ export default function Loading() {
       <div className="bz-card p-6 sm:p-8">
         <CardHead />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <SkBox className="aspect-square w-full max-w-[200px] rounded-xl" />
-          <SkBox className="aspect-square w-full max-w-[128px] rounded-xl" />
+          <SkBox className="aspect-square w-full max-w-[200px] rounded-[20px]" />
+          <SkBox className="aspect-square w-full max-w-[128px] rounded-[20px]" />
         </div>
       </div>
       <div className="bz-card p-6 sm:p-8">

@@ -233,23 +233,23 @@ export default function FormConfirmationEditor({ locale }: Props) {
     // sm+'da bar yok, normal padding.
     <div className="mx-auto max-w-3xl space-y-6 p-4 pb-24 sm:p-6 sm:pb-6 md:p-8">
       <div className="flex items-center justify-between">
-        <Link href="/admin/mail-templates" className="inline-flex items-center gap-2 text-xs font-semibold text-[#525252] hover:text-[#0A0A0A]">
+        <Link href="/admin/mail-templates" className="inline-flex items-center gap-2 text-xs font-medium text-[#525252] hover:text-pn-ink">
           <ArrowLeft size={14} />
           Mail İçeriklerine dön
         </Link>
-        <span className="pulse-eyebrow rounded-full bg-[#FAFAFA] px-3 py-1 text-[#525252]">{locale.toUpperCase()}</span>
+        <span className="text-[13px] font-medium rounded-full bg-pn-canvas px-3 py-1 text-[#525252]">{locale.toUpperCase()}</span>
       </div>
 
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-7">
-        <p className="pulse-eyebrow text-[#737373]">MAIL İÇERİĞİ / FORM-CONFIRMATION</p>
+      <div className="rounded-[24px] border border-pn-line bg-white p-4 sm:p-7">
+        <p className="text-[13px] font-medium text-[#737373]">MAIL İÇERİĞİ / FORM-CONFIRMATION</p>
         {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı —
             globals.css :where(h1..h6) auto-applies var(--font-heading). */}
-        <h1 className="mt-1 flex flex-wrap items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]">
+        <h1 className="mt-1 flex flex-wrap items-center gap-3 text-[24px] sm:text-[28px] font-medium text-pn-ink tracking-[-0.025em]">
           <Mail size={20} strokeWidth={2} />
           <span>Form onayı · {isEnglish ? 'English' : 'Türkçe'}</span>
           {isDirty && !loading && (
             <span
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-medium text-[#92400E] border border-[#FDE68A]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[12px] font-medium text-[#92400E] border border-[#FDE68A]"
               style={{ fontFamily: 'var(--font-sans)' }}
               title="Kaydedilmemiş değişiklikler var"
             >
@@ -264,22 +264,22 @@ export default function FormConfirmationEditor({ locale }: Props) {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>
+        <div className="rounded-[24px] border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-700">{error}</div>
       )}
       {info && (
-        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-4 text-xs font-semibold text-[#0A0A0A]">{info}</div>
+        <div className="rounded-[24px] border border-pn-accent bg-pn-accent-soft p-4 text-xs font-medium text-pn-ink">{info}</div>
       )}
 
       {loading ? (
         <div className="flex items-center justify-center p-16">
-          <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
+          <Loader2 size={22} className="animate-spin text-pn-ink" />
         </div>
       ) : (
         <>
           {/* Variant tabs — horizontally scrollable on mobile when 4
               tabs would otherwise crowd into too-narrow buttons. Snap
               behaviour keeps them aligned even mid-scroll. */}
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-2">
+          <div className="rounded-[24px] border border-pn-line bg-white p-2">
             <div className="no-scrollbar flex gap-1 overflow-x-auto snap-x snap-mandatory sm:flex-wrap sm:overflow-x-visible">
               {VARIANTS.map((v) => {
                 const active = v.key === activeVariant;
@@ -289,16 +289,16 @@ export default function FormConfirmationEditor({ locale }: Props) {
                     key={v.key}
                     onClick={() => setActiveVariant(v.key)}
                     aria-label={`${v.label}${variantDirty ? ' (kaydedilmemiş değişiklik)' : ''}`}
-                    className={`relative inline-flex min-h-[44px] shrink-0 snap-start items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors sm:flex-1 sm:shrink ${
+                    className={`relative inline-flex min-h-[44px] shrink-0 snap-start items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors sm:flex-1 sm:shrink ${
                       active
-                        ? 'bg-[#0A0A0A] text-white'
-                        : 'bg-transparent text-[#525252] hover:bg-[#FAFAFA]'
+                        ? 'bg-pn-ink text-white'
+                        : 'bg-transparent text-[#525252] hover:bg-pn-canvas'
                     }`}
                   >
                     {v.label}
                     {variantDirty && (
                       <span
-                        className={`inline-block h-1.5 w-1.5 rounded-full ${active ? 'bg-[#C6F24E]' : 'bg-[#D97706]'}`}
+                        className={`inline-block h-1.5 w-1.5 rounded-full ${active ? 'bg-pn-accent' : 'bg-[#D97706]'}`}
                         title="Bu variant'ta kaydedilmemiş değişiklik var"
                       />
                     )}
@@ -310,7 +310,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
 
           {/* Active variant fields — mobile'da p-4 (16px) yeterli nefes;
               tablet+'da p-7 form yoğunluğu için daha rahat */}
-          <div className="space-y-4 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-7">
+          <div className="space-y-4 rounded-[24px] border border-pn-line bg-white p-4 sm:p-7">
             {VARIANT_FIELDS.map((f) => (
               <MailFieldInput
                 key={`${activeVariant}:${f.key}`}
@@ -325,7 +325,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
               - Save full-width on mobile
               - Secondary buttons 2-col grid (44px touch targets)
               - Desktop: row layout */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-5">
+          <div className="flex flex-col gap-3 rounded-[24px] border border-pn-line bg-white p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-5">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               <button
                 type="button"
@@ -401,7 +401,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
           bar gizli (md:hidden). pb-safe iOS home indicator'ı için. */}
       {!loading && isDirty && (
         <div
-          className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur md:hidden"
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-pn-line bg-white/95 px-4 py-3 backdrop-blur md:hidden"
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
           <button

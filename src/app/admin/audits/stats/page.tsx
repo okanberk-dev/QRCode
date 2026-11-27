@@ -131,7 +131,7 @@ export default function AuditStatsPage() {
     <div className="mx-auto max-w-[1600px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#C6F24E"
+        eyebrowColor="#D7FE03"
         title="İstatistikler"
         description="Sistem genelinde denetim kullanımı: sektör başına şablon + yanıt dağılımı, en popüler şablonlar, en aktif işletmeler."
         actions={
@@ -166,7 +166,7 @@ export default function AuditStatsPage() {
           <StatCard
             label="Yayında"
             value={data.totals.publishedTemplates}
-            accent="#C6F24E"
+            accent="#D7FE03"
           />
           <StatCard
             label="Tamamlanan yanıt"
@@ -187,7 +187,7 @@ export default function AuditStatsPage() {
       {data && data.totals.totalTemplates === 0 ? (
         <div className="bz-card-soft p-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1 text-[13px] text-[#525252] leading-relaxed">
-            <strong className="text-[#0A0A0A]">Sistem boş.</strong> Henüz şablon veya yanıt yok.
+            <strong className="text-pn-ink">Sistem boş.</strong> Henüz şablon veya yanıt yok.
             6 sektör için hazır 18 kategori + 24 şablon + ~120 soru ile başlamak için{' '}
             <em>“Varsayılan içeriği yükle”</em> butonuna git.
           </div>
@@ -227,9 +227,9 @@ export default function AuditStatsPage() {
                         <td>
                           <Badge kind={SECTOR_BADGE[sec]}>{SECTOR_LABEL[sec]}</Badge>
                         </td>
-                        <td className="bz-mono text-right">{templates}</td>
-                        <td className="bz-mono text-right">{responses}</td>
-                        <td className="bz-mono text-right">{fmtScore(avgScore)}</td>
+                        <td className="tabular-nums text-right">{templates}</td>
+                        <td className="tabular-nums text-right">{responses}</td>
+                        <td className="tabular-nums text-right">{fmtScore(avgScore)}</td>
                       </tr>
                     );
                   })}
@@ -248,18 +248,18 @@ export default function AuditStatsPage() {
                   <div key={sec} className="bz-card p-3">
                     <div className="flex items-center justify-between gap-2">
                       <Badge kind={SECTOR_BADGE[sec]}>{SECTOR_LABEL[sec]}</Badge>
-                      <span className="bz-mono text-[11px] text-[#737373]">
+                      <span className="tabular-nums text-[12px] text-[#737373]">
                         {fmtScore(avgScore)}
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <div>
-                        <div className="pulse-eyebrow text-[#737373]">Şablon</div>
-                        <div className="bz-mono mt-0.5 text-[14px] font-semibold">{templates}</div>
+                        <div className="text-[13px] font-medium text-[#737373]">Şablon</div>
+                        <div className="tabular-nums mt-0.5 text-[14px] font-medium">{templates}</div>
                       </div>
                       <div>
-                        <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
-                        <div className="bz-mono mt-0.5 text-[14px] font-semibold">{responses}</div>
+                        <div className="text-[13px] font-medium text-[#737373]">Yanıt</div>
+                        <div className="tabular-nums mt-0.5 text-[14px] font-medium">{responses}</div>
                       </div>
                     </div>
                   </div>
@@ -309,8 +309,8 @@ export default function AuditStatsPage() {
                           <Badge kind="ghost">Taslak</Badge>
                         )}
                       </td>
-                      <td className="bz-mono text-right">{t.responseCount}</td>
-                      <td className="bz-mono text-right">{fmtScore(t.avgScore)}</td>
+                      <td className="tabular-nums text-right">{t.responseCount}</td>
+                      <td className="tabular-nums text-right">{fmtScore(t.avgScore)}</td>
                       <td className="text-right">
                         <Link
                           href={`/admin/audits/templates/${t.id}`}
@@ -343,21 +343,21 @@ export default function AuditStatsPage() {
                     </div>
                     <Link
                       href={`/admin/audits/templates/${t.id}`}
-                      className="bz-btn-ghost shrink-0 text-[11px]"
+                      className="bz-btn-ghost shrink-0 text-[12px]"
                     >
                       Düzenle
                     </Link>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-2">
+                  <div className="grid grid-cols-2 gap-2 rounded-[14px] border border-pn-line bg-pn-canvas p-2">
                     <div>
-                      <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
-                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                      <div className="text-[13px] font-medium text-[#737373]">Yanıt</div>
+                      <div className="tabular-nums mt-0.5 text-[13px] font-medium">
                         {t.responseCount}
                       </div>
                     </div>
                     <div>
-                      <div className="pulse-eyebrow text-[#737373]">Ort. Puan</div>
-                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                      <div className="text-[13px] font-medium text-[#737373]">Ort. Puan</div>
+                      <div className="tabular-nums mt-0.5 text-[13px] font-medium">
                         {fmtScore(t.avgScore)}
                       </div>
                     </div>
@@ -401,8 +401,8 @@ export default function AuditStatsPage() {
                           {r.name}
                         </Link>
                       </td>
-                      <td className="bz-mono text-right">{r.responseCount}</td>
-                      <td className="bz-mono text-right">{fmtScore(r.avgScore)}</td>
+                      <td className="tabular-nums text-right">{r.responseCount}</td>
+                      <td className="tabular-nums text-right">{fmtScore(r.avgScore)}</td>
                       <td className="text-right text-[13px] text-[#525252]">
                         {fmtDate(r.latestResponseAt)}
                       </td>
@@ -418,24 +418,24 @@ export default function AuditStatsPage() {
                 <Link
                   key={r.restaurantId}
                   href={`/admin/restaurants/${r.restaurantId}`}
-                  className="bz-card block p-3 transition hover:border-[#C6F24E]"
+                  className="bz-card block p-3 transition hover:border-pn-accent"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="bz-h-tight truncate text-[14px]">{r.name}</div>
-                    <span className="bz-mono shrink-0 text-[11px] text-[#737373]">
+                    <span className="tabular-nums shrink-0 text-[12px] text-[#737373]">
                       {fmtDate(r.latestResponseAt)}
                     </span>
                   </div>
-                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-2">
+                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-[14px] border border-pn-line bg-pn-canvas p-2">
                     <div>
-                      <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
-                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                      <div className="text-[13px] font-medium text-[#737373]">Yanıt</div>
+                      <div className="tabular-nums mt-0.5 text-[13px] font-medium">
                         {r.responseCount}
                       </div>
                     </div>
                     <div>
-                      <div className="pulse-eyebrow text-[#737373]">Ort. Puan</div>
-                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                      <div className="text-[13px] font-medium text-[#737373]">Ort. Puan</div>
+                      <div className="tabular-nums mt-0.5 text-[13px] font-medium">
                         {fmtScore(r.avgScore)}
                       </div>
                     </div>

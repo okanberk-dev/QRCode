@@ -85,7 +85,7 @@ export function NewCategoryRow({ autoFocus = false, disabled = false }: { autoFo
         type="button"
         onClick={openForm}
         disabled={disabled}
-        className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#D4D4D4] bg-white text-[13.5px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-[#D4D4D4] disabled:hover:text-[#525252]"
+        className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[20px] border border-dashed border-pn-line-strong bg-white text-[14px] font-medium text-[#525252] hover:border-pn-ink hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-pn-line-strong disabled:hover:text-[#525252]"
       >
         <Plus size={15} strokeWidth={2.25} aria-hidden="true" />
         {copy.outline.newCategory}
@@ -94,7 +94,7 @@ export function NewCategoryRow({ autoFocus = false, disabled = false }: { autoFo
   }
 
   return (
-    <div className="rounded-xl border border-dashed border-[#D4D4D4] bg-white p-4">
+    <div className="rounded-[20px] border border-dashed border-pn-line-strong bg-white p-4">
       <Field label={copy.category.name} error={error}>
         <input
           ref={inputRef}

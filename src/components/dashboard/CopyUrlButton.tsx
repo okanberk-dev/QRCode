@@ -36,7 +36,7 @@ export default function CopyUrlButton({ url, className = "", locale = 'tr' }: Co
       title={label}
       aria-label={label}
     >
-      {copied ? <Check size={14} strokeWidth={2} className="text-[#A8D62E]" /> : <Copy size={14} strokeWidth={2} />}
+      {copied ? <Check size={14} strokeWidth={2} className="text-pn-accent-ink" /> : <Copy size={14} strokeWidth={2} />}
     </button>
   );
 }

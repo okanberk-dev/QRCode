@@ -143,10 +143,10 @@ export default function LoyaltyClient({
         <div className="space-y-3" aria-busy="true">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="bz-skeleton h-[88px] rounded-xl" />
+              <div key={i} className="bz-skeleton h-[88px] rounded-[20px]" />
             ))}
           </div>
-          <div className="bz-skeleton h-64 rounded-xl" />
+          <div className="bz-skeleton h-64 rounded-[20px]" />
         </div>
       ) : !data.moduleEnabled ? (
         <EmptyState

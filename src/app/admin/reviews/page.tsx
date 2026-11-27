@@ -941,7 +941,7 @@ function AdminReviewsContent() {
     <button
       type="button"
       onClick={() => writeFilters({ restaurantId: '' })}
-      className="inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#EAF9B8] px-3 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#DDF39A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+      className="inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-pn-ink bg-pn-accent-soft px-3 text-[12px] font-medium text-pn-ink transition-colors hover:bg-[#DDF39A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
       title={isTr ? 'İşletme filtresini kaldır' : 'Remove the business filter'}
     >
       <span className="truncate">
@@ -1002,7 +1002,7 @@ function AdminReviewsContent() {
       {/* Split view: list | detail. */}
       <div className={ADMIN_REVIEWS_SPLIT_CLASS}>
         <aside
-          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-[#EDEDED] ${
+          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-pn-line ${
             isMobileDetailView ? 'hidden lg:block' : ''
           }`}
         >
@@ -1144,7 +1144,7 @@ function AdminReviewsContent() {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed inset-x-4 z-50 max-w-[560px] rounded-2xl border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 ${
+          className={`fixed inset-x-4 z-50 max-w-[560px] rounded-[24px] border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 ${
             // PanelSelectionBar is ~162px tall below sm (2×2 action grid) and
             // ~106px from sm (one row); keep a 12px gap above it.
             selectedIds.size > 0
@@ -1152,13 +1152,13 @@ function AdminReviewsContent() {
               : 'bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-4'
           } ${
             toast.tone === 'success'
-              ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
+              ? 'border-pn-accent-hover bg-pn-ink text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
           }`}
         >
           <div className="flex items-start gap-3">
             {toast.tone === 'success' ? (
-              <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#C6F24E]" />
+              <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-pn-accent" />
             ) : (
               <AlertCircle size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#DC2626]" />
             )}

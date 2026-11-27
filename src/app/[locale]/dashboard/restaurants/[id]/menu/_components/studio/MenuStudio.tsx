@@ -263,7 +263,7 @@ function StudioLoaded({
   const visibleIds = useMemo(() => visibleItemIds(filtered.sections, effectiveCollapsed), [filtered.sections, effectiveCollapsed]);
   const completion = filter === 'noPhoto' || filter === 'noDescription' ? filter : null;
   const sectionIds = useMemo(() => filtered.sections.map((s) => s.category.id), [filtered.sections]);
-  const activeCategoryId = useScrollSpy(sectionIds, isWide ? 124 : isDesktop ? 180 : 124);
+  const activeCategoryId = useScrollSpy(sectionIds, isWide ? 154 : isDesktop ? 210 : 135);
   const soldOutIds = useMemo(
     () => (filter === 'soldOut' ? filtered.sections.flatMap((s) => s.items.filter((i) => i.isOutOfStock).map((i) => i.id)) : []),
     [filter, filtered.sections],
@@ -890,7 +890,7 @@ function StudioLoaded({
     followCategoryId: designOpen ? null : activeCategoryId,
     onPickItem: designOpen || setupCategories !== null ? undefined : openItem,
     hiddenNote: designOpen ? null : hiddenNote,
-    topOffset: noToolbar ? 72 : isWide ? 128 : 184,
+    topOffset: noToolbar ? 102 : isWide ? 158 : 214,
     scrollTopKey: designOpen ? previewTopKey : undefined,
   };
 
@@ -1230,7 +1230,7 @@ function StudioLoaded({
                   />
                 )}
                 {mode === 'service' && !serviceHintSeen && !pagePreview && (
-                  <div className="flex items-start justify-between gap-3 rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 text-[13px] text-[#525252]">
+                  <div className="flex items-start justify-between gap-3 rounded-[20px] border border-pn-line bg-white px-3 py-2.5 text-[13px] text-[#525252]">
                     <p>{isPublished ? copy.service.hintLive : copy.service.hintDraft}</p>
                     <button
                       type="button"
@@ -1238,7 +1238,7 @@ function StudioLoaded({
                         safeLocalSet(STORAGE_KEYS.serviceHint, '1');
                         setServiceHintSeen(true);
                       }}
-                      className="min-h-11 shrink-0 font-semibold text-[#0A0A0A] pointer-fine:min-h-8"
+                      className="min-h-11 shrink-0 font-medium text-pn-ink pointer-fine:min-h-8"
                     >
                       {copy.service.hintDismiss}
                     </button>
@@ -1308,7 +1308,7 @@ function StudioLoaded({
                     <button
                       type="button"
                       onClick={exitSetup}
-                      className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-[#0A0A0A] pointer-fine:min-h-8"
+                      className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-pn-ink pointer-fine:min-h-8"
                     >
                       <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
                       {copy.setup.backToTemplates}

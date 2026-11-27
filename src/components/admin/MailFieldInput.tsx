@@ -40,10 +40,10 @@ export default function MailFieldInput({ field, value, onChange }: Props) {
     // Mobile'da 16px zorunlu — iOS Safari < 16px font'lu input'a focus
     // verince otomatik zoom yapar (CLAUDE.md §25.5). Tablet+ 14px daha
     // rahat (yoğun field listesi).
-    'mt-1.5 w-full rounded-xl border bg-white px-3 py-2 text-[16px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] sm:text-[14px]';
+    'mt-1.5 w-full rounded-[20px] border bg-white px-3 py-2 text-[16px] text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent sm:text-[14px]';
   const inputClass = field.locked
     ? `${baseClass} border-red-200 bg-red-50/40 cursor-not-allowed opacity-70`
-    : `${baseClass} border-[#EDEDED]`;
+    : `${baseClass} border-pn-line`;
   const placeholder = field.locked
     ? '(Bu alan KVKK / güvenlik kilitli — kod-içi varsayılan kullanılır)'
     : '(Boş bırakırsan kod-içi varsayılan)';
@@ -71,12 +71,12 @@ export default function MailFieldInput({ field, value, onChange }: Props) {
   return (
     <div>
       <div className="flex items-center gap-2">
-        <label htmlFor={field.key} className="block text-[13px] font-semibold text-[#0A0A0A]">
+        <label htmlFor={field.key} className="block text-[13px] font-medium text-pn-ink">
           {field.label}
         </label>
         {field.locked && (
           <span
-            className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-700"
+            className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[12px] font-medium text-red-700"
             title={field.lockReason ?? 'KVKK / güvenlik nedeniyle düzenlenemez'}
           >
             <Lock size={10} strokeWidth={2.5} />
@@ -84,9 +84,9 @@ export default function MailFieldInput({ field, value, onChange }: Props) {
           </span>
         )}
       </div>
-      {field.hint && <p className="mt-0.5 text-[11px] text-[#9CA3AF]">{field.hint}</p>}
+      {field.hint && <p className="mt-0.5 text-[12px] text-[#9CA3AF]">{field.hint}</p>}
       {field.locked && field.lockReason && (
-        <p className="mt-0.5 text-[11px] font-medium text-red-700">{field.lockReason}</p>
+        <p className="mt-0.5 text-[12px] font-medium text-red-700">{field.lockReason}</p>
       )}
       {field.multiline ? (
         <textarea
@@ -124,14 +124,14 @@ export default function MailFieldInput({ field, value, onChange }: Props) {
           ratio >= 0.8 ? 'text-amber-600' :
           'text-[#9CA3AF]';
         return (
-          <div className={`mt-1 text-right font-mono text-[10px] ${tone}`}>
+          <div className={`mt-1 text-right font-mono text-[12px] ${tone}`}>
             {len} / {max}
           </div>
         );
       })()}
       {!field.locked && field.placeholders && field.placeholders.length > 0 && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span className="pulse-eyebrow text-[10px] text-[#9CA3AF]" title="Bu alanda kullanabileceğin runtime token'lar — tıkla, imleç konumuna eklenir.">
+          <span className="text-[13px] font-medium text-[12px] text-[#9CA3AF]" title="Bu alanda kullanabileceğin runtime token'lar — tıkla, imleç konumuna eklenir.">
             ✨ Yerleşik:
           </span>
           {field.placeholders.map((p) => (
@@ -139,7 +139,7 @@ export default function MailFieldInput({ field, value, onChange }: Props) {
               key={p}
               type="button"
               onClick={() => insertPlaceholder(p)}
-              className="min-h-[32px] cursor-pointer rounded-md border border-[#EDEDED] bg-[#FAFAFA] px-2.5 py-1 font-mono text-[11px] text-[#525252] transition-colors hover:border-[#A8D62E] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] active:scale-95"
+              className="min-h-[32px] cursor-pointer rounded-[10px] border border-pn-line bg-pn-canvas px-2.5 py-1 font-mono text-[12px] text-[#525252] transition-colors hover:border-pn-accent-hover hover:bg-pn-accent-soft hover:text-pn-ink active:scale-95"
               title={`Tıkla → imleç konumuna $\{${p}\} ekle`}
             >
               ${'{'}{p}{'}'}

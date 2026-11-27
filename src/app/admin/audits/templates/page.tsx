@@ -222,9 +222,9 @@ export default function AuditTemplatesPage() {
       body: (
         <div className="space-y-2 text-[13px] text-[#525252]">
           <p>
-            Denetim Merkezi için <strong className="text-[#0A0A0A]">18 kategori</strong>,{' '}
-            <strong className="text-[#0A0A0A]">24 şablon</strong> ve{' '}
-            <strong className="text-[#0A0A0A]">~120 soru</strong> yüklenir veya güncellenir.
+            Denetim Merkezi için <strong className="text-pn-ink">18 kategori</strong>,{' '}
+            <strong className="text-pn-ink">24 şablon</strong> ve{' '}
+            <strong className="text-pn-ink">~120 soru</strong> yüklenir veya güncellenir.
           </p>
           <p>
             Mevcut <em>title</em> değiştirilmemiş şablonlar güncellenir; manuel olarak başlık
@@ -262,7 +262,7 @@ export default function AuditTemplatesPage() {
     <div className="mx-auto max-w-[1600px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#C6F24E"
+        eyebrowColor="#D7FE03"
         title="Şablon kataloğu"
         description="Sektör başına yayınlanan hazır denetim şablonlarını yönet. İşletme sahipleri bu kataloğu kopyalayıp kendi denetimlerine uyarlar."
         actions={
@@ -292,15 +292,15 @@ export default function AuditTemplatesPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">Toplam</div>
+          <div className="text-[13px] font-medium text-[#525252]">Toplam</div>
           <div className="bz-h-tight text-[22px] mt-1">{counts.total}</div>
         </div>
         <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">Yayında</div>
+          <div className="text-[13px] font-medium text-[#525252]">Yayında</div>
           <div className="bz-h-tight text-[22px] mt-1 text-[#166534]">{counts.published}</div>
         </div>
         <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">Taslak</div>
+          <div className="text-[13px] font-medium text-[#525252]">Taslak</div>
           <div className="bz-h-tight text-[22px] mt-1 text-[#525252]">{counts.draft}</div>
         </div>
       </div>
@@ -396,7 +396,7 @@ export default function AuditTemplatesPage() {
                         </div>
                       ) : null}
                       {tpl.restaurantId && (
-                        <div className="mt-1 text-[11px] text-[#525252]">Restoran-özel</div>
+                        <div className="mt-1 text-[12px] text-[#525252]">Restoran-özel</div>
                       )}
                     </td>
                     <td>
@@ -406,11 +406,11 @@ export default function AuditTemplatesPage() {
                     <td className="text-[13px]">
                       {SCORING_LABEL[tpl.scoringMode]}
                       {tpl.passingScore != null && (
-                        <span className="text-[11px] text-[#737373]"> · ≥{tpl.passingScore}</span>
+                        <span className="text-[12px] text-[#737373]"> · ≥{tpl.passingScore}</span>
                       )}
                     </td>
-                    <td className="bz-mono text-right">{tpl._count.questions}</td>
-                    <td className="bz-mono text-right">{tpl._count.responses}</td>
+                    <td className="tabular-nums text-right">{tpl._count.questions}</td>
+                    <td className="tabular-nums text-right">{tpl._count.responses}</td>
                     <td>
                       {tpl.isPublished ? (
                         <Badge kind="ok">Yayında</Badge>
@@ -470,7 +470,7 @@ export default function AuditTemplatesPage() {
                       </div>
                     )}
                     {tpl.restaurantId && (
-                      <div className="mt-1 text-[10px] uppercase tracking-wider text-[#525252]">
+                      <div className="mt-1 text-[12px] text-[#525252]">
                         Restoran-özel
                       </div>
                     )}
@@ -485,26 +485,26 @@ export default function AuditTemplatesPage() {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <Badge kind={SECTOR_BADGE[tpl.sector]}>{SECTOR_LABEL[tpl.sector]}</Badge>
                   {tpl.category && (
-                    <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#525252]">
+                    <span className="rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] text-[#525252]">
                       {tpl.category.labelTr}
                     </span>
                   )}
-                  <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#525252]">
+                  <span className="rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] text-[#525252]">
                     {SCORING_LABEL[tpl.scoringMode]}
                     {tpl.passingScore != null ? ` · ≥${tpl.passingScore}` : ''}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-2.5">
+                <div className="grid grid-cols-2 gap-2 rounded-[20px] border border-pn-line bg-pn-canvas p-2.5">
                   <div className="text-center">
-                    <div className="pulse-eyebrow text-[#737373]">Soru</div>
-                    <div className="bz-mono mt-0.5 text-[15px] font-semibold">
+                    <div className="text-[13px] font-medium text-[#737373]">Soru</div>
+                    <div className="tabular-nums mt-0.5 text-[15px] font-medium">
                       {tpl._count.questions}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
-                    <div className="bz-mono mt-0.5 text-[15px] font-semibold">
+                    <div className="text-[13px] font-medium text-[#737373]">Yanıt</div>
+                    <div className="tabular-nums mt-0.5 text-[15px] font-medium">
                       {tpl._count.responses}
                     </div>
                   </div>

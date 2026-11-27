@@ -60,7 +60,7 @@ const PHOTO_LADDER: ReadonlyArray<{ maxDim: number; quality: number }> = [
 ];
 
 const FOCUS_RING =
-  'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#0A0A0A]';
+  'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pn-ink';
 
 function selectedStyle(accent: string) {
   return { background: accent, color: readableOn(accent), borderColor: '#0A0A0A' } as const;
@@ -103,7 +103,7 @@ function Tile({
         className={[
           'flex min-h-12 w-full cursor-pointer select-none items-center justify-center rounded-xl border-2 px-3 text-center',
           big ? 'text-[16px] font-semibold' : 'text-[15px] font-semibold',
-          checked ? '' : 'border-[#E5E5E5] bg-white text-[#0A0A0A] hover:border-[#A3A3A3] hover:bg-[#FAFAFA]',
+          checked ? '' : 'border-pn-line-strong bg-white text-pn-ink hover:border-[#A3A3A3] hover:bg-pn-canvas',
           'transition-colors',
           FOCUS_RING,
         ].join(' ')}
@@ -137,8 +137,8 @@ function Row({
         className={[
           'flex min-h-12 w-full cursor-pointer select-none items-center gap-3 rounded-xl border-2 px-4 py-2.5 text-left text-[15px] transition-colors',
           checked
-            ? 'border-[#0A0A0A] bg-[#FAFAFA] shadow-[inset_4px_0_0_0_var(--row-accent)]'
-            : 'border-[#E5E5E5] bg-white hover:border-[#A3A3A3] hover:bg-[#FAFAFA]',
+            ? 'border-pn-ink bg-pn-canvas shadow-[inset_4px_0_0_0_var(--row-accent)]'
+            : 'border-pn-line-strong bg-white hover:border-[#A3A3A3] hover:bg-pn-canvas',
           FOCUS_RING,
         ].join(' ')}
         style={{ ['--row-accent' as string]: accent }}
@@ -147,7 +147,7 @@ function Row({
           aria-hidden="true"
           className={`inline-flex h-5 w-5 shrink-0 items-center justify-center border-2 ${
             kind === 'radio' ? 'rounded-full' : 'rounded-md'
-          } ${checked ? 'border-[#0A0A0A]' : 'border-[#D4D4D4]'}`}
+          } ${checked ? 'border-pn-ink' : 'border-pn-line-strong'}`}
           style={checked && kind === 'checkbox' ? { background: accent } : undefined}
         >
           {checked && kind === 'radio' && (
@@ -192,7 +192,7 @@ export default function PublicQuestionInput({
   const clearButton = canClear ? (
     <button
       type="button"
-      className="mt-1.5 inline-flex min-h-9 items-center text-[12.5px] text-[#737373] underline underline-offset-2 hover:text-[#0A0A0A]"
+      className="mt-1.5 inline-flex min-h-9 items-center text-[12.5px] text-[#737373] underline underline-offset-2 hover:text-pn-ink"
       onClick={() => onChange(null)}
     >
       {isTr ? 'Seçimi temizle' : 'Clear selection'}
@@ -510,7 +510,7 @@ function PhotoInput({
           <img
             src={dataUrl}
             alt={isTr ? 'Eklenen fotoğraf' : 'Attached photo'}
-            className="max-h-[220px] w-auto max-w-full rounded-xl border border-[#EDEDED] object-contain"
+            className="max-h-[220px] w-auto max-w-full rounded-xl border border-pn-line object-contain"
           />
           <div className="flex flex-wrap gap-2">
             <button
@@ -539,7 +539,7 @@ function PhotoInput({
           onClick={() => inputRef.current?.click()}
           disabled={busy}
           aria-labelledby={labelledBy}
-          className={`flex w-full min-h-12 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#D4D4D4] bg-[#FAFAFA] px-4 text-center transition-colors hover:border-[#A3A3A3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A] ${
+          className={`flex w-full min-h-12 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-pn-line-strong bg-pn-canvas px-4 text-center transition-colors hover:border-[#A3A3A3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-ink ${
             compact ? 'py-4' : 'py-8'
           }`}
           style={busy ? { borderColor: accent } : undefined}
@@ -549,7 +549,7 @@ function PhotoInput({
           ) : (
             <Camera size={20} strokeWidth={1.8} className="text-[#737373]" aria-hidden="true" />
           )}
-          <span className="text-[14px] font-semibold text-[#0A0A0A]">
+          <span className="text-[14px] font-semibold text-pn-ink">
             {busy ? (isTr ? 'İşleniyor…' : 'Processing…') : isTr ? 'Fotoğraf ekle' : 'Add photo'}
           </span>
         </button>

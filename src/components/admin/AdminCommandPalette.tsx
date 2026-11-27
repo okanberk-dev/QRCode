@@ -358,14 +358,14 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
       aria-modal="true"
       aria-label={copy.title}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-[#0A0A0A]/40 backdrop-blur-sm p-4 pt-[12vh] sm:pt-[18vh]"
+      className="fixed inset-0 z-[60] flex items-start justify-center bg-pn-ink/40 backdrop-blur-sm p-4 pt-[12vh] sm:pt-[18vh]"
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-[560px] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0_24px_60px_-20px_rgba(10,10,10,0.35)]"
+        className="w-full max-w-[560px] overflow-hidden rounded-[24px] border border-pn-line bg-white shadow-[0_24px_60px_-20px_rgba(10,10,10,0.35)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 border-b border-[#EDEDED] px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-pn-line px-4 py-3">
           {loading ? (
             <Loader2 size={16} className="animate-spin text-[#737373]" aria-hidden />
           ) : (
@@ -380,14 +380,14 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
               setActiveIdx(0);
             }}
             placeholder={copy.placeholder}
-            className="flex-1 border-0 bg-transparent text-[16px] text-[#0A0A0A] placeholder:text-[#A3A3A3] focus:outline-none sm:text-[15px]"
+            className="flex-1 border-0 bg-transparent text-[16px] text-pn-ink placeholder:text-[#A3A3A3] focus:outline-none sm:text-[15px]"
             aria-label={copy.title}
             autoComplete="off"
           />
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#737373] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#737373] hover:bg-pn-canvas hover:text-pn-ink"
             aria-label={copy.close}
           >
             <X size={14} aria-hidden />
@@ -411,7 +411,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 text-[10px] text-[#737373]">
+        <div className="flex items-center justify-between border-t border-pn-line bg-pn-canvas px-3 py-2 text-[12px] text-[#737373]">
           <span className="inline-flex items-center gap-1">
             <KeyHint icon={<ArrowUp size={9} aria-hidden />} />
             <KeyHint icon={<ArrowDown size={9} aria-hidden />} />
@@ -422,7 +422,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
             <span>{copy.open}</span>
           </span>
           <span className="inline-flex items-center gap-1">
-            <kbd className="rounded border border-[#EDEDED] bg-white px-1.5 py-0.5 font-mono text-[9px] uppercase">
+            <kbd className="rounded border border-pn-line bg-white px-1.5 py-0.5 font-mono text-[12px] ">
               Esc
             </kbd>
             <span>{copy.close}</span>
@@ -461,13 +461,13 @@ function PaletteList({
             aria-selected={active}
             onMouseEnter={() => onHover(i)}
             onClick={() => onClick(hit)}
-            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors ${
-              active ? 'bg-[#EAF9B8]/50' : 'hover:bg-[#FAFAFA]'
+            className={`flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2 text-left transition-colors ${
+              active ? 'bg-pn-accent-soft/50' : 'hover:bg-pn-canvas'
             }`}
           >
             <span
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
-                hit.kind === 'restaurant' ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#FAFAFA] text-[#525252]'
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] ${
+                hit.kind === 'restaurant' ? 'bg-pn-accent-soft text-pn-ink' : 'bg-pn-canvas text-[#525252]'
               }`}
               aria-hidden
             >
@@ -480,14 +480,14 @@ function PaletteList({
               )}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium text-[#0A0A0A]">
+              <span className="block truncate text-[13px] font-medium text-pn-ink">
                 {hit.kind === 'nav'
                   ? hit.label
                   : hit.kind === 'restaurant'
                     ? hit.name
                     : hit.name || hit.email || customerLabel}
               </span>
-              <span className="block truncate text-[11px] text-[#737373]">
+              <span className="block truncate text-[12px] text-[#737373]">
                 {hit.kind === 'nav'
                   ? hit.href
                   : hit.kind === 'restaurant'
@@ -504,7 +504,7 @@ function PaletteList({
 
 function KeyHint({ icon }: { icon: React.ReactNode }) {
   return (
-    <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#EDEDED] bg-white">
+    <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-pn-line bg-white">
       {icon}
     </kbd>
   );

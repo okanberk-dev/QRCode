@@ -225,7 +225,7 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
         )}
 
         {results && results.length === 0 && (
-          <div className="mt-4 rounded-xl border border-dashed border-[#D4D4D4] p-5 text-center">
+          <div className="mt-4 rounded-[20px] border border-dashed border-pn-line-strong p-5 text-center">
             <p className="text-[14px] text-[#262626]">{tr ? 'Kart bulunamadı.' : 'No card found.'}</p>
             {access.operate && (
               <button type="button" className="bz-btn-lime mt-3 inline-flex items-center gap-1.5" onClick={openEnrol}>
@@ -236,17 +236,17 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
         )}
 
         {results && results.length > 1 && !selected && (
-          <ul className="mt-4 divide-y divide-[#F0F0F0] rounded-xl border border-[#EDEDED]">
+          <ul className="mt-4 divide-y divide-[#F0F0F0] rounded-[20px] border border-pn-line">
             {results.map((m, i) => (
               <li key={m.id} className="bzl-rise" style={{ animationDelay: `${Math.min(i, 6) * 45}ms` }}>
-                <button type="button" onClick={() => pick(m)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#FAFAFA]">
+                <button type="button" onClick={() => pick(m)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-pn-canvas">
                   <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz üye' : 'Unnamed')}</span>
+                    <span className="block truncate text-[14px] font-medium text-pn-ink">{m.name || (tr ? 'İsimsiz üye' : 'Unnamed')}</span>
                     <span className="text-[12px] text-[#737373]">
                       {formatMemberCode(m.code)} · {m.phoneMasked}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[13px] font-semibold tabular-nums">{m.balance}</span>
+                  <span className="shrink-0 text-[13px] font-medium tabular-nums">{m.balance}</span>
                 </button>
               </li>
             ))}
@@ -254,7 +254,7 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
         )}
 
         {selected ? (
-          <div key={selected.id} className="bzl-rise mt-5 border-t border-[#EDEDED] pt-5">
+          <div key={selected.id} className="bzl-rise mt-5 border-t border-pn-line pt-5">
             <MemberActions
               locale={locale}
               restaurantId={restaurantId}
@@ -278,11 +278,11 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
 
       <aside className="bz-card p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[13px] font-semibold text-[#0A0A0A]">{tr ? 'Bu oturumda' : 'This session'}</p>
+          <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Bu oturumda' : 'This session'}</p>
           <SoundToggle locale={locale} variant="panel" />
         </div>
         {recent.length === 0 ? (
-          <p className="mt-2 text-[12.5px] text-[#737373]">{tr ? 'İşlem yaptığınız kartlar burada görünür.' : 'Cards you serve show up here.'}</p>
+          <p className="mt-2 text-[13px] text-[#737373]">{tr ? 'İşlem yaptığınız kartlar burada görünür.' : 'Cards you serve show up here.'}</p>
         ) : (
           <ul className="mt-2 space-y-1">
             {recent.map((m) => (
@@ -290,7 +290,7 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
                 <button
                   type="button"
                   onClick={() => setSelected(m)}
-                  className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] ${selected?.id === m.id ? 'bg-[#F5F5F5]' : 'hover:bg-[#FAFAFA]'}`}
+                  className={`flex w-full items-center justify-between gap-2 rounded-[14px] px-2.5 py-2 text-left text-[13px] ${selected?.id === m.id ? 'bg-pn-canvas' : 'hover:bg-pn-canvas'}`}
                 >
                   <span className="min-w-0 truncate">{m.name || formatMemberCode(m.code)}</span>
                   <span className="shrink-0 text-[12px] text-[#737373]">{relativeDay(m.lastVisitAt, locale)}</span>

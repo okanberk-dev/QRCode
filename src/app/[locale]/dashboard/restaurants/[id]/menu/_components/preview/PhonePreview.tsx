@@ -18,10 +18,10 @@ const PublicMenuView = dynamic(() => import('@/components/menu/PublicMenuView').
 function PreviewSkeleton() {
   return (
     <div className="space-y-3 p-4" aria-hidden="true">
-      <div className="h-32 rounded-2xl bg-[#EDEDED]" />
-      <div className="h-4 w-1/2 rounded bg-[#EDEDED]" />
-      <div className="h-16 rounded-xl bg-[#EDEDED]" />
-      <div className="h-16 rounded-xl bg-[#EDEDED]" />
+      <div className="h-32 rounded-[24px] bg-pn-line" />
+      <div className="h-4 w-1/2 rounded bg-pn-line" />
+      <div className="h-16 rounded-[20px] bg-pn-line" />
+      <div className="h-16 rounded-[20px] bg-pn-line" />
     </div>
   );
 }
@@ -175,7 +175,7 @@ export function PhonePreview({
     return (
       <div ref={stageRef} className="w-full">
         {note}
-        <div className="overflow-hidden rounded-xl border border-[#EDEDED] bg-white">{viewport}</div>
+        <div className="overflow-hidden rounded-[20px] border border-pn-line bg-white">{viewport}</div>
       </div>
     );
   }
@@ -184,16 +184,16 @@ export function PhonePreview({
     <div ref={stageRef} className="w-full">
       {note}
       <div className="mx-auto w-fit">
-        <div className="rounded-[40px] bg-[#0A0A0A] p-2 shadow-[0_22px_50px_-12px_rgba(10,10,10,0.45),0_6px_12px_-3px_rgba(10,10,10,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <div className="rounded-[40px] bg-pn-ink p-2 shadow-[0_22px_50px_-12px_rgba(10,10,10,0.45),0_6px_12px_-3px_rgba(10,10,10,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]">
           <div className="relative overflow-hidden rounded-[32px] bg-white">
             <div className="relative flex h-[22px] items-end justify-between bg-white px-4 pb-0.5" aria-hidden="true">
-              <span className="z-10 text-[10px] font-semibold tabular-nums text-[#0A0A0A]">9:41</span>
-              <span className="absolute left-1/2 top-[4px] h-[13px] w-[54px] -translate-x-1/2 rounded-full bg-[#0A0A0A]" />
-              <span className="z-10 h-[8px] w-[16px] rounded-[2px] border border-[#0A0A0A]" />
+              <span className="z-10 text-[12px] font-medium tabular-nums text-pn-ink">9:41</span>
+              <span className="absolute left-1/2 top-[4px] h-[13px] w-[54px] -translate-x-1/2 rounded-full bg-pn-ink" />
+              <span className="z-10 h-[8px] w-[16px] rounded-[2px] border border-pn-ink" />
             </div>
             {viewport}
             <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2" aria-hidden="true">
-              <div className="h-[3px] w-[80px] rounded-full bg-[#0A0A0A]/25" />
+              <div className="h-[3px] w-[80px] rounded-full bg-pn-ink/25" />
             </div>
           </div>
         </div>

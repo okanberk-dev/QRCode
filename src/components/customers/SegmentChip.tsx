@@ -44,11 +44,11 @@ export function SegmentChip({ segment, locale, size = 'md' }: SegmentChipProps) 
   const colors = SEGMENT_COLOR_MAP[segment];
   const labels = SEGMENT_LABELS[segment];
   const Icon = ICON_BY_NAME[colors.iconName];
-  const px = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]';
+  const px = size === 'sm' ? 'px-1.5 py-0.5 text-[12px]' : 'px-2 py-0.5 text-[12px]';
   const iconSize = size === 'sm' ? 9 : 10;
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full font-semibold tracking-tight whitespace-nowrap ${px}`}
+      className={`inline-flex items-center gap-1 rounded-full font-medium tracking-tight whitespace-nowrap ${px}`}
       style={{ backgroundColor: colors.bg, color: colors.fg }}
     >
       <Icon size={iconSize} strokeWidth={2.2} />

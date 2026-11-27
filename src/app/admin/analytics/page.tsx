@@ -125,15 +125,15 @@ export default async function AdminAnalyticsPage({
           analytics parity). As PageHeader `actions` the non-shrinking chip
           row squeezed the title to "An/ali/tik" at tablet widths. */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] bg-white p-1">
+        <div className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white p-1">
           {RANGE_OPTIONS.map((range) => (
             <Link
               key={range}
               href={withParam(currentParams, 'range', range)}
-              className={`rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+              className={`rounded-[10px] px-3 py-1.5 text-[12px] font-medium transition-colors ${
                 rangeKey === range
-                  ? 'bg-[#0A0A0A] text-white'
-                  : 'text-[#525252] hover:bg-[#F5F5F5]'
+                  ? 'bg-pn-ink text-white'
+                  : 'text-[#525252] hover:bg-pn-canvas'
               }`}
             >
               {range.toUpperCase()}
@@ -143,10 +143,10 @@ export default async function AdminAnalyticsPage({
         <div className="flex flex-wrap items-center gap-1.5">
           <Link
             href={withParam(currentParams, 'platform', null)}
-            className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+            className={`rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors ${
               !platformFilter
-                ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                ? 'border-pn-ink bg-pn-ink text-white'
+                : 'border-pn-line text-[#525252] hover:bg-pn-canvas'
             }`}
           >
             {isTr ? 'Tümü' : 'All'}
@@ -155,10 +155,10 @@ export default async function AdminAnalyticsPage({
             <Link
               key={platform}
               href={withParam(currentParams, 'platform', platform)}
-              className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              className={`rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors ${
                 platformFilter === platform
-                  ? 'border-[#0A0A0A] bg-white text-[#0A0A0A]'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                  ? 'border-pn-ink bg-white text-pn-ink'
+                  : 'border-pn-line text-[#525252] hover:bg-pn-canvas'
               }`}
             >
               {PLATFORMS[platform].label}

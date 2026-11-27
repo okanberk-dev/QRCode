@@ -347,7 +347,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
 
           {sessionsLoading ? (
             // Placeholder rows shaped like the session list below.
-            <div role="status" aria-busy="true" className="flex flex-col divide-y divide-[#EDEDED]">
+            <div role="status" aria-busy="true" className="flex flex-col divide-y divide-pn-line">
               <span className="sr-only">{isTr ? "Oturumlar yükleniyor" : "Loading sessions"}</span>
               {[0, 1].map((i) => (
                 <div key={i} className="flex items-center gap-3 py-3">
@@ -364,7 +364,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
               {isTr ? "Aktif oturum yok." : "No active sessions."}
             </p>
           ) : (
-            <ol className="flex flex-col divide-y divide-[#EDEDED]">
+            <ol className="flex flex-col divide-y divide-pn-line">
               {sessions.map((s) => {
                 const ua = parseUserAgentLabel(s.userAgent, isTr);
                 const Icon = ua.device === 'iOS' || ua.device === 'Android' ? Smartphone : ua.device === 'Web' ? Globe : Monitor;
@@ -372,23 +372,23 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
                   <li key={s.id} className="flex items-center gap-3 py-3">
                     <span
                       aria-hidden="true"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#FAFAFA] border border-[#EDEDED]"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-pn-canvas border border-pn-line"
                     >
                       <Icon size={15} className="text-[#525252]" />
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium text-[#0A0A0A]">
+                        <span className="text-[13px] font-medium text-pn-ink">
                           {ua.device} · {ua.browser}
                         </span>
                         {s.isCurrent && (
-                          <span className="pulse-eyebrow inline-flex items-center gap-1 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-1.5 py-0.5 text-[9px] text-[#0A0A0A]">
-                            <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#A8D62E' }} />
+                          <span className="text-[13px] font-medium inline-flex items-center gap-1 rounded-full border border-pn-accent bg-pn-accent-soft px-1.5 py-0.5 text-[12px] text-pn-ink">
+                            <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#83AF3B' }} />
                             {isTr ? 'Bu cihaz' : 'This device'}
                           </span>
                         )}
                       </div>
-                      <div className="bz-mono text-[10.5px] text-[#737373] tabular-nums mt-0.5">
+                      <div className="tabular-nums text-[12px] text-[#737373] tabular-nums mt-0.5">
                         {s.ipAddress ?? '—'} · {relativeTime(s.lastSeenAt, isTr)}
                       </div>
                     </div>
@@ -397,7 +397,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
                         type="button"
                         onClick={() => revokeSession(s.id)}
                         disabled={revoking === s.id}
-                        className="bz-btn-danger bz-btn-sm text-[11px] disabled:opacity-50"
+                        className="bz-btn-danger bz-btn-sm text-[12px] disabled:opacity-50"
                         aria-label={isTr ? 'Bu oturumu sonlandır' : 'Revoke this session'}
                       >
                         {revoking === s.id ? (
@@ -415,7 +415,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
           )}
 
           {!sessionsLoading && sessions.filter((s) => !s.isCurrent).length > 0 && (
-            <div className="mt-4 flex justify-end pt-3 border-t border-[#EDEDED]">
+            <div className="mt-4 flex justify-end pt-3 border-t border-pn-line">
               <button
                 type="button"
                 onClick={revokeOthers}

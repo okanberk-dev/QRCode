@@ -253,21 +253,21 @@ export default function AdminNewslettersPage() {
       {data && (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
           <StatCard label="Toplam abone" value={data.summary.total.toLocaleString('tr-TR')} icon={<Users size={14} />} />
-          <StatCard label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} icon={<Mail size={14} />} accent="#C6F24E" />
+          <StatCard label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} icon={<Mail size={14} />} accent="#D7FE03" />
           <StatCard label="İptal" value={data.summary.cancelled.toLocaleString('tr-TR')} icon={<X size={14} />} />
           <StatCard label="İptal oranı" value={`%${data.summary.cancelRate.toFixed(1)}`} icon={<TrendingDown size={14} />} />
         </div>
       )}
 
       {/* Filters */}
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
+      <div className="rounded-[24px] border border-pn-line bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
           {/* 4-column grid with short labels on mobile — the eyebrow-tracked
               labels pushed 'Tümü' off-screen in an overflow strip at 390px. */}
           <div
             role="group"
             aria-label="Tarih aralığı"
-            className="grid w-full grid-cols-4 gap-1 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow sm:inline-flex sm:w-auto"
+            className="grid w-full grid-cols-4 gap-1 rounded-[20px] border border-pn-line bg-pn-canvas p-1 text-[13px] font-medium sm:inline-flex sm:w-auto"
           >
             {(['7d', '30d', '90d', 'all'] as const).map((opt) => (
               <button
@@ -275,8 +275,8 @@ export default function AdminNewslettersPage() {
                 type="button"
                 aria-pressed={range === opt}
                 onClick={() => setRange(opt)}
-                className={`min-w-0 rounded-lg px-1.5 py-1.5 transition-all sm:shrink-0 sm:px-3 ${
-                  range === opt ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
+                className={`min-w-0 rounded-[14px] px-1.5 py-1.5 transition-all sm:shrink-0 sm:px-3 ${
+                  range === opt ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 <span className="sm:hidden">{RANGE_LABEL[opt].short}</span>
@@ -330,7 +330,7 @@ export default function AdminNewslettersPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="E-posta ara…"
               aria-label="Bülten abonesi ara"
-              className="w-full rounded-xl border border-[#EDEDED] bg-white py-2 pl-9 pr-3 text-xs font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+              className="w-full rounded-[20px] border border-pn-line bg-white py-2 pl-9 pr-3 text-xs font-medium text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent"
             />
           </div>
 
@@ -347,16 +347,16 @@ export default function AdminNewslettersPage() {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>
+        <div className="rounded-[24px] border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-700">{error}</div>
       )}
       {info && (
-        <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-4 text-xs font-semibold text-[#0A0A0A]">{info}</div>
+        <div className="rounded-[24px] border border-pn-accent bg-pn-accent-soft p-4 text-xs font-medium text-pn-ink">{info}</div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-[24px] border border-pn-line bg-white ">
         {loading && !data ? (
           // Row skeleton (§40.10) instead of a second spinner after loading.tsx.
-          <div className="divide-y divide-[#EDEDED]" aria-busy="true">
+          <div className="divide-y divide-pn-line" aria-busy="true">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-4">
                 <SkBox className="h-4 w-48 max-w-[50%]" />
@@ -368,10 +368,10 @@ export default function AdminNewslettersPage() {
           </div>
         ) : rows.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#FAFAFA] text-[#6B7280]">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-pn-canvas text-[#6B7280]">
               <Mail size={22} strokeWidth={2} />
             </div>
-            <p className="text-sm font-semibold text-[#0A0A0A]">Kriterlere uyan abone yok</p>
+            <p className="text-sm font-medium text-pn-ink">Kriterlere uyan abone yok</p>
             <p className="mt-1 text-xs font-medium text-[#6B7280]">Filtreleri değiştirerek veya temizleyerek tekrar deneyin.</p>
           </div>
         ) : (
@@ -379,8 +379,8 @@ export default function AdminNewslettersPage() {
             {/* Desktop table */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#FAFAFA]">
-                  <tr className="pulse-eyebrow text-[#737373]">
+                <thead className="bg-pn-canvas">
+                  <tr className="text-[13px] font-medium text-[#737373]">
                     <th className="px-5 py-3">E-posta</th>
                     <th className="px-5 py-3">Dil</th>
                     <th className="px-5 py-3">Kaynak</th>
@@ -389,17 +389,17 @@ export default function AdminNewslettersPage() {
                     <th className="px-5 py-3 text-right">İşlem</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#EDEDED]">
+                <tbody className="divide-y divide-pn-line">
                   {rows.map((r) => (
-                    <tr key={r.id} className="hover:bg-[#FAFAFA]/50">
-                      <td className="px-5 py-3 font-semibold text-[#0A0A0A]">
+                    <tr key={r.id} className="hover:bg-pn-canvas/50">
+                      <td className="px-5 py-3 font-medium text-pn-ink">
                         <a href={`mailto:${r.email}`} className="hover:underline">{r.email}</a>
                       </td>
-                      <td className="px-5 py-3 text-[#1A1A1A]">
-                        <span className="pulse-eyebrow text-[#525252]">{r.locale.toUpperCase()}</span>
+                      <td className="px-5 py-3 text-pn-ink-2">
+                        <span className="text-[13px] font-medium text-[#525252]">{r.locale.toUpperCase()}</span>
                       </td>
-                      <td className="px-5 py-3 text-[#1A1A1A]">{getNewsletterSourceLabel(r.source, 'tr')}</td>
-                      <td className="px-5 py-3 text-[#1A1A1A]">
+                      <td className="px-5 py-3 text-pn-ink-2">{getNewsletterSourceLabel(r.source, 'tr')}</td>
+                      <td className="px-5 py-3 text-pn-ink-2">
                         {new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="px-5 py-3">
@@ -410,7 +410,7 @@ export default function AdminNewslettersPage() {
                           onClick={() => deleteSubscriber(r.id, r.email)}
                           disabled={deletingId === r.id}
                           title="Kalıcı sil (KVKK)"
-                          className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] bg-white px-2 py-1 text-[11px] font-semibold text-[#525252] hover:border-red-300 hover:text-red-600 active:scale-95 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-2 py-1 text-[12px] font-medium text-[#525252] hover:border-red-300 hover:text-red-600 active:scale-95 disabled:opacity-50"
                         >
                           {deletingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} strokeWidth={2} />}
                           Sil
@@ -423,14 +423,14 @@ export default function AdminNewslettersPage() {
             </div>
 
             {/* Mobile cards */}
-            <div className="divide-y divide-[#EDEDED] md:hidden">
+            <div className="divide-y divide-pn-line md:hidden">
               {rows.map((r) => (
                 <div key={r.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <a href={`mailto:${r.email}`} className="min-w-0 flex-1 truncate text-sm font-semibold text-[#0A0A0A] hover:underline">{r.email}</a>
+                    <a href={`mailto:${r.email}`} className="min-w-0 flex-1 truncate text-sm font-medium text-pn-ink hover:underline">{r.email}</a>
                     <StatusPill cancelled={!!r.unsubscribedAt} />
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 pulse-eyebrow text-[#6B7280]">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-[#6B7280]">
                     <span>{r.locale.toUpperCase()}</span>
                     <span>·</span>
                     <span className="truncate">{getNewsletterSourceLabel(r.source, 'tr')}</span>
@@ -441,7 +441,7 @@ export default function AdminNewslettersPage() {
                     <button
                       onClick={() => deleteSubscriber(r.id, r.email)}
                       disabled={deletingId === r.id}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#525252] hover:border-red-300 hover:text-red-600 active:scale-95 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#525252] hover:border-red-300 hover:text-red-600 active:scale-95 disabled:opacity-50"
                     >
                       {deletingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} strokeWidth={2} />}
                       Kalıcı sil (KVKK)
@@ -452,22 +452,22 @@ export default function AdminNewslettersPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-3 border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-3">
-                <p className="pulse-eyebrow text-[#6B7280]">
+              <div className="flex items-center justify-between gap-3 border-t border-pn-line bg-pn-canvas px-5 py-3">
+                <p className="text-[13px] font-medium text-[#6B7280]">
                   Sayfa {data?.meta.page} / {totalPages} · Toplam {data?.meta.total}
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1 || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-40"
+                    className="rounded-[14px] border border-pn-line bg-white px-3 py-1.5 text-[13px] font-medium text-pn-ink hover:bg-pn-canvas active:scale-95 disabled:opacity-40"
                   >
                     Önceki
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-40"
+                    className="rounded-[14px] border border-pn-line bg-white px-3 py-1.5 text-[13px] font-medium text-pn-ink hover:bg-pn-canvas active:scale-95 disabled:opacity-40"
                   >
                     Sonraki
                   </button>
@@ -484,10 +484,10 @@ export default function AdminNewslettersPage() {
 
 function StatusPill({ cancelled }: { cancelled: boolean }) {
   return cancelled ? (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#737373]">İptal</span>
+    <span className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-2 py-0.5 text-[12px] font-medium text-[#737373]">İptal</span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E]/30 px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
-      <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" />Aktif
+    <span className="inline-flex items-center gap-1 rounded-full bg-pn-accent/30 px-2 py-0.5 text-[12px] font-medium text-pn-ink">
+      <span className="h-1.5 w-1.5 rounded-full bg-pn-ink" />Aktif
     </span>
   );
 }

@@ -35,7 +35,7 @@ export function cameraScanSupported(): boolean {
   );
 }
 
-const CORNER = 'absolute h-8 w-8 border-[#C6F24E]';
+const CORNER = 'absolute h-8 w-8 border-pn-accent';
 
 export default function ScanDialog({
   locale,
@@ -111,7 +111,7 @@ export default function ScanDialog({
         <ScanHelp locale={locale} denied={denied} />
       ) : (
         <div>
-          <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[#0A0A0A]">
+          <div className="relative aspect-square w-full overflow-hidden rounded-[24px] bg-pn-ink">
             <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" muted playsInline />
 
             {/* Viewfinder: the frame dims the rest of the picture. */}
@@ -130,7 +130,7 @@ export default function ScanDialog({
                     className="bzl-scan-sweep absolute inset-x-0 top-0 h-full"
                     style={{
                       background:
-                        'linear-gradient(180deg, rgba(198,242,78,0) 0%, rgba(198,242,78,0) 62%, rgba(198,242,78,0.28) 94%, #C6F24E 100%)',
+                        'linear-gradient(180deg, rgba(215,254,3,0) 0%, rgba(215,254,3,0) 62%, rgba(215,254,3,0.28) 94%, #C6F24E 100%)',
                     }}
                   />
                 </span>
@@ -146,11 +146,11 @@ export default function ScanDialog({
 
             {found && (
               <>
-                <div className="bzl-flash pointer-events-none absolute inset-0 bg-[#C6F24E]" aria-hidden="true" />
+                <div className="bzl-flash pointer-events-none absolute inset-0 bg-pn-accent" aria-hidden="true" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bzl-pop flex h-20 w-20 items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_18px_40px_-12px_rgba(0,0,0,0.5)]">
+                  <span className="bzl-pop flex h-20 w-20 items-center justify-center rounded-full bg-pn-accent shadow-[0_18px_40px_-12px_rgba(0,0,0,0.5)]">
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#0A0A0A" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#000000" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                 </div>
@@ -186,23 +186,23 @@ function ScanHelp({ locale, denied }: { locale: 'tr' | 'en'; denied: boolean }) 
             ? 'Bu tarayıcı panel içinden kamerayla okutmayı desteklemiyor (iPhone Safari gibi).'
             : 'This browser cannot scan from inside the panel (iPhone Safari, for example).'}
       </p>
-      <div className="flex gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[#C6F24E]">
+      <div className="flex gap-3 rounded-[20px] border border-pn-line bg-pn-canvas p-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-ink text-pn-accent">
           <Camera size={17} aria-hidden="true" />
         </span>
         <p className="text-[13px] leading-relaxed text-[#404040]">
-          <strong className="text-[#0A0A0A]">{tr ? 'Telefonun kamerasıyla okutun.' : 'Scan with the phone’s camera.'}</strong>{' '}
+          <strong className="text-pn-ink">{tr ? 'Telefonun kamerasıyla okutun.' : 'Scan with the phone’s camera.'}</strong>{' '}
           {tr
             ? 'Bu telefonda panele giriş yaptıysanız müşterinin kartı doğrudan kasa modunda açılır: damga ve ödül oradan verilir.'
             : 'If you are signed in to the panel on this phone, the customer’s card opens straight in staff mode: add stamps and give rewards there.'}
         </p>
       </div>
-      <div className="flex gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#525252] ring-1 ring-[#EDEDED]">
+      <div className="flex gap-3 rounded-[20px] border border-pn-line bg-pn-canvas p-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-white text-[#525252] ring-1 ring-pn-line">
           <Keyboard size={17} aria-hidden="true" />
         </span>
         <p className="text-[13px] leading-relaxed text-[#404040]">
-          <strong className="text-[#0A0A0A]">{tr ? 'Ya da kodu yazın.' : 'Or type the code.'}</strong>{' '}
+          <strong className="text-pn-ink">{tr ? 'Ya da kodu yazın.' : 'Or type the code.'}</strong>{' '}
           {tr ? 'Kartın altındaki 6 haneli kodu arama kutusuna yazın.' : 'Type the 6-character code under the card into the search box.'}
         </p>
       </div>

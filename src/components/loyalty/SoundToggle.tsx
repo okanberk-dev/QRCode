@@ -14,7 +14,7 @@ const VARIANTS = {
   /** On a dark bar (staff mode header). */
   dark: 'h-9 w-9 rounded-full bg-white/10 text-white hover:bg-white/20',
   /** On a white panel card. */
-  panel: 'h-8 w-8 rounded-lg border border-[#EDEDED] bg-white text-[#525252] hover:bg-[#FAFAFA]',
+  panel: 'h-8 w-8 rounded-lg border border-pn-line bg-white text-[#525252] hover:bg-pn-canvas',
 } as const;
 
 export default function SoundToggle({

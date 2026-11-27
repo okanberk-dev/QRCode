@@ -25,13 +25,13 @@ export default function MenuBuilderError({
 
   return (
     <div className="mx-auto max-w-[640px] px-4 py-12 sm:px-7 lg:py-16">
-      <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-6 sm:p-8">
+      <div className="rounded-[24px] border border-[#FECACA] bg-[#FEF2F2] p-6 sm:p-8">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-[#DC2626]/10 p-2">
             <AlertTriangle size={20} className="text-[#DC2626]" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="bz-h-tight text-[20px] text-[#0A0A0A] sm:text-[22px]">{copy.errors.boundaryTitle}</h1>
+            <h1 className="bz-h-tight text-[20px] text-pn-ink sm:text-[22px]">{copy.errors.boundaryTitle}</h1>
             <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{copy.errors.boundaryBody}</p>
             {error.digest && <p className="mt-2 font-mono text-[12px] text-[#737373]">ref: {error.digest}</p>}
           </div>

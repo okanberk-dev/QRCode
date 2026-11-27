@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Eyebrow } from "./Eyebrow";
+import { PageBackButton } from "@/components/panel/pano/PageBackButton";
 
 interface PageHeaderProps {
   eyebrow?: ReactNode;
@@ -22,77 +22,54 @@ interface PageHeaderProps {
    *     gibi yoğun 3-col layout sayfalar (h1 ezici hissedilebilir, daha
    *     mütevazı). PR-1 visual regression riski'ni absorb eder. */
   titleScale?: 'hero' | 'compact';
+  /** Extra classes on the h1 (e.g. `hidden sm:block` when a page shows its
+   *  title inside a mobile hero card instead). */
+  titleClassName?: string;
   className?: string;
 }
 
 export function PageHeader({
-  eyebrow,
-  eyebrowColor,
-  eyebrowPulse,
+  eyebrow: _eyebrow,
+  eyebrowColor: _eyebrowColor,
+  eyebrowPulse: _eyebrowPulse,
   title,
   description,
   subtitle,
   actions,
   titleScale = 'hero',
+  titleClassName = "",
   className = "",
 }: PageHeaderProps) {
-  // §38.66 — titleScale variant: hero (Apple HIG default) vs compact
-  // (yoğun 3-col layout için mütevazı). Her ikisinde de `bz-h-tight-2`
-  // Space Grotesk weight 500 + tight tracking sabit; sadece size scale.
-  // §49 — shadcn dashboard scale (text-2xl/3xl semibold) in the Geist panels.
-  const titleStyle = titleScale === 'compact'
-    ? { fontSize: 'clamp(20px, 2.6vw, 24px)', lineHeight: 1.15 }
-    : { fontSize: 'clamp(24px, 3vw, 30px)', lineHeight: 1.1 };
+  // Pano page header (docs/design/DASHBOARD_DESIGN.md §5.2): round back
+  // button, a large light title, actions on the right. Eyebrows are not shown
+  // (the design has no label above headings); the props stay for callers.
+  const titleClass =
+    titleScale === 'compact'
+      ? 'text-[28px] leading-[1.15] sm:text-[32px] lg:text-[36px]'
+      : 'text-[32px] leading-[1.1] sm:text-[38px] lg:text-[46px]';
   return (
     <div
-      className={`flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4 mb-5 ${className}`}
+      className={`mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center lg:mb-7 ${className}`}
     >
-      <div className="min-w-0 flex-1">
-        {eyebrow && (
-          <span className="inline-flex items-center gap-1.5">
-            <Eyebrow color={eyebrowColor}>{eyebrow}</Eyebrow>
-            {eyebrowPulse && (
-              <span
-                aria-hidden="true"
-                className="inline-block h-1.5 w-1.5 rounded-full bz-pulse-dot"
-                style={{ background: "#C6F24E" }}
-              />
-            )}
-          </span>
-        )}
-        <h1
-          /* §38.65 — Apple HIG type-first hierarchy upgrade. §38.66'da
-             titleScale prop ile per-callsite override (hero vs compact)
-             eklendi; default hero (Dashboard/Hesabım/Settings için 28-40px),
-             compact yoğun 3-col layout (Yorumlar/Müşteriler/Analitik için
-             22-32px) ezici hissedilmesini önler. `bz-h-tight-2` Space Grotesk
-             weight 500 + tight tracking sabit. */
-          // min-w-0 + break-words: tek kelimelik uzun işletme adları 375px'te
-          // taşıp kırpılıyordu.
-          className="bz-h-tight-2 mt-1 min-w-0 break-words"
-          style={titleStyle}
-        >
-          {title}
-        </h1>
-        {subtitle && (
-          <p
-            className="bz-mono mt-2"
-            style={{ fontSize: 12, color: "#737373", lineHeight: 1.5 }}
+      <div className="flex min-w-0 flex-1 items-start gap-4 lg:gap-5">
+        <PageBackButton />
+        <div className="min-w-0 flex-1">
+          <h1
+            // min-w-0 + break-words: long single-word business names overflowed at 375px.
+            className={`min-w-0 break-words font-normal tracking-[-0.01em] text-pn-ink ${titleClass} ${titleClassName}`}
           >
-            {subtitle}
-          </p>
-        )}
-        {description && (
-          <p
-            className="mt-2 max-w-2xl"
-            style={{ fontSize: 13, color: "#525252", lineHeight: 1.55 }}
-          >
-            {description}
-          </p>
-        )}
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="mt-2 text-[14px] leading-[1.5] text-[#9A9AA0]">{subtitle}</p>
+          )}
+          {description && (
+            <p className="mt-2 max-w-2xl text-[14px] leading-[1.55] text-[#6E6E73]">{description}</p>
+          )}
+        </div>
       </div>
       {actions && (
-        <div className="flex flex-wrap gap-2 shrink-0">{actions}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
       )}
     </div>
   );

@@ -193,7 +193,7 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
       <div>
         <Link
           href={`${base}/${template.id}/results`}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-[#0A0A0A] sm:min-h-0 sm:text-[12px]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-pn-ink sm:min-h-0 sm:text-[12px]"
         >
           <ArrowLeft size={13} aria-hidden="true" /> {isTr ? 'Sonuçlara dön' : 'Back to results'}
         </Link>
@@ -219,7 +219,7 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
       {/* Özet */}
       <div className={`grid gap-3 ${hasPassMark ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
         <div className={`bz-card p-3 ${hasPassMark ? 'col-span-2 sm:col-span-1' : ''}`}>
-          <div className="pulse-eyebrow text-[#525252]">{isTr ? 'Puan' : 'Score'}</div>
+          <div className="text-[13px] font-medium text-[#525252]">{isTr ? 'Puan' : 'Score'}</div>
           {score !== null ? (
             <div className="bz-h-tight mt-1 text-[28px]">
               {score}
@@ -238,7 +238,7 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
         </div>
         {hasPassMark && (
           <div className="bz-card p-3">
-            <div className="pulse-eyebrow text-[#525252]">{isTr ? 'Sonuç' : 'Outcome'}</div>
+            <div className="text-[13px] font-medium text-[#525252]">{isTr ? 'Sonuç' : 'Outcome'}</div>
             <div className="mt-2">
               {passed === true ? (
                 <Badge kind="ok">{passLabel}</Badge>
@@ -247,13 +247,13 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
               ) : (
                 <span className="text-[#A3A3A3]">—</span>
               )}
-              <span className="bz-mono ml-2 text-[11px] text-[#737373]">≥{template.passingScore}</span>
+              <span className="tabular-nums ml-2 text-[12px] text-[#737373]">≥{template.passingScore}</span>
             </div>
           </div>
         )}
         <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">{isTr ? 'İnceleme' : 'Review'}</div>
-          <div className="mt-2 text-[13px] text-[#0A0A0A]">
+          <div className="text-[13px] font-medium text-[#525252]">{isTr ? 'İnceleme' : 'Review'}</div>
+          <div className="mt-2 text-[13px] text-pn-ink">
             {reviewedAt
               ? formatResponseStamp(reviewedAt, ui)
               : isTr
@@ -295,26 +295,26 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
                 <div className="flex items-start gap-3">
                   <span
                     aria-hidden="true"
-                    className="bz-mono mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-[#F5F5F5] px-1.5 text-[11px] text-[#525252]"
+                    className="tabular-nums mt-0.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-pn-canvas px-1.5 text-[12px] text-[#525252]"
                   >
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="min-w-0 break-words text-[14px] font-medium leading-snug text-[#0A0A0A]">
+                      <p className="min-w-0 break-words text-[14px] font-medium leading-snug text-pn-ink">
                         <span className="sr-only">{`${i + 1}. `}</span>
                         {q.prompt}
                       </p>
                       {verdictBadge}
                     </div>
-                    <p className="mt-0.5 text-[11px] text-[#737373]">
+                    <p className="mt-0.5 text-[12px] text-[#737373]">
                       {humanQuestionType(q.type, ui)}
                       {!q.isRequired && ` · ${isTr ? 'Zorunlu değil' : 'Optional'}`}
                     </p>
 
                     <div className="mt-2 flex flex-wrap items-start gap-x-6 gap-y-2 text-[13px]">
                       <div className="min-w-0">
-                        <div className="pulse-eyebrow text-[#525252]">{isTr ? 'Cevap' : 'Answer'}</div>
+                        <div className="text-[13px] font-medium text-[#525252]">{isTr ? 'Cevap' : 'Answer'}</div>
                         {!answer ? (
                           <div className="italic text-[#A3A3A3]">
                             {isTr ? 'Madde sonradan eklendi' : 'Item added later'}
@@ -323,14 +323,14 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
                           <button
                             type="button"
                             onClick={() => openPhotoInNewTab(photo)}
-                            className="inline-block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                            className="inline-block rounded-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
                           >
                             <img
                               src={photo}
                               alt={isTr ? 'Yüklenen fotoğraf (büyütmek için aç)' : 'Uploaded photo (open to enlarge)'}
                               loading="lazy"
                               decoding="async"
-                              className="mt-1 max-h-[200px] w-auto rounded-lg border border-[#EDEDED] object-contain"
+                              className="mt-1 max-h-[200px] w-auto rounded-[14px] border border-pn-line object-contain"
                             />
                           </button>
                         ) : empty ? (
@@ -344,14 +344,14 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
                                 : 'Left blank'}
                           </div>
                         ) : (
-                          <div className="whitespace-pre-wrap break-words text-[#0A0A0A]">
+                          <div className="whitespace-pre-wrap break-words text-pn-ink">
                             {formatValue(value, q.type)}
                           </div>
                         )}
                       </div>
                       {showExpected && (
                         <div className="min-w-0">
-                          <div className="pulse-eyebrow text-[#525252]">
+                          <div className="text-[13px] font-medium text-[#525252]">
                             {expectedAnswerLabel(template.kind, ui)}
                           </div>
                           <div className="break-words text-[#525252]">{formatExpected(q.correctAnswer)}</div>
@@ -371,7 +371,7 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
       {canWrite ? (
         <section className="bz-card space-y-3 p-4 sm:p-5">
           <div>
-            <label htmlFor={`${idBase}-note`} className="block text-[13px] font-semibold text-[#0A0A0A]">
+            <label htmlFor={`${idBase}-note`} className="block text-[13px] font-medium text-pn-ink">
               {isTr
                 ? 'Bu yanıt için notun (yalnızca sen ve ekibin görür)'
                 : 'Your note on this response (only you and your team can see it)'}
@@ -385,7 +385,7 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
             />
           </div>
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[11.5px] text-[#737373]">
+            <p className="text-[12px] text-[#737373]">
               {isTr ? 'Notu kaydetmek puanı değiştirmez.' : 'Saving a note does not change the score.'}
             </p>
             <button
@@ -406,10 +406,10 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
       ) : (
         savedNoteRef.current.trim() && (
           <section className="bz-card p-4 sm:p-5">
-            <div className="text-[13px] font-semibold text-[#0A0A0A]">
+            <div className="text-[13px] font-medium text-pn-ink">
               {isTr ? 'İnceleme notu' : 'Review note'}
             </div>
-            <p className="mt-2 whitespace-pre-wrap break-words text-[14px] text-[#0A0A0A]">
+            <p className="mt-2 whitespace-pre-wrap break-words text-[14px] text-pn-ink">
               {savedNoteRef.current}
             </p>
           </section>
@@ -428,22 +428,22 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
           </Disclosure>
           {manualOpen && (
             <div id={`${idBase}-manual`} className="space-y-3 pb-4 pt-2">
-              <p className="text-[12.5px] leading-relaxed text-[#525252]">
+              <p className="text-[13px] leading-relaxed text-[#525252]">
                 {isTr
                   ? 'Bir maddeye 0-100 arası kendi puanını yazabilirsin. Boş bırakırsan otomatik puan kullanılır. Kaydedince toplam puan yeniden hesaplanır.'
                   : 'Write your own 0-100 score for an item. Leave it empty to use the automatic score. The total score is recalculated when you save.'}
               </p>
-              <ul className="divide-y divide-[#EDEDED]">
+              <ul className="divide-y divide-pn-line">
                 {template.questions.map((q, i) => {
                   const answer = answerByQid.get(q.id);
                   if (!answer) return null;
                   const inputId = `${idBase}-m-${q.id}`;
                   return (
                     <li key={q.id} className="flex items-center gap-3 py-2.5">
-                      <label htmlFor={inputId} className="min-w-0 flex-1 text-[13px] text-[#0A0A0A]">
-                        <span className="bz-mono mr-1.5 text-[11px] text-[#737373]">{i + 1}.</span>
+                      <label htmlFor={inputId} className="min-w-0 flex-1 text-[13px] text-pn-ink">
+                        <span className="tabular-nums mr-1.5 text-[12px] text-[#737373]">{i + 1}.</span>
                         <span className="break-words">{q.prompt}</span>
-                        <span className="mt-0.5 block text-[11px] text-[#737373]">
+                        <span className="mt-0.5 block text-[12px] text-[#737373]">
                           {isTr ? 'Otomatik' : 'Automatic'}:{' '}
                           <span className="bz-mono">{answer.autoScore !== null ? answer.autoScore : '—'}</span>
                         </span>

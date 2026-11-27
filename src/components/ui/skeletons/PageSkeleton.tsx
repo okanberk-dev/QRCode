@@ -31,7 +31,7 @@ interface BoxProps {
 export function SkBox({ className = '' }: BoxProps) {
   return (
     <div
-      className={`bg-[#EDEDED] rounded ${className}`}
+      className={`bg-pn-line rounded ${className}`}
       aria-hidden="true"
     />
   );
@@ -148,7 +148,7 @@ export function SkTable({
   return (
     <div className="bz-card overflow-hidden">
       {/* Header strip */}
-      <div className="border-b border-[#EDEDED] px-4 py-3">
+      <div className="border-b border-pn-line px-4 py-3">
         <div className={colsClass}>
           {Array.from({ length: cols }).map((_, i) => (
             <SkBox key={i} className="h-3 w-20" />
@@ -156,7 +156,7 @@ export function SkTable({
         </div>
       </div>
       {/* Rows */}
-      <div className="divide-y divide-[#EDEDED]">
+      <div className="divide-y divide-pn-line">
         {Array.from({ length: rows }).map((_, r) => (
           <div key={r} className="px-4 py-4">
             <div className={colsClass}>
@@ -234,7 +234,7 @@ export function SkForm({ rows = 5 }: { rows?: number }) {
  */
 export function SkTabStrip({ count = 5 }: { count?: number }) {
   return (
-    <div className="flex flex-wrap gap-2 border-b border-[#EDEDED] pb-3">
+    <div className="flex flex-wrap gap-2 border-b border-pn-line pb-3">
       {Array.from({ length: count }).map((_, i) => (
         <SkBox key={i} className="h-8 w-20" />
       ))}

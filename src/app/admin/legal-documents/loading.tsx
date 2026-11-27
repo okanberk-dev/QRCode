@@ -17,7 +17,7 @@ export default function Loading() {
         <SkBox className="h-10 w-full sm:max-w-[320px]" />
         <SkBox className="h-9 w-72 max-w-full" />
       </div>
-      <SkBox className="h-20 w-full rounded-xl" />
+      <SkBox className="h-20 w-full rounded-[20px]" />
       <LegalDocGroupsSkeleton />
     </SkPageShell>
   );

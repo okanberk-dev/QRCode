@@ -253,14 +253,14 @@ export function BusinessBrandSettings({
             // Inline placeholder: the description renders inside a <p>.
             <span
               aria-hidden="true"
-              className="inline-block h-3 w-44 max-w-full rounded bg-[#EDEDED] align-middle"
+              className="inline-block h-3 w-44 max-w-full rounded bg-pn-line align-middle"
             />
           ) : completionPct === 100
               ? t.complete
               : t.progress(filledCount, COMPLETION_FIELDS.length)
         }
         actions={
-          <div className="bz-mono text-[12px] text-[#0A0A0A]">
+          <div className="tabular-nums text-[12px] text-pn-ink">
             {loading ? "—" : `%${completionPct}`}
           </div>
         }
@@ -276,8 +276,8 @@ export function BusinessBrandSettings({
           <>
             <ProgressBar value={completionPct} />
             {missing.length > 0 && (
-              <p className="mt-3 text-[12.5px] text-[#525252]">
-                <span className="text-[#0A0A0A] font-medium">{t.missing}</span>{" "}
+              <p className="mt-3 text-[13px] text-[#525252]">
+                <span className="text-pn-ink font-medium">{t.missing}</span>{" "}
                 {missing.join(" · ")}
               </p>
             )}
@@ -315,7 +315,7 @@ export function BusinessBrandSettings({
             style={{
               aspectRatio: "16 / 9",
               borderRadius: 12,
-              background: "#FAFAFA",
+              background: "#F5F5F8",
               border: snapshot?.coverImageUrl ? "1px solid #EDEDED" : "1px dashed #D4D4D4",
             }}
           >
@@ -333,7 +333,7 @@ export function BusinessBrandSettings({
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-[#A3A3A3]">
                 <ImageIcon size={22} strokeWidth={2} />
-                <span className="text-[11px]">{t.notUploaded}</span>
+                <span className="text-[12px]">{t.notUploaded}</span>
               </div>
             )}
           </div>
@@ -371,7 +371,7 @@ export function BusinessBrandSettings({
                 {t.removeCover}
               </button>
             )}
-            <p className="text-[11px] text-[#A3A3A3] leading-[1.55] mt-1">
+            <p className="text-[12px] text-[#A3A3A3] leading-[1.55] mt-1">
               {t.fileHint}
             </p>
           </div>
@@ -392,7 +392,7 @@ export function BusinessBrandSettings({
         <button
           type="button"
           onClick={() => setRefreshTick((t) => t + 1)}
-          className="text-[12px] text-[#737373] hover:text-[#0A0A0A] transition-colors"
+          className="text-[12px] text-[#737373] hover:text-pn-ink transition-colors"
         >
           {t.refresh}
         </button>

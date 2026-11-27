@@ -99,15 +99,13 @@ export default function ImpersonationBanner() {
       // banner sat on top of the burger + logo. On mobile it now scrolls away
       // with the page and leaves the topbar its slot; from lg up it is outside
       // the scroll container, so behaviour there is unchanged.
-      className="relative lg:sticky lg:top-0 z-[60] w-full bg-[#991B1B] text-white border-b-2 border-[#7F1D1D]"
+      className="relative z-[60] mx-2 mt-2 rounded-[24px] bg-[#B42318] text-white"
     >
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2 sm:px-7">
+      <div className="flex items-center justify-between gap-3 py-2 pl-5 pr-2">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <ShieldAlert size={16} strokeWidth={2.5} className="shrink-0" />
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-medium leading-tight">
-            <span className="font-bold uppercase tracking-wider text-[10.5px]">
-              ADMIN MODE
-            </span>
+          <ShieldAlert size={18} className="shrink-0" />
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px] leading-tight">
+            <span className="font-medium">Destek oturumu</span>
             <span className="opacity-90">
               {actor.impersonationAdminUsername
                 ? `${actor.impersonationAdminUsername} olarak görüntülüyorsun`
@@ -119,7 +117,7 @@ export default function ImpersonationBanner() {
                   <strong>Süre doldu</strong>
                 ) : (
                   <>
-                    · <strong className="bz-mono tabular-nums">{formatRemaining(remainingMs)}</strong> kaldı
+                    · <strong className="tabular-nums">{formatRemaining(remainingMs)}</strong> kaldı
                   </>
                 )}
               </span>
@@ -130,10 +128,10 @@ export default function ImpersonationBanner() {
           type="button"
           onClick={handleEnd}
           disabled={ending}
-          className="bz-btn-on-dark bz-btn-sm shrink-0 text-[11px] uppercase tracking-wider disabled:opacity-50"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-[14px] font-medium text-[#B42318] transition-colors hover:bg-white/90 disabled:opacity-50"
           aria-label="Admin moddan çık"
         >
-          <LogOut size={11} strokeWidth={2.5} />
+          <LogOut size={16} />
           {ending ? 'Çıkılıyor…' : 'Çıkış'}
         </button>
       </div>

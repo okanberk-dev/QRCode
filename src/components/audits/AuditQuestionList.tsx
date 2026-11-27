@@ -153,13 +153,13 @@ function AutoTextarea({
         }
       }}
       className={[
-        'block w-full resize-none overflow-hidden rounded-lg border bg-transparent px-2 py-1.5',
-        'text-[16px] leading-snug text-[#0A0A0A] sm:text-[14px]',
-        'placeholder:text-[#A3A3A3] hover:border-[#EDEDED] hover:bg-white',
-        'focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#C6F24E]/50',
+        'block w-full resize-none overflow-hidden rounded-[14px] border bg-transparent px-2 py-1.5',
+        'text-[16px] leading-snug text-pn-ink sm:text-[14px]',
+        'placeholder:text-[#A3A3A3] hover:border-pn-line hover:bg-white',
+        'focus:bg-white focus:outline-none focus:ring-2 focus:ring-pn-accent/50',
         invalid
           ? 'border-[#FCA5A5] focus:border-[#DC2626]'
-          : 'border-transparent focus:border-[#C6F24E]',
+          : 'border-transparent focus:border-pn-accent',
       ].join(' ')}
     />
   );
@@ -226,7 +226,7 @@ const QuestionRow = memo(function QuestionRow({
       data-q-key={q.clientKey}
       className={[
         'bz-card scroll-mt-24 p-2.5 sm:p-3',
-        isDragging ? 'ring-1 ring-[#C6F24E]' : '',
+        isDragging ? 'ring-1 ring-pn-accent' : '',
         error ? 'border-[#FCA5A5]' : '',
       ].join(' ')}
     >
@@ -242,7 +242,7 @@ const QuestionRow = memo(function QuestionRow({
         </button>
         <span
           aria-hidden="true"
-          className="bz-mono mt-2.5 w-5 shrink-0 text-right text-[12px] text-[#737373] sm:mt-2"
+          className="tabular-nums mt-2.5 w-5 shrink-0 text-right text-[12px] text-[#737373] sm:mt-2"
         >
           {index + 1}
         </span>
@@ -279,7 +279,7 @@ const QuestionRow = memo(function QuestionRow({
                   onChange={(v) => onExpected(q.clientKey, v === '0' ? 0 : 1)}
                 />
                 {yesNoIdx === -1 && (
-                  <span className="text-[11.5px] text-[#737373]">
+                  <span className="text-[12px] text-[#737373]">
                     {isTr ? 'Seçilmedi · puana katılmaz' : 'Not set · not scored'}
                   </span>
                 )}
@@ -292,7 +292,7 @@ const QuestionRow = memo(function QuestionRow({
               </span>
             )}
             {(q.type === 'single' || q.type === 'multi') && filledOptions.length >= 2 && !hasCorrect && (
-              <span className="text-[11.5px] text-[#737373]">
+              <span className="text-[12px] text-[#737373]">
                 {isTr ? 'Doğru cevap yok · puana katılmaz' : 'No correct answer · not scored'}
               </span>
             )}
@@ -308,11 +308,11 @@ const QuestionRow = memo(function QuestionRow({
               aria-pressed={!q.isRequired}
               onClick={() => onToggleOptional(q.clientKey)}
               className={[
-                'inline-flex min-h-11 items-center gap-1 rounded-full border px-3 text-[12.5px] font-medium transition-colors sm:min-h-8',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]',
+                'inline-flex min-h-11 items-center gap-1 rounded-full border px-3 text-[13px] font-medium transition-colors sm:min-h-8',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-accent',
                 !q.isRequired
-                  ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]'
-                  : 'border-[#EDEDED] bg-white text-[#525252] hover:bg-[#FAFAFA]',
+                  ? 'border-pn-accent-hover bg-pn-accent-soft text-pn-ink'
+                  : 'border-pn-line bg-white text-[#525252] hover:bg-pn-canvas',
               ].join(' ')}
             >
               {isTr ? 'Zorunlu değil' : 'Not required'}
@@ -320,7 +320,7 @@ const QuestionRow = memo(function QuestionRow({
 
             {locked && (
               <span
-                className="inline-flex items-center gap-1 text-[11.5px] text-[#737373]"
+                className="inline-flex items-center gap-1 text-[12px] text-[#737373]"
                 title={
                   isTr
                     ? 'Bu maddeye yanıt verilmiş; türü ve seçenekleri değişmez.'
@@ -586,7 +586,7 @@ export default function AuditQuestionList({
       </div>
 
       {questions.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#FAFAFA] px-4 py-5 text-center text-[13px] text-[#737373]">
+        <p className="rounded-[20px] border border-dashed border-pn-line-strong bg-pn-canvas px-4 py-5 text-center text-[13px] text-[#737373]">
           {kind === 'quiz'
             ? isTr
               ? 'Henüz soru yok. Yukarıya ilk soruyu yazıp Enter\'a bas.'

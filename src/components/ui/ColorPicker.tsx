@@ -60,7 +60,7 @@ export function ColorPicker({
             aria-label={hex}
             disabled={disabled}
             onClick={() => onChange(hex.toUpperCase())}
-            className="relative h-9 w-9 rounded-[10px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative h-9 w-9 rounded-[10px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               backgroundColor: hex,
               border: active
@@ -80,7 +80,7 @@ export function ColorPicker({
         aria-label="Custom color"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        className="relative flex h-9 w-9 items-center justify-center rounded-[10px] border border-dashed border-[#D4D4D4] text-[#737373] hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative flex h-9 w-9 items-center justify-center rounded-[10px] border border-dashed border-pn-line-strong text-[#737373] hover:border-pn-ink hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         style={
           isCustom
             ? {

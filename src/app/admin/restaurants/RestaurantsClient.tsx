@@ -774,8 +774,8 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
           }
           title={
             <div>
-              <p className="pulse-eyebrow text-[#737373]">Yeni Kayıt</p>
-              <h2 className="mt-1 text-[22px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+              <p className="text-[13px] font-medium text-[#737373]">Yeni Kayıt</p>
+              <h2 className="mt-1 text-[22px] font-medium tracking-[-0.015em] text-pn-ink">
                 İşletme Ekle
               </h2>
               <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
@@ -792,21 +792,21 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
               )}
 
               <div className="space-y-1.5">
-                <label className="pulse-eyebrow text-[#737373]">İşletme Adı</label>
+                <label className="text-[13px] font-medium text-[#737373]">İşletme Adı</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Örn: Gourmet Eats Ankara"
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="pulse-eyebrow text-[#737373]">URL Slug</label>
-                <div className="flex items-center overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-all focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E]/40">
-                  <span className="select-none whitespace-nowrap border-r border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-3 font-mono text-[12px] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
+                <label className="text-[13px] font-medium text-[#737373]">URL Slug</label>
+                <div className="flex items-center overflow-hidden rounded-[24px] border border-pn-line bg-white transition-all focus-within:border-pn-ink focus-within:ring-2 focus-within:ring-pn-accent/40">
+                  <span className="select-none whitespace-nowrap border-r border-pn-line bg-pn-canvas px-3.5 py-3 font-mono text-[12px] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
                     buaze.com/r/
                   </span>
                   <input
@@ -818,21 +818,21 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                       setIsManualSlug(true);
                     }}
                     placeholder="gourmet-eats"
-                    className="min-w-0 flex-1 bg-transparent px-3.5 py-3 font-mono text-[14px] text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+                    className="min-w-0 flex-1 bg-transparent px-3.5 py-3 font-mono text-[14px] text-pn-ink outline-none placeholder:text-[#A3A3A3]"
                     style={{ fontFamily: 'var(--font-mono)' }}
                   />
                 </div>
               </div>
 
               {/* Google Review Link — emphasized */}
-              <div className="rounded-2xl border border-[#C6F24E] bg-gradient-to-br from-[#EAF9B8]/60 via-[#EAF9B8]/30 to-white p-4">
+              <div className="rounded-[24px] border border-pn-accent bg-gradient-to-br from-pn-accent-soft/60 via-pn-accent-soft/30 to-white p-4">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A] shadow-sm">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent text-pn-ink ">
                       <MapPin size={16} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-[#0A0A0A]">
+                      <p className="text-[13px] font-medium text-pn-ink">
                         Google Yorum Bağlantısı
                         <span className="ml-1 text-[#737373]">(opsiyonel)</span>
                       </p>
@@ -852,8 +852,8 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                 </div>
 
                 {showGoogleInfo && (
-                  <div className="mb-3 rounded-xl border border-[#EDEDED] bg-white p-3.5">
-                    <p className="pulse-eyebrow mb-2 text-[#0A0A0A]">Nasıl alınır?</p>
+                  <div className="mb-3 rounded-[20px] border border-pn-line bg-white p-3.5">
+                    <p className="text-[13px] font-medium mb-2 text-pn-ink">Nasıl alınır?</p>
                     <ol className="ml-4 list-decimal space-y-1 text-[12px] leading-relaxed text-[#525252]">
                       <li>Google Haritalar&apos;ı açın ve işletmenizi aratın.</li>
                       <li>İşletmeye tıklayın, &quot;Paylaş&quot; butonuna basın.</li>
@@ -863,7 +863,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                       href="https://www.google.com/maps"
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+                      className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-pn-ink underline-offset-2 hover:underline"
                     >
                       <ExternalLink size={12} strokeWidth={2} />
                       Google Haritalar&apos;ı Aç
@@ -876,14 +876,14 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                   value={formData.googlePlaceId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, googlePlaceId: e.target.value }))}
                   placeholder="https://maps.google.com/... veya Place ID"
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                  className="w-full rounded-[20px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {owners.length > 0 && (
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="pulse-eyebrow text-[#737373]">İşletme Sahibi</label>
+                    <label className="text-[13px] font-medium text-[#737373]">İşletme Sahibi</label>
                     <PulseSelect
                       value={formData.userId}
                       onChange={(v) => setFormData((prev) => ({ ...prev, userId: v }))}
@@ -900,7 +900,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                   </div>
                 )}
                 <div className="space-y-1.5">
-                  <label className="pulse-eyebrow text-[#737373]">Kategori</label>
+                  <label className="text-[13px] font-medium text-[#737373]">Kategori</label>
                   <PulseSelect
                     value={formData.category}
                     onChange={(v) => setFormData((prev) => ({ ...prev, category: v }))}
@@ -911,13 +911,13 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="pulse-eyebrow text-[#737373]">Tema Rengi</label>
-                  <div className="flex items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-3 py-2">
+                  <label className="text-[13px] font-medium text-[#737373]">Tema Rengi</label>
+                  <div className="flex items-center gap-3 rounded-[24px] border border-pn-line bg-white px-3 py-2">
                     <input
                       type="color"
                       value={formData.primaryColor}
                       onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                      className="h-9 w-9 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-2 [&::-webkit-color-swatch]:border-white [&::-webkit-color-swatch]:shadow-sm"
+                      className="h-9 w-9 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-2 [&::-webkit-color-swatch]:border-white [&::-webkit-color-swatch]:"
                     />
                     <span className="font-mono text-[13px] tabular-nums text-[#525252]" style={{ fontFamily: 'var(--font-mono)' }}>
                       {formData.primaryColor.toUpperCase()}
@@ -928,28 +928,28 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="pulse-eyebrow text-[#737373]">Bildirim E-postası</label>
+                  <label className="text-[13px] font-medium text-[#737373]">Bildirim E-postası</label>
                   <input
                     type="email"
                     value={formData.notificationEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                     placeholder="yonetim@email.com"
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="pulse-eyebrow text-[#737373]">Telefon Numarası</label>
+                  <label className="text-[13px] font-medium text-[#737373]">Telefon Numarası</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="05..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse justify-end gap-2 border-t border-[#EDEDED] pt-5 sm:flex-row">
+              <div className="flex flex-col-reverse justify-end gap-2 border-t border-pn-line pt-5 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setError(''); }}
@@ -1015,8 +1015,8 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
           onClose={() => setShowFeatureModal(false)}
           title={
             <div>
-              <p className="pulse-eyebrow text-[#737373]">Toplu özellik geçişi</p>
-              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+              <p className="text-[13px] font-medium text-[#737373]">Toplu özellik geçişi</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
                 {selectedIds.size} işletmede özellik aç/kapat
               </h2>
               <p className="mt-1 text-[12px] text-[#525252]">
@@ -1031,7 +1031,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
             </AlertBanner>
 
             <div className="space-y-2">
-              <label className="pulse-eyebrow text-[#737373]">Özellik</label>
+              <label className="text-[13px] font-medium text-[#737373]">Özellik</label>
               <div className="grid gap-1.5">
                 {FEATURE_OPTIONS.map((f) => (
                   <button
@@ -1039,15 +1039,15 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                     type="button"
                     onClick={() => setFeatureKey(f.key)}
                     aria-pressed={featureKey === f.key}
-                    className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                    className={`flex items-start gap-3 rounded-[20px] border px-3 py-2.5 text-left transition-colors ${
                       featureKey === f.key
-                        ? 'border-[#0A0A0A] bg-[#FAFAFA]'
-                        : 'border-[#EDEDED] hover:border-[#A3A3A3]'
+                        ? 'border-pn-ink bg-pn-canvas'
+                        : 'border-pn-line hover:border-[#A3A3A3]'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium text-[#0A0A0A]">{f.label}</div>
-                      <div className="mt-0.5 text-[11px] text-[#737373]">{f.hint}</div>
+                      <div className="text-[13px] font-medium text-pn-ink">{f.label}</div>
+                      <div className="mt-0.5 text-[12px] text-[#737373]">{f.hint}</div>
                     </div>
                   </button>
                 ))}
@@ -1055,16 +1055,16 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
             </div>
 
             <div className="space-y-2">
-              <label className="pulse-eyebrow text-[#737373]">Değer</label>
+              <label className="text-[13px] font-medium text-[#737373]">Değer</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setFeatureValue(true)}
                   aria-pressed={featureValue === true}
-                  className={`py-3 rounded-xl border pulse-eyebrow transition-colors ${
+                  className={`py-3 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     featureValue
-                      ? 'bg-[#C6F24E] text-[#0A0A0A] border-[#A8D62E]'
-                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                      ? 'bg-pn-accent text-pn-ink border-pn-accent-hover'
+                      : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >
                   <ToggleRight size={14} className="inline mr-1.5" strokeWidth={2} />
@@ -1074,10 +1074,10 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                   type="button"
                   onClick={() => setFeatureValue(false)}
                   aria-pressed={featureValue === false}
-                  className={`py-3 rounded-xl border pulse-eyebrow transition-colors ${
+                  className={`py-3 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     !featureValue
-                      ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                      ? 'bg-pn-ink text-white border-pn-ink'
+                      : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >
                   <ToggleLeft size={14} className="inline mr-1.5" strokeWidth={2} />
@@ -1086,8 +1086,8 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
               </div>
             </div>
 
-            <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3 text-[12px] text-[#525252]">
-              <span className="bz-mono uppercase tracking-wider text-[#737373]">Önizleme</span>
+            <div className="rounded-[20px] bg-pn-canvas border border-pn-line p-3 text-[12px] text-[#525252]">
+              <span className="tabular-nums text-[#737373]">Önizleme</span>
               <p className="mt-1">
                 <strong>{selectedIds.size}</strong> işletmede{' '}
                 <strong>{FEATURE_OPTIONS.find((f) => f.key === featureKey)?.label}</strong>{' '}
@@ -1095,7 +1095,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
               </p>
             </div>
 
-            <div className="flex flex-col-reverse justify-end gap-2 border-t border-[#EDEDED] pt-4 sm:flex-row">
+            <div className="flex flex-col-reverse justify-end gap-2 border-t border-pn-line pt-4 sm:flex-row">
               <button
                 type="button"
                 onClick={() => setShowFeatureModal(false)}
@@ -1126,7 +1126,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg lg:bottom-20"
+          className="fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full bg-pn-ink text-white px-4 py-2 text-[12px] font-medium shadow-lg lg:bottom-20"
         >
           {bulkNotice}
         </div>
@@ -1187,7 +1187,7 @@ function MenuBadge({ r }: { r: Restaurant }) {
 function RatingCell({ value }: { value: number | null | undefined }) {
   if (value == null) return <span className="text-[#A3A3A3]">—</span>;
   return (
-    <span className="inline-flex items-center gap-1 tabular-nums text-[#0A0A0A]">
+    <span className="inline-flex items-center gap-1 tabular-nums text-pn-ink">
       <Star size={12} strokeWidth={0} className="fill-[#F5B400]" aria-hidden="true" />
       {value.toFixed(1)}
     </span>
@@ -1214,21 +1214,21 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
   const ownerCell = (r: Restaurant) =>
     r.user ? (
       <div className="min-w-0">
-        <Link href={`/admin/members/${r.user.id}`} className="block truncate text-[13px] text-[#0A0A0A] hover:underline underline-offset-2">
+        <Link href={`/admin/members/${r.user.id}`} className="block truncate text-[13px] text-pn-ink hover:underline underline-offset-2">
           {r.user.name || r.user.email}
         </Link>
         {(perOwner.get(r.user.id) ?? 0) > 1 && (
           <button
             type="button"
             onClick={() => onShowOwner(r.user!.id)}
-            className="text-[11.5px] text-[#737373] hover:text-[#0A0A0A] hover:underline underline-offset-2"
+            className="text-[12px] text-[#737373] hover:text-pn-ink hover:underline underline-offset-2"
           >
             {perOwner.get(r.user.id)} işletme · hepsini gör
           </button>
         )}
       </div>
     ) : (
-      <span className="text-[12.5px] text-[#A3A3A3]">Sahip atanmamış</span>
+      <span className="text-[13px] text-[#A3A3A3]">Sahip atanmamış</span>
     );
 
   return (
@@ -1261,7 +1261,7 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
               const plan = planBadge(r.user?.plan);
               const selected = selectedIds.has(r.id);
               return (
-                <tr key={r.id} className={selected ? 'bg-[#F7FAEF]' : undefined}>
+                <tr key={r.id} className={selected ? 'bg-pn-accent-soft' : undefined}>
                   <td>
                     <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} />
                   </td>
@@ -1269,7 +1269,7 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar name={r.name} size={32} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
                       <div className="min-w-0">
-                        <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[13.5px] font-semibold text-[#0A0A0A] hover:underline underline-offset-2">
+                        <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-medium text-pn-ink hover:underline underline-offset-2">
                           {r.name}
                         </Link>
                         <span className="block truncate text-[12px] text-[#737373]">
@@ -1309,12 +1309,12 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
             const plan = planBadge(r.user?.plan);
             const selected = selectedIds.has(r.id);
             return (
-              <li key={r.id} className={`bz-card p-4 ${selected ? 'border-[#A8D62E] bg-[#F7FAEF]' : ''}`}>
+              <li key={r.id} className={`bz-card p-4 ${selected ? 'border-pn-accent-hover bg-pn-accent-soft' : ''}`}>
                 <div className="flex items-start gap-3">
                   <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} className="mt-1.5" />
                   <Avatar name={r.name} size={36} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
                   <div className="min-w-0 flex-1">
-                    <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-semibold text-[#0A0A0A]">
+                    <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-medium text-pn-ink">
                       {r.name}
                     </Link>
                     <span className="block truncate text-[12px] text-[#737373]">
@@ -1328,8 +1328,8 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
                   {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
                   <MenuBadge r={r} />
                 </div>
-                <div className="mt-3 flex items-center gap-4 border-t border-[#EDEDED] pt-3 text-[12.5px] text-[#525252]">
-                  <span><span className="font-medium tabular-nums text-[#0A0A0A]">{r._count.feedbacks}</span> yorum</span>
+                <div className="mt-3 flex items-center gap-4 border-t border-pn-line pt-3 text-[13px] text-[#525252]">
+                  <span><span className="font-medium tabular-nums text-pn-ink">{r._count.feedbacks}</span> yorum</span>
                   <RatingCell value={r.avgRating} />
                   {r.city && <span className="truncate">{r.city}</span>}
                 </div>
@@ -1364,7 +1364,7 @@ function FranchiseView({ groups, selectedIds, onToggleSelect, onSelectMany, onTo
         const title = g.ownerId ? g.ownerName || g.ownerEmail || 'İşletme sahibi' : 'Sahibi atanmamış işletmeler';
         return (
           <li key={g.ownerId ?? 'none'} className="bz-card overflow-hidden p-0">
-            <div className="flex flex-col gap-3 border-b border-[#EDEDED] bg-[#FCFCFC] p-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 border-b border-pn-line bg-[#FCFCFC] p-4 sm:flex-row sm:items-center">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <APCheckbox
                   size="sm"
@@ -1376,7 +1376,7 @@ function FranchiseView({ groups, selectedIds, onToggleSelect, onSelectMany, onTo
                 <Avatar name={title} size={36} />
                 <div className="min-w-0">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <span className="truncate text-[14px] font-semibold text-[#0A0A0A]">{title}</span>
+                    <span className="truncate text-[14px] font-medium text-pn-ink">{title}</span>
                     {plan && <Badge kind={plan.kind}>{plan.label}</Badge>}
                     {g.restaurants.length > 1 && <Badge kind="dark" dot={false}>Zincir</Badge>}
                     {!g.ownerActive && <Badge kind="danger">Hesap pasif</Badge>}
@@ -1385,10 +1385,10 @@ function FranchiseView({ groups, selectedIds, onToggleSelect, onSelectMany, onTo
                 </div>
               </div>
               <dl className="grid grid-cols-4 gap-3 text-[12px] sm:flex sm:gap-5">
-                <div><dt className="text-[#737373]">İşletme</dt><dd className="font-semibold tabular-nums text-[#0A0A0A]">{g.active}/{g.restaurants.length}</dd></div>
-                <div><dt className="text-[#737373]">Yorum</dt><dd className="font-semibold tabular-nums text-[#0A0A0A]">{g.reviews}</dd></div>
-                <div><dt className="text-[#737373]">Puan</dt><dd className="font-semibold"><RatingCell value={g.avgRating} /></dd></div>
-                <div><dt className="text-[#737373]">Menü</dt><dd className="font-semibold tabular-nums text-[#0A0A0A]">{g.menuPublished}/{g.restaurants.length}</dd></div>
+                <div><dt className="text-[#737373]">İşletme</dt><dd className="font-medium tabular-nums text-pn-ink">{g.active}/{g.restaurants.length}</dd></div>
+                <div><dt className="text-[#737373]">Yorum</dt><dd className="font-medium tabular-nums text-pn-ink">{g.reviews}</dd></div>
+                <div><dt className="text-[#737373]">Puan</dt><dd className="font-medium"><RatingCell value={g.avgRating} /></dd></div>
+                <div><dt className="text-[#737373]">Menü</dt><dd className="font-medium tabular-nums text-pn-ink">{g.menuPublished}/{g.restaurants.length}</dd></div>
               </dl>
               {g.ownerId && (
                 <div className="flex flex-wrap gap-2 sm:shrink-0">
@@ -1408,20 +1408,20 @@ function FranchiseView({ groups, selectedIds, onToggleSelect, onSelectMany, onTo
                 </div>
               )}
             </div>
-            <ul className="divide-y divide-[#EDEDED]" role="list">
+            <ul className="divide-y divide-pn-line" role="list">
               {g.restaurants.map((r) => {
                 const selected = selectedIds.has(r.id);
                 return (
-                  <li key={r.id} className={`flex items-center gap-3 px-4 py-2.5 ${selected ? 'bg-[#F7FAEF]' : ''}`}>
+                  <li key={r.id} className={`flex items-center gap-3 px-4 py-2.5 ${selected ? 'bg-pn-accent-soft' : ''}`}>
                     <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} />
-                    <Link href={`/admin/restaurants/${r.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#0A0A0A] hover:underline underline-offset-2">
+                    <Link href={`/admin/restaurants/${r.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium text-pn-ink hover:underline underline-offset-2">
                       {r.name}
                       {r.city && <span className="font-normal text-[#737373]"> · {r.city}</span>}
                     </Link>
                     <span className="hidden sm:inline-flex">{r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}</span>
                     <span className="hidden md:inline-flex"><MenuBadge r={r} /></span>
-                    <span className="w-14 text-right text-[12.5px] tabular-nums text-[#525252]">{r._count.feedbacks}</span>
-                    <span className="w-12 text-right text-[12.5px]"><RatingCell value={r.avgRating} /></span>
+                    <span className="w-14 text-right text-[13px] tabular-nums text-[#525252]">{r._count.feedbacks}</span>
+                    <span className="w-12 text-right text-[13px]"><RatingCell value={r.avgRating} /></span>
                     <RowMenu r={r} onToggleActive={onToggleActive} />
                   </li>
                 );

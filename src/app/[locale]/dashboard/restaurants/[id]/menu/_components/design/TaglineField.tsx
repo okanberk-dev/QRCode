@@ -48,14 +48,14 @@ export function TaglineField({
         />
         <span
           aria-hidden="true"
-          className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[11.5px] tabular-nums ${
+          className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[12px] tabular-nums ${
             raw.length >= MENU_TAGLINE_MAX ? 'text-[#B42318]' : 'text-[#A3A3A3]'
           }`}
         >
           {copy.design.taglineCounter(raw.length)}
         </span>
       </div>
-      <p id={`${id}-hint`} className="text-[12.5px] leading-relaxed text-[#737373]">
+      <p id={`${id}-hint`} className="text-[13px] leading-relaxed text-[#737373]">
         {copy.design.taglineHint}
       </p>
     </div>

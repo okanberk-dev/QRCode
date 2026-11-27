@@ -13,11 +13,11 @@ import { peakPoint, type VolumePoint } from '@/lib/volume-series';
 
 const VolumeChartCanvas = dynamic(() => import('./VolumeChartCanvas'), {
   ssr: false,
-  loading: () => <div className="h-full w-full rounded-lg bg-[#FAFAFA]" aria-hidden="true" />,
+  loading: () => <div className="h-full w-full rounded-[14px] bg-pn-canvas" aria-hidden="true" />,
 });
 
 // Kept in sync with VolumeChartCanvas (that module loads lazily).
-const COLORS = { feedback: '#0A0A0A', redirects: '#C6F24E' } as const;
+const COLORS = { feedback: '#000000', redirects: '#D7FE03' } as const;
 
 export interface VolumeRange {
   key: string;
@@ -63,19 +63,19 @@ export function VolumeChart({
     <section className="bz-card p-5 sm:p-6" aria-label={title}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{title}</h2>
+          <h2 className="text-[15px] font-medium text-pn-ink">{title}</h2>
           {subtitle && <p className="mt-0.5 text-[13px] text-[#525252]">{subtitle}</p>}
         </div>
         {ranges.length > 1 && (
-          <div role="group" aria-label={isTr ? 'Grafik aralığı' : 'Chart range'} className="inline-flex rounded-lg bg-[#F5F5F5] p-0.5">
+          <div role="group" aria-label={isTr ? 'Grafik aralığı' : 'Chart range'} className="inline-flex rounded-[14px] bg-pn-canvas p-0.5">
             {ranges.map((r) => (
               <button
                 key={r.key}
                 type="button"
                 aria-pressed={r.key === range?.key}
                 onClick={() => setActive(r.key)}
-                className={`min-h-[36px] rounded-md px-3 text-[12.5px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] ${
-                  r.key === range?.key ? 'bg-white text-[#0A0A0A] shadow-sm' : 'text-[#525252] hover:text-[#0A0A0A]'
+                className={`min-h-[36px] rounded-[10px] px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover ${
+                  r.key === range?.key ? 'bg-white text-pn-ink ' : 'text-[#525252] hover:text-pn-ink'
                 }`}
               >
                 {r.label}
@@ -85,21 +85,21 @@ export function VolumeChart({
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12.5px] text-[#525252]">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-[#525252]">
         <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.redirects }} />
+          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[8px]" style={{ background: COLORS.redirects }} />
           {isTr ? 'Platforma yönlendirme' : 'Sent to a platform'}
-          <span className="tabular-nums font-semibold text-[#0A0A0A]">{fmt(totals.redirects)}</span>
+          <span className="tabular-nums font-medium text-pn-ink">{fmt(totals.redirects)}</span>
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.feedback }} />
+          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[8px]" style={{ background: COLORS.feedback }} />
           {isTr ? 'Geri bildirim' : 'Feedback'}
-          <span className="tabular-nums font-semibold text-[#0A0A0A]">{fmt(totals.feedback)}</span>
+          <span className="tabular-nums font-medium text-pn-ink">{fmt(totals.feedback)}</span>
         </span>
       </div>
 
       {empty ? (
-        <p className="mt-4 rounded-lg border border-dashed border-[#E5E5E5] bg-[#FAFAFA] px-4 py-10 text-center text-[13px] text-[#525252]">
+        <p className="mt-4 rounded-[14px] border border-dashed border-pn-line-strong bg-pn-canvas px-4 py-10 text-center text-[13px] text-[#525252]">
           {isTr ? 'Bu dönemde puan yok. Müşteriler QR ile puan verdikçe burada görünür.' : 'No ratings in this period. They appear here as customers rate through the QR.'}
         </p>
       ) : (
@@ -109,7 +109,7 @@ export function VolumeChart({
       )}
 
       {(peak || footer) && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12.5px] text-[#737373]">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[13px] text-[#737373]">
           {peak ? (
             <span>
               {isTr ? 'En yoğun' : 'Busiest'}: {peak.longLabel} · {fmt(peak.total)} {isTr ? 'puan' : peak.total === 1 ? 'rating' : 'ratings'}

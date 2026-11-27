@@ -167,7 +167,7 @@ export function PasteReview({
         <h4 id={titleId} className="text-[14px]">
           <span className="bz-h-tight [word-spacing:0.1em]">{copy.paste.preview}</span>
         </h4>
-        <p className="text-[12.5px] text-[#525252]" aria-live="polite">
+        <p className="text-[13px] text-[#525252]" aria-live="polite">
           {copy.fmt.paste.willAdd(items)}
           {unreadable > 0 && <span className="text-[#92400E]"> · {copy.fmt.paste.unreadable(unreadable)}</span>}
         </p>
@@ -180,11 +180,11 @@ export function PasteReview({
 
       <div className="max-h-[50dvh] space-y-3 overflow-y-auto">
         {sections.map((section) => (
-          <div key={section.id} className="overflow-hidden rounded-xl border border-[#EDEDED] bg-white">
+          <div key={section.id} className="overflow-hidden rounded-[20px] border border-pn-line bg-white">
             {section.header !== null && (
-              <div className="flex flex-wrap items-center gap-2 border-b border-[#EDEDED] bg-[#FAFAFA] px-3 py-2">
+              <div className="flex flex-wrap items-center gap-2 border-b border-pn-line bg-pn-canvas px-3 py-2">
                 <FolderPlus size={14} strokeWidth={2} className="shrink-0 text-[#525252]" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate font-body text-[13.5px] font-semibold text-[#0A0A0A]">
+                <span className="min-w-0 flex-1 truncate font-body text-[14px] font-medium text-pn-ink">
                   {section.asCategory ? copy.fmt.paste.newCategory(section.header) : section.header}
                 </span>
                 <APCheckbox
@@ -192,12 +192,12 @@ export function PasteReview({
                   checked={section.asCategory}
                   disabled={busy}
                   onChange={(on) => setAsCategory(section.id, on)}
-                  label={<span className="text-[12.5px] text-[#525252]">{copy.paste.asCategory}</span>}
+                  label={<span className="text-[13px] text-[#525252]">{copy.paste.asCategory}</span>}
                   className="min-h-11 items-center pointer-fine:min-h-0"
                 />
               </div>
             )}
-            <ul className="divide-y divide-[#F2F2F2]">
+            <ul className="divide-y divide-pn-line">
               {section.rows.map((row) => {
                 const editing = editingRow === row.id || row.error !== null;
                 return (
@@ -214,7 +214,7 @@ export function PasteReview({
                             onBlur={() => updateRow(section.id, row.id, {}, true)}
                             onKeyDown={onRowKey}
                             aria-label={copy.item.name}
-                            className="bz-input h-11 text-[16px] sm:text-[13.5px] pointer-fine:h-8"
+                            className="bz-input h-11 text-[16px] sm:text-[14px] pointer-fine:h-8"
                           />
                           <div className="relative">
                             <input
@@ -225,7 +225,7 @@ export function PasteReview({
                               onBlur={() => updateRow(section.id, row.id, {}, true)}
                               onKeyDown={onRowKey}
                               aria-label={copy.item.price}
-                              className="bz-input h-11 pr-6 text-right text-[16px] tabular-nums sm:text-[13.5px] pointer-fine:h-8"
+                              className="bz-input h-11 pr-6 text-right text-[16px] tabular-nums sm:text-[14px] pointer-fine:h-8"
                             />
                             <span aria-hidden="true" className="pointer-events-none absolute right-2 top-0 flex h-11 items-center text-[12px] text-[#737373] pointer-fine:h-8">
                               {currencySymbol('TRY')}
@@ -241,8 +241,8 @@ export function PasteReview({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="min-w-0 flex-1 truncate font-body text-[13.5px] text-[#0A0A0A]">{row.name}</span>
-                        <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[#0A0A0A]">
+                        <span className="min-w-0 flex-1 truncate font-body text-[14px] text-pn-ink">{row.name}</span>
+                        <span className="shrink-0 text-[13px] font-medium tabular-nums text-pn-ink">
                           {row.priceCents !== null ? money(row.priceCents) : row.price}
                         </span>
                         <button
@@ -261,7 +261,7 @@ export function PasteReview({
               })}
             </ul>
             {section.overLimit && !intoTarget(section) && (
-              <p className="border-t border-[#EDEDED] px-3 py-2 text-[12px] text-[#92400E]">
+              <p className="border-t border-pn-line px-3 py-2 text-[12px] text-[#92400E]">
                 {copy.fmt.paste.overLimitNote(MENU_BULK_MAX_ITEMS)}
               </p>
             )}
@@ -270,9 +270,9 @@ export function PasteReview({
       </div>
 
       {confirmDiscard ? (
-        <div role="alertdialog" aria-label={copy.paste.discardTitle} className="space-y-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3">
-          <p className="text-[13.5px] font-semibold text-[#991B1B]">{copy.paste.discardTitle}</p>
-          <p className="text-[12.5px] text-[#991B1B]">{copy.paste.discardBody}</p>
+        <div role="alertdialog" aria-label={copy.paste.discardTitle} className="space-y-2 rounded-[20px] border border-[#FECACA] bg-[#FEF2F2] p-3">
+          <p className="text-[14px] font-medium text-[#991B1B]">{copy.paste.discardTitle}</p>
+          <p className="text-[13px] text-[#991B1B]">{copy.paste.discardBody}</p>
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" autoFocus onClick={() => setConfirmDiscard(false)} className="bz-btn-ghost min-h-[44px] sm:min-h-[36px]">
               {copy.paste.keep}
@@ -284,7 +284,7 @@ export function PasteReview({
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {items === 0 && <p className="mr-auto text-[12.5px] text-[#737373]">{copy.paste.nothingToAdd}</p>}
+          {items === 0 && <p className="mr-auto text-[13px] text-[#737373]">{copy.paste.nothingToAdd}</p>}
           <button type="button" onClick={cancel} disabled={busy} className="bz-btn-ghost min-h-[44px] sm:min-h-[36px]">
             {copy.paste.cancel}
           </button>

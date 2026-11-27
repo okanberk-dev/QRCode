@@ -38,8 +38,8 @@ const EDIT_TYPE_LABELS: Record<string, string> = {
 };
 
 const EDIT_TYPE_BG: Record<string, string> = {
-  created: 'bg-[#EAF9B8] text-[#0A0A0A]',
-  updated: 'bg-[#FAFAFA] text-[#0A0A0A]',
+  created: 'bg-pn-accent-soft text-pn-ink',
+  updated: 'bg-pn-canvas text-pn-ink',
   deleted: 'bg-[#FEF2F2] text-[#991B1B]',
   reverted: 'bg-[#FFFBEB] text-[#92400E]',
 };
@@ -145,11 +145,11 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
       <div className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#EDEDED] p-5">
+        <div className="flex items-center justify-between border-b border-pn-line p-5">
           <div className="flex items-center gap-2">
-            <History size={18} strokeWidth={2} className="text-[#0A0A0A]" />
+            <History size={18} strokeWidth={2} className="text-pn-ink" />
             {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
-            <h2 className="text-[16px] font-medium text-[#0A0A0A]">
+            <h2 className="text-[16px] font-medium text-pn-ink">
               Sürüm geçmişi
             </h2>
           </div>
@@ -164,12 +164,12 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
         </div>
 
         {error && (
-          <div className="m-4 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-xs font-semibold text-[#991B1B]">{error}</div>
+          <div className="m-4 rounded-[20px] border border-[#FECACA] bg-[#FEF2F2] p-3 text-xs font-medium text-[#991B1B]">{error}</div>
         )}
 
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
-            <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
+            <Loader2 size={22} className="animate-spin text-pn-ink" />
           </div>
         ) : revisions.length === 0 ? (
           <div className="flex flex-1 items-center justify-center px-6 text-center text-[13px] text-[#737373]">
@@ -191,28 +191,28 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
                 const diffBefore = olderSibling ? olderSibling.content : {};
                 const diffAfter = r.content;
                 return (
-                  <li key={r.id} className="rounded-xl border border-[#EDEDED] bg-white p-3">
+                  <li key={r.id} className="rounded-[20px] border border-pn-line bg-white p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className={`pulse-eyebrow rounded-full px-2 py-0.5 ${EDIT_TYPE_BG[r.editType] ?? 'bg-[#FAFAFA] text-[#0A0A0A]'}`}>
+                          <span className={`text-[13px] font-medium rounded-full px-2 py-0.5 ${EDIT_TYPE_BG[r.editType] ?? 'bg-pn-canvas text-pn-ink'}`}>
                             {EDIT_TYPE_LABELS[r.editType] ?? r.editType}
                           </span>
                           {isLatest && (
-                            <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
+                            <span className="text-[13px] font-medium rounded-full bg-pn-accent px-2 py-0.5 text-pn-ink">
                               MEVCUT
                             </span>
                           )}
                         </div>
                         <p className="mt-1.5 text-[12px] text-[#525252]">{formatDate(r.createdAt)}</p>
-                        <p className="text-[11px] text-[#9CA3AF]">{editorLabel}</p>
+                        <p className="text-[12px] text-[#9CA3AF]">{editorLabel}</p>
                       </div>
                       {!isLatest && (
                         <button
                           type="button"
                           onClick={() => onRevert(r.id)}
                           disabled={reverting !== null}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+                          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-pn-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-pn-ink hover:bg-pn-canvas active:scale-95 disabled:opacity-50"
                           title="Bu sürüme dön"
                         >
                           {reverting === r.id ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
@@ -224,21 +224,21 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
                       <button
                         type="button"
                         onClick={() => toggleExpand(r.id)}
-                        className="text-[11px] font-semibold text-[#737373] hover:text-[#0A0A0A]"
+                        className="text-[12px] font-medium text-[#737373] hover:text-pn-ink"
                       >
                         {isExpanded ? 'İçeriği gizle' : 'İçeriği göster'}
                       </button>
                       <button
                         type="button"
                         onClick={() => setDiffOpenFor(isDiffOpen ? null : r.id)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#737373] hover:text-[#0A0A0A]"
+                        className="inline-flex items-center gap-1 text-[12px] font-medium text-[#737373] hover:text-pn-ink"
                       >
                         <GitCompare size={11} />
                         {isDiffOpen ? 'Farkı gizle' : 'Önceki sürümle farkı göster'}
                       </button>
                     </div>
                     {isExpanded && (
-                      <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-[#FAFAFA] p-2 text-[10px] text-[#525252]">
+                      <pre className="mt-2 max-h-64 overflow-auto rounded-[14px] bg-pn-canvas p-2 text-[12px] text-[#525252]">
                         {JSON.stringify(r.content, null, 2)}
                       </pre>
                     )}

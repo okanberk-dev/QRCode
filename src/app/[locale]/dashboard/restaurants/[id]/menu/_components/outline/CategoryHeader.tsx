@@ -106,10 +106,10 @@ export function CategoryHeader({
     else await run(false);
   };
 
-  const nameClass = 'font-body text-[16px] font-semibold tracking-[-0.01em] text-[#0A0A0A] break-words';
+  const nameClass = 'font-body text-[16px] font-medium tracking-[-0.01em] text-pn-ink break-words';
 
   return (
-    <div className="border-b border-[#EDEDED]">
+    <div className="border-b border-pn-line">
       <div className="flex min-h-[52px] items-center gap-2 px-3 py-2.5 sm:px-4">
         <button
           type="button"
@@ -145,7 +145,7 @@ export function CategoryHeader({
           disabled={!canEdit || service}
           onChange={(v) => void actions.setCategoryVisible(category.id, v)}
           ariaLabel={copy.category.visibleAria(category.name)}
-          label={<span className="hidden text-[12.5px] font-medium text-[#525252] sm:inline">{copy.category.visible}</span>}
+          label={<span className="hidden text-[13px] font-medium text-[#525252] sm:inline">{copy.category.visible}</span>}
         />
         <PulseMenu
           className={`min-w-[220px] ${MENU_TOUCH}`}
@@ -274,13 +274,13 @@ export function CategoryHeader({
             className="bz-input min-h-[64px] resize-none text-[16px] sm:text-[13px]"
           />
           {descFocused && description.length > 250 && (
-            <p className="mt-1 text-right text-[11.5px] text-[#737373]">
+            <p className="mt-1 text-right text-[12px] text-[#737373]">
               {copy.fmt.descriptionCount(description.length, DESCRIPTION_MAX)}
             </p>
           )}
         </div>
       ) : category.description ? (
-        <p className="px-4 pb-2.5 text-[12.5px] leading-snug text-[#525252] sm:pl-[60px] pointer-fine:sm:pl-[52px]">
+        <p className="px-4 pb-2.5 text-[13px] leading-snug text-[#525252] sm:pl-[60px] pointer-fine:sm:pl-[52px]">
           {category.description}
         </p>
       ) : null}

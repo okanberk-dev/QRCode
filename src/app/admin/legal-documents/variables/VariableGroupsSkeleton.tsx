@@ -9,10 +9,10 @@ export function VariableGroupsSkeleton() {
     <div className="space-y-5" aria-hidden="true">
       {[3, 2, 2, 2].map((rows, i) => (
         <div key={i} className="bz-card overflow-hidden">
-          <div className="border-b border-[#EDEDED] px-5 py-3">
+          <div className="border-b border-pn-line px-5 py-3">
             <SkBox className="h-4 w-40" />
           </div>
-          <div className="divide-y divide-[#EDEDED]">
+          <div className="divide-y divide-pn-line">
             {Array.from({ length: rows }).map((__, j) => (
               <div
                 key={j}

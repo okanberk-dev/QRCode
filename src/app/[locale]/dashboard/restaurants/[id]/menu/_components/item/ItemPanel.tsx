@@ -223,7 +223,7 @@ export function ItemPanel({
     ) : (
       <>
         <span className="sr-only">{copy.item.editPrefix} </span>
-        <span className="truncate font-body text-[17px] font-semibold tracking-[-0.01em]">{item?.name}</span>
+        <span className="truncate font-body text-[17px] font-medium tracking-[-0.01em]">{item?.name}</span>
       </>
     );
 
@@ -280,7 +280,7 @@ export function ItemPanel({
     ) : null;
 
   const noticeNode = notice ? (
-    <div role="status" className="flex items-center gap-2 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] px-3 py-2 text-[13px] font-medium text-[#166534]">
+    <div role="status" className="flex items-center gap-2 rounded-[20px] border border-[#BBF7D0] bg-[#F0FDF4] px-3 py-2 text-[13px] font-medium text-[#166534]">
       <Check size={14} strokeWidth={2.5} aria-hidden="true" />
       <span className="min-w-0 flex-1 truncate">{copy.fmt.itemAddedNotice(notice.name)}</span>
       {notice.undoId && (
@@ -291,7 +291,7 @@ export function ItemPanel({
             setNotice(null);
             if (id) void toaster.undoById(id);
           }}
-          className="-my-3 inline-flex min-h-11 shrink-0 items-center px-2 font-semibold underline underline-offset-2 pointer-fine:my-0 pointer-fine:min-h-0 pointer-fine:px-0"
+          className="-my-3 inline-flex min-h-11 shrink-0 items-center px-2 font-medium underline underline-offset-2 pointer-fine:my-0 pointer-fine:min-h-0 pointer-fine:px-0"
         >
           {copy.save.undo}
         </button>
@@ -372,7 +372,7 @@ export function ItemPanel({
       className="absolute inset-0 z-20 flex items-center justify-center bg-white/95 p-6 backdrop-blur-sm"
     >
       <div className="w-full max-w-[320px] text-center">
-        <p id="item-leave-title" className="bz-h-tight [word-spacing:0.1em] text-[16px] text-[#0A0A0A]">
+        <p id="item-leave-title" className="bz-h-tight [word-spacing:0.1em] text-[16px] text-pn-ink">
           {copy.dialogs.leaveTitle}
         </p>
         <p id="item-leave-body" className="mt-2 text-[13px] leading-relaxed text-[#525252]">
@@ -408,7 +408,7 @@ export function ItemPanel({
         initialFocusRef={initialFocusRef}
         headerExtra={
           <div className="flex shrink-0 items-center gap-1">
-            <div role="tablist" aria-label={copy.view.label} className="inline-flex gap-0.5 rounded-[10px] bg-[#F2F2F2] p-[3px]">
+            <div role="tablist" aria-label={copy.view.label} className="inline-flex gap-0.5 rounded-[10px] bg-pn-canvas p-[3px]">
               {(['edit', 'preview'] as const).map((tab) => (
                 <button
                   key={tab}
@@ -417,7 +417,7 @@ export function ItemPanel({
                   aria-selected={sheetTab === tab}
                   onClick={() => onSheetTab?.(tab)}
                   className={`min-h-[38px] rounded-[7px] px-3 text-[13px] font-medium ${
-                    sheetTab === tab ? 'bg-white text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]' : 'text-[#525252]'
+                    sheetTab === tab ? 'bg-white text-pn-ink shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]' : 'text-[#525252]'
                   }`}
                 >
                   {tab === 'edit' ? copy.item.editTab : copy.item.previewTab}
@@ -451,7 +451,7 @@ export function ItemPanel({
       onKeyDown={onKeyDown}
       className="relative flex min-h-0 flex-1 flex-col"
     >
-      <div className="flex items-center gap-2 border-b border-[#EDEDED] px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-pn-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <h2 id="item-panel-title" ref={titleRef} tabIndex={-1} className="flex min-w-0 items-center outline-none">
             {title}
@@ -461,7 +461,7 @@ export function ItemPanel({
         {navButtons}
       </div>
       <div className="@container min-h-0 flex-1 overflow-y-auto px-4 py-5">{form}</div>
-      <div className="border-t border-[#EDEDED] bg-white px-4 py-3">{footer}</div>
+      <div className="border-t border-pn-line bg-white px-4 py-3">{footer}</div>
       {confirm}
     </section>
   );

@@ -259,15 +259,15 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
           panel'in birincil aksiyonunu görsel öne çıkarır. */}
       <section
         aria-label={isTr ? 'Hızlı başlangıç' : 'Quick start'}
-        className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-gradient-to-br from-white via-[#FAFAFA] to-[#EAF9B8]/40"
+        className="overflow-hidden rounded-[24px] border border-pn-line bg-gradient-to-br from-white via-pn-canvas to-pn-accent-soft/40"
       >
         <div className="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
           <div className="flex items-start gap-3 lg:max-w-[640px]">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-pn-accent">
               <Wand2 size={18} strokeWidth={2.2} />
             </span>
             <div>
-              <h2 className="bz-h-tight text-[18px] sm:text-[20px] text-[#0A0A0A]">
+              <h2 className="bz-h-tight text-[18px] sm:text-[20px] text-pn-ink">
                 {isTr ? 'QR oluştur · Yapıştır · Cevapla' : 'Create QR · Stick · Reply'}
               </h2>
               <p className="mt-1.5 text-[13px] leading-[1.55] text-[#525252]">
@@ -280,14 +280,14 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
           <div className="flex flex-wrap gap-2 lg:shrink-0 lg:flex-nowrap">
             <Link
               href={`/${locale}/dashboard/qr?new=1`}
-              className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] sm:min-h-[36px]"
+              className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[13px] sm:min-h-[36px]"
             >
               <Wand2 size={13} strokeWidth={2.2} />
               {isTr ? 'QR sihirbazı' : 'QR wizard'}
             </Link>
             <Link
               href={`/${locale}/dashboard`}
-              className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] sm:min-h-[36px]"
+              className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[13px] sm:min-h-[36px]"
             >
               <CheckCircle2 size={13} strokeWidth={2.2} />
               {isTr ? 'Aktivasyon listesi' : 'Activation list'}
@@ -309,15 +309,15 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             className="bz-card flex flex-col gap-3 p-5 sm:p-6"
           >
             <header className="flex items-start justify-between gap-3">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink">
                 {step.icon}
               </span>
-              <span className="bz-mono text-[11px] font-semibold tracking-[0.18em] text-[#A3A3A3]">
+              <span className="tabular-nums text-[12px] font-medium text-[#A3A3A3]">
                 {step.num}
               </span>
             </header>
             <div className="flex-1">
-              <h3 className="bz-h-tight text-[16px] sm:text-[17px] text-[#0A0A0A]">
+              <h3 className="bz-h-tight text-[16px] sm:text-[17px] text-pn-ink">
                 {isTr ? step.titleTr : step.titleEn}
               </h3>
               <p className="mt-2 text-[13px] leading-[1.6] text-[#525252]">
@@ -333,7 +333,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
                       <CheckCircle2
                         size={11}
                         strokeWidth={2.4}
-                        className="mt-1 shrink-0 text-[#A8D62E]"
+                        className="mt-1 shrink-0 text-pn-accent-ink"
                       />
                       <span>{b}</span>
                     </li>
@@ -344,7 +344,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             {step.link && (
               <Link
                 href={step.link}
-                className="mt-1 inline-flex min-h-[44px] items-center gap-1.5 self-start rounded text-[12.5px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
+                className="mt-1 inline-flex min-h-[44px] items-center gap-1.5 self-start rounded text-[13px] font-medium text-pn-ink underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink sm:min-h-[32px]"
               >
                 {isTr ? step.linkLabelTr : step.linkLabelEn}
                 <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
@@ -358,7 +358,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
           kısa kurallar. CLAUDE.md §11 Pulse Voice — net + actionable. */}
       <section
         aria-label={isTr ? 'İpuçları' : 'Tips'}
-        className="overflow-hidden rounded-2xl bg-[#0A0A0A] text-white"
+        className="overflow-hidden rounded-[24px] bg-pn-ink text-white"
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
           <h2 className="bz-h-tight text-[20px] sm:text-[22px]">
@@ -378,8 +378,8 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
                 i < 3 ? 'lg:border-t-0' : 'lg:border-t'
               } ${i % 3 !== 0 ? 'lg:border-l' : 'lg:border-l-0'}`}
             >
-              <h3 className="flex items-center gap-1.5 text-[13.5px] font-semibold text-white">
-                <span className="shrink-0 text-[#C6F24E]" aria-hidden="true">
+              <h3 className="flex items-center gap-1.5 text-[14px] font-medium text-white">
+                <span className="shrink-0 text-pn-accent" aria-hidden="true">
                   {tip.icon}
                 </span>
                 {isTr ? tip.titleTr : tip.titleEn}
@@ -400,14 +400,14 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         className="bz-card-soft flex flex-col gap-3 p-5 sm:p-6"
       >
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#0A0A0A]">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink">
             <Sparkles size={16} strokeWidth={2} />
           </span>
           <div className="flex-1">
-            <p className="bz-h-tight text-[15px] text-[#0A0A0A]">
+            <p className="bz-h-tight text-[15px] text-pn-ink">
               {isTr ? 'Sektörüne özel rehberler' : 'Sector-specific guides'}
             </p>
-            <p className="mt-0.5 text-[12.5px] leading-[1.55] text-[#525252]">
+            <p className="mt-0.5 text-[13px] leading-[1.55] text-[#525252]">
               {isTr
                 ? 'Restoran, otel, klinik, salon — sektörüne özel ipuçlarını sektör sayfalarında bulabilirsin.'
                 : 'Restaurant, hotel, clinic, salon — find tips for your sector on the sector pages.'}
@@ -419,7 +419,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             <Link
               key={s.slug}
               href={`/${locale}/solutions/${s.slug}`}
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-pn-line bg-white px-3 py-1.5 text-[12px] font-medium text-pn-ink transition-colors hover:border-pn-ink hover:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink sm:min-h-[32px]"
             >
               {isTr ? s.labelTr : s.labelEn}
               <ArrowRight size={11} strokeWidth={2} className="text-[#A3A3A3]" />
@@ -431,14 +431,14 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       {/* Yardım CTA — kullanıcı sıkışırsa nereye dönsün */}
       <section className="bz-card-soft flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#0A0A0A]">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink">
             <Bell size={16} strokeWidth={2} />
           </span>
           <div>
-            <p className="bz-h-tight text-[15px] text-[#0A0A0A]">
+            <p className="bz-h-tight text-[15px] text-pn-ink">
               {isTr ? 'Hâlâ sorun yaşıyor musun?' : 'Still stuck?'}
             </p>
-            <p className="mt-0.5 text-[12.5px] leading-[1.55] text-[#525252]">
+            <p className="mt-0.5 text-[13px] leading-[1.55] text-[#525252]">
               {isTr
                 ? 'Yardım merkezindeki makalelere göz at veya ekibimize yaz.'
                 : 'Browse the help center articles or write to our team.'}

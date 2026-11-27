@@ -54,7 +54,7 @@ export function SurfacePicker({
             disabled={disabled}
             onClick={() => onChange(key)}
             onKeyDown={(e) => onKeyDown(e, index)}
-            className="group flex min-w-0 flex-col items-center gap-1.5 rounded-xl p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-60"
+            className="group flex min-w-0 flex-col items-center gap-1.5 rounded-[20px] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span
               className={`relative flex h-11 w-16 max-w-full items-center justify-center rounded-[10px] transition-shadow duration-[160ms] ${
@@ -67,12 +67,12 @@ export function SurfacePicker({
               </span>
               <span className="absolute bottom-1.5 left-2 right-2 h-px" style={{ backgroundColor: s.rule }} />
               {on && (
-                <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#0A0A0A] shadow-[0_0_0_2px_#FFFFFF]">
+                <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-pn-ink shadow-[0_0_0_2px_#FFFFFF]">
                   <Check size={10} strokeWidth={3} className="text-white" />
                 </span>
               )}
             </span>
-            <span className={`flex max-w-full items-center gap-1 text-[12px] leading-4 ${on ? 'font-semibold text-[#0A0A0A]' : 'text-[#525252]'}`}>
+            <span className={`flex max-w-full items-center gap-1 text-[12px] leading-4 ${on ? 'font-medium text-pn-ink' : 'text-[#525252]'}`}>
               <span className="truncate">{names[key]}</span>
               {isDefault && <DefaultDot on={false} />}
             </span>

@@ -374,22 +374,22 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                       role="radio"
                       aria-checked={active}
                       onClick={() => setForm((f) => ({ ...f, scoringMode: mode }))}
-                      className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all ${
+                      className={`flex items-start gap-3 rounded-[24px] border p-3.5 text-left transition-all ${
                         active
-                          ? 'border-[#0A0A0A] bg-[#FAFAFA]'
-                          : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]/40'
+                          ? 'border-pn-ink bg-pn-canvas'
+                          : 'border-pn-line bg-white hover:border-pn-ink/40'
                       }`}
                     >
                       <span
                         className={`mt-0.5 h-3 w-3 shrink-0 rounded-full ${
-                          active ? 'bg-[#C6F24E] ring-2 ring-[#0A0A0A]' : 'bg-[#E5E5E5]'
+                          active ? 'bg-pn-accent ring-2 ring-pn-ink' : 'bg-[#E5E5E5]'
                         }`}
                       />
                       <span className="min-w-0">
-                        <span className="block text-[13px] font-semibold text-[#0A0A0A]">
+                        <span className="block text-[13px] font-medium text-pn-ink">
                           {SCORING_LABEL[mode]}
                         </span>
-                        <span className="mt-1 block text-[11.5px] leading-[1.45] text-[#737373]">
+                        <span className="mt-1 block text-[12px] leading-[1.45] text-[#737373]">
                           {SCORING_HINT[mode]}
                         </span>
                       </span>
@@ -427,12 +427,12 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
               </Field>
             </div>
 
-            <div className="rounded-2xl border border-[#EDEDED] bg-[#0A0A0A] p-5 text-white">
+            <div className="rounded-[24px] border border-pn-line bg-pn-ink p-5 text-white">
               <div className="flex items-center justify-between gap-3">
-                <span className="pulse-eyebrow text-white/60">ŞABLON ÖZETİ</span>
-                <Sparkles size={15} className="text-[#C6F24E]" />
+                <span className="text-[13px] font-medium text-white/60">ŞABLON ÖZETİ</span>
+                <Sparkles size={15} className="text-pn-accent" />
               </div>
-              <p className="mt-3 break-words text-[18px] font-semibold leading-tight">
+              <p className="mt-3 break-words text-[18px] font-medium leading-tight">
                 {form.title || 'Başlıksız şablon'}
               </p>
               <p className="mt-1 text-[12px] text-white/55">
@@ -441,19 +441,19 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                   ? ` · ${filteredCategories.find((c) => c.id === form.categoryId)?.labelTr ?? ''}`
                   : ''}
               </p>
-              <div className="mt-4 grid grid-cols-3 gap-3 rounded-2xl bg-white/8 p-3">
+              <div className="mt-4 grid grid-cols-3 gap-3 rounded-[24px] bg-white/8 p-3">
                 <div>
-                  <span className="pulse-eyebrow text-white/55">Sorular</span>
+                  <span className="text-[13px] font-medium text-white/55">Sorular</span>
                   <p className="mt-1 text-[13px] font-medium text-white">
                     {filledQuestions > 0 ? `${kindLabel(kind, 'tr')} · ${itemsCount(filledQuestions, 'tr')}` : '—'}
                   </p>
                 </div>
                 <div>
-                  <span className="pulse-eyebrow text-white/55">Mod</span>
+                  <span className="text-[13px] font-medium text-white/55">Mod</span>
                   <p className="mt-1 text-[13px] font-medium text-white">{SCORING_LABEL[form.scoringMode]}</p>
                 </div>
                 <div>
-                  <span className="pulse-eyebrow text-white/55">Geçme</span>
+                  <span className="text-[13px] font-medium text-white/55">Geçme</span>
                   <p className="mt-1 text-[13px] font-medium text-white">
                     {form.passingScore ? `≥ ${form.passingScore}` : '—'}
                   </p>
@@ -462,9 +462,9 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             </div>
 
             <p
-              className={`rounded-2xl border p-3.5 text-[12.5px] leading-[1.55] ${
+              className={`rounded-[24px] border p-3.5 text-[13px] leading-[1.55] ${
                 filledQuestions > 0
-                  ? 'border-[#EDEDED] bg-[#FAFAFA] text-[#525252]'
+                  ? 'border-pn-line bg-pn-canvas text-[#525252]'
                   : 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]'
               }`}
             >
@@ -484,7 +484,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
         )}
 
         {/* Sticky bottom action bar */}
-        <div className="sticky bottom-0 -mx-6 flex flex-col gap-2 border-t border-[#EDEDED] bg-white/95 px-6 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky bottom-0 -mx-6 flex flex-col gap-2 border-t border-pn-line bg-white/95 px-6 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={handleClose}
@@ -544,14 +544,14 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
 
 function StepIntro({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
+    <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent text-pn-ink">
           {icon}
         </div>
         <div>
-          <p className="text-[15px] font-semibold text-[#0A0A0A]">{title}</p>
-          <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">{body}</p>
+          <p className="text-[15px] font-medium text-pn-ink">{title}</p>
+          <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">{body}</p>
         </div>
       </div>
     </div>

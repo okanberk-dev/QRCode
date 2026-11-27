@@ -86,7 +86,7 @@ export function ItemForm({
 
       <div className="grid gap-3 @min-[420px]:grid-cols-[1fr_160px]">
         <div className="min-w-0">
-          <label htmlFor={nameId} className="mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]">
+          <label htmlFor={nameId} className="mb-1.5 block text-[12px] font-medium text-pn-ink">
             {copy.item.name}
             <span aria-hidden="true" className="ml-1 text-[#DC2626]">*</span>
           </label>
@@ -114,7 +114,7 @@ export function ItemForm({
           )}
         </div>
         <div className="min-w-0">
-          <label htmlFor={priceId} className="mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]">
+          <label htmlFor={priceId} className="mb-1.5 block text-[12px] font-medium text-pn-ink">
             {copy.item.price}
             <span aria-hidden="true" className="ml-1 text-[#DC2626]">*</span>
           </label>
@@ -148,7 +148,7 @@ export function ItemForm({
       </div>
 
       <div>
-        <label htmlFor={descId} className="mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]">
+        <label htmlFor={descId} className="mb-1.5 block text-[12px] font-medium text-pn-ink">
           {copy.item.description}
         </label>
         <textarea
@@ -163,14 +163,14 @@ export function ItemForm({
           className="bz-input peer resize-none font-body"
         />
         <p
-          className={`mt-1 text-right text-[11.5px] text-[#737373] ${values.description.length > 400 ? '' : 'hidden peer-focus:block'}`}
+          className={`mt-1 text-right text-[12px] text-[#737373] ${values.description.length > 400 ? '' : 'hidden peer-focus:block'}`}
         >
           {copy.fmt.descriptionCount(values.description.length, DESCRIPTION_MAX)}
         </p>
       </div>
 
       <div>
-        <label htmlFor={categoryId} className="mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]">
+        <label htmlFor={categoryId} className="mb-1.5 block text-[12px] font-medium text-pn-ink">
           {copy.item.category}
         </label>
         {/* Native select: it works inside the Radix sheet (the portaled

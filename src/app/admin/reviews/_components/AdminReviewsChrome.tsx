@@ -14,7 +14,7 @@ import { AdminFeedbackDetailSkeleton } from './AdminFeedbackDetail';
  */
 
 export const ADMIN_REVIEWS_ROOT_CLASS =
-  'flex min-h-full w-full min-w-0 flex-1 flex-col bg-white lg:min-h-0';
+  'flex min-h-full w-full min-w-0 flex-1 flex-col bg-white lg:min-h-0 lg:mx-2 lg:mb-2 lg:!w-[calc(100%-16px)] lg:overflow-hidden lg:rounded-[28px]';
 
 export const ADMIN_REVIEWS_SPLIT_CLASS =
   'lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]';
@@ -42,7 +42,7 @@ export function AdminReviewsSkeleton({ isTr }: { isTr: boolean }) {
       <AdminReviewsHeader isTr={isTr} />
 
       {/* Toolbar — same padding and rows as InboxToolbar. */}
-      <div className="border-y border-[#EDEDED] bg-white px-4 py-3 sm:px-7" aria-hidden="true">
+      <div className="border-y border-pn-line bg-white px-4 py-3 sm:px-7" aria-hidden="true">
         <div className="flex gap-1.5 overflow-hidden">
           {['w-20', 'w-36', 'w-32', 'w-32'].map((w, i) => (
             <SkBox key={i} className={`h-11 shrink-0 rounded-full sm:h-9 ${w}`} />
@@ -64,7 +64,7 @@ export function AdminReviewsSkeleton({ isTr }: { isTr: boolean }) {
 
       {/* Split — same tracks as the page. */}
       <div className={ADMIN_REVIEWS_SPLIT_CLASS}>
-        <div className="min-h-0 lg:overflow-hidden lg:border-r lg:border-[#EDEDED]">
+        <div className="min-h-0 lg:overflow-hidden lg:border-r lg:border-pn-line">
           <AdminFeedbackSelectAllSkeleton />
           {Array.from({ length: 6 }).map((_, i) => (
             <AdminFeedbackListSkeletonRow key={i} />

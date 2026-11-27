@@ -114,28 +114,26 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
     ? { more: (n: number) => `+${n} more`, less: 'Hide', learn: 'Learn more', dismiss: 'Dismiss' }
     : { more: (n: number) => `+${n} duyuru daha`, less: 'Gizle', learn: 'Detayları gör', dismiss: 'Kapat' };
 
-  const renderOne = (a: DashboardAnnouncement, compact: boolean) => {
+  const renderOne = (a: DashboardAnnouncement, _compact: boolean) => {
     const style = SEVERITY_STYLES[a.severity];
     const Icon = style.icon;
     const dismissable = a.isDismissible && a.severity !== 'critical';
     return (
       <div
         key={a.id}
-        className={`relative flex flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3.5 ${
-          compact ? '' : 'shadow-sm'
-        }`}
-        style={{ background: style.bg, borderColor: style.border, color: style.text }}
+        className="relative flex flex-col gap-3 rounded-[28px] px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3.5"
+        style={{ background: style.bg, color: style.text }}
         role={a.severity === 'critical' ? 'alert' : 'status'}
       >
         <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
           style={{ background: style.accent, color: style.text }}
         >
           <Icon size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
           <p
-            className="bz-h-tight text-[14px] leading-tight"
+            className="text-[15px] font-medium leading-tight"
             style={{ color: style.text }}
           >
             {a.title}
@@ -148,7 +146,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
               href={a.ctaLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="bz-btn-primary whitespace-nowrap px-4 py-2 text-[12px]"
+              className="bz-btn-primary whitespace-nowrap"
             >
               {a.ctaText}
             </a>
@@ -170,7 +168,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
   };
 
   return (
-    <div className="px-3 sm:px-6 md:px-10 pt-3 sm:pt-6 space-y-2">
+    <div className="mx-auto w-full max-w-[1440px] space-y-2 px-4 pt-4 sm:px-7">
       {renderOne(primary, false)}
       {rest.length > 0 && expanded && (
         <div className="space-y-2">
@@ -181,7 +179,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="inline-flex items-center gap-1.5 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#737373] hover:text-pn-ink transition-colors"
         >
           <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} />
           {expanded ? copy.less : copy.more(rest.length)}

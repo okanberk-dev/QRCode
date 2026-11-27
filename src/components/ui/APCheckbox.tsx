@@ -146,22 +146,23 @@ export const APCheckbox = forwardRef<HTMLInputElement, APCheckboxProps>(function
       {/* Visual checkbox — Pulse §11 lime fill + graphite border */}
       <span
         aria-hidden
+        data-state={visualState}
         className={[
-          'relative inline-flex shrink-0 items-center justify-center rounded-[5px] border-[1.5px]',
+          'ap-check-box relative inline-flex shrink-0 items-center justify-center rounded-[5px] border-[1.5px] text-pn-ink',
           'bz-motion-spring',
-          'group-focus-within:ring-2 group-focus-within:ring-[#C6F24E] group-focus-within:ring-offset-1',
+          'group-focus-within:ring-2 group-focus-within:ring-pn-accent group-focus-within:ring-offset-1',
           visualState === 'off'
-            ? 'border-[#D4D4D4] bg-white group-hover:border-[#0A0A0A]'
-            : 'border-[#C6F24E] bg-[#C6F24E]',
+            ? 'border-pn-line-strong bg-white group-hover:border-pn-ink'
+            : 'border-pn-accent bg-pn-accent',
           s.box,
           'mt-0.5',
         ].join(' ')}
       >
         {visualState === 'on' && (
-          <Check size={s.icon} strokeWidth={3} color="#0A0A0A" aria-hidden />
+          <Check size={s.icon} strokeWidth={3} color="currentColor" aria-hidden />
         )}
         {visualState === 'mixed' && (
-          <Minus size={s.icon} strokeWidth={3} color="#0A0A0A" aria-hidden />
+          <Minus size={s.icon} strokeWidth={3} color="currentColor" aria-hidden />
         )}
       </span>
 
@@ -174,7 +175,7 @@ export const APCheckbox = forwardRef<HTMLInputElement, APCheckboxProps>(function
             <span
               className={[
                 'text-[13px] leading-[1.35]',
-                disabled ? 'text-[#A3A3A3]' : 'text-[#0A0A0A]',
+                disabled ? 'text-[#A3A3A3]' : 'text-pn-ink',
                 labelClassName,
               ]
                 .filter(Boolean)

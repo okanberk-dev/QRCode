@@ -444,7 +444,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM ŞABLONU"
-        eyebrowColor="#C6F24E"
+        eyebrowColor="#D7FE03"
         title={data.title || 'Adsız şablon'}
         description={
           isRestaurantScoped
@@ -649,7 +649,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
                 key={q.id}
                 className="bz-card-soft p-3 flex items-start gap-3"
               >
-                <span className="bz-mono text-[12px] text-[#737373] mt-0.5 min-w-[24px]">
+                <span className="tabular-nums text-[12px] text-[#737373] mt-0.5 min-w-[24px]">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -658,7 +658,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
                     {q.isRequired && <Badge kind="warn">Zorunlu</Badge>}
                     {q.weight > 1 && <Badge kind="info">×{q.weight}</Badge>}
                   </div>
-                  <p className="text-[14px] text-[#0A0A0A]">{q.prompt}</p>
+                  <p className="text-[14px] text-pn-ink">{q.prompt}</p>
                   {q.helpText && (
                     <p className="text-[12px] text-[#737373] mt-1">{q.helpText}</p>
                   )}
@@ -722,7 +722,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
       {/* Action bar — below lg it parks above the floating mobile nav;
           at bottom-0 the nav covered "Kaydet" on phones. */}
       {!isRestaurantScoped && (
-        <div className="flex flex-wrap justify-between gap-2 sticky bottom-[calc(96px+env(safe-area-inset-bottom,0px))] z-10 bg-white border-t border-[#EDEDED] pt-3 pb-2 -mx-4 px-4 sm:-mx-7 sm:px-7 lg:bottom-0">
+        <div className="flex flex-wrap justify-between gap-2 sticky bottom-[calc(96px+env(safe-area-inset-bottom,0px))] z-10 bg-white border-t border-pn-line pt-3 pb-2 -mx-4 px-4 sm:-mx-7 sm:px-7 lg:bottom-0">
           <button
             type="button"
             className="bz-btn-ghost text-[#991B1B]"

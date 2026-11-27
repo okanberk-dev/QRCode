@@ -27,7 +27,7 @@ export function SentimentSparkbar({ score }: SentimentSparkbarProps) {
   const tone = isEmpty
     ? '#E5E5E5' /* n-200 muted (data yok) */
     : v >= 70
-      ? '#A8D62E' /* lime-deep */
+      ? '#83AF3B' /* lime-deep */
       : v >= 50
         ? '#A3A3A3' /* n-mute */
         : '#DC2626' /* danger */;
@@ -39,14 +39,14 @@ export function SentimentSparkbar({ score }: SentimentSparkbarProps) {
       aria-label={isEmpty ? 'Sentiment skoru henüz yok' : `Sentiment skoru ${v}/100`}
     >
       <div
-        className="h-[5px] w-[60px] rounded-[3px] overflow-hidden bg-[#F5F5F5] shrink-0"
+        className="h-[5px] w-[60px] rounded-[3px] overflow-hidden bg-pn-canvas shrink-0"
       >
         <div
           className="h-full transition-[width] duration-200"
           style={{ width: isEmpty ? '100%' : `${v}%`, backgroundColor: tone }}
         />
       </div>
-      <span className="bz-mono tabular-nums text-[11px] text-[#A3A3A3] w-6 text-right">
+      <span className="tabular-nums tabular-nums text-[12px] text-[#A3A3A3] w-6 text-right">
         {isEmpty ? '—' : v}
       </span>
     </div>

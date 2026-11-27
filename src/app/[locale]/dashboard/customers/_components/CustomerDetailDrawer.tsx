@@ -273,7 +273,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
             yakalıyor; bu component'tan style block kaldırıldı. */}
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] p-5">
+        <div className="flex items-start justify-between gap-3 border-b border-pn-line p-5">
           <div className="flex min-w-0 items-start gap-3">
             {data ? (
               <div className="bz-avatar flex h-11 w-11 shrink-0 items-center justify-center text-[14px]">
@@ -282,12 +282,12 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
             ) : (
               // Still loading (or failed): a neutral placeholder, not a "?"
               // avatar that reads like an unknown customer.
-              <div aria-hidden="true" className="h-11 w-11 shrink-0 rounded-full bg-[#EDEDED]" />
+              <div aria-hidden="true" className="h-11 w-11 shrink-0 rounded-full bg-pn-line" />
             )}
             <div className="min-w-0">
               <h2
                 id="customer-drawer-heading"
-                className="bz-h-tight text-[18px] truncate text-[#0A0A0A]"
+                className="bz-h-tight text-[18px] truncate text-pn-ink"
               >
                 {data ? (
                   data.customer.name || (isTr ? 'İsimsiz' : 'Unnamed')
@@ -296,7 +296,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                 ) : (
                   <>
                     <span className="sr-only">{isTr ? 'Müşteri yükleniyor' : 'Loading customer'}</span>
-                    <span aria-hidden="true" className="mt-1 inline-block h-5 w-40 max-w-full rounded bg-[#EDEDED] align-middle" />
+                    <span aria-hidden="true" className="mt-1 inline-block h-5 w-40 max-w-full rounded bg-pn-line align-middle" />
                   </>
                 )}
               </h2>
@@ -340,7 +340,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
               icon={<AlertTriangle size={14} strokeWidth={2} className="shrink-0 mt-0.5" />}
             >
               <div>
-                <div className="font-semibold">
+                <div className="font-medium">
                   {isTr ? 'Müşteri detayı getirilemedi' : 'Failed to load customer'}
                 </div>
                 <p className="mt-1 opacity-80">{error}</p>
@@ -361,7 +361,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                         <Mail size={14} strokeWidth={2} aria-hidden="true" />
                         <span className="sr-only">{isTr ? 'E-posta' : 'Email'}</span>
                       </dt>
-                      <dd className="min-w-0 truncate select-all text-[#0A0A0A]">{data.customer.email}</dd>
+                      <dd className="min-w-0 truncate select-all text-pn-ink">{data.customer.email}</dd>
                     </div>
                   )}
                   {data.customer.phone && (
@@ -370,7 +370,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                         <Phone size={14} strokeWidth={2} aria-hidden="true" />
                         <span className="sr-only">{isTr ? 'Telefon' : 'Phone'}</span>
                       </dt>
-                      <dd className="min-w-0 truncate select-all text-[#0A0A0A]">{data.customer.phone}</dd>
+                      <dd className="min-w-0 truncate select-all text-pn-ink">{data.customer.phone}</dd>
                     </div>
                   )}
                 </dl>
@@ -383,7 +383,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                     {isTr ? 'Yorum' : 'Reviews'}
                   </span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="bz-h-tight text-[20px] tabular-nums text-[#0A0A0A]">
+                    <span className="bz-h-tight text-[20px] tabular-nums text-pn-ink">
                       {data.stats.totalReviews}
                     </span>
                     <MessageSquareText size={11} className="text-[#A3A3A3]" />
@@ -394,10 +394,10 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                     {isTr ? 'Ortalama puan' : 'Average rating'}
                   </span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="bz-h-tight text-[20px] tabular-nums text-[#0A0A0A]">
+                    <span className="bz-h-tight text-[20px] tabular-nums text-pn-ink">
                       {data.stats.avgRating != null ? data.stats.avgRating.toFixed(1) : '—'}
                     </span>
-                    <Star size={11} className="text-[#C6F24E]" fill="#C6F24E" />
+                    <Star size={11} className="text-pn-accent" fill="#D7FE03" />
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">
@@ -405,7 +405,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                     {isTr ? 'Son ziyaret' : 'Last visit'}
                   </span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                    <span className="bz-h-tight text-[14px] text-pn-ink">
                       {data.stats.lastSeenAt
                         ? formatRelative(data.stats.lastSeenAt, locale)
                         : '—'}
@@ -437,17 +437,17 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                 <span className="text-[#737373]">
                   {isTr ? 'Kanal' : 'Channel'}
                 </span>
-                <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
+                <span className="tabular-nums inline-flex items-center rounded-full bg-pn-canvas px-2 py-0.5 text-[#525252]">
                   {computeLastChannel(data.stats.lastPlatform ?? null, locale)}
                 </span>
               </div>
 
               {/* First seen + truncated notice */}
-              <div className="flex items-center justify-between text-[11px] text-[#737373]">
+              <div className="flex items-center justify-between text-[12px] text-[#737373]">
                 <span className="inline-flex items-center gap-1.5">
                   <TrendingUp size={11} strokeWidth={2} />
                   {isTr ? 'İlk ziyaret:' : 'First visit:'}{' '}
-                  <strong className="text-[#0A0A0A]">
+                  <strong className="text-pn-ink">
                     {data.stats.firstSeenAt
                       ? formatDate(data.stats.firstSeenAt, locale)
                       : '—'}
@@ -463,12 +463,12 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
               {/* Feedback timeline */}
               <div>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <h3 className="text-[13px] font-semibold text-[#0A0A0A]">
+                  <h3 className="text-[13px] font-medium text-pn-ink">
                     {isTr ? 'Yorum geçmişi' : 'Review history'}
                   </h3>
                   <Link
                     href={`/${locale}/dashboard/feedbacks?focus=${data.feedbacks[0]?.id ?? ''}`}
-                    className="inline-flex min-h-[44px] items-center gap-1 rounded-md text-[12px] font-medium text-[#525252] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:min-h-0"
+                    className="inline-flex min-h-[44px] items-center gap-1 rounded-full text-[12px] font-medium text-[#525252] transition-colors hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:min-h-0"
                     onClick={closeDrawer}
                   >
                     {isTr ? 'Yorumlarda aç' : 'Open in inbox'}
@@ -484,7 +484,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                     return (
                       <li
                         key={fb.id}
-                        className="rounded-xl border border-[#EDEDED] bg-white p-3.5"
+                        className="rounded-[20px] border border-pn-line bg-white p-3.5"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
@@ -499,22 +499,22 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                                   key={s}
                                   size={11}
                                   className={
-                                    s <= fb.rating ? 'text-[#C6F24E]' : 'text-[#EDEDED]'
+                                    s <= fb.rating ? 'text-pn-accent' : 'text-pn-line'
                                   }
-                                  fill={s <= fb.rating ? '#C6F24E' : '#EDEDED'}
+                                  fill={s <= fb.rating ? '#D7FE03' : '#ECECF0'}
                                 />
                               ))}
                             </span>
-                            <span className="bz-mono text-[10.5px] tabular-nums text-[#737373]">
+                            <span className="tabular-nums text-[12px] tabular-nums text-[#737373]">
                               {fb.rating.toFixed(1)}
                             </span>
                           </div>
-                          <span className="bz-mono text-[10.5px] tabular-nums text-[#A3A3A3]">
+                          <span className="tabular-nums text-[12px] tabular-nums text-[#A3A3A3]">
                             {formatDateTimeStamp(fb.createdAt, locale)}
                           </span>
                         </div>
                         {fb.comment ? (
-                          <p className="mt-2 text-[12.5px] leading-[1.55] text-[#262626] whitespace-pre-wrap">
+                          <p className="mt-2 text-[13px] leading-[1.55] text-[#262626] whitespace-pre-wrap">
                             {fb.comment}
                           </p>
                         ) : (
@@ -522,7 +522,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                             {isTr ? 'Yorum metni yok.' : 'No comment text.'}
                           </p>
                         )}
-                        <div className="mt-2 flex items-center gap-2 text-[10.5px] text-[#737373]">
+                        <div className="mt-2 flex items-center gap-2 text-[12px] text-[#737373]">
                           <span>{platformLabel}</span>
                           {fb.branch && (
                             <>
@@ -542,7 +542,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
 
         {/* Footer — contact actions (email primary, call secondary). */}
         {data && !loading && (data.customer.email || data.customer.phone) && (
-          <div className="flex gap-2 border-t border-[#EDEDED] bg-[#FAFAFA] p-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))]">
+          <div className="flex gap-2 border-t border-pn-line bg-pn-canvas p-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))]">
             {data.customer.email && (
               <a
                 href={`mailto:${data.customer.email}`}

@@ -54,8 +54,8 @@ import {
 const PublicSurveyView = dynamic(() => import('@/app/s/[slug]/PublicSurveyView'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-[#0A0A0A]" role="status">
-      <Loader2 size={22} className="animate-spin text-[#C6F24E]" aria-hidden="true" />
+    <div className="flex h-full w-full items-center justify-center bg-pn-ink" role="status">
+      <Loader2 size={22} className="animate-spin text-pn-accent" aria-hidden="true" />
       <span className="sr-only">…</span>
     </div>
   ),
@@ -263,7 +263,7 @@ export default function SurveyDetailClient({
       <div className="mb-3">
         <Link
           href={`/${locale}/dashboard/surveys`}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#525252] hover:text-[#0A0A0A] sm:min-h-9"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#525252] hover:text-pn-ink sm:min-h-9"
         >
           <ArrowLeft size={14} aria-hidden="true" />
           {isTr ? 'Anketler' : 'Surveys'}
@@ -434,7 +434,7 @@ export default function SurveyDetailClient({
               ? 'Önizleme gerçek anketle aynıdır; hiçbir şey kaydedilmez.'
               : 'The preview is the real survey; nothing is saved.'}
           </p>
-          <div className="mx-auto aspect-[9/16] w-full max-w-[360px] overflow-hidden rounded-[32px] border-8 border-[#0A0A0A] bg-[#0A0A0A]">
+          <div className="mx-auto aspect-[9/16] w-full max-w-[360px] overflow-hidden rounded-[32px] border-8 border-pn-ink bg-pn-ink">
             <PublicSurveyView survey={previewSurvey} preview={{}} />
           </div>
         </Modal>

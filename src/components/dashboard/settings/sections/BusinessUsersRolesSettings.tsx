@@ -368,7 +368,7 @@ export function BusinessUsersRolesSettings({
         {/* Owner row (kendisi) */}
         <div
           className="flex items-center gap-3 p-3 mb-3"
-          style={{ background: "#EAF9B8", border: "1px solid #A8D62E", borderRadius: 10 }}
+          style={{ background: "#F3FDC4", border: "1px solid #A8D62E", borderRadius: 10 }}
         >
           {/* §38.51 — Owner her zaman online (mevcut session sahibi). */}
           <div className="relative">
@@ -385,7 +385,7 @@ export function BusinessUsersRolesSettings({
               </span>
               <Badge kind="lime" dot={false}>{roleLabels.owner}</Badge>
             </div>
-            <div className="text-[11.5px] text-[#525252] truncate">{ownerEmail}</div>
+            <div className="text-[12px] text-[#525252] truncate">{ownerEmail}</div>
           </div>
           <Badge kind="ok">{statusLabels.active}</Badge>
         </div>
@@ -421,7 +421,7 @@ export function BusinessUsersRolesSettings({
                   key={m.id}
                   className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap"
                   style={{
-                    background: "#FAFAFA",
+                    background: "#F5F5F8",
                     border: "1px solid #EDEDED",
                     borderRadius: 10,
                   }}
@@ -448,7 +448,7 @@ export function BusinessUsersRolesSettings({
                         {statusLabels[m.status]}
                       </Badge>
                     </div>
-                    <div className="text-[11.5px] text-[#737373] mt-0.5 flex items-center gap-2 flex-wrap">
+                    <div className="text-[12px] text-[#737373] mt-0.5 flex items-center gap-2 flex-wrap">
                       <span className="bz-mono break-all">{m.email}</span>
                       <span>·</span>
                       <span>{locLabel}</span>
@@ -543,8 +543,8 @@ export function BusinessUsersRolesSettings({
               />
             </Field>
             <fieldset>
-              <legend className="block text-[12px] font-semibold text-[#0A0A0A] mb-1.5">{t.locationAccess}</legend>
-              <p className="text-[11.5px] text-[#737373] mb-2">{t.locationHint}</p>
+              <legend className="block text-[12px] font-medium text-pn-ink mb-1.5">{t.locationAccess}</legend>
+              <p className="text-[12px] text-[#737373] mb-2">{t.locationHint}</p>
               {restaurants.length === 0 ? (
                 <p className="text-[12px] text-[#737373]">{t.noBusiness}</p>
               ) : (
@@ -600,7 +600,7 @@ export function BusinessUsersRolesSettings({
                 <div className="bz-h-tight text-[14px] truncate">
                   {editOpen.name || editOpen.email}
                 </div>
-                <div className="bz-mono text-[12px] text-[#737373] truncate">
+                <div className="tabular-nums text-[12px] text-[#737373] truncate">
                   {editOpen.email}
                 </div>
               </div>
@@ -617,8 +617,8 @@ export function BusinessUsersRolesSettings({
               />
             </Field>
             <fieldset>
-              <legend className="block text-[12px] font-semibold text-[#0A0A0A] mb-1.5">{t.locationAccess}</legend>
-              <p className="text-[11.5px] text-[#737373] mb-2">{t.locationHint}</p>
+              <legend className="block text-[12px] font-medium text-pn-ink mb-1.5">{t.locationAccess}</legend>
+              <p className="text-[12px] text-[#737373] mb-2">{t.locationHint}</p>
               {restaurants.length === 0 ? (
                 <p className="text-[12px] text-[#737373]">{t.noBusiness}</p>
               ) : (

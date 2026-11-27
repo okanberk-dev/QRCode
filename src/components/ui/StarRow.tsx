@@ -13,7 +13,7 @@ interface StarRowProps {
 export function StarRow({
   value,
   size = 12,
-  color = "#C6F24E",
+  color = "var(--color-pn-accent)",
   emptyColor = "#E5E5E5",
   className = "",
   ariaLabel,

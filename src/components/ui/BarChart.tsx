@@ -26,7 +26,7 @@ interface BarChartProps {
 export function BarChart({
   data,
   maxValue,
-  accent = "#0A0A0A",
+  accent = "var(--color-pn-ink)",
   height = 120,
   className = "",
   showValues = false,
@@ -61,13 +61,13 @@ export function BarChart({
             <button
               key={`${d.label}-${i}`}
               type="button"
-              className="group flex-1 flex flex-col items-center gap-1.5 relative h-full justify-end bg-transparent border-0 p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 rounded"
+              className="group flex-1 flex flex-col items-center gap-1.5 relative h-full justify-end bg-transparent border-0 p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 rounded"
               title={tooltipText}
               aria-label={tooltipText.replace(/\n/g, ", ")}
             >
               {/* Value badge above bar — 6px gap, top alan padding-top ile ayrılmış */}
               <span
-                className="absolute font-semibold text-[#0A0A0A] transition-opacity"
+                className="absolute font-semibold text-pn-ink transition-opacity"
                 style={{
                   bottom: Math.max(h, 4) + 6,
                   fontSize: 11,
@@ -77,7 +77,7 @@ export function BarChart({
                 {d.value}
               </span>
               <div
-                className="w-full rounded transition-colors duration-200 group-hover:opacity-90"
+                className="w-full rounded-full transition-colors duration-200 group-hover:opacity-90"
                 style={{
                   maxWidth: 28,
                   height: Math.max(h, 4),
@@ -93,7 +93,7 @@ export function BarChart({
               {/* Hover tooltip card — hidden by default, shown on group-hover */}
               {secondaryValues && secVal !== undefined && (
                 <span
-                  className="pointer-events-none absolute z-10 rounded-lg border border-[#EDEDED] bg-white px-2.5 py-1.5 text-[10px] font-medium text-[#0A0A0A] opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                  className="pointer-events-none absolute z-10 rounded-full bg-pn-ink px-3 py-1.5 text-[12px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
                   style={{
                     bottom: Math.max(h, 4) + 56,
                     fontFamily: "var(--font-mono)",
@@ -113,7 +113,7 @@ export function BarChart({
             className="flex-1 flex flex-col items-center gap-1.5 relative h-full justify-end"
           >
             <div
-              className="w-full rounded transition-all duration-200"
+              className="w-full rounded-full transition-all duration-200"
               style={{
                 maxWidth: 28,
                 height: Math.max(h, 4),

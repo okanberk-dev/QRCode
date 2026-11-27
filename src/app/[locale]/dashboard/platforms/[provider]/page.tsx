@@ -195,7 +195,7 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
         <div>
           <Link
             href={`/${locale}/dashboard/platforms`}
-            className="bz-mono mb-3 inline-flex min-h-[44px] items-center sm:min-h-[32px] gap-1 rounded text-[11px] text-[#737373] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+            className="tabular-nums mb-3 inline-flex min-h-[44px] items-center sm:min-h-[32px] gap-1 rounded text-[12px] text-[#737373] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2"
           >
             <ArrowLeft size={12} aria-hidden="true" />
             {linksLabel}

@@ -69,21 +69,17 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
     <div>
       <header className="mb-3 flex items-baseline justify-between gap-4">
         <div>
-          <span className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Gün ve saate göre puan' : 'Ratings by day and hour'}</span>
+          <span className="text-[13px] font-medium text-[#525252]">{isTr ? 'Gün ve saate göre puan' : 'Ratings by day and hour'}</span>
           <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
             {isTr ? 'Gün × Saat' : 'Day × Hour'}
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-1.5">
-          <span className="bz-mono text-[10px] text-[#737373]">{isTr ? 'az' : 'low'}</span>
-          {[0.25, 0.45, 0.7, 0.95].map((o, i) => (
-            <div
-              key={i}
-              className="rounded-[2px]"
-              style={{ width: 12, height: 12, background: `rgba(168, 214, 46, ${o})` }}
-            />
+          <span className="tabular-nums text-[12px] text-[#737373]">{isTr ? 'az' : 'low'}</span>
+          {['rgba(215,254,3,0.35)', '#D7FE03', '#000000'].map((c) => (
+            <div key={c} className="rounded-full" style={{ width: 12, height: 12, background: c }} />
           ))}
-          <span className="bz-mono text-[10px] text-[#737373]">{isTr ? 'çok' : 'high'}</span>
+          <span className="tabular-nums text-[12px] text-[#737373]">{isTr ? 'çok' : 'high'}</span>
         </div>
       </header>
 
@@ -107,7 +103,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
                 {dayLabels.map((day, di) => (
                   <Fragment key={`row-${day}`}>
                     <span
-                      className="bz-mono self-center pr-1.5 text-right text-[10px] leading-none text-[#737373]"
+                      className="tabular-nums self-center pr-1.5 text-right text-[12px] leading-none text-[#737373]"
                       aria-hidden="true"
                     >
                       {day}
@@ -115,13 +111,13 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
                     {Array.from({ length: 24 }, (_, hi) => {
                       const v = matrix[di][hi];
                       const ratio = max > 0 ? v / max : 0;
-                      // Boş hücre açık gri; aksi halde lime opacity (tasarım paterni).
+                      // Pano: empty → canvas grey; low → pale lime; mid → lime; peak → black.
                       const fill =
-                        v === 0 ? '#F2F2F2' : `rgba(168, 214, 46, ${0.15 + ratio * 0.85})`;
+                        v === 0 ? '#F5F5F8' : ratio < 0.34 ? 'rgba(215,254,3,0.35)' : ratio < 0.67 ? '#D7FE03' : '#000000';
                       return (
                         <div
                           key={`c-${di}-${hi}`}
-                          className="aspect-square max-h-9 w-full rounded-[3px] sm:rounded-[5px]"
+                          className="aspect-square max-h-9 w-full rounded-full"
                           style={{ background: fill }}
                           title={`${dayLabels[di]} ${String(hi).padStart(2, '0')}:00 — ${v} ${isTr ? 'yorum' : 'reviews'}`}
                           aria-hidden="true"
@@ -136,7 +132,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
                 {HOUR_TICKS.map((h) => (
                   <span
                     key={`hx-${h}`}
-                    className="bz-mono whitespace-nowrap text-[10px] leading-none text-[#A3A3A3]"
+                    className="tabular-nums whitespace-nowrap text-[12px] leading-none text-[#A3A3A3]"
                     style={{ gridColumn: h + 2, gridRow: 1, justifySelf: h === 23 ? 'end' : 'center' }}
                   >
                     {String(h).padStart(2, '0')}:00
@@ -146,7 +142,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
             </div>
           </div>
 
-          <p className="bz-mono mt-2 text-[11px] text-[#737373]">
+          <p className="tabular-nums mt-2 text-[12px] text-[#737373]">
             {isTr
               ? `Pik · ${dayLabels[peakDay]} ${String(peakHour).padStart(2, '0')}:00 · ${peakCount} yorum/saat`
               : `Peak · ${dayLabels[peakDay]} ${String(peakHour).padStart(2, '0')}:00 · ${peakCount} reviews/hour`}

@@ -150,7 +150,7 @@ export default function UserDetailPage({
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <Link
         href="/admin/users"
-        className="text-[12px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1.5"
+        className="text-[12px] text-[#737373] hover:text-pn-ink inline-flex items-center gap-1.5"
       >
         <ArrowLeft size={12} strokeWidth={2} />
         Listeye dön
@@ -188,7 +188,7 @@ export default function UserDetailPage({
           label="Rol"
           value={roleMeta.label}
           icon={<ShieldCheck size={14} strokeWidth={2} />}
-          accent={user.role === 'superadmin' ? '#C6F24E' : undefined}
+          accent={user.role === 'superadmin' ? '#D7FE03' : undefined}
         />
         <StatCard
           label="Kapsam"
@@ -210,7 +210,7 @@ export default function UserDetailPage({
       {/* Detail + Audit grid */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4">
         <section className="bz-card p-5 sm:p-6">
-          <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Hesap bilgileri</h3>
+          <h3 className="text-[15px] font-medium text-pn-ink mb-4">Hesap bilgileri</h3>
           <dl className="space-y-3 text-[13px]">
             <Row label="Kullanıcı adı" value={user.username} mono />
             <Row label="Kurtarma e-postası" value={user.email || '—'} mono={!!user.email} />
@@ -224,7 +224,7 @@ export default function UserDetailPage({
                 valueNode={
                   <Link
                     href={`/admin/restaurants/${restaurant.id}`}
-                    className="inline-flex items-center gap-1.5 text-[#0A0A0A] hover:underline"
+                    className="inline-flex items-center gap-1.5 text-pn-ink hover:underline"
                   >
                     <Store size={11} strokeWidth={2} />
                     {restaurant.name}
@@ -242,7 +242,7 @@ export default function UserDetailPage({
         </section>
 
         <section className="bz-card p-5 sm:p-6">
-          <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Hızlı bağlantılar</h3>
+          <h3 className="text-[15px] font-medium text-pn-ink mb-4">Hızlı bağlantılar</h3>
           <div className="space-y-2">
             {/* Stage A2 §38.94 — RBAC permission management. Only meaningful
                 for manager role; superadmin auto-bypass. Page itself shows
@@ -277,9 +277,9 @@ export default function UserDetailPage({
               UserSession only tracks User auth (CLAUDE.md §38.79); AdminUser
               has no session table yet. passwordChangedAt is the equivalent
               staleness pivot (CLAUDE.md §37.3 #1 closure) and is shown above. */}
-          <div className="mt-5 pt-4 border-t border-[#EDEDED]">
+          <div className="mt-5 pt-4 border-t border-pn-line">
             <p className="text-[12px] text-[#737373]">
-              <span className="font-medium text-[#0A0A0A]">Aktif oturumlar</span> —
+              <span className="font-medium text-pn-ink">Aktif oturumlar</span> —
               Şifre değiştiğinde bu yöneticinin önceki tüm oturumları kapanır. Üstteki
               &quot;Son şifre değişimi&quot; tarihi, önceki oturumların geçersiz kılındığı andır.
             </p>
@@ -290,8 +290,8 @@ export default function UserDetailPage({
       {/* Audit history — actions THIS admin performed (actorId=id) */}
       <section className="bz-card p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Yönetici aksiyon geçmişi</h3>
-          <p className="text-[11px] text-[#737373]">Son 50 işlem (panele yansıyan)</p>
+          <h3 className="text-[15px] font-medium text-pn-ink">Yönetici aksiyon geçmişi</h3>
+          <p className="text-[12px] text-[#737373]">Son 50 işlem (panele yansıyan)</p>
         </div>
         <UserAuditTimeline userId={id} />
       </section>
@@ -326,9 +326,9 @@ function Row({
 }) {
   return (
     <div className="flex items-start justify-between gap-3 flex-wrap">
-      <dt className="pulse-eyebrow text-[#737373] shrink-0">{label}</dt>
+      <dt className="text-[13px] font-medium text-[#737373] shrink-0">{label}</dt>
       <dd
-        className={`text-[#0A0A0A] text-right ${mono ? 'font-mono text-[12px]' : 'text-[13px] font-medium'}`}
+        className={`text-pn-ink text-right ${mono ? 'font-mono text-[12px]' : 'text-[13px] font-medium'}`}
       >
         {valueNode ?? value}
       </dd>

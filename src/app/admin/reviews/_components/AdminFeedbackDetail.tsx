@@ -56,15 +56,15 @@ export function AdminFeedbackDetailSkeleton() {
   return (
     <div className="px-5 py-5 sm:px-8 sm:py-6" aria-hidden="true">
       <div className="flex items-start gap-4">
-        <SkBox className="h-12 w-12 shrink-0 rounded-2xl" />
+        <SkBox className="h-12 w-12 shrink-0 rounded-[24px]" />
         <div className="min-w-0 flex-1 space-y-2 pt-1">
           <SkBox className="h-6 w-48 max-w-full" />
           <SkBox className="h-4 w-64 max-w-full" />
           <SkBox className="h-3 w-36" />
         </div>
       </div>
-      <SkBox className="mt-5 h-24 w-full rounded-2xl" />
-      <SkBox className="mt-5 h-32 w-full rounded-2xl" />
+      <SkBox className="mt-5 h-24 w-full rounded-[24px]" />
+      <SkBox className="mt-5 h-32 w-full rounded-[24px]" />
     </div>
   );
 }
@@ -159,7 +159,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
     >
       {/* Mobile sticky back bar — under the 61px admin mobile topbar. */}
       {showBackButton && (
-        <div className="sticky top-[61px] z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+        <div className="sticky top-[72px] z-10 flex items-center justify-between gap-2 border-b border-pn-line bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
           <button
             type="button"
             onClick={onBack}
@@ -188,7 +188,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                 <h2
                   id={titleId}
                   tabIndex={-1}
-                  className="bz-h-tight break-words text-[20px] text-[#0A0A0A] outline-none sm:text-[22px]"
+                  className="bz-h-tight break-words text-[20px] text-pn-ink outline-none sm:text-[22px]"
                 >
                   {active.customerName || (isTr ? 'İsimsiz' : 'Unnamed')}
                 </h2>
@@ -236,7 +236,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
 
           {/* Comment */}
           {active.comment ? (
-            <blockquote className="mt-5 whitespace-pre-line break-words rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-[15px] leading-[1.7] text-[#0A0A0A]">
+            <blockquote className="mt-5 whitespace-pre-line break-words rounded-[24px] border border-pn-line bg-pn-canvas px-5 py-4 text-[15px] leading-[1.7] text-pn-ink">
               {active.comment}
             </blockquote>
           ) : (
@@ -252,7 +252,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             <div className="mt-6">
               <div className="mb-2 flex items-center gap-2">
                 <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} aria-hidden="true" />
-                <span className="text-[12px] font-semibold text-[#525252]">
+                <span className="text-[12px] font-medium text-[#525252]">
                   {isTr
                     ? `Gönderilen yanıtlar (${sentReplies.length})`
                     : `Sent replies (${sentReplies.length})`}
@@ -272,8 +272,8 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                   return (
                     <li
                       key={rep.id}
-                      className={`rounded-xl border p-3.5 ${
-                        failed ? 'border-[#FCA5A5] bg-[#FFFBFB]' : 'border-[#EDEDED] bg-white'
+                      className={`rounded-[20px] border p-3.5 ${
+                        failed ? 'border-[#FCA5A5] bg-[#FFFBFB]' : 'border-pn-line bg-white'
                       }`}
                     >
                       <div className="mb-1.5 flex items-center justify-between gap-2 text-[12px]">
@@ -292,11 +292,11 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                           {formatStamp(rep.createdAt, isTr)}
                         </time>
                       </div>
-                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-[#0A0A0A]">
+                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-pn-ink">
                         {rep.body}
                       </p>
                       {failed && (
-                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
+                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[14px] border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
                           <span>
                             {isTr
                               ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
@@ -344,10 +344,10 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             <div className="mt-6">
               <AlertBanner
                 kind="lime"
-                icon={<Sparkles size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2} />}
+                icon={<Sparkles size={14} className="mt-1 text-pn-ink" strokeWidth={2} />}
               >
                 <span className="block text-[#525252]">
-                  <strong className="font-semibold text-[#0A0A0A]">
+                  <strong className="font-medium text-pn-ink">
                     {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
                   </strong>{' '}
                   {active.platform
@@ -367,10 +367,10 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             <div className="mt-6">
               <AlertBanner
                 kind={props.notice?.tone === 'success' ? 'success' : 'info'}
-                icon={<Check size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2.2} />}
+                icon={<Check size={14} className="mt-1 text-pn-ink" strokeWidth={2.2} />}
               >
                 <span className="block text-[#525252]">
-                  <strong className="font-semibold text-[#0A0A0A]">
+                  <strong className="font-medium text-pn-ink">
                     {props.notice?.tone === 'success'
                       ? props.notice.msg + '.'
                       : isTr
@@ -393,7 +393,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
           as the owner dock: capped at 48% of the pane with a floor so label →
           Send fits on short screens; only the textarea shrinks. */}
       {canReply && (
-        <div className="border-t border-[#EDEDED] bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
+        <div className="border-t border-pn-line bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
           <AdminReplyComposerCard
             feedback={active}
             isTr={isTr}

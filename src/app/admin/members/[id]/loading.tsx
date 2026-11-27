@@ -19,7 +19,7 @@ export default function Loading() {
         <div className="bz-card p-5 space-y-3">
           <SkBox className="h-5 w-32" />
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-3 border border-[#EDEDED] rounded-lg">
+            <div key={i} className="flex items-center justify-between p-3 border border-pn-line rounded-[14px]">
               <div className="space-y-1">
                 <SkBox className="h-4 w-32" />
                 <SkBox className="h-3 w-24" />

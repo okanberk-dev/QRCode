@@ -65,7 +65,7 @@ export default function ShareLinksModal({
 
   return (
     <Modal title={locale === 'tr' ? 'Linki paylaş' : 'Share link'} onClose={onClose} size={560}>
-      <p className="mb-4 break-words text-[13px] font-medium text-[#0A0A0A]">{title}</p>
+      <p className="mb-4 break-words text-[13px] font-medium text-pn-ink">{title}</p>
       <ShareLinksPanel
         controller={controller}
         title={title}

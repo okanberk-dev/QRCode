@@ -248,7 +248,7 @@ export default function UserPermissionsPage({
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <Link
         href={`/admin/users/${id}`}
-        className="text-[12px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1.5"
+        className="text-[12px] text-[#737373] hover:text-pn-ink inline-flex items-center gap-1.5"
       >
         <ArrowLeft size={12} strokeWidth={2} />
         Detaya dön
@@ -295,7 +295,7 @@ export default function UserPermissionsPage({
         <section className="bz-card p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Hazır şablonlar</h3>
+              <h3 className="text-[15px] font-medium text-pn-ink">Hazır şablonlar</h3>
               <p className="mt-0.5 text-[12px] text-[#737373]">
                 Sık kullanılan izin kombinasyonlarını tek tıkla ver. Tekrar uygulamak zarar vermez.
               </p>
@@ -310,29 +310,29 @@ export default function UserPermissionsPage({
                   type="button"
                   onClick={() => applyPreset(key)}
                   disabled={isBusy || !!busyKey}
-                  className="rounded-xl border border-[#EDEDED] bg-white p-4 text-left hover:border-[#0A0A0A] hover:bg-[#FAFAFA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="rounded-[20px] border border-pn-line bg-white p-4 text-left hover:border-pn-ink hover:bg-pn-canvas disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <Sparkles size={14} strokeWidth={2} className="text-[#A8D62E]" />
-                    <span className="text-[13px] font-semibold text-[#0A0A0A]">
+                    <Sparkles size={14} strokeWidth={2} className="text-pn-accent-ink" />
+                    <span className="text-[13px] font-medium text-pn-ink">
                       {preset.label}
                     </span>
                   </div>
-                  <p className="mt-1 text-[11px] text-[#737373] leading-relaxed">
+                  <p className="mt-1 text-[12px] text-[#737373] leading-relaxed">
                     {preset.description}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {preset.grants.map((g) => (
                       <span
                         key={`${g.resource}:${g.action}`}
-                        className="inline-flex items-center rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[10px] text-[#525252]"
+                        className="inline-flex items-center rounded-full bg-pn-canvas border border-pn-line px-2 py-0.5 text-[12px] text-[#525252]"
                       >
                         {RESOURCE_LABELS[g.resource] || g.resource} · {ACTION_LABELS[g.action] || g.action}
                       </span>
                     ))}
                   </div>
                   {isBusy && (
-                    <div className="mt-2 flex items-center gap-1 text-[11px] text-[#737373]">
+                    <div className="mt-2 flex items-center gap-1 text-[12px] text-[#737373]">
                       <Loader2 size={11} className="animate-spin" />
                       Uygulanıyor…
                     </div>
@@ -349,7 +349,7 @@ export default function UserPermissionsPage({
         <section className="bz-card p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Yetki matrisi</h3>
+              <h3 className="text-[15px] font-medium text-pn-ink">Yetki matrisi</h3>
               <p className="mt-0.5 text-[12px] text-[#737373]">
                 {RESOURCES.length} bölüm × {ACTIONS.length} işlem. Bir hücreye tıklayarak izni ver
                 veya geri al.
@@ -360,15 +360,15 @@ export default function UserPermissionsPage({
             </Badge>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-[#EDEDED]">
+          <div className="overflow-x-auto rounded-[14px] border border-pn-line">
             <table className="w-full text-left text-[13px]" style={{ minWidth: 540 }}>
               <thead>
-                <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">
-                  <th className="px-4 py-3 pulse-eyebrow text-[#737373]">Bölüm</th>
+                <tr className="bg-pn-canvas border-b border-pn-line">
+                  <th className="px-4 py-3 text-[13px] font-medium text-[#737373]">Bölüm</th>
                   {ACTIONS.map((a) => (
                     <th
                       key={a}
-                      className="px-3 py-3 pulse-eyebrow text-[#737373] text-center"
+                      className="px-3 py-3 text-[13px] font-medium text-[#737373] text-center"
                       style={{ width: 110 }}
                     >
                       {ACTION_LABELS[a]}
@@ -376,11 +376,11 @@ export default function UserPermissionsPage({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EDEDED]">
+              <tbody className="divide-y divide-pn-line">
                 {RESOURCES.map((r) => (
-                  <tr key={r} className="hover:bg-[#FAFAFA]/60">
+                  <tr key={r} className="hover:bg-pn-canvas/60">
                     <td className="px-4 py-3">
-                      <span className="text-[13px] font-medium text-[#0A0A0A]">
+                      <span className="text-[13px] font-medium text-pn-ink">
                         {RESOURCE_LABELS[r]}
                       </span>
                     </td>
@@ -398,7 +398,7 @@ export default function UserPermissionsPage({
                       type="button"
                       onClick={() => permId && askRevoke(r, a, permId)}
                       disabled={!!busyKey}
-                      className="bz-btn-icon bg-[#EAF9B8] text-[#0A0A0A] hover:bg-[#FEE2E2] hover:text-[#991B1B] disabled:opacity-50"
+                      className="bz-btn-icon bg-pn-accent-soft text-pn-ink hover:bg-[#FEE2E2] hover:text-[#991B1B] disabled:opacity-50"
                       title="Geri al"
                               aria-label={`${RESOURCE_LABELS[r]} ${ACTION_LABELS[a]} yetkisini geri al`}
                             >
@@ -409,7 +409,7 @@ export default function UserPermissionsPage({
                       type="button"
                       onClick={() => grantPermission(r, a)}
                       disabled={!!busyKey}
-                      className="bz-btn-icon border border-dashed border-[#EDEDED] text-[#A3A3A3] disabled:opacity-50"
+                      className="bz-btn-icon border border-dashed border-pn-line text-[#A3A3A3] disabled:opacity-50"
                       title="Ver"
                               aria-label={`${RESOURCE_LABELS[r]} ${ACTION_LABELS[a]} yetkisi ver`}
                             >
@@ -430,20 +430,20 @@ export default function UserPermissionsPage({
       {/* Active grants list */}
       {!isSuperadmin && data.permissions.length > 0 && (
         <section className="bz-card p-5 sm:p-6">
-          <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-3">
+          <h3 className="text-[15px] font-medium text-pn-ink mb-3">
             Aktif yetkiler ({data.permissions.length})
           </h3>
-          <ul className="divide-y divide-[#EDEDED]">
+          <ul className="divide-y divide-pn-line">
             {data.permissions.map((p) => {
               const isBusy = busyKey === permissionKey(p.resource, p.action);
               return (
                 <li key={p.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
-                    <span className="text-[13px] font-medium text-[#0A0A0A]">
+                    <span className="text-[13px] font-medium text-pn-ink">
                       {RESOURCE_LABELS[p.resource as AdminResource] || p.resource} ·{' '}
                       {ACTION_LABELS[p.action as AdminAction] || p.action}
                     </span>
-                    <p className="text-[11px] text-[#737373] mt-0.5">
+                    <p className="text-[12px] text-[#737373] mt-0.5">
                       Verildi: {formatFullDateTimeInTimeZone(p.grantedAt, 'tr')}
                       {p.expiresAt && (
                         <>

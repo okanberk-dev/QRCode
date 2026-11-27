@@ -56,7 +56,7 @@ export function PlacesProfileSkeleton() {
       </div>
 
       {/* Sample reviews */}
-      <div className="bz-card divide-y divide-[#EDEDED] lg:col-start-1 lg:row-start-2">
+      <div className="bz-card divide-y divide-pn-line lg:col-start-1 lg:row-start-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="space-y-2 p-4 sm:p-5">
             <div className="flex items-center gap-2">

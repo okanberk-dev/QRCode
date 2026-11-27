@@ -467,7 +467,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
       )}
 
       {sortedPlans.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
+        <div className="rounded-[28px] border border-dashed border-pn-line bg-pn-canvas p-10 text-center">
           <p className="text-[14px] text-[#525252]">
             Henüz paket yok. <strong>Varsayılan paketleri yükle</strong> butonuyla 3 hazır paketi
             yükle veya <strong>Yeni paket</strong> ile sıfırdan oluştur.
@@ -475,7 +475,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
         </div>
       ) : (
         /* §38.224 — Tier card grid (marketing /pricing parity).
-           Featured tier dark variant (bg-[#0A0A0A] + lime accent), normal tier
+           Featured tier dark variant (bg-pn-ink + lime accent), normal tier
            white + EDEDED border. InlinePriceCell'lar hero price'ın altında —
            Stage 139 inline edit pattern korunur, modal full-form ile aynı. */
         <div
@@ -495,16 +495,16 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
             return (
               <article
                 key={p.id}
-                className={`relative flex flex-col rounded-3xl p-6 sm:p-7 ${
+                className={`relative flex flex-col rounded-[28px] p-6 sm:p-7 ${
                   isDark
-                    ? 'bg-[#0A0A0A] text-white shadow-[0_20px_60px_rgba(10,10,10,0.18)]'
-                    : 'border border-[#EDEDED] bg-white'
+                    ? 'bg-pn-ink text-white shadow-[0_20px_60px_rgba(10,10,10,0.18)]'
+                    : 'border border-pn-line bg-white'
                 } ${!p.isActive ? 'opacity-70' : ''}`}
               >
                 {/* "En popüler" badge — top-center (featured) */}
                 {isDark && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="pulse-eyebrow whitespace-nowrap rounded-full bg-[#C6F24E] px-4 py-1.5 text-[#0A0A0A]">
+                    <span className="text-[13px] font-medium whitespace-nowrap rounded-full bg-pn-accent px-4 py-1.5 text-pn-ink">
                       <Crown size={10} className="inline mr-1 -mt-0.5" /> EN POPÜLER
                     </span>
                   </div>
@@ -530,19 +530,19 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h2
-                        className={`bz-h-tight text-[22px] ${isDark ? 'text-white' : 'text-[#0A0A0A]'}`}
+                        className={`bz-h-tight text-[22px] ${isDark ? 'text-white' : 'text-pn-ink'}`}
                       >
                         {p.nameTr}
                       </h2>
                       <p
-                        className={`text-[11.5px] mt-0.5 ${isDark ? 'text-white/60' : 'text-[#A3A3A3]'}`}
+                        className={`text-[12px] mt-0.5 ${isDark ? 'text-white/60' : 'text-[#A3A3A3]'}`}
                       >
                         / {p.nameEn}
                       </p>
                     </div>
                   </div>
                   <p
-                    className={`mt-2.5 text-[12.5px] leading-snug line-clamp-2 ${
+                    className={`mt-2.5 text-[13px] leading-snug line-clamp-2 ${
                       isDark ? 'text-white/70' : 'text-[#525252]'
                     }`}
                   >
@@ -551,17 +551,17 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   {/* Per-plan user count badge */}
                   <div className="mt-3">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium ${
                         isDark
                           ? 'bg-white/10 text-white'
                           : userCount > 0
-                            ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                            : 'bg-[#FAFAFA] text-[#737373]'
+                            ? 'bg-pn-accent-soft text-pn-ink'
+                            : 'bg-pn-canvas text-[#737373]'
                       }`}
                     >
                       <span
                         className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          isDark ? 'bg-[#C6F24E]' : userCount > 0 ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'
+                          isDark ? 'bg-pn-accent' : userCount > 0 ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
                         }`}
                       />
                       {userCount > 0
@@ -575,7 +575,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     §38.225 Stage 145: USD-only. TRY field'ları schema'da kalır
                     (backwards-compat) ama admin UI'da gösterilmez. */}
                 <div
-                  className={`mb-5 border-b pb-5 ${isDark ? 'border-white/10' : 'border-[#EDEDED]'}`}
+                  className={`mb-5 border-b pb-5 ${isDark ? 'border-white/10' : 'border-pn-line'}`}
                 >
                   <div className="flex items-baseline gap-2">
                     <InlinePriceCell
@@ -591,7 +591,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       dark={isDark}
                     />
                     <span
-                      className={`pulse-eyebrow ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
+                      className={`text-[13px] font-medium ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
                     >
                       /ay
                     </span>
@@ -604,7 +604,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   >
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`text-[10px] uppercase tracking-wider ${
+                        className={`text-[12px] ${
                           isDark ? 'text-white/40' : 'text-[#A3A3A3]'
                         }`}
                       >
@@ -625,7 +625,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       <>
                         <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
                         <span
-                          className={`text-[10px] uppercase tracking-wider ${
+                          className={`text-[12px] ${
                             isDark ? 'text-white/40' : 'text-[#A3A3A3]'
                           }`}
                           title="Formula fallback: monthly × 12 × 0.8 (≈%20 indirim)"
@@ -643,22 +643,22 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     <li
                       key={`${p.id}-feat-${fi}`}
                       className={`flex items-start gap-2.5 text-[13px] ${
-                        isDark ? 'text-white' : 'text-[#0A0A0A]'
+                        isDark ? 'text-white' : 'text-pn-ink'
                       }`}
                     >
                       <span
                         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                          isDark ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
+                          isDark ? 'bg-pn-accent' : 'bg-pn-accent-soft'
                         }`}
                       >
-                        <Crown size={9} className="text-[#0A0A0A]" strokeWidth={3} />
+                        <Crown size={9} className="text-pn-ink" strokeWidth={3} />
                       </span>
                       <span className="line-clamp-2">{feat}</span>
                     </li>
                   ))}
                   {p.featuresTr.length > 5 && (
                     <li
-                      className={`text-[11px] ${
+                      className={`text-[12px] ${
                         isDark ? 'text-white/50' : 'text-[#737373]'
                       } pl-6`}
                     >
@@ -679,11 +679,11 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 {/* Meta + actions footer */}
                 <div
                   className={`flex flex-col gap-3 pt-4 border-t ${
-                    isDark ? 'border-white/10' : 'border-[#EDEDED]'
+                    isDark ? 'border-white/10' : 'border-pn-line'
                   }`}
                 >
                   <div
-                    className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] ${
+                    className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] ${
                       isDark ? 'text-white/50' : 'text-[#737373]'
                     }`}
                   >
@@ -695,7 +695,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                         <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
                         <span
                           className={`font-medium ${
-                            isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+                            isDark ? 'text-pn-accent' : 'text-pn-ink'
                           }`}
                         >
                           PayNKolay
@@ -712,7 +712,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
                         isDark
                           ? 'border border-white/15 text-white/70 hover:bg-white/10 disabled:opacity-30'
-                          : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] disabled:opacity-40'
+                          : 'border border-pn-line text-[#525252] hover:border-pn-ink disabled:opacity-40'
                       }`}
                       aria-label="Yukarı taşı"
                     >
@@ -725,7 +725,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
                         isDark
                           ? 'border border-white/15 text-white/70 hover:bg-white/10 disabled:opacity-30'
-                          : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] disabled:opacity-40'
+                          : 'border border-pn-line text-[#525252] hover:border-pn-ink disabled:opacity-40'
                       }`}
                       aria-label="Aşağı taşı"
                     >
@@ -735,14 +735,14 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       type="button"
                       onClick={() => togglePlanField(p.id, { isFeatured: !p.isFeatured })}
                       disabled={busyRowId === p.id}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors ${
                         p.isFeatured
                           ? isDark
-                            ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                            : 'bg-[#0A0A0A] text-white'
+                            ? 'bg-pn-accent text-pn-ink'
+                            : 'bg-pn-ink text-white'
                           : isDark
                             ? 'border border-white/15 text-white/70 hover:bg-white/10'
-                            : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
+                            : 'border border-pn-line text-[#525252] hover:border-pn-ink'
                       }`}
                       aria-label={p.isFeatured ? 'En popüler tier' : 'En popüler yap'}
                     >
@@ -753,15 +753,15 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       type="button"
                       onClick={() => togglePlanField(p.id, { isActive: !p.isActive })}
                       disabled={busyRowId === p.id}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors ${
                         isDark
                           ? 'border border-white/15 text-white/70 hover:bg-white/10'
-                          : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
+                          : 'border border-pn-line text-[#525252] hover:border-pn-ink'
                       }`}
                     >
                       <span
                         className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          p.isActive ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'
+                          p.isActive ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
                         }`}
                       />
                       {p.isActive ? 'Yayında' : 'Pasif'}
@@ -769,10 +769,10 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     <button
                       type="button"
                       onClick={() => openEdit(p)}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors ${
                         isDark
                           ? 'border border-white/15 text-white/80 hover:bg-white/10'
-                          : 'border border-[#EDEDED] text-[#0A0A0A] hover:bg-[#FAFAFA]'
+                          : 'border border-pn-line text-pn-ink hover:bg-pn-canvas'
                       }`}
                     >
                       <Pencil size={10} /> Düzenle
@@ -781,7 +781,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       type="button"
                       onClick={() => setDeleteId(p.id)}
                       disabled={busyRowId === p.id}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors disabled:opacity-60 ${
                         isDark
                           ? 'border border-white/10 text-white/50 hover:bg-red-500/20 hover:text-red-200'
                           : 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
@@ -1035,7 +1035,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
             </Field>
           </div>
 
-          <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
+          <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
             <SwitchCard
               label="İndirim aktif"
               hint="Yüzde veya sabit tutar indirim"
@@ -1091,8 +1091,8 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
             {/* ── Ödeme (PayNKolay) + paket modülleri (CLAUDE.md §44, §5.2) ── */}
             <div className="bz-card-soft p-4">
               <div className="mb-3">
-                <p className="text-[13px] font-semibold text-[#0A0A0A]">Ödeme ve paket modülleri</p>
-                <p className="mt-0.5 text-[11px] text-[#737373]">
+                <p className="text-[13px] font-medium text-pn-ink">Ödeme ve paket modülleri</p>
+                <p className="mt-0.5 text-[12px] text-[#737373]">
                   <strong>Elle</strong> = admin üyenin faturasını yönetir.{' '}
                   <strong>PayNKolay</strong> = işletme sahibi kartla öder; TL fiyatı girin
                   (PayNKolay yalnız TL tahsil eder). Her ödeme bir dönem (ay / yıl) açar,
@@ -1136,7 +1136,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   </Field>
                 </div>
               )}
-              <div className="mt-4 border-t border-[#EDEDED] pt-3">
+              <div className="mt-4 border-t border-pn-line pt-3">
                 <Field label="İşletme sınırı" hint="Boş: sınırsız. Sahip bu sayıdan fazla işletme ekleyemez.">
                   <input
                     type="number"
@@ -1147,8 +1147,8 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   />
                 </Field>
               </div>
-              <div className="mt-4 border-t border-[#EDEDED] pt-3">
-                <label className="flex items-start gap-2 text-[12px] text-[#0A0A0A]">
+              <div className="mt-4 border-t border-pn-line pt-3">
+                <label className="flex items-start gap-2 text-[12px] text-pn-ink">
                   <input
                     type="checkbox"
                     checked={form.modulesManaged}
@@ -1231,12 +1231,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-[12px] font-semibold text-[#525252]">
+      <label className="text-[12px] font-medium text-[#525252]">
         {label}
         {required && <span className="ml-1 text-[#DC2626]">*</span>}
       </label>
       <div className="mt-1.5">{children}</div>
-      {hint && <p className="mt-1 text-[11px] text-[#737373]">{hint}</p>}
+      {hint && <p className="mt-1 text-[12px] text-[#737373]">{hint}</p>}
     </div>
   );
 }
@@ -1282,7 +1282,7 @@ function YearlyDisplayHint({
     isOverride && hasMonthly && formulaPerMonth > 0 && perMonthYearly < formulaPerMonth * 0.7;
 
   return (
-    <p className={`mt-1 text-[11px] ${stale ? 'text-[#92400E]' : 'text-[#525252]'}`}>
+    <p className={`mt-1 text-[12px] ${stale ? 'text-[#92400E]' : 'text-[#525252]'}`}>
       Public sayfada gösterilecek: <strong>{formatted}/ay</strong> (yıllık){' '}
       <span className="text-[#737373]">
         — {isOverride ? 'manuel override' : 'aylık × 12 × 0.8'}
@@ -1290,7 +1290,7 @@ function YearlyDisplayHint({
       {stale && (
         <>
           {' '}
-          <span className="font-semibold">— override aylıktan kopmuş olabilir, sıfırlamayı düşünün.</span>
+          <span className="font-medium">— override aylıktan kopmuş olabilir, sıfırlamayı düşünün.</span>
         </>
       )}
     </p>
@@ -1318,8 +1318,8 @@ function SwitchCard({
   const content = (
     <>
       <div className="min-w-0">
-        <p className="text-[13px] font-semibold text-[#0A0A0A]">{label}</p>
-        {hint && <p className="mt-0.5 text-[11px] text-[#737373]">{hint}</p>}
+        <p className="text-[13px] font-medium text-pn-ink">{label}</p>
+        {hint && <p className="mt-0.5 text-[12px] text-[#737373]">{hint}</p>}
       </div>
       <APSwitch checked={value} onChange={onChange} ariaLabel={label} />
     </>
@@ -1330,7 +1330,7 @@ function SwitchCard({
   }
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3">
+    <div className="flex items-start justify-between gap-3 rounded-[24px] border border-pn-line bg-white px-4 py-3">
       {content}
     </div>
   );
@@ -1447,10 +1447,10 @@ function InlinePriceCell({
           onClick={startEdit}
           disabled={busy}
           title={`${label} — düzenlemek için tıkla`}
-          className={`group inline-flex items-baseline rounded-md px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`group inline-flex items-baseline rounded-[10px] px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-50 ${
             dark
-              ? 'hover:bg-white/5 focus-visible:bg-white/5 text-[#C6F24E]'
-              : 'hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] text-[#0A0A0A]'
+              ? 'hover:bg-white/5 focus-visible:bg-white/5 text-pn-accent'
+              : 'hover:bg-pn-canvas focus-visible:bg-pn-canvas text-pn-ink'
           }`}
           style={{
             fontFamily: 'var(--font-heading)',
@@ -1477,10 +1477,10 @@ function InlinePriceCell({
         onClick={startEdit}
         disabled={busy}
         title={`${label} — düzenlemek için tıkla`}
-        className={`group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`group inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-50 ${
           dark
             ? 'text-white hover:bg-white/10 focus-visible:bg-white/10'
-            : 'text-[#0A0A0A] hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA]'
+            : 'text-pn-ink hover:bg-pn-canvas focus-visible:bg-pn-canvas'
         }`}
         style={{ fontFamily: 'var(--font-mono)' }}
       >
@@ -1504,12 +1504,12 @@ function InlinePriceCell({
   if (isHero) {
     return (
       <span
-        className={`inline-flex items-baseline gap-1 rounded-md border-2 border-[#C6F24E] px-2 py-1 ring-2 ring-[#C6F24E]/30 ${
+        className={`inline-flex items-baseline gap-1 rounded-[10px] border-2 border-pn-accent px-2 py-1 ring-2 ring-pn-accent/30 ${
           dark ? 'bg-white/5' : 'bg-white'
         }`}
       >
         <span
-          className={`text-[28px] ${dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'}`}
+          className={`text-[28px] ${dark ? 'text-pn-accent' : 'text-pn-ink'}`}
           style={{ fontFamily: 'var(--font-heading)', fontWeight: 500 }}
         >
           {currency === 'TRY' ? '₺' : '$'}
@@ -1534,7 +1534,7 @@ function InlinePriceCell({
           disabled={saving}
           aria-label={label}
           className={`w-24 border-0 bg-transparent p-0 text-[36px] sm:text-[44px] leading-none focus:outline-none disabled:opacity-50 ${
-            dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+            dark ? 'text-pn-accent' : 'text-pn-ink'
           }`}
           style={{
             fontFamily: 'var(--font-heading)',
@@ -1545,7 +1545,7 @@ function InlinePriceCell({
         {saving ? (
           <Loader2 size={14} className="animate-spin text-[#737373]" aria-hidden />
         ) : (
-          <span className={`text-[11px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
+          <span className={`text-[12px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
             ↵
           </span>
         )}
@@ -1555,11 +1555,11 @@ function InlinePriceCell({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md border border-[#C6F24E] px-1 py-0.5 ring-2 ring-[#C6F24E]/30 ${
+      className={`inline-flex items-center gap-1 rounded-full border border-pn-accent px-1 py-0.5 ring-2 ring-pn-accent/30 ${
         dark ? 'bg-white/10' : 'bg-white'
       }`}
     >
-      <span className={`text-[11px] ${dark ? 'text-white/60' : 'text-[#737373]'}`}>
+      <span className={`text-[12px] ${dark ? 'text-white/60' : 'text-[#737373]'}`}>
         {currency === 'TRY' ? '₺' : '$'}
       </span>
       <input
@@ -1582,14 +1582,14 @@ function InlinePriceCell({
         disabled={saving}
         aria-label={label}
         className={`w-16 border-0 bg-transparent p-0 text-[12px] font-medium focus:outline-none disabled:opacity-50 ${
-          dark ? 'text-white' : 'text-[#0A0A0A]'
+          dark ? 'text-white' : 'text-pn-ink'
         }`}
         style={{ fontFamily: 'var(--font-mono)' }}
       />
       {saving ? (
         <Loader2 size={10} className="animate-spin text-[#737373]" aria-hidden />
       ) : (
-        <span className={`text-[9px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
+        <span className={`text-[12px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
           ↵
         </span>
       )}

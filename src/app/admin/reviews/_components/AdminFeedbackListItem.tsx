@@ -57,13 +57,13 @@ export function AdminFeedbackListItem({
   return (
     <li
       data-feedback-id={r.id}
-      className={`flex w-full items-stretch border-b border-[#F5F5F5] transition-colors ${
+      className={`flex w-full items-stretch border-b border-pn-line transition-colors ${
         isActive
-          ? 'bg-[#EAF9B8]/60 shadow-[inset_3px_0_0_#0A0A0A]'
+          ? 'bg-pn-accent-soft/60 shadow-[inset_3px_0_0_#0A0A0A]'
           : isSelected
-            ? 'bg-[#EAF9B8]/30'
-            : 'hover:bg-[#FAFAFA]'
-      } ${isPulsed ? 'animate-pulse ring-2 ring-inset ring-[#C6F24E]' : ''}`}
+            ? 'bg-pn-accent-soft/30'
+            : 'hover:bg-pn-canvas'
+      } ${isPulsed ? 'animate-pulse ring-2 ring-inset ring-pn-accent' : ''}`}
     >
       {/* Checkbox column — the whole column is the hit area (≥44px tall). */}
       <label
@@ -75,7 +75,7 @@ export function AdminFeedbackListItem({
           checked={isSelected}
           onChange={(e) => onToggleSelect(r.id, e.target.checked)}
           aria-label={isTr ? `${customerLabel} yorumunu seç` : `Select ${customerLabel}'s review`}
-          className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
+          className="h-4 w-4 cursor-pointer accent-pn-ink"
         />
       </label>
       <button
@@ -84,7 +84,7 @@ export function AdminFeedbackListItem({
         onClick={() => onSelect(r.id)}
         aria-current={isActive ? 'true' : undefined}
         aria-label={accessibleName}
-        className="group flex min-w-0 flex-1 items-start gap-3 py-3.5 pl-1 pr-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E] sm:pr-5"
+        className="group flex min-w-0 flex-1 items-start gap-3 py-3.5 pl-1 pr-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent sm:pr-5"
       >
         <RatingBadge rating={r.rating} isTr={isTr} size="md" />
         <div className="min-w-0 flex-1">
@@ -97,7 +97,7 @@ export function AdminFeedbackListItem({
               />
             )}
             <span
-              className={`truncate text-[14px] text-[#0A0A0A] ${isUnread ? 'font-bold' : 'font-semibold'}`}
+              className={`truncate text-[14px] text-pn-ink ${isUnread ? 'font-medium' : 'font-medium'}`}
             >
               {customerLabel}
             </span>
@@ -111,7 +111,7 @@ export function AdminFeedbackListItem({
           </div>
           <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#525252]">
             {r.redirected ? (
-              <span className="inline-flex items-center rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[12px] font-medium text-[#365314]">
+              <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-[#365314]">
                 {redirectBadgeLabel(r.platform, isTr)}
               </span>
             ) : (

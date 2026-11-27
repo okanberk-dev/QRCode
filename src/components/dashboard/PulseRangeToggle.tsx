@@ -43,9 +43,9 @@ const PULSE_SERIES: Array<{
   labelEn: string;
   color: string;
 }> = [
-  { key: 'google', labelTr: 'Google', labelEn: 'Google', color: '#0A0A0A' },
+  { key: 'google', labelTr: 'Google', labelEn: 'Google', color: '#000000' },
   { key: 'tripadvisor', labelTr: 'Tripadvisor', labelEn: 'Tripadvisor', color: '#737373' },
-  { key: 'buazeQr', labelTr: 'Buaze QR', labelEn: 'Buaze QR', color: '#C6F24E' },
+  { key: 'buazeQr', labelTr: 'Buaze QR', labelEn: 'Buaze QR', color: '#D7FE03' },
   { key: 'other', labelTr: 'Diğer', labelEn: 'Other', color: '#A3A3A3' },
 ];
 
@@ -80,10 +80,10 @@ export function PulseRangeToggle({
                 type="button"
                 aria-pressed={isActive}
                 onClick={() => setActive(key)}
-                className={`inline-flex min-h-[32px] items-center justify-center px-3 rounded-full text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+                className={`inline-flex min-h-[32px] items-center justify-center px-3 rounded-full text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 ${
                   isActive
-                    ? 'bg-[#0A0A0A] text-white'
-                    : 'bg-white border border-[#EDEDED] text-[#525252] hover:text-[#0A0A0A] hover:border-[#A3A3A3]'
+                    ? 'bg-pn-ink text-white'
+                    : 'bg-white border border-pn-line text-[#525252] hover:text-pn-ink hover:border-[#A3A3A3]'
                 }`}
               >
                 {label}
@@ -99,14 +99,14 @@ export function PulseRangeToggle({
           const total = totals[item.key];
           if (total === 0) return null;
           return (
-            <span key={item.key} className="inline-flex items-center gap-1.5 text-[11px] text-[#525252]">
+            <span key={item.key} className="inline-flex items-center gap-1.5 text-[12px] text-[#525252]">
               <span
                 aria-hidden="true"
-                className="h-2 w-2 rounded-sm"
+                className="h-2 w-2 rounded-[8px]"
                 style={{ background: item.color }}
               />
               <span className="font-medium">{isTr ? item.labelTr : item.labelEn}</span>
-              <span className="bz-mono tabular-nums font-semibold text-[#0A0A0A]">{total}</span>
+              <span className="tabular-nums tabular-nums font-medium text-pn-ink">{total}</span>
             </span>
           );
         })}
@@ -119,14 +119,14 @@ export function PulseRangeToggle({
         points={activeRange.data}
         isTr={isTr}
         heightClassName="h-[260px] w-full sm:h-[300px] md:h-[330px]"
-        emptyClassName="mt-4 rounded-[14px] border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-8 text-center"
+        emptyClassName="mt-4 rounded-[14px] border border-dashed border-pn-line bg-pn-canvas px-4 py-8 text-center"
       />
 
       {/* Peak hint ("Pik · 4 Mayıs · 9 yorum") + optional action. */}
       {(peak || footerAction) && (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           {peak ? (
-            <p className="bz-mono text-[11px] text-[#737373]">
+            <p className="tabular-nums text-[12px] text-[#737373]">
               {isTr
                 ? `Pik · ${peak.dateText} · ${peak.count} yorum`
                 : `Peak · ${peak.dateText} · ${peak.count} ${peak.count === 1 ? 'review' : 'reviews'}`}

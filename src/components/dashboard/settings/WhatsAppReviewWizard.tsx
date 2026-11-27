@@ -333,7 +333,7 @@ export function WhatsAppReviewWizard({
                 </>
               )}
             </button>
-            <span className="bz-mono hidden text-[11px] text-[#737373] sm:inline">
+            <span className="tabular-nums hidden text-[12px] text-[#737373] sm:inline">
               {stepIndex + 1} / {STEPS.length}
             </span>
           </div>
@@ -392,17 +392,17 @@ export function WhatsAppReviewWizard({
                 onClick={() => jumpTo(idx)}
                 disabled={!reachable}
                 aria-selected={active}
-                className="group flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
+                className="group flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-[14px] px-2 py-2 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
                 style={{
-                  background: active ? "#0A0A0A" : "transparent",
-                  color: active ? "#FFFFFF" : done ? "#0A0A0A" : reachable ? "#525252" : "#A3A3A3",
+                  background: active ? "#000000" : "transparent",
+                  color: active ? "#FFFFFF" : done ? "#000000" : reachable ? "#525252" : "#A3A3A3",
                 }}
               >
                 <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
                   style={{
-                    background: active ? "#C6F24E" : done ? "#EAF9B8" : "#FAFAFA",
-                    color: "#0A0A0A",
+                    background: active ? "#D7FE03" : done ? "#F3FDC4" : "#F5F5F8",
+                    color: "#000000",
                     border: !active && !done ? "1px solid #EDEDED" : "none",
                   }}
                 >
@@ -440,18 +440,18 @@ export function WhatsAppReviewWizard({
 
             {whatsappInput.trim().length > 0 && (
               <div
-                className="rounded-xl border p-3 text-[12.5px]"
+                className="rounded-[20px] border p-3 text-[13px]"
                 style={{
                   borderColor: normalized.ok ? "#D1FAE5" : "#FECACA",
                   background: normalized.ok ? "#F0FDF4" : "#FEF2F2",
-                  color: normalized.ok ? "#0A0A0A" : "#991B1B",
+                  color: normalized.ok ? "#000000" : "#991B1B",
                 }}
               >
                 {normalized.ok ? (
                   <span className="inline-flex items-center gap-1.5">
                     <Check size={13} strokeWidth={2.4} className="text-[#16A34A]" />
                     {isTr ? "Geçerli" : "Valid"}:{" "}
-                    <span className="bz-mono font-semibold">{normalized.url}</span>
+                    <span className="tabular-nums font-medium">{normalized.url}</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5">
@@ -472,7 +472,7 @@ export function WhatsAppReviewWizard({
               </div>
             )}
 
-            <p className="text-[11.5px] leading-[1.55] text-[#737373]">
+            <p className="text-[12px] leading-[1.55] text-[#737373]">
               {isTr
                 ? "Bu numara müşterinin değerlendirme sayfasında WhatsApp butonuna tıklayınca açılır. Otomatik mesaj gönderilmez — müşteri kendi mesajını da düzenleyebilir."
                 : "This number opens when the customer taps the WhatsApp button on the review surface. No auto-send — the customer can edit the prefilled message before sending."}
@@ -500,9 +500,9 @@ export function WhatsAppReviewWizard({
                       aria-pressed={isActive}
                       className="rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors"
                       style={{
-                        borderColor: isActive ? "#0A0A0A" : "#EDEDED",
-                        background: isActive ? "#FAFAFA" : "#FFFFFF",
-                        color: "#0A0A0A",
+                        borderColor: isActive ? "#000000" : "#ECECF0",
+                        background: isActive ? "#F5F5F8" : "#FFFFFF",
+                        color: "#000000",
                       }}
                     >
                       {p.label}
@@ -537,10 +537,10 @@ export function WhatsAppReviewWizard({
             </Field>
 
             <div className="flex items-center justify-between gap-2 -mt-2">
-              <span className="pulse-eyebrow text-[#737373]">
+              <span className="text-[13px] font-medium text-[#737373]">
                 {isTr ? "DEĞİŞKEN EKLE" : "INSERT VARIABLE"}
               </span>
-              <span aria-live="polite" className={`bz-mono text-[11px] tabular-nums ${charClass}`}>
+              <span aria-live="polite" className={`tabular-nums text-[12px] tabular-nums ${charClass}`}>
                 {charCount} / {WHATSAPP_MESSAGE_MAX_CHARS}
               </span>
             </div>
@@ -550,7 +550,7 @@ export function WhatsAppReviewWizard({
                   key={v.token}
                   type="button"
                   onClick={() => insertVariable(v.token)}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-2.5 py-1 text-[11px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] hover:bg-[#FAFAFA]"
+                  className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-2.5 py-1 text-[12px] font-medium text-pn-ink transition-colors hover:border-pn-ink hover:bg-pn-canvas"
                   title={isTr ? v.labelTr : v.labelEn}
                 >
                   <span className="bz-mono">{v.token}</span>
@@ -559,14 +559,14 @@ export function WhatsAppReviewWizard({
             </div>
 
             {/* Live preview */}
-            <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3.5">
+            <div className="rounded-[20px] border border-pn-line bg-pn-canvas p-3.5">
               <div className="flex items-center gap-1.5">
-                <Sparkles size={11} strokeWidth={2.2} className="text-[#A8D62E]" />
-                <span className="pulse-eyebrow text-[#737373]">
+                <Sparkles size={11} strokeWidth={2.2} className="text-pn-accent-ink" />
+                <span className="text-[13px] font-medium text-[#737373]">
                   {isTr ? "ÖRNEK MESAJ" : "SAMPLE MESSAGE"}
                 </span>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-[12.5px] leading-[1.55] text-[#0A0A0A]">
+              <p className="mt-2 whitespace-pre-wrap text-[13px] leading-[1.55] text-pn-ink">
                 {previewMessage}
               </p>
             </div>
@@ -577,8 +577,8 @@ export function WhatsAppReviewWizard({
         {currentStep.id === "preview" && (
           <div className="flex flex-col gap-4">
             {/* Customer-side mock card (matches /r/[slug] thanks step language) */}
-            <div className="rounded-2xl bg-[#0A0A0A] p-5 sm:p-6">
-              <span className="bz-mono text-[10px] font-semibold tracking-[0.18em] uppercase text-[#A3A3A3]">
+            <div className="rounded-[24px] bg-pn-ink p-5 sm:p-6">
+              <span className="tabular-nums text-[12px] font-medium text-[#A3A3A3]">
                 {isTr ? "MÜŞTERİYE GÖRÜNECEK" : "CUSTOMER PREVIEW"}
               </span>
               <p className="mt-2 text-[13px] text-white/80">
@@ -591,7 +591,7 @@ export function WhatsAppReviewWizard({
                   type="button"
                   disabled
                   aria-disabled="true"
-                  className="inline-flex w-full max-w-[280px] items-center justify-center gap-2 rounded-[14px] bg-[#0A0A0A] px-4 py-3 text-[13px] font-semibold text-white border border-white/10"
+                  className="inline-flex w-full max-w-[280px] items-center justify-center gap-2 rounded-[14px] bg-pn-ink px-4 py-3 text-[13px] font-medium text-white border border-white/10"
                 >
                   <MessageCircle
                     size={14}
@@ -602,7 +602,7 @@ export function WhatsAppReviewWizard({
                 </button>
               </div>
               {previewUrl && (
-                <p className="mt-3 text-center bz-mono text-[10px] text-white/40 truncate">
+                <p className="mt-3 text-center tabular-nums text-[12px] text-white/40 truncate">
                   {previewUrl}
                 </p>
               )}
@@ -610,7 +610,7 @@ export function WhatsAppReviewWizard({
 
             {/* Enable toggle */}
             <div
-              className="flex items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4"
+              className="flex items-start gap-3 rounded-[24px] border border-pn-line bg-white p-4"
             >
               {/* Canonical panel switch (§23.3) — the hand-rolled one was graphite
                   when on and had no accessible name. */}
@@ -620,15 +620,15 @@ export function WhatsAppReviewWizard({
                 ariaLabel={isTr ? "WhatsApp geri bildirim butonunu aç" : "Enable the WhatsApp feedback button"}
               />
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-[#0A0A0A]">
+                <p className="text-[13px] font-medium text-pn-ink">
                   {isTr ? "Bu özelliği aç" : "Enable this feature"}
                 </p>
-                <p className="mt-0.5 text-[11.5px] leading-[1.5] text-[#525252]">
+                <p className="mt-0.5 text-[12px] leading-[1.5] text-[#525252]">
                   {isTr
                     ? "Açıkken 1–3 yıldız müşteriler değerlendirme sayfası sonunda WhatsApp butonu görür."
                     : "When on, customers giving 1–3★ see the WhatsApp button on the review thanks step."}
                 </p>
-                <p className="mt-1.5 text-[11px] leading-[1.5] text-[#737373]">
+                <p className="mt-1.5 text-[12px] leading-[1.5] text-[#737373]">
                   {isTr
                     ? "KVKK: Müşteri butona tıklamadan WhatsApp açılmaz; otomatik yönlendirme yoktur."
                     : "KVKK / GDPR: WhatsApp opens only on customer tap; no auto-redirect."}
@@ -637,7 +637,7 @@ export function WhatsAppReviewWizard({
             </div>
 
             {error && (
-              <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+              <div className="rounded-[14px] border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
                 {error}
               </div>
             )}

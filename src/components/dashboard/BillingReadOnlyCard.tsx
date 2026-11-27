@@ -247,7 +247,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
     return (
       <section id="billing" className="space-y-4 scroll-mt-20" aria-busy="true">
         <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
-          <div className="rounded-2xl bg-[#0A0A0A] p-5 sm:p-6 space-y-3">
+          <div className="rounded-[24px] bg-pn-ink p-5 sm:p-6 space-y-3">
             <div className="h-3 w-24 rounded bg-white/15" />
             <div className="h-9 w-40 rounded bg-white/15" />
             <div className="h-3 w-32 rounded bg-white/10" />
@@ -322,8 +322,8 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
       {/* ─── Top row: Plan hero (dark) + Payment method ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
         {/* Plan hero — graphite bg */}
-        <div className="rounded-2xl bg-[#0A0A0A] p-5 sm:p-6 text-white">
-          <p className="bz-mono text-[11px] font-medium tracking-[0.18em] uppercase text-[#A3A3A3]">
+        <div className="rounded-[24px] bg-pn-ink p-5 sm:p-6 text-white">
+          <p className="tabular-nums text-[12px] font-medium text-[#A3A3A3]">
             {isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}
           </p>
           <h3 className="bz-h-tight-2 mt-1.5 text-[36px] sm:text-[40px] text-white">
@@ -344,7 +344,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
           {summary?.amount != null ? (
             <div className="mt-4">
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="bz-h-tight-2 text-[28px] sm:text-[32px] text-[#C6F24E]">
+                <span className="bz-h-tight-2 text-[28px] sm:text-[32px] text-pn-accent">
                   {formatCurrency(summary.amount, summary.currency, isTr ? 'tr' : 'en')}
                 </span>
                 <span className="text-[13px] text-[#A3A3A3]">
@@ -363,7 +363,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                 </div>
               ) : null}
               {summary.tier?.name ? (
-                <div className="mt-1 text-[11px] text-[#A3A3A3]">
+                <div className="mt-1 text-[12px] text-[#A3A3A3]">
                   {isTr ? 'Paket' : 'Plan'}:{' '}
                   <span className="text-white font-medium">{summary.tier.name}</span>
                 </div>
@@ -401,7 +401,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                 {billingText(paidByCard ? 'hero.extend' : 'hero.upgrade', locale)}
               </button>
             )}
-            <span className="text-[11px] text-[#A3A3A3]">
+            <span className="text-[12px] text-[#A3A3A3]">
               {billingText(paidByCard ? 'hero.autoOff' : 'hero.pickPlan', locale)}
             </span>
           </div>
@@ -426,15 +426,15 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
               <p className="mt-3 text-[13px] leading-[1.5] text-[#525252]">{billingText('pm.teamOnly', locale)}</p>
             ) : summary?.paymentMethod ? (
               <div className="mt-3 flex items-center gap-3">
-                <div className="flex h-9 w-12 items-center justify-center rounded-md bg-[#1A1F71] text-[10px] font-bold text-white tracking-wider">
+                <div className="flex h-9 w-12 items-center justify-center rounded-[10px] bg-[#1A1F71] text-[12px] font-medium text-white ">
                   {summary.paymentMethod.brand.toUpperCase().slice(0, 4)}
                 </div>
                 <div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">
+                  <div className="text-[14px] font-medium text-pn-ink">
                     •••• {summary.paymentMethod.last4}
                   </div>
                   {summary.source === 'manual' ? (
-                    <div className="text-[11px] text-[#737373] mt-0.5">{billingText('pm.legacyManual', locale)}</div>
+                    <div className="text-[12px] text-[#737373] mt-0.5">{billingText('pm.legacyManual', locale)}</div>
                   ) : null}
                 </div>
               </div>
@@ -449,9 +449,9 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
             {summary?.billingAddress?.companyName ||
             summary?.billingAddress?.address ||
             summary?.billingAddress?.city ? (
-              <div className="mt-2.5 text-[13px] text-[#0A0A0A] leading-[1.6]">
+              <div className="mt-2.5 text-[13px] text-pn-ink leading-[1.6]">
                 {summary.billingAddress.companyName && (
-                  <div className="font-semibold">{summary.billingAddress.companyName}</div>
+                  <div className="font-medium">{summary.billingAddress.companyName}</div>
                 )}
                 {summary.billingAddress.taxNumber && (
                   <div className="text-[12px] text-[#737373]">
@@ -478,7 +478,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
 
       {/* ─── Usage (businesses, team, AI replies this month) ─── */}
       {usageItems.length > 0 && (
-        <div className="bz-card grid grid-cols-3 divide-x divide-[#EDEDED]">
+        <div className="bz-card grid grid-cols-3 divide-x divide-pn-line">
           {usageItems.map((item) => {
             const pct =
               item.limit && item.limit > 0
@@ -488,7 +488,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
               <div key={item.label} className="min-w-0 p-3 sm:p-5">
                 <div className="text-[12px] leading-tight text-[#737373]">{item.label}</div>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <span className="bz-h-tight tabular-nums text-[20px] text-[#0A0A0A]">
+                  <span className="bz-h-tight tabular-nums text-[20px] text-pn-ink">
                     {item.used.toLocaleString(intLocale)}
                   </span>
                   {item.limit != null && (
@@ -499,7 +499,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                 </div>
                 {pct != null && (
                   <div
-                    className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#EDEDED]"
+                    className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-pn-line"
                     role="progressbar"
                     aria-label={item.label}
                     aria-valuenow={pct}
@@ -510,7 +510,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       className="h-full rounded-full"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#A8D62E',
+                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#83AF3B',
                       }}
                     />
                   </div>
@@ -523,9 +523,9 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
 
       {/* ─── Invoice list ─── */}
       <div className="bz-card">
-        <div className="flex items-center gap-2 border-b border-[#EDEDED] px-5 py-4">
-          <Receipt size={14} className="text-[#0A0A0A]" strokeWidth={2} />
-          <h3 className="text-[15px] font-semibold text-[#0A0A0A]">
+        <div className="flex items-center gap-2 border-b border-pn-line px-5 py-4">
+          <Receipt size={14} className="text-pn-ink" strokeWidth={2} />
+          <h3 className="text-[15px] font-medium text-pn-ink">
             {isTr ? 'Faturalar' : 'Invoices'}
           </h3>
         </div>
@@ -544,19 +544,19 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr
-                  className="bz-mono border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]"
+                  className="tabular-nums border-b border-pn-line bg-pn-canvas text-[#737373]"
                   style={{ fontSize: 11, letterSpacing: '0.16em' }}
                 >
-                  <th className="px-5 py-3 font-medium uppercase">
+                  <th className="px-5 py-3 font-medium ">
                     {isTr ? 'TARİH' : 'DATE'}
                   </th>
-                  <th className="px-5 py-3 font-medium uppercase">
+                  <th className="px-5 py-3 font-medium ">
                     {isTr ? 'FATURA NO' : 'INVOICE'}
                   </th>
-                  <th className="px-5 py-3 font-medium uppercase">
+                  <th className="px-5 py-3 font-medium ">
                     {isTr ? 'TUTAR' : 'AMOUNT'}
                   </th>
-                  <th className="px-5 py-3 font-medium uppercase">
+                  <th className="px-5 py-3 font-medium ">
                     {isTr ? 'DURUM' : 'STATUS'}
                   </th>
                   <th className="px-5 py-3 text-right" />
@@ -566,18 +566,18 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                 {invoices.map((inv) => (
                   <tr
                     key={inv.id}
-                    className="border-b border-[#EDEDED] last:border-0 hover:bg-[#FAFAFA]/50"
+                    className="border-b border-pn-line last:border-0 hover:bg-pn-canvas/50"
                   >
                     <td className="px-5 py-3.5 text-[#525252]">{dateFormat(inv.date)}</td>
-                    <td className="bz-mono px-5 py-3.5 text-[12px] text-[#525252]">
+                    <td className="tabular-nums px-5 py-3.5 text-[12px] text-[#525252]">
                       {inv.invoiceNumber || inv.id.slice(0, 10).toUpperCase()}
                     </td>
                     <td className="px-5 py-3.5">
-                      <div className="font-medium text-[#0A0A0A]">
+                      <div className="font-medium text-pn-ink">
                         {formatCurrency(inv.amount, inv.currency || null, isTr ? 'tr' : 'en')}
                       </div>
                       {inv.description && (
-                        <div className="text-[11px] text-[#737373] mt-0.5">{inv.description}</div>
+                        <div className="text-[12px] text-[#737373] mt-0.5">{inv.description}</div>
                       )}
                     </td>
                     <td className="px-5 py-3.5">
@@ -591,7 +591,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                           href={inv.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-[12px] text-[#525252] hover:text-[#0A0A0A]"
+                          className="inline-flex items-center gap-1.5 text-[12px] text-[#525252] hover:text-pn-ink"
                         >
                           {isTr ? 'PDF indir' : 'Download PDF'}
                           <Download size={12} aria-hidden />
@@ -607,19 +607,19 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden divide-y divide-[#EDEDED]">
+            <div className="md:hidden divide-y divide-pn-line">
               {invoices.map((inv) => (
                 <div key={inv.id} className="p-4 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium text-[#0A0A0A]">
+                      <span className="text-[13px] font-medium text-pn-ink">
                         {formatCurrency(inv.amount, inv.currency || null, isTr ? 'tr' : 'en')}
                       </span>
                       <Badge kind={STATUS_KIND[inv.status]}>
                         {(isTr ? STATUS_LABELS_TR : STATUS_LABELS_EN)[inv.status]}
                       </Badge>
                     </div>
-                    <div className="mt-1 text-[11px] text-[#737373] flex items-center gap-2">
+                    <div className="mt-1 text-[12px] text-[#737373] flex items-center gap-2">
                       <span>{dateFormat(inv.date)}</span>
                       <span>·</span>
                       <span className="bz-mono">
@@ -627,7 +627,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       </span>
                     </div>
                     {inv.description && (
-                      <div className="mt-0.5 text-[11px] text-[#737373]">{inv.description}</div>
+                      <div className="mt-0.5 text-[12px] text-[#737373]">{inv.description}</div>
                     )}
                   </div>
                   {inv.url && (
@@ -635,7 +635,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       href={inv.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[11px] text-[#525252] hover:text-[#0A0A0A] hover:border-[#0A0A0A]"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-pn-line px-3 py-1.5 text-[12px] text-[#525252] hover:text-pn-ink hover:border-pn-ink"
                     >
                       <Download size={11} aria-hidden />
                       PDF
@@ -671,19 +671,19 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         <p className="-mt-1 mb-4 text-[13px] text-[#737373] leading-snug">
           {billingText(cardStorage ? 'picker.intro' : 'picker.introLegacy', locale)}
         </p>
-        <div role="group" aria-label={billingText('review.cycle', locale)} className="mb-4 inline-flex rounded-full bg-[#F2F2F2] p-1">
+        <div role="group" aria-label={billingText('review.cycle', locale)} className="mb-4 inline-flex rounded-full bg-pn-canvas p-1">
           {(['monthly', 'yearly'] as const).map((c) => (
             <button
               key={c}
               type="button"
               aria-pressed={pickerCycle === c}
               onClick={() => setPickerCycle(c)}
-              className={`min-h-[36px] rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
-                pickerCycle === c ? 'bg-white text-[#0A0A0A] shadow-sm' : 'text-[#525252] hover:text-[#0A0A0A]'
+              className={`min-h-[36px] rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${
+                pickerCycle === c ? 'bg-white text-pn-ink ' : 'text-[#525252] hover:text-pn-ink'
               }`}
             >
               {billingText(c === 'monthly' ? 'review.monthly' : 'review.yearly', locale)}
-              {c === 'yearly' ? <span className="ml-1.5 text-[11px] text-[#4D5C00]">· {billingText('review.yearlyHint', locale)}</span> : null}
+              {c === 'yearly' ? <span className="ml-1.5 text-[12px] text-[#4D5C00]">· {billingText('review.yearlyHint', locale)}</span> : null}
             </button>
           ))}
         </div>
@@ -723,16 +723,16 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
               return (
                 <div
                   key={p.id}
-                  className={`flex flex-col rounded-2xl p-5 ${
+                  className={`flex flex-col rounded-[24px] p-5 ${
                     isDark
-                      ? 'bg-[#0A0A0A] text-white'
-                      : 'border border-[#EDEDED] bg-white'
+                      ? 'bg-pn-ink text-white'
+                      : 'border border-pn-line bg-white'
                   }`}
                 >
                   {(isDark || isCurrent) && (
                     <div className="mb-2 flex flex-wrap items-center gap-1.5">
                       {isDark ? (
-                        <span className="pulse-eyebrow inline-block rounded-full bg-[#C6F24E] px-3 py-1 text-[#0A0A0A]">
+                        <span className="text-[13px] font-medium inline-block rounded-full bg-pn-accent px-3 py-1 text-pn-ink">
                           {isTr ? 'EN POPÜLER' : 'MOST POPULAR'}
                         </span>
                       ) : null}
@@ -741,7 +741,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   )}
                   <h3
                     className={`text-[18px] font-medium tracking-[-0.02em] ${
-                      isDark ? 'text-white' : 'text-[#0A0A0A]'
+                      isDark ? 'text-white' : 'text-pn-ink'
                     }`}
                   >
                     {p.name}
@@ -756,7 +756,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   <div className="mt-3 flex items-baseline gap-2">
                     <span
                       className={`bz-h-tight text-[28px] font-medium leading-none tracking-[-0.03em] ${
-                        isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+                        isDark ? 'text-pn-accent' : 'text-pn-ink'
                       }`}
                     >
                       {checkoutTry != null && checkoutTry > 0
@@ -767,14 +767,14 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                     </span>
                     {monthlyShown > 0 && (
                       <span
-                        className={`pulse-eyebrow ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
+                        className={`text-[13px] font-medium ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
                       >
                         {wired && pickerCycle === 'yearly' ? (isTr ? '/ YIL' : '/ YR') : isTr ? '/ AY' : '/ MO'}
                       </span>
                     )}
                   </div>
                   {p.maxBusinesses != null && (
-                    <p className={`mt-2 text-[12px] font-medium ${isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'}`}>
+                    <p className={`mt-2 text-[12px] font-medium ${isDark ? 'text-pn-accent' : 'text-pn-ink'}`}>
                       {businessCountLabel(p.maxBusinesses, isTr ? 'tr' : 'en')}
                     </p>
                   )}
@@ -783,14 +783,14 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       <li
                         key={feat}
                         className={`flex items-start gap-2 text-[12px] ${
-                          isDark ? 'text-white/90' : 'text-[#0A0A0A]'
+                          isDark ? 'text-white/90' : 'text-pn-ink'
                         }`}
                       >
                         <Check
                           size={11}
                           strokeWidth={2.5}
                           className={`mt-0.5 shrink-0 ${
-                            isDark ? 'text-[#C6F24E]' : 'text-[#A8D62E]'
+                            isDark ? 'text-pn-accent' : 'text-pn-accent-ink'
                           }`}
                         />
                         {feat}
@@ -798,7 +798,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                     ))}
                     {p.features.length > 4 && (
                       <li
-                        className={`pl-5 text-[11px] ${
+                        className={`pl-5 text-[12px] ${
                           isDark ? 'text-white/50' : 'text-[#737373]'
                         }`}
                       >
@@ -814,8 +814,8 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       rel="nofollow"
                       className={`block min-h-[40px] w-full rounded-full py-2.5 text-center text-[13px] font-medium transition-colors ${
                         isDark
-                          ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                          : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
+                          ? 'bg-pn-accent text-pn-ink hover:bg-pn-accent-hover'
+                          : 'border border-pn-ink text-pn-ink hover:bg-pn-ink hover:text-white'
                       }`}
                     >
                       {billingText('picker.continue', locale, {
@@ -826,7 +826,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                     <button
                       type="button"
                       disabled
-                      className="block min-h-[40px] w-full rounded-full bg-[#FAFAFA] py-2.5 text-center text-[13px] font-medium text-[#A3A3A3] cursor-not-allowed"
+                      className="block min-h-[40px] w-full rounded-full bg-pn-canvas py-2.5 text-center text-[13px] font-medium text-[#A3A3A3] cursor-not-allowed"
                       title={
                         isTr
                           ? 'Bu paket için kartla ödeme henüz açılmadı.'
@@ -841,7 +841,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
             })}
           </div>
         )}
-        <p className="pulse-eyebrow mt-6 text-center text-[#737373]">
+        <p className="text-[13px] font-medium mt-6 text-center text-[#737373]">
           {billingText('picker.footer', locale)}
         </p>
       </Modal>

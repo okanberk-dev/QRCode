@@ -503,7 +503,7 @@ function AdminQrContent({ initialRestaurants, initialItems }: AdminQrClientProps
 
       {loading && (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
+          <Loader2 className="h-8 w-8 animate-spin text-pn-ink" />
         </div>
       )}
 
@@ -574,14 +574,14 @@ function AdminQrContent({ initialRestaurants, initialItems }: AdminQrClientProps
               <div key={c.id} className="bz-card p-3.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-semibold text-[#0A0A0A] truncate">{c.name}</div>
-                    <div className="mt-1 text-[11px] text-[#525252] truncate">{c.branch || '—'}</div>
-                    <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px]">
+                    <div className="text-[13px] font-medium text-pn-ink truncate">{c.name}</div>
+                    <div className="mt-1 text-[12px] text-[#525252] truncate">{c.branch || '—'}</div>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap text-[12px]">
                       {platformCell(c.platform)}
                       {c.tableNumber && (
                         <>
                           <span className="text-[#A3A3A3]">·</span>
-                          <span className="bz-mono font-semibold">{c.tableNumber}</span>
+                          <span className="tabular-nums font-medium">{c.tableNumber}</span>
                         </>
                       )}
                       <span className="text-[#A3A3A3]">·</span>
@@ -730,7 +730,7 @@ export default function AdminQrClient(props: AdminQrClientProps) {
     <Suspense
       fallback={
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
+          <Loader2 className="h-8 w-8 animate-spin text-pn-ink" />
         </div>
       }
     >

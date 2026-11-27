@@ -65,10 +65,10 @@ function PulseLine({ className = '' }: { className?: string }) {
     >
       <defs>
         <linearGradient id="adminPulseFade" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#C6F24E" stopOpacity="0" />
-          <stop offset="0.12" stopColor="#C6F24E" stopOpacity="1" />
-          <stop offset="0.88" stopColor="#C6F24E" stopOpacity="1" />
-          <stop offset="1" stopColor="#C6F24E" stopOpacity="0" />
+          <stop offset="0" stopColor="#D7FE03" stopOpacity="0" />
+          <stop offset="0.12" stopColor="#D7FE03" stopOpacity="1" />
+          <stop offset="0.88" stopColor="#D7FE03" stopOpacity="1" />
+          <stop offset="1" stopColor="#D7FE03" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path
@@ -176,16 +176,16 @@ function AdminLoginContent() {
     s >= 60 ? `${Math.floor(s / 60)} dk ${String(s % 60).padStart(2, '0')} sn` : `${s} sn`;
 
   return (
-    <main className="relative w-full min-h-[100dvh] bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+    <main className="relative w-full min-h-[100dvh] bg-white text-pn-ink selection:bg-pn-accent/40 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
       {/* ================= BRAND PANEL (desktop) ================= */}
-      <aside className="relative hidden overflow-hidden bg-[#0A0A0A] text-white lg:flex lg:flex-col">
+      <aside className="relative hidden overflow-hidden bg-pn-ink text-white lg:flex lg:flex-col">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-44 -right-40 h-[520px] w-[520px] rounded-full bg-[#C6F24E]/25 blur-[130px]"
+          className="pointer-events-none absolute -top-44 -right-40 h-[520px] w-[520px] rounded-full bg-pn-accent/25 blur-[130px]"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute bottom-[-32%] left-[-18%] h-[460px] w-[460px] rounded-full bg-[#A8D62E]/15 blur-[150px]"
+          className="pointer-events-none absolute bottom-[-32%] left-[-18%] h-[460px] w-[460px] rounded-full bg-pn-accent-hover/15 blur-[150px]"
         />
         <div
           aria-hidden
@@ -201,33 +201,33 @@ function AdminLoginContent() {
           <Link href="/" className="inline-flex items-center gap-2.5 self-start" aria-label="Buaze ana sayfa">
             <BuazeLogo size={36} variant="on-dark" />
             <span className="bz-h-tight text-[22px]" style={{ letterSpacing: '-0.03em' }}>
-              buaze<span className="text-[#C6F24E]">.</span>
+              buaze<span className="text-pn-accent">.</span>
             </span>
           </Link>
 
           <div className="max-w-[460px]">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C6F24E] opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C6F24E]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-pn-accent opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-pn-accent" />
               </span>
-              <span className="pulse-eyebrow text-white/80">YÖNETİCİ KONSOLU</span>
+              <span className="text-[13px] font-medium text-white/80">YÖNETİCİ KONSOLU</span>
             </div>
 
             <h2 className="mt-7 text-[44px] xl:text-[56px] font-medium leading-[1.0] tracking-[-0.04em] text-white">
               Her yorum
               <br />
-              bir <span className="text-[#C6F24E]">nabız.</span>
+              bir <span className="text-pn-accent">nabız.</span>
             </h2>
             <p className="mt-5 max-w-[400px] text-[15px] leading-[1.65] text-white/70">
               İşletmelerin itibarını tek panelden izle: yorum akışı, QR performansı, Pulse AI
               taslakları ve platform sağlığı — hepsi burada.
             </p>
 
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03]">
+            <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.03]">
               <div className="flex items-center justify-between px-4 pt-3.5">
-                <span className="pulse-eyebrow text-white/50">CANLI NABIZ</span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#C6F24E]">
+                <span className="text-[13px] font-medium text-white/50">CANLI NABIZ</span>
+                <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-pn-accent">
                   <span className="bz-pulse-dot" />
                   Akış aktif
                 </span>
@@ -238,12 +238,12 @@ function AdminLoginContent() {
             <ul className="mt-7 space-y-3.5">
               {FEATURES.map(({ icon: Icon, label, sub }) => (
                 <li key={label} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E]/12 text-[#C6F24E]">
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent/12 text-pn-accent">
                     <Icon size={16} strokeWidth={2.2} />
                   </span>
                   <span>
                     <span className="block text-[14px] font-medium text-white/90">{label}</span>
-                    <span className="block text-[12.5px] text-white/50">{sub}</span>
+                    <span className="block text-[13px] text-white/50">{sub}</span>
                   </span>
                 </li>
               ))}
@@ -252,11 +252,11 @@ function AdminLoginContent() {
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {TRUST_MARKS.map((m) => (
-              <span key={m} className="pulse-eyebrow text-white/40">
+              <span key={m} className="text-[13px] font-medium text-white/40">
                 {m}
               </span>
             ))}
-            <span className="ml-auto text-[11px] tracking-[0.06em] text-white/35">
+            <span className="ml-auto text-[12px] text-white/35">
               © {new Date().getFullYear()} BUAZE
             </span>
           </div>
@@ -275,12 +275,12 @@ function AdminLoginContent() {
           <Link href="/" className="inline-flex items-center gap-2.5 lg:hidden" aria-label="Buaze ana sayfa">
             <BuazeLogo size={32} />
             <span className="bz-h-tight text-[20px]" style={{ letterSpacing: '-0.03em' }}>
-              buaze<span className="text-[#A8D62E]">.</span>
+              buaze<span className="text-pn-accent-ink">.</span>
             </span>
           </Link>
           <Link
             href={`/${locale}/auth/login`}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-[#0A0A0A]/10 bg-white/70 px-4 text-[12.5px] font-semibold text-[#525252] backdrop-blur-sm transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 lg:text-[13px]"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-pn-ink/10 bg-white/70 px-4 text-[13px] font-medium text-[#525252] backdrop-blur-sm transition-colors hover:border-pn-ink hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 lg:text-[13px]"
           >
             İşletme girişi
             <ArrowRight size={13} strokeWidth={2.2} />
@@ -289,16 +289,16 @@ function AdminLoginContent() {
 
         <div className="relative flex flex-1 items-center justify-center px-4 pb-[calc(24px+env(safe-area-inset-bottom,0px))] pt-8 sm:px-8 sm:pt-10 lg:px-12 lg:py-8">
           <div className="bz-fade-in w-full max-w-[440px]">
-            <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-[0_30px_80px_-48px_rgba(10,10,10,0.45)] sm:p-8 lg:rounded-none lg:border-0 lg:p-0 lg:shadow-none">
+            <div className="rounded-[28px] border border-pn-line bg-white p-5 shadow-[0_30px_80px_-48px_rgba(10,10,10,0.45)] sm:p-8 lg:rounded-none lg:border-0 lg:p-0 lg:shadow-none">
               {/* Heading */}
               <div className="mb-6 sm:mb-7">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+                <span className="inline-flex items-center gap-2 rounded-full border border-pn-line bg-pn-canvas px-3 py-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pn-ink text-pn-accent">
                     <ShieldCheck size={11} strokeWidth={2.5} />
                   </span>
-                  <span className="pulse-eyebrow text-[#0A0A0A]">YÖNETİCİ PANELİ</span>
+                  <span className="text-[13px] font-medium text-pn-ink">YÖNETİCİ PANELİ</span>
                 </span>
-                <h1 className="mt-4 text-[32px] sm:text-[42px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A]">
+                <h1 className="mt-4 text-[32px] sm:text-[42px] font-medium leading-[1.02] tracking-[-0.04em] text-pn-ink">
                   Tekrar hoş geldin.
                 </h1>
                 <p className="mt-2.5 max-w-[380px] text-[14px] sm:text-[15px] leading-[1.6] text-[#525252]">
@@ -320,7 +320,7 @@ function AdminLoginContent() {
                   <AlertBanner kind="danger">
                     {error}
                     {lockSecondsLeft > 0 && (
-                      <span className="mt-1 block bz-mono text-[11px] opacity-80">
+                      <span className="mt-1 block tabular-nums text-[12px] opacity-80">
                         Tekrar deneme: {formatLock(lockSecondsLeft)}
                       </span>
                     )}
@@ -331,12 +331,12 @@ function AdminLoginContent() {
               <form onSubmit={handleLogin} className="space-y-4" noValidate>
                 {/* Username */}
                 <div className="space-y-1.5">
-                  <label htmlFor="adminUsername" className="pulse-eyebrow text-[#737373]">
+                  <label htmlFor="adminUsername" className="text-[13px] font-medium text-[#737373]">
                     Kullanıcı adı
                   </label>
                   <div className="group relative">
                     <User
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] transition-colors group-focus-within:text-[#0A0A0A]"
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] transition-colors group-focus-within:text-pn-ink"
                       size={16}
                       strokeWidth={2}
                       aria-hidden
@@ -356,7 +356,7 @@ function AdminLoginContent() {
                       onChange={(e) =>
                         setCredentials((prev) => ({ ...prev, username: e.target.value }))
                       }
-                      className="w-full min-h-[52px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[16px] sm:text-[15px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:font-normal placeholder:text-[#A3A3A3] hover:border-[#D4D4D4] hover:bg-white focus:border-[#0A0A0A] focus:bg-white focus:ring-4 focus:ring-[#C6F24E]/30"
+                      className="w-full min-h-[52px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-4 text-[16px] sm:text-[15px] font-medium text-pn-ink outline-none transition-all placeholder:font-normal placeholder:text-[#A3A3A3] hover:border-pn-line-strong hover:bg-white focus:border-pn-ink focus:bg-white focus:ring-4 focus:ring-pn-accent/30"
                       placeholder="kullanici.adi"
                     />
                   </div>
@@ -365,13 +365,13 @@ function AdminLoginContent() {
                 {/* Password */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="adminPassword" className="pulse-eyebrow text-[#737373]">
+                    <label htmlFor="adminPassword" className="text-[13px] font-medium text-[#737373]">
                       Şifre
                     </label>
                     <Link
                       href="/admin/forgot-password"
                       prefetch={false}
-                      className="group/forgot inline-flex min-h-[32px] items-center gap-1 rounded-md text-[12px] font-semibold text-[#0A0A0A] transition-colors hover:text-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      className="group/forgot inline-flex min-h-[32px] items-center gap-1 rounded-full text-[12px] font-medium text-pn-ink transition-colors hover:text-pn-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
                     >
                       <KeyRound size={12} strokeWidth={2.4} aria-hidden />
                       <span className="underline-offset-4 group-hover/forgot:underline">
@@ -381,7 +381,7 @@ function AdminLoginContent() {
                   </div>
                   <div className="group relative">
                     <LockKeyhole
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] transition-colors group-focus-within:text-[#0A0A0A]"
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3] transition-colors group-focus-within:text-pn-ink"
                       size={16}
                       strokeWidth={2}
                       aria-hidden
@@ -401,13 +401,13 @@ function AdminLoginContent() {
                       onKeyUp={detectCapsLock}
                       onBlur={() => setCapsLock(false)}
                       aria-describedby={capsLock ? 'adminCapsHint' : undefined}
-                      className="w-full min-h-[52px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-14 text-[16px] sm:text-[15px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:font-normal placeholder:text-[#A3A3A3] hover:border-[#D4D4D4] hover:bg-white focus:border-[#0A0A0A] focus:bg-white focus:ring-4 focus:ring-[#C6F24E]/30"
+                      className="w-full min-h-[52px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-14 text-[16px] sm:text-[15px] font-medium text-pn-ink outline-none transition-all placeholder:font-normal placeholder:text-[#A3A3A3] hover:border-pn-line-strong hover:bg-white focus:border-pn-ink focus:bg-white focus:ring-4 focus:ring-pn-accent/30"
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-1.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl text-[#737373] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                      className="absolute right-1.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[20px] text-[#737373] transition-colors hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
                       aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                       aria-pressed={showPassword}
                     >
@@ -434,19 +434,19 @@ function AdminLoginContent() {
                       name="rememberMe"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="peer h-5 w-5 appearance-none rounded-md border border-[#D4D4D4] bg-white transition-colors checked:border-[#0A0A0A] checked:bg-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      className="peer h-5 w-5 appearance-none rounded-[10px] border border-pn-line-strong bg-white transition-colors checked:border-pn-ink checked:bg-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
                     />
                     <svg
                       aria-hidden
                       viewBox="0 0 16 16"
-                      className="pointer-events-none absolute h-3 w-3 text-[#C6F24E] opacity-0 transition-opacity peer-checked:opacity-100"
+                      className="pointer-events-none absolute h-3 w-3 text-pn-accent opacity-0 transition-opacity peer-checked:opacity-100"
                     >
                       <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                   <span>
                     Beni 30 gün hatırla
-                    <span className="block text-[11.5px] font-normal text-[#A3A3A3]">
+                    <span className="block text-[12px] font-normal text-[#A3A3A3]">
                       Sadece kişisel cihazlarda kullan.
                     </span>
                   </span>
@@ -456,7 +456,7 @@ function AdminLoginContent() {
                 <button
                   type="submit"
                   disabled={submitDisabled}
-                  className="bz-btn-lime mt-1 min-h-[54px] w-full text-[15px] shadow-[0_18px_40px_-20px_rgba(198,242,78,0.9)] hover:shadow-[0_18px_40px_-18px_rgba(168,214,46,0.9)] disabled:shadow-none"
+                  className="bz-btn-lime mt-1 min-h-[54px] w-full text-[15px] shadow-[0_18px_40px_-20px_rgba(215,254,3,0.9)] hover:shadow-[0_18px_40px_-18px_rgba(168,214,46,0.9)] disabled:shadow-none"
                 >
                   {loading ? (
                     <>
@@ -478,7 +478,7 @@ function AdminLoginContent() {
               </form>
 
               <div className="mt-6 space-y-2 text-center">
-                <p className="text-[11px] tracking-[0.02em] text-[#A3A3A3]">
+                <p className="text-[12px] text-[#A3A3A3]">
                   Buaze yönetici girişi · yalnızca yetkili ekip
                 </p>
                 <RecaptchaNotice className="mx-auto max-w-[360px]" />
@@ -488,7 +488,7 @@ function AdminLoginContent() {
         </div>
 
         <footer className="relative px-5 pb-[calc(14px+env(safe-area-inset-bottom,0px))] text-center lg:hidden">
-          <span className="pulse-eyebrow text-[#C4C4C4]">© {new Date().getFullYear()} BUAZE</span>
+          <span className="text-[13px] font-medium text-[#C4C4C4]">© {new Date().getFullYear()} BUAZE</span>
         </footer>
       </section>
     </main>
@@ -500,7 +500,7 @@ export default function AdminLogin() {
     <Suspense
       fallback={
         <main className="flex w-full min-h-[100dvh] items-center justify-center bg-white">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
+          <Loader2 className="h-8 w-8 animate-spin text-pn-ink" />
         </main>
       }
     >

@@ -47,18 +47,18 @@ function RowSkeleton() {
 export function PlatformsOverviewBodySkeleton({ withTabs = false }: { withTabs?: boolean } = {}) {
   return (
     <>
-      {withTabs && <SkBox className="h-[38px] w-60 max-w-full rounded-lg" />}
-      <SkBox className="h-[84px] w-full rounded-2xl" />
+      {withTabs && <SkBox className="h-[38px] w-60 max-w-full rounded-[14px]" />}
+      <SkBox className="h-[84px] w-full rounded-[24px]" />
       <div className="space-y-3">
         <SkBox className="h-5 w-40" />
         <SkBox className="h-3 w-80 max-w-full" />
-        <div className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0" aria-hidden="true">
+        <div className="bz-card divide-y divide-pn-line overflow-hidden p-0" aria-hidden="true">
           {Array.from({ length: 6 }).map((_, index) => (
             <RowSkeleton key={index} />
           ))}
         </div>
       </div>
-      <SkBox className="h-[220px] w-full rounded-2xl" />
+      <SkBox className="h-[220px] w-full rounded-[24px]" />
     </>
   );
 }
@@ -87,16 +87,16 @@ export function PlatformProviderBodySkeleton() {
         <div className="space-y-2">
           <SkBox className="h-3 w-40" />
           <SkBox className="h-3 w-full max-w-[520px]" />
-          <SkBox className="h-11 w-full rounded-xl" />
+          <SkBox className="h-11 w-full rounded-[20px]" />
         </div>
-        <SkBox className="h-11 w-full max-w-[360px] rounded-xl" />
+        <SkBox className="h-11 w-full max-w-[360px] rounded-[20px]" />
         <div className="flex flex-col gap-2 sm:flex-row">
           <SkBox className="h-11 w-full rounded-full sm:h-9 sm:w-24" />
           <SkBox className="h-11 w-full rounded-full sm:h-9 sm:w-32" />
           <SkBox className="h-11 w-full rounded-full sm:h-9 sm:w-20" />
         </div>
       </div>
-      <SkBox className="h-[96px] w-full rounded-2xl" />
+      <SkBox className="h-[96px] w-full rounded-[24px]" />
     </>
   );
 }

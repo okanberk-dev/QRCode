@@ -162,7 +162,7 @@ export default function ActivationChecklistCard({
           </div>
           <ul className="min-w-0 flex-1 space-y-1">
             {[0, 1, 2].map((i) => (
-              <li key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+              <li key={i} className="flex items-center gap-3 rounded-[20px] px-3 py-2.5">
                 <div className="bz-skeleton h-7 w-7 rounded-full shrink-0" />
                 <div className="bz-skeleton h-[13.5px] flex-1 rounded" style={{ maxWidth: `${60 + ((i * 7) % 24)}%` }} />
                 <div className="bz-skeleton h-8 w-20 rounded-full shrink-0" />
@@ -188,11 +188,11 @@ export default function ActivationChecklistCard({
   if (result.isComplete) {
     return (
       <div
-        className="bz-card border-[#A8D62E] bg-[#F6FCE6] p-5 sm:p-6"
+        className="bz-card border-pn-accent-hover bg-[#F6FCE6] p-5 sm:p-6"
         role="status"
       >
         <div className="flex items-start gap-3">
-          <div aria-hidden="true" className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
+          <div aria-hidden="true" className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-pn-accent text-pn-ink">
             <PartyPopper size={20} />
           </div>
           <div className="flex-1 min-w-0">
@@ -205,7 +205,7 @@ export default function ActivationChecklistCard({
               type="button"
               onClick={() => performAction("dismiss")}
               disabled={busy !== null}
-              className="mt-1 inline-flex min-h-[44px] items-center text-[12px] font-medium text-[#525252] underline hover:text-[#0A0A0A] disabled:opacity-50 sm:min-h-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] rounded"
+              className="mt-1 inline-flex min-h-[44px] items-center text-[12px] font-medium text-[#525252] underline hover:text-pn-ink disabled:opacity-50 sm:min-h-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent rounded"
             >
               {isTr ? "Kapat" : "Dismiss"}
             </button>
@@ -257,7 +257,7 @@ export default function ActivationChecklistCard({
           </div>
 
           <div
-            className="mt-3 h-2 rounded-full bg-[#F5F5F5] overflow-hidden"
+            className="mt-3 h-2 rounded-full bg-pn-canvas overflow-hidden"
             role="progressbar"
             aria-label={isTr ? "Kurulum ilerlemesi" : "Setup progress"}
             aria-valuenow={result.percentage}
@@ -265,7 +265,7 @@ export default function ActivationChecklistCard({
             aria-valuemax={100}
           >
             <div
-              className="h-full bg-[#C6F24E] transition-[width] duration-500"
+              className="h-full bg-pn-accent transition-[width] duration-500"
               style={{ width: `${result.percentage}%` }}
             />
           </div>
@@ -275,7 +275,7 @@ export default function ActivationChecklistCard({
               type="button"
               onClick={() => setShowDone((v) => !v)}
               aria-expanded={showDone}
-              className="mt-2 inline-flex min-h-[44px] items-center text-[12px] font-medium text-[#525252] hover:text-[#0A0A0A] sm:min-h-[32px] rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+              className="mt-2 inline-flex min-h-[44px] items-center text-[12px] font-medium text-[#525252] hover:text-pn-ink sm:min-h-[32px] rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
             >
               {showDone
                 ? isTr
@@ -299,21 +299,21 @@ export default function ActivationChecklistCard({
             return (
               <li
                 key={s.step}
-                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-[#FAFAFA] transition-colors"
+                className="flex items-center gap-3 rounded-[20px] px-3 py-2 hover:bg-pn-canvas transition-colors"
               >
                 <div
                   aria-hidden="true"
                   className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-full ${
                     s.done
-                      ? "bg-[#C6F24E] text-[#0A0A0A]"
-                      : "bg-[#F5F5F5] text-[#737373]"
+                      ? "bg-pn-accent text-pn-ink"
+                      : "bg-pn-canvas text-[#737373]"
                   }`}
                 >
                   <Icon size={14} strokeWidth={s.done ? 2.5 : 2} />
                 </div>
                 <span
-                  className={`flex-1 min-w-0 text-[13.5px] ${
-                    s.done ? "text-[#737373] line-through" : "text-[#0A0A0A]"
+                  className={`flex-1 min-w-0 text-[14px] ${
+                    s.done ? "text-[#737373] line-through" : "text-pn-ink"
                   }`}
                 >
                   {s.done && <span className="sr-only">{isTr ? "Tamamlandı: " : "Done: "}</span>}

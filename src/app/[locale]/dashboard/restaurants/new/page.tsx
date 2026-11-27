@@ -55,7 +55,7 @@ export default async function NewRestaurantPage({ params }: PageProps) {
     return (
       <div className="mx-auto max-w-[920px] px-4 sm:px-7 py-6 lg:py-8">
         <div className="bz-card p-6 sm:p-8">
-          <h1 className="text-[20px] font-semibold text-[#0A0A0A]">
+          <h1 className="text-[20px] font-medium text-pn-ink">
             {isTr ? 'İşletme sınırına ulaştınız' : 'You have reached your business limit'}
           </h1>
           <p className="mt-2 max-w-[60ch] text-[14px] leading-[1.6] text-[#525252]">

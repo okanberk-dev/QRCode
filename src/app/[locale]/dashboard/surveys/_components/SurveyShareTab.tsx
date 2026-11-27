@@ -95,7 +95,7 @@ export default function SurveyShareTab({ locale, survey, publicUrl }: Props) {
             readOnly
             value={publicUrl}
             onFocus={(e) => e.currentTarget.select()}
-            className="bz-input bz-mono mt-4 min-h-11 w-full text-[13px] sm:min-h-9"
+            className="bz-input tabular-nums mt-4 min-h-11 w-full text-[13px] sm:min-h-9"
           />
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <button
@@ -138,7 +138,7 @@ export default function SurveyShareTab({ locale, survey, publicUrl }: Props) {
               : 'Print it for table cards, receipts or the counter.'}
           </p>
           <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-xl border border-[#EDEDED] bg-white">
+            <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-[20px] border border-pn-line bg-white">
               {/* Inline SVG preview straight from the API: a raw <img> avoids
                   next/image for an already authorised, rate-limited SVG.
                   `preview=1` returns the frame-less variant that stays legible
@@ -200,7 +200,7 @@ export default function SurveyShareTab({ locale, survey, publicUrl }: Props) {
           {infoRows.map(([label, value]) => (
             <div key={label} className="flex items-baseline justify-between gap-3 text-[13px]">
               <dt className="text-[#737373]">{label}</dt>
-              <dd className="text-right font-medium text-[#0A0A0A]">{value}</dd>
+              <dd className="text-right font-medium text-pn-ink">{value}</dd>
             </div>
           ))}
         </dl>

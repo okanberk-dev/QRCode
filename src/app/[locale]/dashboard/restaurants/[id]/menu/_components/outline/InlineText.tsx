@@ -205,8 +205,8 @@ export function InlineText({
       aria-keyshortcuts={rowFocus ? ROW_ARIA_KEYS : undefined}
       onClick={editable ? open : onDisplayClick}
       aria-label={editable ? copy.inline.editLabel(label, value) : displayAriaLabel}
-      className={`group/inline inline-flex max-w-full min-w-0 items-start gap-1.5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
-        editable ? 'cursor-text hover:bg-[#F5F5F5]' : ''
+      className={`group/inline inline-flex max-w-full min-w-0 items-start gap-1.5 rounded-[10px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${
+        editable ? 'cursor-text hover:bg-pn-canvas' : ''
       }`}
     >
       <span className={displayClassName}>{value}</span>

@@ -24,8 +24,8 @@ export function FilterChips({
   const fade = useScrollFade(stripRef, shown.map((f) => `${f}:${counts[f]}`).join(','));
   if (shown.length === 0 && value === 'all') return null;
   const chip = (active: boolean) =>
-    `inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
-      active ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#E5E5E5] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
+    `inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${
+      active ? 'border-pn-ink bg-pn-ink text-white' : 'border-pn-line-strong bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink'
     }`;
   return (
     <div ref={stripRef} role="group" aria-label={copy.outline.filtersLabel} className={`no-scrollbar flex min-w-0 gap-1.5 overflow-x-auto ${fade} ${className}`}>

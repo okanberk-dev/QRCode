@@ -243,16 +243,16 @@ export function AdminCustomerDrawer() {
         className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[420px] md:w-[480px] bg-white flex flex-col bz-elev-3"
         style={{ animation: 'cust-drawer-in 180ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] p-5">
+        <div className="flex items-start justify-between gap-3 border-b border-pn-line p-5">
           <div className="flex min-w-0 items-start gap-3">
             <div className="bz-avatar flex h-11 w-11 shrink-0 items-center justify-center text-[14px]">
               {initial}
             </div>
             <div className="min-w-0">
-              <span className="pulse-eyebrow text-[#737373]">CRM · ADMIN</span>
+              <span className="text-[13px] font-medium text-[#737373]">CRM · ADMIN</span>
               <h2
                 id="admin-customer-drawer-heading"
-                className="bz-h-tight mt-0.5 text-[18px] truncate text-[#0A0A0A]"
+                className="bz-h-tight mt-0.5 text-[18px] truncate text-pn-ink"
               >
                 {data?.customer.name || 'İsimsiz'}
               </h2>
@@ -294,7 +294,7 @@ export function AdminCustomerDrawer() {
               icon={<AlertTriangle size={14} strokeWidth={2} className="shrink-0 mt-0.5" />}
             >
               <div>
-                <div className="font-semibold">Müşteri detayı getirilemedi</div>
+                <div className="font-medium">Müşteri detayı getirilemedi</div>
                 <p className="mt-1 opacity-80">{error}</p>
               </div>
             </AlertBanner>
@@ -303,12 +303,12 @@ export function AdminCustomerDrawer() {
           {data && !loading && (
             <>
               {/* Admin-only: cross-link to restaurant detail + owner detail */}
-              <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 space-y-2">
-                <span className="pulse-eyebrow text-[#737373]">YÖNETİM BAĞLANTILARI</span>
+              <div className="rounded-[20px] border border-pn-line bg-pn-canvas p-3 space-y-2">
+                <span className="text-[13px] font-medium text-[#737373]">YÖNETİM BAĞLANTILARI</span>
                 <div className="flex flex-col gap-1.5">
                   <Link
                     href={`/admin/restaurants/${data.customer.restaurantId}`}
-                    className="inline-flex items-center justify-between gap-2 text-[12.5px] text-[#0A0A0A] hover:underline"
+                    className="inline-flex items-center justify-between gap-2 text-[13px] text-pn-ink hover:underline"
                   >
                     <span className="inline-flex items-center gap-1.5">
                       <Store size={12} strokeWidth={2} />
@@ -319,7 +319,7 @@ export function AdminCustomerDrawer() {
                   {data.customer.restaurantOwnerUserId && (
                     <Link
                       href={`/admin/members/${data.customer.restaurantOwnerUserId}`}
-                      className="inline-flex items-center justify-between gap-2 text-[12.5px] text-[#0A0A0A] hover:underline"
+                      className="inline-flex items-center justify-between gap-2 text-[13px] text-pn-ink hover:underline"
                     >
                       <span className="inline-flex items-center gap-1.5">
                         <Shield size={12} strokeWidth={2} />
@@ -335,48 +335,48 @@ export function AdminCustomerDrawer() {
                 {data.customer.email && (
                   <a
                     href={`mailto:${data.customer.email}`}
-                    className="inline-flex items-center gap-2.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2.5 text-[13px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
+                    className="inline-flex items-center gap-2.5 rounded-full border border-pn-line bg-pn-canvas px-3 py-2.5 text-[13px] text-pn-ink hover:border-pn-ink transition-colors"
                   >
                     <Mail size={14} strokeWidth={2} className="text-[#525252] shrink-0" />
                     <span className="truncate flex-1">{data.customer.email}</span>
-                    <span className="pulse-eyebrow text-[#737373]">E-POSTA</span>
+                    <span className="text-[13px] font-medium text-[#737373]">E-POSTA</span>
                   </a>
                 )}
                 {data.customer.phone && (
                   <a
                     href={`tel:${data.customer.phone}`}
-                    className="inline-flex items-center gap-2.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2.5 text-[13px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
+                    className="inline-flex items-center gap-2.5 rounded-full border border-pn-line bg-pn-canvas px-3 py-2.5 text-[13px] text-pn-ink hover:border-pn-ink transition-colors"
                   >
                     <Phone size={14} strokeWidth={2} className="text-[#525252] shrink-0" />
                     <span className="truncate flex-1">{data.customer.phone}</span>
-                    <span className="pulse-eyebrow text-[#737373]">TELEFON</span>
+                    <span className="text-[13px] font-medium text-[#737373]">TELEFON</span>
                   </a>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">YORUM</span>
+                  <span className="text-[13px] font-medium text-[#737373]">YORUM</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="bz-h-tight text-[20px] tabular-nums text-[#0A0A0A]">
+                    <span className="bz-h-tight text-[20px] tabular-nums text-pn-ink">
                       {data.stats.totalReviews}
                     </span>
                     <MessageSquareText size={11} className="text-[#A3A3A3]" />
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">ORT.</span>
+                  <span className="text-[13px] font-medium text-[#737373]">ORT.</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="bz-h-tight text-[20px] tabular-nums text-[#0A0A0A]">
+                    <span className="bz-h-tight text-[20px] tabular-nums text-pn-ink">
                       {data.stats.avgRating != null ? data.stats.avgRating.toFixed(1) : '—'}
                     </span>
-                    <Star size={11} className="text-[#C6F24E]" fill="#C6F24E" />
+                    <Star size={11} className="text-pn-accent" fill="#D7FE03" />
                   </div>
                 </div>
                                 <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">SON</span>
+                  <span className="text-[13px] font-medium text-[#737373]">SON</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                    <span className="bz-h-tight text-[14px] text-pn-ink">
                       {data.stats.lastSeenAt ? formatRelative(data.stats.lastSeenAt) : '—'}
                     </span>
                     <Calendar size={11} className="text-[#A3A3A3]" />
@@ -384,8 +384,8 @@ export function AdminCustomerDrawer() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                <span className="pulse-eyebrow text-[#737373]">SON KONU</span>
+              <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                <span className="text-[13px] font-medium text-[#737373]">SON KONU</span>
                 <span className="text-[#262626] font-medium">
                   {computeLastTopic(
                     {
@@ -398,17 +398,17 @@ export function AdminCustomerDrawer() {
                   )}
                 </span>
                 <span className="text-[#A3A3A3]">·</span>
-                <span className="pulse-eyebrow text-[#737373]">KANAL</span>
-                <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
+                <span className="text-[13px] font-medium text-[#737373]">KANAL</span>
+                <span className="tabular-nums inline-flex items-center rounded-full bg-pn-canvas px-2 py-0.5 text-[#525252]">
                   {computeLastChannel(data.stats.lastPlatform ?? null, 'tr')}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-[#737373]">
+              <div className="flex items-center justify-between text-[12px] text-[#737373]">
                 <span className="inline-flex items-center gap-1.5">
                   <TrendingUp size={11} strokeWidth={2} />
                   Üye:{' '}
-                  <strong className="text-[#0A0A0A]">
+                  <strong className="text-pn-ink">
                     {data.stats.firstSeenAt ? formatDate(data.stats.firstSeenAt) : '—'}
                   </strong>
                 </span>
@@ -419,7 +419,7 @@ export function AdminCustomerDrawer() {
 
               <div>
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="pulse-eyebrow text-[#737373]">YORUM GEÇMİŞİ</span>
+                  <span className="text-[13px] font-medium text-[#737373]">YORUM GEÇMİŞİ</span>
                 </div>
                 <ol className="space-y-3">
                   {data.feedbacks.map((fb) => {
@@ -428,7 +428,7 @@ export function AdminCustomerDrawer() {
                     return (
                       <li
                         key={fb.id}
-                        className="rounded-xl border border-[#EDEDED] bg-white p-3.5"
+                        className="rounded-[20px] border border-pn-line bg-white p-3.5"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
@@ -442,21 +442,21 @@ export function AdminCustomerDrawer() {
                                 <Star
                                   key={s}
                                   size={11}
-                                  className={s <= fb.rating ? 'text-[#C6F24E]' : 'text-[#EDEDED]'}
-                                  fill={s <= fb.rating ? '#C6F24E' : '#EDEDED'}
+                                  className={s <= fb.rating ? 'text-pn-accent' : 'text-pn-line'}
+                                  fill={s <= fb.rating ? '#D7FE03' : '#ECECF0'}
                                 />
                               ))}
                             </span>
-                            <span className="bz-mono text-[10.5px] tabular-nums text-[#737373]">
+                            <span className="tabular-nums text-[12px] tabular-nums text-[#737373]">
                               {fb.rating.toFixed(1)}
                             </span>
                           </div>
-                          <span className="bz-mono text-[10.5px] tabular-nums text-[#A3A3A3]">
+                          <span className="tabular-nums text-[12px] tabular-nums text-[#A3A3A3]">
                             {formatDateTimeStamp(fb.createdAt)}
                           </span>
                         </div>
                         {fb.comment ? (
-                          <p className="mt-2 text-[12.5px] leading-[1.55] text-[#262626] whitespace-pre-wrap">
+                          <p className="mt-2 text-[13px] leading-[1.55] text-[#262626] whitespace-pre-wrap">
                             {fb.comment}
                           </p>
                         ) : (
@@ -464,7 +464,7 @@ export function AdminCustomerDrawer() {
                             Yorum metni yok.
                           </p>
                         )}
-                        <div className="mt-2 flex items-center gap-2 text-[10.5px] text-[#737373]">
+                        <div className="mt-2 flex items-center gap-2 text-[12px] text-[#737373]">
                           <span>{platformLabel}</span>
                           {fb.branch && (
                             <>
@@ -483,7 +483,7 @@ export function AdminCustomerDrawer() {
         </div>
 
         {data && data.feedbacks.length > 0 && (
-          <div className="border-t border-[#EDEDED] bg-[#FAFAFA] p-4 flex gap-2">
+          <div className="border-t border-pn-line bg-pn-canvas p-4 flex gap-2">
             {data.customer.email && (
               <a
                 href={`mailto:${data.customer.email}`}

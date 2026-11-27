@@ -65,7 +65,7 @@ export function StatusCell({
       onChange={() => void actions.toggleSoldOut(item.id)}
       ariaLabel={copy.item.switchAria(item.name)}
       label={
-        <span className={`${labelClass} text-[12.5px] font-medium ${soldOut ? 'text-[#92400E]' : 'text-[#737373]'}`}>
+        <span className={`${labelClass} text-[13px] font-medium ${soldOut ? 'text-[#92400E]' : 'text-[#737373]'}`}>
           {soldOut ? copy.item.soldOut : copy.item.available}
         </span>
       }

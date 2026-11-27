@@ -77,7 +77,7 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
 
   if (loading) {
     return (
-      <div className="rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] p-4">
+      <div className="rounded-[10px] border border-pn-line bg-pn-canvas p-4">
         <div className="flex items-center gap-2 text-[12px] text-[#737373]">
           <Loader2 size={14} className="animate-spin" />
           {isTr ? 'AI özet hazırlanıyor…' : 'Preparing AI summary…'}
@@ -101,21 +101,21 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
 
   return (
     <section
-      className="rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] p-4"
+      className="rounded-[10px] border border-pn-line bg-pn-canvas p-4"
       aria-label={isTr ? 'AI özeti' : 'AI summary'}
     >
       <header className="mb-2 flex items-center gap-2">
-        <Sparkles size={13} className="text-[#A8D62E]" strokeWidth={2.2} />
-        <span className="text-[13px] font-semibold text-[#0A0A0A]">
+        <Sparkles size={13} className="text-pn-accent-ink" strokeWidth={2.2} />
+        <span className="text-[13px] font-medium text-pn-ink">
           {isTr
             ? `${totalSignals} sinyal tespit edildi`
             : `${totalSignals} signals detected`}
         </span>
       </header>
-      <ul className="m-0 list-none p-0 space-y-1.5 text-[12.5px] leading-[1.55] text-[#525252]">
+      <ul className="m-0 list-none p-0 space-y-1.5 text-[13px] leading-[1.55] text-[#525252]">
         {positives.length > 0 && (
           <li className="flex gap-2">
-            <span className="font-semibold text-[#16A34A] shrink-0">
+            <span className="font-medium text-[#16A34A] shrink-0">
               {isTr ? 'Pozitif:' : 'Positive:'}
             </span>
             <span>{positives.join(', ')}</span>
@@ -123,17 +123,17 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
         )}
         {improvements.length > 0 && (
           <li className="flex gap-2">
-            <span className="font-semibold text-[#D97706] shrink-0">
+            <span className="font-medium text-[#D97706] shrink-0">
               {isTr ? 'İyileştirme:' : 'Improvement:'}
             </span>
             <span>{improvements.join(', ')}</span>
           </li>
         )}
         <li className="flex gap-2">
-          <span className="font-semibold text-[#525252] shrink-0">
+          <span className="font-medium text-[#525252] shrink-0">
             {isTr ? 'Tekrar gelme niyeti:' : 'Return intent:'}
           </span>
-          <span className="font-semibold" style={{ color: intentColor }}>
+          <span className="font-medium" style={{ color: intentColor }}>
             {intentLabel}
           </span>
         </li>

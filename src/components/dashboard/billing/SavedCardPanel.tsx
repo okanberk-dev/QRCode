@@ -58,9 +58,9 @@ export default function SavedCardPanel({
     return (
       <div className="bz-card p-5" aria-busy="true">
         <Eyebrow>{billingText('pm.eyebrow', locale)}</Eyebrow>
-        <div className="mt-3 aspect-[1.586/1] w-full max-w-[340px] animate-pulse rounded-[14px] bg-[#F2F2F2] motion-reduce:animate-none" />
-        <div className="mt-3 h-3 w-56 max-w-full animate-pulse rounded bg-[#F2F2F2] motion-reduce:animate-none" />
-        <div className="mt-4 h-11 w-32 animate-pulse rounded-full bg-[#F2F2F2] motion-reduce:animate-none sm:h-8" />
+        <div className="mt-3 aspect-[1.586/1] w-full max-w-[340px] animate-pulse rounded-[14px] bg-pn-canvas motion-reduce:animate-none" />
+        <div className="mt-3 h-3 w-56 max-w-full animate-pulse rounded bg-pn-canvas motion-reduce:animate-none" />
+        <div className="mt-4 h-11 w-32 animate-pulse rounded-full bg-pn-canvas motion-reduce:animate-none sm:h-8" />
         <div className="mt-3 min-h-[18px]" />
       </div>
     );
@@ -215,7 +215,7 @@ export default function SavedCardPanel({
       ) : null}
 
       {data.otherCards.length > 0 ? (
-        <ul className="mt-4 space-y-2 border-t border-[#EDEDED] pt-3">
+        <ul className="mt-4 space-y-2 border-t border-pn-line pt-3">
           {data.otherCards.map((other) => (
             <li key={other.handle} className="flex items-start justify-between gap-3">
               <div className="min-w-0 text-[12px] leading-[1.45] text-[#737373]">

@@ -298,7 +298,7 @@ export default function MenuAnalyticsPage() {
         {/* Analytics is opened from the builder ("Diğer → Analitik"): back goes there. */}
         <Link
           href={`${base}/menu`}
-          className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-medium text-[#525252] transition-colors hover:text-[#0A0A0A] sm:min-h-[32px]"
+          className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-medium text-[#525252] transition-colors hover:text-pn-ink sm:min-h-[32px]"
         >
           <ArrowLeft size={14} strokeWidth={2} />
           {copy.back}
@@ -322,7 +322,7 @@ export default function MenuAnalyticsPage() {
         <div
           role="group"
           aria-label={copy.period}
-          className="flex w-full items-center gap-0.5 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex sm:w-auto"
+          className="flex w-full items-center gap-0.5 rounded-full border border-pn-line bg-white p-0.5 sm:inline-flex sm:w-auto"
         >
           {ranges.map((opt) => {
             const active = range === opt.key;
@@ -332,8 +332,8 @@ export default function MenuAnalyticsPage() {
                 key={opt.key}
                 onClick={() => setRange(opt.key)}
                 aria-pressed={active}
-                className={`inline-flex min-h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:h-[28px] sm:min-h-0 sm:flex-none sm:text-[12px] ${
-                  active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5] hover:text-[#0A0A0A]'
+                className={`inline-flex min-h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:h-[28px] sm:min-h-0 sm:flex-none sm:text-[12px] ${
+                  active ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas hover:text-pn-ink'
                 }`}
               >
                 <span className="sm:hidden">{opt.short}</span>
@@ -397,7 +397,7 @@ export default function MenuAnalyticsPage() {
           <button
             type="button"
             onClick={fetchAnalytics}
-            className="font-semibold underline underline-offset-2"
+            className="font-medium underline underline-offset-2"
           >
             {copy.retry}
           </button>
@@ -429,7 +429,7 @@ export default function MenuAnalyticsPage() {
           {data.trend.length > 0 && daysWithTraffic >= MIN_TREND_DAYS ? (
             <TrendChart trend={data.trend} copy={copy} isTr={isTr} />
           ) : range === 'all' ? (
-            <div className="flex items-center gap-3 rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] p-4 text-xs font-medium text-[#6B7280]">
+            <div className="flex items-center gap-3 rounded-[24px] border border-pn-line bg-[#FFFFFF] p-4 text-xs font-medium text-[#6B7280]">
               <Info size={14} className="shrink-0" strokeWidth={2} />
               <span>{copy.allTimeTrendNote}</span>
             </div>
@@ -478,10 +478,10 @@ function EmptyReport({
   }
   return (
     <div className="bz-card px-6 py-10 text-center sm:p-12">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FAFAFA]">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-pn-canvas">
         <Sparkles size={26} strokeWidth={2} className="text-[#6B7280]" />
       </div>
-      <h2 className="text-lg font-semibold tracking-tight text-[#0A0A0A]">{title}</h2>
+      <h2 className="text-lg font-medium tracking-tight text-pn-ink">{title}</h2>
       <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#6B7280]">{body}</p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         {action}
@@ -536,11 +536,11 @@ function OverviewCards({
               <p className="min-w-0 truncate text-[12px] font-medium leading-3 text-[#525252]" title={c.hint ? `${c.label} — ${c.hint}` : c.label}>
                 {c.label}
               </p>
-              <Icon size={14} strokeWidth={2} className="shrink-0 text-[#1A1A1A]" />
+              <Icon size={14} strokeWidth={2} className="shrink-0 text-pn-ink-2" />
             </div>
-            <p className="truncate text-[26px] font-semibold leading-7 tracking-tight text-[#0A0A0A]">{c.value}</p>
+            <p className="truncate text-[26px] font-medium leading-7 tracking-tight text-pn-ink">{c.value}</p>
             {hasDelta ? (
-              <div className={`flex min-w-0 items-start gap-1 text-[11px] font-bold leading-3 ${unchanged ? 'text-[#6B7280]' : positive ? 'text-[#166534]' : 'text-[#991B1B]'}`}>
+              <div className={`flex min-w-0 items-start gap-1 text-[12px] font-medium leading-3 ${unchanged ? 'text-[#6B7280]' : positive ? 'text-[#166534]' : 'text-[#991B1B]'}`}>
                 {unchanged ? <Minus size={11} strokeWidth={2.5} aria-hidden className="shrink-0" /> : positive ? <TrendingUp size={11} strokeWidth={2.5} aria-hidden className="shrink-0" /> : <TrendingDown size={11} strokeWidth={2.5} aria-hidden className="shrink-0" />}
                 <span className="min-w-0">
                   {unchanged
@@ -549,9 +549,9 @@ function OverviewCards({
                 </span>
               </div>
             ) : c.hint ? (
-              <p className="text-[11px] font-medium leading-3 text-[#6B7280]">{c.hint}</p>
+              <p className="text-[12px] font-medium leading-3 text-[#6B7280]">{c.hint}</p>
             ) : (
-              <p className="text-[11px] leading-3 text-transparent" aria-hidden>·</p>
+              <p className="text-[12px] leading-3 text-transparent" aria-hidden>·</p>
             )}
           </div>
         );
@@ -564,7 +564,7 @@ function EditLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[#EDEDED] bg-white px-3 text-[12px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] sm:min-h-0 sm:py-1.5"
+      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-pn-line bg-white px-3 text-[12px] font-medium text-pn-ink transition-colors hover:border-pn-ink sm:min-h-0 sm:py-1.5"
     >
       <Pencil size={12} strokeWidth={2.2} />
       {label}
@@ -587,7 +587,7 @@ function TodoSection({
   return (
     <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-todo">
       <div className="mb-4">
-        <h2 id="menu-analytics-todo" className="text-[15px] font-semibold text-[#0A0A0A]">
+        <h2 id="menu-analytics-todo" className="text-[15px] font-medium text-pn-ink">
           {copy.todo}
         </h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.todoSub}</p>
@@ -599,7 +599,7 @@ function TodoSection({
         <div className="space-y-6">
           {data.lowInterest.length > 0 && (
             <div>
-              <h3 className="mb-2 text-[12px] font-semibold text-[#0A0A0A]">{copy.lowInterest}</h3>
+              <h3 className="mb-2 text-[12px] font-medium text-pn-ink">{copy.lowInterest}</h3>
               {/* ≥ sm: table */}
               <div className="hidden overflow-x-auto sm:block">
                 <table className="w-full text-left text-xs">
@@ -614,16 +614,16 @@ function TodoSection({
                       <th scope="col" className="pb-2"><span className="sr-only">{copy.editItem}</span></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#EDEDED]">
+                  <tbody className="divide-y divide-pn-line">
                     {data.lowInterest.map((r) => (
                       <tr key={r.productId}>
-                        <td className="py-3 pr-2 font-semibold text-[#0A0A0A]">{r.productName}</td>
-                        <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
-                        <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmt.count(r.views)}</td>
-                        <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmt.count(r.clicks)}</td>
-                        <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#991B1B]">{fmt.rate(r.ctr)}</td>
+                        <td className="py-3 pr-2 font-medium text-pn-ink">{r.productName}</td>
+                        <td className="py-3 pr-2 text-pn-ink-2">{r.categoryName ?? '—'}</td>
+                        <td className="py-3 pr-2 text-right font-medium tabular-nums text-pn-ink">{fmt.count(r.views)}</td>
+                        <td className="py-3 pr-2 text-right font-medium tabular-nums text-pn-ink">{fmt.count(r.clicks)}</td>
+                        <td className="py-3 pr-2 text-right font-medium tabular-nums text-[#991B1B]">{fmt.rate(r.ctr)}</td>
                         <td className="py-3 pr-2">
-                          <span className="inline-flex rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[11px] font-semibold text-[#92400E]">
+                          <span className="inline-flex rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[12px] font-medium text-[#92400E]">
                             {copy.statusLabels[r.status]}
                           </span>
                         </td>
@@ -636,11 +636,11 @@ function TodoSection({
                 </table>
               </div>
               {/* < sm: two-line cards (CLAUDE.md §23.6 table-to-card) */}
-              <ul className="divide-y divide-[#EDEDED] sm:hidden">
+              <ul className="divide-y divide-pn-line sm:hidden">
                 {data.lowInterest.map((r) => (
                   <li key={r.productId} className="flex min-w-0 flex-col gap-2 py-3">
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">
+                      <p className="truncate text-[13px] font-medium text-pn-ink">
                         {r.productName}
                         {r.categoryName ? <span className="font-medium text-[#6B7280]"> · {r.categoryName}</span> : null}
                       </p>
@@ -649,7 +649,7 @@ function TodoSection({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="inline-flex rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[11px] font-semibold text-[#92400E]">
+                      <span className="inline-flex rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[12px] font-medium text-[#92400E]">
                         {copy.statusLabels[r.status]}
                       </span>
                       <EditLink href={editHref(r.productId)} label={copy.editItem} />
@@ -665,13 +665,13 @@ function TodoSection({
               {data.insights.map((insight, idx) => {
                 const productId = insight.kind === 'low_ctr_product' ? insight.relatedIds?.[0] : undefined;
                 return (
-                  <div key={`${insight.kind}-${idx}`} className="flex min-w-0 gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#4D5C00]">
+                  <div key={`${insight.kind}-${idx}`} className="flex min-w-0 gap-3 rounded-[24px] border border-pn-line bg-white p-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent-soft text-[#4D5C00]">
                       <Lightbulb size={16} strokeWidth={2.2} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-tight text-[#0A0A0A]">{insight.title}</p>
-                      <p className="mt-1 text-xs font-medium leading-relaxed text-[#1A1A1A]">{insight.description}</p>
+                      <p className="text-sm font-medium leading-tight text-pn-ink">{insight.title}</p>
+                      <p className="mt-1 text-xs font-medium leading-relaxed text-pn-ink-2">{insight.description}</p>
                       {productId ? (
                         <div className="mt-2">
                           <EditLink href={editHref(productId)} label={copy.editItem} />
@@ -700,11 +700,11 @@ function TopProducts({
   const shown = rows.slice(0, 10);
   return (
     <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-products">
-      <h2 id="menu-analytics-products" className="mb-4 text-[15px] font-semibold text-[#0A0A0A]">
+      <h2 id="menu-analytics-products" className="mb-4 text-[15px] font-medium text-pn-ink">
         {copy.topProducts}
       </h2>
       {shown.length === 0 ? (
-        <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.notEnoughData}</p>
+        <p className="py-10 text-center text-xs font-medium text-[#6B7280]">{copy.notEnoughData}</p>
       ) : (
         <>
           <div className="hidden overflow-x-auto sm:block">
@@ -719,26 +719,26 @@ function TopProducts({
                   <th scope="col" className="pb-2 text-right">{copy.columns.interest}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EDEDED]">
+              <tbody className="divide-y divide-pn-line">
                 {shown.map((r, i) => (
                   <tr key={r.productId}>
-                    <td className="py-3 pr-2 font-semibold text-[#6B7280]">{i + 1}</td>
-                    <td className="py-3 pr-2 font-semibold text-[#0A0A0A]">{r.productName}</td>
-                    <td className="py-3 pr-2 text-[#1A1A1A]">{r.categoryName ?? '—'}</td>
-                    <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmt.count(r.views)}</td>
-                    <td className="py-3 pr-2 text-right font-bold tabular-nums text-[#0A0A0A]">{fmt.count(r.clicks)}</td>
-                    <td className="py-3 text-right font-bold tabular-nums text-[#0A0A0A]">{fmt.rate(r.ctr)}</td>
+                    <td className="py-3 pr-2 font-medium text-[#6B7280]">{i + 1}</td>
+                    <td className="py-3 pr-2 font-medium text-pn-ink">{r.productName}</td>
+                    <td className="py-3 pr-2 text-pn-ink-2">{r.categoryName ?? '—'}</td>
+                    <td className="py-3 pr-2 text-right font-medium tabular-nums text-pn-ink">{fmt.count(r.views)}</td>
+                    <td className="py-3 pr-2 text-right font-medium tabular-nums text-pn-ink">{fmt.count(r.clicks)}</td>
+                    <td className="py-3 text-right font-medium tabular-nums text-pn-ink">{fmt.rate(r.ctr)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <ol className="divide-y divide-[#EDEDED] sm:hidden">
+          <ol className="divide-y divide-pn-line sm:hidden">
             {shown.map((r, i) => (
               <li key={r.productId} className="flex min-w-0 items-start gap-3 py-3">
-                <span className="w-5 shrink-0 text-[12px] font-semibold tabular-nums text-[#6B7280]">{i + 1}</span>
+                <span className="w-5 shrink-0 text-[12px] font-medium tabular-nums text-[#6B7280]">{i + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">
+                  <p className="truncate text-[13px] font-medium text-pn-ink">
                     {r.productName}
                     {r.categoryName ? <span className="font-medium text-[#6B7280]"> · {r.categoryName}</span> : null}
                   </p>
@@ -765,11 +765,11 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
     .map((r) => ({ name: truncate(r.categoryName), fullName: r.categoryName, clicks: r.clicks, views: r.views }));
   return (
     <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-categories">
-      <h2 id="menu-analytics-categories" className="mb-4 text-[15px] font-semibold text-[#0A0A0A]">
+      <h2 id="menu-analytics-categories" className="mb-4 text-[15px] font-medium text-pn-ink">
         {copy.topCategories}
       </h2>
       {dataRows.length === 0 ? (
-        <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.notEnoughData}</p>
+        <p className="py-10 text-center text-xs font-medium text-[#6B7280]">{copy.notEnoughData}</p>
       ) : (
         <MeasuredChart className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
           {({ width, height }) => (
@@ -803,7 +803,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   return (
     <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-trend">
       <div className="mb-4">
-        <h2 id="menu-analytics-trend" className="text-[15px] font-semibold text-[#0A0A0A]">{copy.trends}</h2>
+        <h2 id="menu-analytics-trend" className="text-[15px] font-medium text-pn-ink">{copy.trends}</h2>
       </div>
       <MeasuredChart className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
         {({ width, height }) => (

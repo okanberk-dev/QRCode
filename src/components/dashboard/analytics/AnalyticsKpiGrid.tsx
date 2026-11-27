@@ -1,4 +1,5 @@
 import { InfoTip, Sparkline } from '@/components/ui';
+import { PanoNumber } from '@/components/panel/pano/PanoNumber';
 import type { ChangeText, ChangeTone } from '@/lib/feedback-metrics';
 
 // §38.50 — Analitik sayfası KPI grid 5-col single row (tasarım birebir).
@@ -32,7 +33,7 @@ export interface AnalyticsKpiGridProps {
   isTr?: boolean;
 }
 
-const TONE_COLOR: Record<ChangeTone, string> = { good: '#15803D', bad: '#B91C1C', neutral: '#737373' };
+const TONE_COLOR: Record<ChangeTone, string> = { good: '#3A8228', bad: '#D92D20', neutral: '#6E6E73' };
 
 function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
   const change: ChangeText | null =
@@ -45,14 +46,14 @@ function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
         }
       : null);
   return (
-    <article className="bz-card flex min-w-0 flex-col gap-2 p-4 sm:p-6">
-      <div className="inline-flex items-center gap-1 text-[12.5px] font-medium text-[#525252]">
+    <article className="bz-card flex min-w-0 flex-col gap-3 p-5 sm:p-6">
+      <div className="inline-flex items-center gap-1 text-[14px] text-[#6E6E73]">
         {kpi.label}
         {kpi.info && <InfoTip text={kpi.info} label={kpi.label} isTr={isTr} />}
       </div>
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-        <span className="text-[24px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-[#0A0A0A] sm:text-[26px]">
-          {kpi.value}
+        <span className="text-[30px] leading-none text-pn-ink sm:text-[34px]">
+          <PanoNumber value={kpi.value} locale={isTr ? 'tr' : 'en'} />
         </span>
         {change && (
           <span className="text-[12px] font-medium tabular-nums" style={{ color: TONE_COLOR[change.tone] }}>
@@ -63,17 +64,17 @@ function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
       </div>
       {kpi.sparkline && kpi.sparkline.length >= 2 && (
         <div className="h-7">
-          <Sparkline values={kpi.sparkline} w={140} h={28} color={kpi.sparklineColor ?? '#A8D62E'} className="w-full" />
+          <Sparkline values={kpi.sparkline} w={140} h={28} color={kpi.sparklineColor ?? 'var(--color-pn-ink)'} className="w-full" />
         </div>
       )}
-      {kpi.subtitle && <div className="mt-auto text-[12px] leading-snug text-[#737373]">{kpi.subtitle}</div>}
+      {kpi.subtitle && <div className="mt-auto text-[13px] leading-snug text-[#9A9AA0]">{kpi.subtitle}</div>}
     </article>
   );
 }
 
 export function AnalyticsKpiGrid({ kpis, isTr = true }: AnalyticsKpiGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
       {kpis.map((kpi) => (
         <KpiCard key={kpi.label} kpi={kpi} isTr={isTr} />
       ))}

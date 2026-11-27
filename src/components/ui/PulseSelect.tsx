@@ -234,7 +234,7 @@ export function PulseSelect({
                 >
                   <span className="truncate">{opt.label}</span>
                   {isSel && (
-                    <Check size={13} strokeWidth={2.5} className="!text-[#A8D62E]" aria-hidden="true" />
+                    <Check size={13} strokeWidth={2.5} className="!text-pn-accent-ink" aria-hidden="true" />
                   )}
                 </button>
               );
@@ -262,7 +262,7 @@ export function PulseSelect({
         disabled={disabled}
         onClick={toggleMenu}
         onKeyDown={onTriggerKeyDown}
-        className="bz-input flex w-full items-center justify-between gap-2 h-11 sm:h-[34px] py-0 pr-2.5 text-[14px] sm:text-[13px] text-[#0A0A0A] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bz-input flex w-full items-center justify-between gap-2 h-11 py-0 pr-3 text-[14px] text-pn-ink disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span className="truncate text-left">{triggerLabel}</span>
         <ChevronDown

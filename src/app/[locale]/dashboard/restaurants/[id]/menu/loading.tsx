@@ -14,7 +14,7 @@ const STATUS_COPY = getMenuCopy('tr');
 function SkText({ className = '', textClassName = '', children }: { className?: string; textClassName?: string; children: ReactNode }) {
   return (
     <div className={className}>
-      <span className={`select-none rounded bg-[#EDEDED] text-transparent [box-decoration-break:clone] ${textClassName}`}>{children}</span>
+      <span className={`select-none rounded bg-pn-line text-transparent [box-decoration-break:clone] ${textClassName}`}>{children}</span>
     </div>
   );
 }
@@ -49,9 +49,9 @@ export default function MenuBuilderSkeleton() {
             </div>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">
-            <SkBox className="h-11 flex-1 rounded-lg sm:h-9 sm:w-[112px] sm:flex-none" />
-            <SkBox className="h-11 flex-1 rounded-lg sm:h-9 sm:w-[128px] sm:flex-none" />
-            <SkBox className="h-11 w-11 shrink-0 rounded-lg sm:h-9 sm:w-[76px]" />
+            <SkBox className="h-11 flex-1 rounded-[14px] sm:h-9 sm:w-[112px] sm:flex-none" />
+            <SkBox className="h-11 flex-1 rounded-[14px] sm:h-9 sm:w-[128px] sm:flex-none" />
+            <SkBox className="h-11 w-11 shrink-0 rounded-[14px] sm:h-9 sm:w-[76px]" />
           </div>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function MenuBuilderSkeleton() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
           <div className={STATUS_TEXT_COLUMN}>
             <div className="flex min-w-0 items-center gap-2">
-              <span className="bz-badge w-[72px] shrink-0 bg-[#EDEDED]">
+              <span className="bz-badge w-[72px] shrink-0 bg-pn-line">
                 <span className="h-1.5 w-1.5 shrink-0" />
               </span>
               <SkText className="min-w-0 bz-h-tight [word-spacing:0.1em]" textClassName="text-[18px]">
@@ -73,10 +73,10 @@ export default function MenuBuilderSkeleton() {
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
             <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
-              <SkBox className="h-11 w-[240px] max-w-full rounded-lg lg:h-9 max-sm:flex-1" />
+              <SkBox className="h-11 w-[240px] max-w-full rounded-[14px] lg:h-9 max-sm:flex-1" />
               <SkBox className="h-11 w-11 shrink-0 rounded-full sm:h-10 sm:w-[134px]" />
             </div>
-            <SkBox className="h-11 w-[126px] rounded-lg pointer-fine:h-8" />
+            <SkBox className="h-11 w-[126px] rounded-[14px] pointer-fine:h-8" />
           </div>
         </div>
       </div>
@@ -93,8 +93,8 @@ export default function MenuBuilderSkeleton() {
           <SkBox className="h-9 w-9" />
           <div className="hidden shrink-0 items-center gap-2 min-[1600px]:flex">
             <SkBox className="h-9 w-[150px] rounded-[10px]" />
-            <SkBox className="h-9 w-16 rounded-lg" />
-            <SkBox className="h-[34px] w-20 rounded-lg" />
+            <SkBox className="h-9 w-16 rounded-[14px]" />
+            <SkBox className="h-[34px] w-20 rounded-[14px]" />
           </div>
         </div>
         <div className="flex h-14 items-center gap-2 min-[1600px]:hidden">
@@ -102,7 +102,7 @@ export default function MenuBuilderSkeleton() {
             <SkBox key={i} className="h-9 w-24 rounded-full" />
           ))}
           <SkBox className="ml-auto h-9 w-[150px] rounded-[10px]" />
-          <SkBox className="h-[34px] w-20 rounded-lg" />
+          <SkBox className="h-[34px] w-20 rounded-[14px]" />
         </div>
       </div>
 
@@ -110,7 +110,7 @@ export default function MenuBuilderSkeleton() {
       <div className="space-y-3 lg:hidden">
         {/* ViewSwitch: 44px segments inside a 3px track */}
         <SkBox className="h-[50px] w-full rounded-[10px] sm:w-[300px]" />
-        <SkBox className="h-11 w-full rounded-lg sm:w-[280px]" />
+        <SkBox className="h-11 w-full rounded-[14px] sm:w-[280px]" />
         <div className="flex gap-1.5 overflow-hidden">
           {Array.from({ length: 3 }).map((_, i) => (
             <SkBox key={i} className="h-9 w-24 shrink-0 rounded-full" />
@@ -119,19 +119,19 @@ export default function MenuBuilderSkeleton() {
       </div>
 
       {/* <1024: sticky category chip bar */}
-      <div className="-mx-4 border-b border-[#EDEDED] px-4 sm:-mx-7 sm:px-7 lg:hidden">
+      <div className="-mx-4 border-b border-pn-line px-4 sm:-mx-7 sm:px-7 lg:hidden">
         <div className="flex h-[52px] items-center gap-2 overflow-hidden">
           <SkBox className="h-4 w-14 shrink-0" />
           {Array.from({ length: 4 }).map((_, i) => (
             <SkBox key={i} className="h-9 w-24 shrink-0 rounded-full" />
           ))}
-          <SkBox className="ml-auto h-11 w-11 shrink-0 rounded-lg" />
+          <SkBox className="ml-auto h-11 w-11 shrink-0 rounded-[14px]" />
         </div>
       </div>
 
       {/* Category rail (≥1600) | outline | right column */}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-5 xl:grid-cols-[minmax(0,1fr)_360px] min-[100rem]:grid-cols-[184px_minmax(0,1fr)_380px]">
-        <div className="bz-card sticky top-[128px] hidden self-start p-2 min-[1600px]:block" aria-hidden="true">
+        <div className="bz-card sticky top-[72px] hidden self-start p-2 min-[1600px]:block" aria-hidden="true">
           <SkBox className="mx-2 mb-1.5 mt-1 h-3 w-20" />
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex h-10 items-center gap-2 px-2">
@@ -144,7 +144,7 @@ export default function MenuBuilderSkeleton() {
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, s) => (
               <div key={s} className="bz-card overflow-hidden p-0">
-                <div className="flex min-h-[52px] items-center gap-2 border-b border-[#EDEDED] px-3 py-2.5 sm:px-4">
+                <div className="flex min-h-[52px] items-center gap-2 border-b border-pn-line px-3 py-2.5 sm:px-4">
                   <SkBox className="h-11 w-11 shrink-0 pointer-fine:h-8 pointer-fine:w-8" />
                   <div className="flex min-w-0 flex-1 items-center gap-2">
                     <SkBox className="h-4 w-40" />
@@ -153,7 +153,7 @@ export default function MenuBuilderSkeleton() {
                   <SkBox className="h-[22px] w-9 rounded-full" />
                   <SkBox className="h-11 w-11 shrink-0 pointer-fine:h-8 pointer-fine:w-8" />
                 </div>
-                <ul className="divide-y divide-[#EDEDED]">
+                <ul className="divide-y divide-pn-line">
                   {Array.from({ length: 4 }).map((__, r) => (
                     <li key={r} className={`${ROW_BASE} ${ROW_NARROW} ${ROW_MEDIUM} ${ROW_FULL}`}>
                       <div className={CELL_PHOTO}>
@@ -179,7 +179,7 @@ export default function MenuBuilderSkeleton() {
                     </li>
                   ))}
                 </ul>
-                <div className="flex h-12 items-center border-t border-[#EDEDED] px-4">
+                <div className="flex h-12 items-center border-t border-pn-line px-4">
                   <SkBox className="h-3.5 w-24" />
                 </div>
               </div>
@@ -187,19 +187,19 @@ export default function MenuBuilderSkeleton() {
           </div>
         </div>
 
-        <div className="bz-card sticky top-[184px] hidden max-h-[calc(100dvh-200px)] flex-col self-start overflow-hidden p-0 lg:flex min-[1600px]:top-[128px] min-[1600px]:max-h-[calc(100dvh-144px)]">
-          <div className="flex h-11 items-center gap-2 border-b border-[#EDEDED] px-3">
+        <div className="bz-card sticky top-[128px] hidden max-h-[calc(100dvh-230px)] flex-col self-start overflow-hidden p-0 lg:flex min-[1600px]:top-[72px] min-[1600px]:max-h-[calc(100dvh-174px)]">
+          <div className="flex h-11 items-center gap-2 border-b border-pn-line px-3">
             <SkBox className="h-3.5 w-36" />
-            <SkBox className="ml-auto h-7 w-24 rounded-lg" />
+            <SkBox className="ml-auto h-7 w-24 rounded-[14px]" />
           </div>
           <div className="px-4 py-4">
             <div
-              className="mx-auto w-[288px] max-w-full rounded-[40px] bg-[#EDEDED] xl:w-[308px]"
+              className="mx-auto w-[288px] max-w-full rounded-[40px] bg-pn-line xl:w-[308px]"
               style={{ height: 'min(640px, calc(100dvh - 312px))' }}
               aria-hidden="true"
             />
           </div>
-          <div className="flex h-[60px] items-center border-t border-[#EDEDED] px-4">
+          <div className="flex h-[60px] items-center border-t border-pn-line px-4">
             <SkBox className="h-3 w-full" />
           </div>
         </div>

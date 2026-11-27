@@ -203,17 +203,17 @@ export default function ProgramEditor({
               type="button"
               onClick={() => setDraft({ ...draftFromTemplate(t.key, locale), accentColor: draft.accentColor })}
               aria-pressed={active}
-              className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] ${
-                active ? 'border-[#0A0A0A] bg-[#FAFAFA]' : 'border-[#EDEDED] bg-white hover:border-[#D4D4D4]'
+              className={`flex items-start gap-3 rounded-[20px] border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover ${
+                active ? 'border-pn-ink bg-pn-canvas' : 'border-pn-line bg-white hover:border-pn-line-strong'
               }`}
             >
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-[#C6F24E]' : 'bg-[#F5F5F5]'}`}>
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] ${active ? 'bg-pn-accent' : 'bg-pn-canvas'}`}>
                 <Icon size={17} aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className="block text-[14px] font-semibold text-[#0A0A0A]">{t.label[locale]}</span>
-                <span className="mt-0.5 block text-[12.5px] text-[#737373]">{t.hint[locale]}</span>
-                <span className="mt-1.5 inline-flex items-center gap-1 text-[11.5px] text-[#525252]">
+                <span className="block text-[14px] font-medium text-pn-ink">{t.label[locale]}</span>
+                <span className="mt-0.5 block text-[13px] text-[#737373]">{t.hint[locale]}</span>
+                <span className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-[#525252]">
                   {t.kind === 'stamps' ? <Stamp size={12} aria-hidden="true" /> : <Coins size={12} aria-hidden="true" />}
                   {t.kind === 'stamps' ? (tr ? 'Damga kartı' : 'Stamp card') : tr ? 'Puan kartı' : 'Points card'}
                 </span>
@@ -227,7 +227,7 @@ export default function ProgramEditor({
 
   const kindSwitch = (
     <Field label={tr ? 'Kart türü' : 'Card type'} hint={kindLocked ? (tr ? 'Üyeler olduğu için kart türü değiştirilemez.' : 'The type is fixed once the card has members.') : undefined}>
-      <div className="inline-flex rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-1" role="radiogroup" aria-label={tr ? 'Kart türü' : 'Card type'}>
+      <div className="inline-flex rounded-[14px] border border-pn-line bg-pn-canvas p-1" role="radiogroup" aria-label={tr ? 'Kart türü' : 'Card type'}>
         {(['stamps', 'points'] as LoyaltyKind[]).map((k) => (
           <button
             key={k}
@@ -244,8 +244,8 @@ export default function ProgramEditor({
                 welcomeBonus: k === 'stamps' ? Math.min(d.welcomeBonus, L.welcomeBonusMaxStamps) : d.welcomeBonus,
               }))
             }
-            className={`min-h-[36px] rounded-md px-3 text-[13px] font-medium disabled:opacity-40 ${
-              draft.kind === k ? 'bg-white text-[#0A0A0A] shadow-sm' : 'text-[#525252]'
+            className={`min-h-[36px] rounded-[10px] px-3 text-[13px] font-medium disabled:opacity-40 ${
+              draft.kind === k ? 'bg-white text-pn-ink ' : 'text-[#525252]'
             }`}
           >
             {k === 'stamps' ? (tr ? 'Damga kartı' : 'Stamp card') : tr ? 'Puan kartı' : 'Points card'}
@@ -272,8 +272,8 @@ export default function ProgramEditor({
       </div>
 
       {draft.kind === 'points' && (
-        <div className="rounded-xl border border-[#EDEDED] p-4">
-          <p className="text-[13px] font-semibold text-[#0A0A0A]">{tr ? 'Puan nasıl kazanılır?' : 'How points are earned'}</p>
+        <div className="rounded-[20px] border border-pn-line p-4">
+          <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Puan nasıl kazanılır?' : 'How points are earned'}</p>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Field label={tr ? 'Her ziyarette' : 'Every visit'}>
               <NumberInput value={draft.pointsPerVisit} min={0} max={L.pointsPerVisitMax} onChange={(n) => set('pointsPerVisit', n)} suffix={tr ? 'puan' : 'points'} ariaLabel={tr ? 'Ziyaret başına puan' : 'Points per visit'} />
@@ -287,13 +287,13 @@ export default function ProgramEditor({
               </div>
             </Field>
           </div>
-          <p className="mt-3 text-[12.5px] text-[#737373]">{earnRuleLine(draft, locale)}</p>
+          <p className="mt-3 text-[13px] text-[#737373]">{earnRuleLine(draft, locale)}</p>
         </div>
       )}
 
       <div>
         <div className="flex items-center justify-between">
-          <p className="text-[13px] font-semibold text-[#0A0A0A]">{tr ? 'Ödüller' : 'Rewards'}</p>
+          <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Ödüller' : 'Rewards'}</p>
           <span className="text-[12px] text-[#737373]">
             {draft.kind === 'stamps'
               ? tr
@@ -306,7 +306,7 @@ export default function ProgramEditor({
         </div>
         <ul className="mt-2 space-y-2">
           {draft.rewards.map((r, i) => (
-            <li key={r.id ?? `new-${i}`} className="flex flex-col gap-2 rounded-xl border border-[#EDEDED] p-3 sm:flex-row sm:items-center">
+            <li key={r.id ?? `new-${i}`} className="flex flex-col gap-2 rounded-[20px] border border-pn-line p-3 sm:flex-row sm:items-center">
               <input
                 value={r.title}
                 maxLength={L.rewardTitleMax}
@@ -394,8 +394,8 @@ export default function ProgramEditor({
         </Field>
       </div>
 
-      <details className="group rounded-xl border border-[#EDEDED] p-4">
-        <summary className="cursor-pointer list-none text-[13px] font-semibold text-[#0A0A0A]">
+      <details className="group rounded-[20px] border border-pn-line p-4">
+        <summary className="cursor-pointer list-none text-[13px] font-medium text-pn-ink">
           {tr ? 'Gelişmiş: seviyeler, doğum günü, süre, görünüm' : 'Advanced: tiers, birthday, expiry, look'}
           <span className="ml-2 font-normal text-[#737373] group-open:hidden">{tr ? '(isteğe bağlı)' : '(optional)'}</span>
         </summary>
@@ -424,13 +424,13 @@ export default function ProgramEditor({
           </div>
 
           <div>
-            <p className="text-[13px] font-semibold text-[#0A0A0A]">{tr ? 'Seviyeler (en çok 3)' : 'Tiers (up to 3)'}</p>
-            <p className="mt-0.5 text-[12.5px] text-[#737373]">
+            <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Seviyeler (en çok 3)' : 'Tiers (up to 3)'}</p>
+            <p className="mt-0.5 text-[13px] text-[#737373]">
               {tr ? 'Ziyaret sayısına göre; ayrıcalığı kasada siz uygularsınız.' : 'By visit count; staff applies the perk.'}
             </p>
             <ul className="mt-2 space-y-2">
               {draft.tiers.map((t, i) => (
-                <li key={i} className="grid gap-2 rounded-xl border border-[#EDEDED] p-3 sm:grid-cols-[1fr_auto_2fr_auto] sm:items-center">
+                <li key={i} className="grid gap-2 rounded-[20px] border border-pn-line p-3 sm:grid-cols-[1fr_auto_2fr_auto] sm:items-center">
                   <input value={t.name} maxLength={L.tierNameMax} onChange={(e) => set('tiers', draft.tiers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="bz-input" placeholder={tr ? 'Gümüş' : 'Silver'} aria-label={tr ? 'Seviye adı' : 'Tier name'} />
                   <NumberInput value={t.minVisits} min={1} max={L.tierMinVisitsMax} onChange={(n) => set('tiers', draft.tiers.map((x, j) => (j === i ? { ...x, minVisits: n } : x)))} suffix={tr ? 'ziyaret' : 'visits'} ariaLabel={tr ? 'Gereken ziyaret' : 'Visits needed'} />
                   <input value={t.perk} maxLength={L.tierPerkMax} onChange={(e) => set('tiers', draft.tiers.map((x, j) => (j === i ? { ...x, perk: e.target.value } : x)))} className="bz-input" placeholder={tr ? 'Her ziyarette ücretsiz içecek' : 'A free drink every visit'} aria-label={tr ? 'Ayrıcalık' : 'Perk'} />
@@ -463,7 +463,7 @@ export default function ProgramEditor({
                     aria-checked={on}
                     aria-label={c}
                     onClick={() => set('accentColor', c === '#0A0A0A' ? null : c)}
-                    className={`h-9 w-9 rounded-full border-2 ${on ? 'border-[#A8D62E] ring-2 ring-[#C6F24E]/60' : 'border-[#EDEDED]'}`}
+                    className={`h-9 w-9 rounded-full border-2 ${on ? 'border-pn-accent-hover ring-2 ring-pn-accent/60' : 'border-pn-line'}`}
                     style={{ background: c }}
                   />
                 );
@@ -493,7 +493,7 @@ export default function ProgramEditor({
   );
 
   const summary = (
-    <ul className="space-y-1.5 text-[13.5px] text-[#262626]">
+    <ul className="space-y-1.5 text-[14px] text-[#262626]">
       <li>{earnRuleLine(draft, locale)}</li>
       {draft.rewards
         .filter((r) => r.isActive && r.title.trim())
@@ -514,7 +514,7 @@ export default function ProgramEditor({
     <aside className="space-y-3 lg:sticky lg:top-4">
       <p className="text-[12px] font-medium text-[#737373]">{tr ? 'Müşterinin göreceği kart' : 'What the customer sees'}</p>
       {preview}
-      <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">{summary}</div>
+      <div className="rounded-[20px] border border-pn-line bg-pn-canvas p-4">{summary}</div>
     </aside>
   );
 
@@ -551,9 +551,9 @@ export default function ProgramEditor({
                   ? 'Yayına aldığınızda müşteriler kasadaki QR ile kart açabilir, siz de “Kasa” ekranından damga / puan verirsiniz.'
                   : 'Once published, customers open a card with the QR at the counter and you add stamps / points from the “Counter” screen.'}
               </p>
-              <p className="mt-3 text-[12.5px] text-[#737373]">
+              <p className="mt-3 text-[13px] text-[#737373]">
                 {tr ? 'Yayına alarak ' : 'By publishing you accept the '}
-                <a href={`/${locale}/sadakat-isletme-eki`} target="_blank" rel="noopener" className="font-medium text-[#0A0A0A] underline underline-offset-2">
+                <a href={`/${locale}/sadakat-isletme-eki`} target="_blank" rel="noopener" className="font-medium text-pn-ink underline underline-offset-2">
                   {tr ? 'Sadakat programı işletme ekini' : 'loyalty programme business addendum'}
                 </a>
                 {tr
@@ -569,7 +569,7 @@ export default function ProgramEditor({
                 </AlertBanner>
               </div>
             )}
-            <div className="mt-6 flex flex-col-reverse gap-2 border-t border-[#EDEDED] pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-6 flex flex-col-reverse gap-2 border-t border-pn-line pt-4 sm:flex-row sm:items-center sm:justify-between">
               <button type="button" className="bz-btn-ghost" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
                 {tr ? 'Geri' : 'Back'}
               </button>
@@ -612,10 +612,10 @@ export default function ProgramEditor({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <div className="bz-card min-w-0 p-4 sm:p-6">
-        <div className="mb-5 flex flex-col gap-3 border-b border-[#EDEDED] pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-5 flex flex-col gap-3 border-b border-pn-line pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[15px] font-semibold text-[#0A0A0A]">{tr ? 'Program ayarları' : 'Programme settings'}</p>
-            <p className="text-[12.5px] text-[#737373]">
+            <p className="text-[15px] font-medium text-pn-ink">{tr ? 'Program ayarları' : 'Programme settings'}</p>
+            <p className="text-[13px] text-[#737373]">
               {tr ? 'Değişiklikler kaydedince müşterinin kartında hemen görünür.' : 'Changes show on customer cards as soon as you save.'}
             </p>
           </div>
@@ -641,7 +641,7 @@ export default function ProgramEditor({
             </AlertBanner>
           </div>
         )}
-        <div className="mt-6 flex justify-end border-t border-[#EDEDED] pt-4">
+        <div className="mt-6 flex justify-end border-t border-pn-line pt-4">
           <button type="button" className="bz-btn-primary" disabled={saving !== null} onClick={() => void save('save')}>
             {saving === 'save' && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
             {tr ? 'Kaydet' : 'Save'}

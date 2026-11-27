@@ -170,7 +170,7 @@ export function BusinessOperationalSettings({
         </Field>
         <div
           className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-[10px]"
-          style={{ background: "#FAFAFA", border: "1px solid #EDEDED" }}
+          style={{ background: "#F5F5F8", border: "1px solid #EDEDED" }}
         >
           <Info size={14} className="shrink-0 mt-0.5 text-[#737373]" aria-hidden="true" />
           <span className="text-[12px] text-[#525252]">{t.hoursSoon}</span>
@@ -188,7 +188,7 @@ export function BusinessOperationalSettings({
             onChange={(next) => set("temporarilyClosed", next)}
             ariaLabel={t.closedAria}
           />
-          <span className="text-[13px] text-[#0A0A0A]">
+          <span className="text-[13px] text-pn-ink">
             {form.temporarilyClosed ? t.closedOn : t.closedOff}
           </span>
         </div>

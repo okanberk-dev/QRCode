@@ -37,12 +37,12 @@ export function SettingsCard({
         <header className="flex items-start gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3">
           {icon && (
             <div
-              className="shrink-0 flex items-center justify-center text-[#0A0A0A]"
+              className="shrink-0 flex items-center justify-center text-pn-ink"
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: 10,
-                background: "#FAFAFA",
+                background: "#F5F5F8",
                 border: "1px solid #EDEDED",
               }}
             >
@@ -51,12 +51,12 @@ export function SettingsCard({
           )}
           <div className="min-w-0 flex-1">
             {title && (
-              <h3 className="bz-h-tight text-[16px] sm:text-[17px] text-[#0A0A0A]">
+              <h3 className="bz-h-tight text-[16px] sm:text-[17px] text-pn-ink">
                 {title}
               </h3>
             )}
             {description && (
-              <p className="text-[12.5px] leading-[1.55] text-[#525252] mt-1">
+              <p className="text-[13px] leading-[1.55] text-[#525252] mt-1">
                 {description}
               </p>
             )}

@@ -228,7 +228,7 @@ export default async function FranchiseReportPage({
             href={`/${locale}/dashboard/restaurants/report?days=${d}`}
             aria-current={d === days ? 'page' : undefined}
             className={`rounded-full border px-3 py-1.5 text-[12px] font-medium ${
-              d === days ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#EDEDED] bg-white text-[#525252]'
+              d === days ? 'border-pn-ink bg-pn-ink text-white' : 'border-pn-line bg-white text-[#525252]'
             }`}
           >
             {t.days(d)}
@@ -255,22 +255,22 @@ export default async function FranchiseReportPage({
                 const d = delta(r.avg, r.prevAvg);
                 return (
                   <tr key={r.id}>
-                    <td className="font-medium text-[#0A0A0A]">
+                    <td className="font-medium text-pn-ink">
                       {r.name}
-                      {!r.isActive && <span className="ml-2 text-[11px] text-[#737373]">· {t.paused}</span>}
+                      {!r.isActive && <span className="ml-2 text-[12px] text-[#737373]">· {t.paused}</span>}
                     </td>
                     <td className="text-right tabular-nums">{nf.format(r.reviews)}</td>
                     <td className="text-right tabular-nums">
                       {fmtAvg(r.avg)}
                       {d && (
-                        <span className={`ml-1.5 text-[11px] ${d.up ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>{d.text}</span>
+                        <span className={`ml-1.5 text-[12px] ${d.up ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>{d.text}</span>
                       )}
                     </td>
                     <td className="text-right tabular-nums">{nf.format(r.low)}</td>
                     <td className="text-right tabular-nums">{pct(r.lowReplied, r.low)}</td>
                     <td className="text-right tabular-nums">{nf.format(r.scans)}</td>
                     <td className="text-right tabular-nums">{nf.format(r.redirects)}</td>
-                    <td className={`text-right tabular-nums ${r.brokenLinks > 0 ? 'font-semibold text-[#B91C1C]' : ''}`}>
+                    <td className={`text-right tabular-nums ${r.brokenLinks > 0 ? 'font-medium text-[#B91C1C]' : ''}`}>
                       {nf.format(r.brokenLinks)}
                     </td>
                   </tr>
@@ -278,7 +278,7 @@ export default async function FranchiseReportPage({
               })}
             </tbody>
             <tfoot>
-              <tr className="font-semibold">
+              <tr className="font-medium">
                 <td>{t.total}</td>
                 <td className="text-right tabular-nums">{nf.format(totals.reviews)}</td>
                 <td className="text-right tabular-nums">
@@ -294,7 +294,7 @@ export default async function FranchiseReportPage({
           </table>
         </div>
       )}
-      <p className="text-[11px] text-[#737373]">{t.generated}</p>
+      <p className="text-[12px] text-[#737373]">{t.generated}</p>
     </div>
   );
 }

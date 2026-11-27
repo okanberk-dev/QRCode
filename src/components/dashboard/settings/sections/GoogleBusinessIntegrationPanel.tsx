@@ -375,7 +375,7 @@ export function GoogleBusinessIntegrationPanel({
             returnTo'su; callback success/failure'i burada da görünür. */}
         <GoogleConnectFlashBanner locale={locale} />
 
-        <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5">
+        <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4 sm:p-5">
           <PlacesBusinessPicker
             restaurant={pickerRestaurant}
             restaurants={[pickerRestaurant]}
@@ -395,14 +395,14 @@ export function GoogleBusinessIntegrationPanel({
           {profileHref && linked && (
             <Link
               href={profileHref}
-              className="mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+              className="mt-3 inline-flex min-h-11 items-center text-[13px] font-medium text-pn-ink underline decoration-pn-accent decoration-2 underline-offset-4"
             >
               {isTr ? "Puanını ve profil eksiklerini gör →" : "See your rating and profile gaps →"}
             </Link>
           )}
         </div>
 
-        <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
+        <div className="rounded-[24px] border border-pn-line bg-white p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="bz-h-tight text-[15px]">
@@ -509,8 +509,8 @@ export function GoogleBusinessIntegrationPanel({
                   edilmiyordu: owner Google'a bağlanıyor, ekranda hiçbir
                   şey görmüyor ve neden olduğunu anlayamıyordu. */}
               {!locationsLoading && locations.length === 0 && !locationsError && (
-                <div className="rounded-xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-5 text-center">
-                  <p className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                <div className="rounded-[20px] border border-dashed border-pn-line bg-pn-canvas px-4 py-5 text-center">
+                  <p className="bz-h-tight text-[14px] text-pn-ink">
                     {isTr ? 'Konum bulunamadı' : 'No locations found'}
                   </p>
                   <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-[1.6] text-[#737373]">
@@ -524,10 +524,10 @@ export function GoogleBusinessIntegrationPanel({
               )}
 
               {locations.length > 0 && status?.syncedAt && (
-                <div className="text-[11px] text-[#737373]">
+                <div className="text-[12px] text-[#737373]">
                   {isTr ? 'Son senkron' : 'Last sync'}: {formatRelativeTime(status.syncedAt, isTr)}
                   {locationsSource === 'cache' && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] text-[#525252]">
+                    <span className="ml-2 inline-flex items-center rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] text-[#525252]">
                       {isTr ? 'Önbellek' : 'Cached'}
                     </span>
                   )}
@@ -541,7 +541,7 @@ export function GoogleBusinessIntegrationPanel({
                       type="button"
                       key={`${location.accountName}:${location.locationName}`}
                       onClick={() => selectLocation(location)}
-                      className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 text-left transition hover:border-[#D4D4D4] hover:bg-white"
+                      className="rounded-[20px] border border-pn-line bg-pn-canvas p-3 text-left transition hover:border-pn-line-strong hover:bg-white"
                     >
                       <div className="bz-h-tight text-[14px]">{location.title}</div>
                       <div className="mt-1 text-[12px] text-[#737373]">{location.address}</div>

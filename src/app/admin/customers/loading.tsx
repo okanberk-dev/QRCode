@@ -22,7 +22,7 @@ export default function Loading() {
           </div>
         ))}
       </div>
-      <div className="space-y-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
+      <div className="space-y-3 rounded-[24px] border border-pn-line bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
           <SkBox className="h-9 w-full sm:w-[340px]" />
           <SkBox className="h-11 w-full sm:h-[34px] sm:w-[180px]" />

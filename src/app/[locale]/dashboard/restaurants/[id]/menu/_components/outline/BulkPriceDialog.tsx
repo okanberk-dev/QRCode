@@ -103,7 +103,7 @@ export function BulkPriceDialog({
     current: T,
     onPick: (v: T) => void,
   ): ReactNode => (
-    <div role="group" aria-label={label} className="inline-flex w-full gap-0.5 rounded-[10px] bg-[#F2F2F2] p-[3px] sm:w-auto">
+    <div role="group" aria-label={label} className="inline-flex w-full gap-0.5 rounded-[10px] bg-pn-canvas p-[3px] sm:w-auto">
       {options.map((o) => (
         <button
           key={o.value}
@@ -113,8 +113,8 @@ export function BulkPriceDialog({
           onClick={() => onPick(o.value)}
           className={`min-h-[40px] flex-1 rounded-[7px] px-4 text-[13px] font-medium disabled:opacity-40 sm:flex-none pointer-fine:min-h-8 ${
             current === o.value
-              ? 'bg-white text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]'
-              : 'text-[#525252] hover:text-[#0A0A0A]'
+              ? 'bg-white text-pn-ink shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]'
+              : 'text-[#525252] hover:text-pn-ink'
           }`}
         >
           {o.label}
@@ -133,7 +133,7 @@ export function BulkPriceDialog({
       title={
         <span className="flex flex-col">
           <span className="bz-h-tight [word-spacing:0.1em] text-[18px]">{copy.bulkPrice.title}</span>
-          <span className="text-[12.5px] font-normal text-[#737373]">{copy.bulkPrice.subtitle(base.current.length)}</span>
+          <span className="text-[13px] font-normal text-[#737373]">{copy.bulkPrice.subtitle(base.current.length)}</span>
         </span>
       }
       footer={
@@ -170,7 +170,7 @@ export function BulkPriceDialog({
       <div className="space-y-4">
         {error && <AlertBanner kind="danger">{error}</AlertBanner>}
         <div className="space-y-2">
-          <p className="text-[12px] font-semibold text-[#0A0A0A]">{copy.bulkPrice.modeLabel}</p>
+          <p className="text-[12px] font-medium text-pn-ink">{copy.bulkPrice.modeLabel}</p>
           {segmented<Kind>(
             copy.bulkPrice.modeLabel,
             [
@@ -215,7 +215,7 @@ export function BulkPriceDialog({
                 autoFocus
                 className="bz-input h-11 pr-8 text-right tabular-nums pointer-fine:h-9"
               />
-              <span aria-hidden="true" className="pointer-events-none absolute right-3 top-0 flex h-11 items-center text-[12.5px] text-[#737373] pointer-fine:h-9">
+              <span aria-hidden="true" className="pointer-events-none absolute right-3 top-0 flex h-11 items-center text-[13px] text-[#737373] pointer-fine:h-9">
                 {kind === 'percent' ? '%' : (symbol ?? '')}
               </span>
             </div>
@@ -243,32 +243,32 @@ export function BulkPriceDialog({
 
         {preview && !frozen && (
           <div className="space-y-2" aria-live="polite">
-            <p className="text-[12px] font-semibold text-[#0A0A0A]">{copy.bulkPrice.previewLabel}</p>
+            <p className="text-[12px] font-medium text-pn-ink">{copy.bulkPrice.previewLabel}</p>
             {k === 0 ? (
               <p className="text-[13px] text-[#737373]">{copy.bulkPrice.none}</p>
             ) : (
-              <ul className="divide-y divide-[#EDEDED] rounded-xl border border-[#EDEDED]">
+              <ul className="divide-y divide-pn-line rounded-[20px] border border-pn-line">
                 {changes.slice(0, PREVIEW_ROWS).map((c) => {
                   const currency = base.current.find((i) => i.id === c.id)?.currency ?? 'TRY';
                   return (
                     <li key={c.id} className="flex items-center gap-2 px-3 py-2 text-[13px]">
-                      <span className="min-w-0 flex-1 truncate font-body font-medium text-[#0A0A0A]">{c.name}</span>
+                      <span className="min-w-0 flex-1 truncate font-body font-medium text-pn-ink">{c.name}</span>
                       <span className="shrink-0 tabular-nums text-[#737373]">{formatPrice(c.from, currency, locale)}</span>
                       <ArrowRight size={12} strokeWidth={2} className="shrink-0 text-[#A3A3A3]" aria-hidden="true" />
-                      <span className={`shrink-0 font-semibold tabular-nums ${c.to === 0 ? 'text-[#92400E]' : 'text-[#0A0A0A]'}`}>
+                      <span className={`shrink-0 font-medium tabular-nums ${c.to === 0 ? 'text-[#92400E]' : 'text-pn-ink'}`}>
                         {formatPrice(c.to, currency, locale)}
                       </span>
                     </li>
                   );
                 })}
                 {k > PREVIEW_ROWS && (
-                  <li className="px-3 py-2 text-[12.5px] text-[#737373]">{copy.fmt.bulkPrice.more(k - PREVIEW_ROWS)}</li>
+                  <li className="px-3 py-2 text-[13px] text-[#737373]">{copy.fmt.bulkPrice.more(k - PREVIEW_ROWS)}</li>
                 )}
               </ul>
             )}
-            {preview.unchanged > 0 && <p className="text-[12.5px] text-[#737373]">{copy.fmt.bulkPrice.unchanged(preview.unchanged)}</p>}
+            {preview.unchanged > 0 && <p className="text-[13px] text-[#737373]">{copy.fmt.bulkPrice.unchanged(preview.unchanged)}</p>}
             {preview.zeroCount > 0 && (
-              <p className="flex items-center gap-1.5 rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[12.5px] text-[#92400E]">
+              <p className="flex items-center gap-1.5 rounded-[14px] border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[13px] text-[#92400E]">
                 <AlertTriangle size={13} strokeWidth={2} className="shrink-0" aria-hidden="true" />
                 {copy.fmt.bulkPrice.zeroWarning(preview.zeroCount)}
               </p>

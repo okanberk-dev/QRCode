@@ -52,8 +52,8 @@ export function CategoryChips({
             onClick={() => onJump(c.id)}
             aria-current={active ? 'true' : undefined}
             aria-label={[copy.fmt.categoryChipLabel(c.name, count), c.isVisible ? null : copy.category.hidden].filter(Boolean).join(', ')}
-            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
-              active ? 'border-[#D9EE7A] bg-[#EAF9B8] text-[#0A0A0A]' : 'border-[#E5E5E5] bg-white text-[#525252] hover:text-[#0A0A0A]'
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${
+              active ? 'border-[#D9EE7A] bg-pn-accent-soft text-pn-ink' : 'border-pn-line-strong bg-white text-[#525252] hover:text-pn-ink'
             }`}
           >
             {!c.isVisible && <EyeOff size={12} strokeWidth={2} aria-hidden="true" />}
@@ -66,7 +66,7 @@ export function CategoryChips({
         <button
           type="button"
           onClick={onAddCategory}
-          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-dashed border-[#D4D4D4] px-3 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
+          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-dashed border-pn-line-strong px-3 text-[13px] font-medium text-[#525252] hover:border-pn-ink hover:text-pn-ink"
         >
           <Plus size={13} strokeWidth={2.25} aria-hidden="true" />
           {copy.outline.addCategoryChip}
@@ -78,9 +78,9 @@ export function CategoryChips({
   if (variant === 'toolbar') return chips;
 
   return (
-    <div className="sticky top-[61px] z-20 -mx-4 border-b border-[#EDEDED] bg-[#FAFAFA]/95 px-4 backdrop-blur sm:-mx-7 sm:px-7 lg:hidden">
+    <div className="sticky top-[72px] z-20 -mx-4 border-b border-pn-line bg-pn-canvas/95 px-4 backdrop-blur sm:-mx-7 sm:px-7 lg:hidden">
       <div className="flex h-[52px] items-center gap-2">
-        {leading && <div className="shrink-0 border-r border-[#EDEDED] pr-2">{leading}</div>}
+        {leading && <div className="shrink-0 border-r border-pn-line pr-2">{leading}</div>}
         {chips}
         {onPreview && (
           <button type="button" onClick={onPreview} className="bz-btn-ghost min-h-[44px] shrink-0 px-3">

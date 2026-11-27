@@ -29,7 +29,7 @@ export default function Loading() {
 
       <div className="bz-card space-y-3 p-4 sm:p-5">
         <SkBox className="h-5 w-32" />
-        <div className="space-y-3 rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4">
+        <div className="space-y-3 rounded-[10px] border border-pn-line bg-pn-canvas p-3 sm:p-4">
           <SkBox className="h-11 w-full" />
           <SkBox className="h-9 w-2/3" />
         </div>
@@ -40,7 +40,7 @@ export default function Loading() {
       <div className="space-y-2">
         <SkBox className="h-5 w-24" />
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-[#EDEDED] bg-white px-3 py-3">
+          <div key={i} className="rounded-[20px] border border-pn-line bg-white px-3 py-3">
             <SkBox className="h-4 w-2/3" />
           </div>
         ))}
@@ -49,7 +49,7 @@ export default function Loading() {
       <div className="space-y-2">
         <SkBox className="h-5 w-32" />
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-[#EDEDED] bg-white px-3 py-3">
+          <div key={i} className="rounded-[20px] border border-pn-line bg-white px-3 py-3">
             <SkBox className="h-4 w-1/2" />
           </div>
         ))}

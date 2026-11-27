@@ -72,16 +72,16 @@ export function AIInsightBanner({
       role="status"
       aria-label={isTr ? 'AI içgörü' : 'AI insight'}
       // Calm light strip (CLAUDE.md §58): two-line summary + "Detay".
-      className="flex items-start gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 sm:px-5"
+      className="flex items-start gap-3 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 sm:px-5"
     >
       <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#65A30D]" />
-      <p className="min-w-0 flex-1 text-[13.5px] leading-[1.55] text-[#262626] line-clamp-2">
-        <span className="font-medium text-[#0A0A0A]">{isTr ? 'AI özeti: ' : 'AI summary: '}</span>
+      <p className="min-w-0 flex-1 text-[14px] leading-[1.55] text-[#262626] line-clamp-2">
+        <span className="font-medium text-pn-ink">{isTr ? 'AI özeti: ' : 'AI summary: '}</span>
         {insight}
       </p>
       <Link
         href={actionHref}
-        className="inline-flex min-h-[44px] shrink-0 items-center gap-1 self-center rounded-md px-1 text-[13px] font-medium text-[#0A0A0A] hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] sm:min-h-[32px]"
+        className="inline-flex min-h-[44px] shrink-0 items-center gap-1 self-center rounded-full px-1 text-[13px] font-medium text-pn-ink hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover sm:min-h-[32px]"
       >
         {actionLabel ?? (isTr ? 'Detay' : 'Details')}
         <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
@@ -90,7 +90,7 @@ export function AIInsightBanner({
         type="button"
         onClick={handleDismiss}
         aria-label={isTr ? 'Bu haftalık içgörüyü gizle' : "Hide this week's insight"}
-        className="-my-2 -mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#737373] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] sm:h-8 sm:w-8 sm:self-center sm:m-0"
+        className="-my-2 -mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#737373] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover sm:h-8 sm:w-8 sm:self-center sm:m-0"
       >
         <X size={14} strokeWidth={2} aria-hidden="true" />
       </button>

@@ -48,7 +48,7 @@ export function StudioHeader({
         className="!mb-0"
         titleScale="compact"
         title={copy.header.title}
-        description={<span className="font-medium text-[#0A0A0A]">{restaurantName}</span>}
+        description={<span className="font-medium text-pn-ink">{restaurantName}</span>}
         actions={
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <button

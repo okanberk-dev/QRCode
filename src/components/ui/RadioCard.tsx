@@ -10,66 +10,41 @@ interface RadioCardProps {
   className?: string;
 }
 
-export function RadioCard({
-  active,
-  onClick,
-  title,
-  body,
-  icon,
-  disabled,
-  className = "",
-}: RadioCardProps) {
+/**
+ * Large choice card (Pano §5.4 outlined row): 24px corners, hairline border;
+ * the chosen card turns black with white text and a lime dot.
+ */
+export function RadioCard({ active, onClick, title, body, icon, disabled, className = "" }: RadioCardProps) {
   return (
     <button
       type="button"
+      role="radio"
+      aria-checked={active}
       onClick={onClick}
       disabled={disabled}
-      className={`text-left flex items-start gap-2.5 ${className}`}
-      style={{
-        padding: 14,
-        borderRadius: 10,
-        border: `1px solid ${active ? "#0A0A0A" : "#EDEDED"}`,
-        background: active ? "#FAFAFA" : "#fff",
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.6 : 1,
-        fontFamily: "inherit",
-      }}
+      className={`flex items-start gap-3 rounded-[24px] border px-5 py-4 text-left transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 ${
+        active ? "border-pn-ink bg-pn-ink text-white" : "border-pn-line bg-white text-pn-ink hover:bg-pn-canvas"
+      } ${className}`}
     >
       <span
         aria-hidden="true"
-        style={{
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          flexShrink: 0,
-          border: `2px solid ${active ? "#0A0A0A" : "#D4D4D4"}`,
-          background: "#fff",
-          position: "relative",
-          marginTop: 2,
-        }}
+        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.5px] ${
+          active ? "border-pn-accent" : "border-[#D2D2D8]"
+        }`}
       >
-        {active && (
-          <span
-            style={{
-              position: "absolute",
-              inset: 2,
-              borderRadius: "50%",
-              background: "#0A0A0A",
-            }}
-          />
+        {active && <span className="h-2.5 w-2.5 rounded-full bg-pn-accent" />}
+      </span>
+      <span className="flex-1">
+        <span className="flex items-center gap-2">
+          {icon}
+          <span className="text-[15px] font-medium">{title}</span>
+        </span>
+        {body && (
+          <span className={`mt-1 block text-[13px] leading-[1.5] ${active ? "text-white/65" : "text-[#6E6E73]"}`}>
+            {body}
+          </span>
         )}
       </span>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          {icon}
-          <span style={{ fontSize: 13, fontWeight: 600 }}>{title}</span>
-        </div>
-        {body && (
-          <div className="mt-1" style={{ fontSize: 12, color: "#737373", lineHeight: 1.5 }}>
-            {body}
-          </div>
-        )}
-      </div>
     </button>
   );
 }

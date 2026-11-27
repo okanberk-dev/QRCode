@@ -36,12 +36,12 @@ interface AdminFeedbackListProps {
 /** Skeleton row — same anatomy as AdminFeedbackListItem (checkbox · badge · text). */
 export function AdminFeedbackListSkeletonRow() {
   return (
-    <div className="flex items-start border-b border-[#F5F5F5]" aria-hidden="true">
+    <div className="flex items-start border-b border-pn-line" aria-hidden="true">
       <div className="flex w-11 shrink-0 justify-center pl-1 pt-[26px]">
         <SkBox className="h-4 w-4 rounded" />
       </div>
       <div className="flex min-w-0 flex-1 items-start gap-3 py-3.5 pl-1 pr-4 sm:pr-5">
-        <SkBox className="h-10 w-10 shrink-0 rounded-xl" />
+        <SkBox className="h-10 w-10 shrink-0 rounded-[20px]" />
         <div className="min-w-0 flex-1 space-y-2 pt-0.5">
           <div className="flex items-center justify-between gap-3">
             <SkBox className="h-4 w-32" />
@@ -59,7 +59,7 @@ export function AdminFeedbackListSkeletonRow() {
 /** Select-all row placeholder (same height as the real sticky row). */
 export function AdminFeedbackSelectAllSkeleton() {
   return (
-    <div className="flex h-[41px] items-center gap-2 border-b border-[#F5F5F5] px-4" aria-hidden="true">
+    <div className="flex h-[41px] items-center gap-2 border-b border-pn-line px-4" aria-hidden="true">
       <SkBox className="h-4 w-4 rounded" />
       <SkBox className="h-3 w-20" />
     </div>
@@ -141,7 +141,7 @@ export function AdminFeedbackList({
               top of the list pane on lg; on mobile the sticky toolbar already
               sits there, so the row scrolls with the list. */}
           {filtered.length > 0 && (
-            <div className="z-10 flex h-[41px] lg:sticky lg:top-0 items-center border-b border-[#F5F5F5] bg-white px-4 text-[12px] text-[#525252]">
+            <div className="z-10 flex h-[41px] lg:sticky lg:top-0 items-center border-b border-pn-line bg-white px-4 text-[12px] text-[#525252]">
               <APCheckbox
                 size="sm"
                 checked={allSelected}
@@ -209,7 +209,7 @@ export function AdminFeedbackList({
           {/* "Daha fazla göster" — the API paginates (25 per page). Selection
               survives load-more (CLAUDE.md §11.21). */}
           {hasMore && (
-            <div className="flex flex-col items-center gap-2 border-t border-[#F5F5F5] px-3 py-4">
+            <div className="flex flex-col items-center gap-2 border-t border-pn-line px-3 py-4">
               <button
                 type="button"
                 onClick={onLoadMore}

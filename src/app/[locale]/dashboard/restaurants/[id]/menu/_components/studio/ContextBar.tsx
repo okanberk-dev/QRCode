@@ -41,13 +41,13 @@ export function ContextBar({
   if (!searching && !selection && !reorder) return null;
   const summary = filtering ? copy.fmt.filterSummary(copy.outline.filters[filter], total) : copy.fmt.resultsCount(total);
   const link =
-    'min-h-11 font-semibold text-[#525252] underline underline-offset-2 hover:text-[#0A0A0A] disabled:text-[#A3A3A3] disabled:no-underline pointer-fine:min-h-8';
+    'min-h-11 font-medium text-[#525252] underline underline-offset-2 hover:text-pn-ink disabled:text-[#A3A3A3] disabled:no-underline pointer-fine:min-h-8';
 
   return (
-    <div className="space-y-2 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-[13px]">
+    <div className="space-y-2 rounded-[20px] border border-pn-line bg-white px-3 py-2 text-[13px]">
       {selection && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p role="status" className="font-semibold text-[#0A0A0A]">
+          <p role="status" className="font-medium text-pn-ink">
             {copy.selection.count(selection.count)}
             {selection.outsideFilter > 0 && (
               <span className="font-normal text-[#737373]"> · {copy.selection.outsideFilter(selection.outsideFilter)}</span>
@@ -71,7 +71,7 @@ export function ContextBar({
       )}
       {searching && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p role="status" className="font-medium text-[#0A0A0A]">
+          <p role="status" className="font-medium text-pn-ink">
             {summary}
           </p>
           <button type="button" onClick={onClear} className={link}>
@@ -82,8 +82,8 @@ export function ContextBar({
               {copy.context.restockAll}
             </button>
           )}
-          {(filter === 'noPhoto' || filter === 'noDescription') && <p className="text-[12.5px] text-[#737373]">{copy.context.completionHint}</p>}
-          {dragNote && <p className="text-[12.5px] text-[#737373]">{copy.context.dragDisabledWhileFiltering}</p>}
+          {(filter === 'noPhoto' || filter === 'noDescription') && <p className="text-[13px] text-[#737373]">{copy.context.completionHint}</p>}
+          {dragNote && <p className="text-[13px] text-[#737373]">{copy.context.dragDisabledWhileFiltering}</p>}
         </div>
       )}
     </div>

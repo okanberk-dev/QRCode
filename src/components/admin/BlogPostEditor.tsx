@@ -166,10 +166,10 @@ function getStarterTemplate(locale: string) {
 export function BlogEditorSkeleton() {
   return (
     <div className="w-full flex-1 bg-[#FFFFFF]" aria-busy="true">
-      <div className="border-b border-[#EDEDED] bg-white">
+      <div className="border-b border-pn-line bg-white">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <SkBox className="mt-1 h-9 w-9 rounded-lg" />
+            <SkBox className="mt-1 h-9 w-9 rounded-[14px]" />
             <div className="space-y-2">
               <SkBox className="h-3 w-24" />
               <SkBox className="h-6 w-64 max-w-full" />
@@ -183,13 +183,13 @@ export function BlogEditorSkeleton() {
       </div>
       <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-6 sm:px-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:py-8">
         <div className="space-y-6">
-          <div className="space-y-4 rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-7">
+          <div className="space-y-4 rounded-[28px] border border-pn-line bg-white p-5 sm:p-7">
             <SkBox className="h-3 w-16" />
             <SkBox className="h-12 w-full" />
-            <SkBox className="h-24 w-full rounded-2xl" />
+            <SkBox className="h-24 w-full rounded-[24px]" />
           </div>
-          <div className="overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-sm">
-            <div className="border-b border-[#EDEDED] bg-[#FAFAFA] p-3">
+          <div className="overflow-hidden rounded-[28px] border border-pn-line bg-white ">
+            <div className="border-b border-pn-line bg-pn-canvas p-3">
               <SkBox className="h-8 w-56" />
             </div>
             <div className="space-y-3 p-6">
@@ -201,12 +201,12 @@ export function BlogEditorSkeleton() {
           </div>
         </div>
         <div className="space-y-5">
-          <div className="space-y-4 rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
+          <div className="space-y-4 rounded-[28px] border border-pn-line bg-pn-canvas p-5">
             <SkBox className="h-3 w-28" />
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <SkBox className="h-3 w-20" />
-                <SkBox className="h-11 w-full rounded-2xl" />
+                <SkBox className="h-11 w-full rounded-[24px]" />
               </div>
             ))}
           </div>
@@ -508,7 +508,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
         {/* Sticky on desktop only, offset below the 57px admin topbar so it no
             longer covers search / bell / avatar. On mobile the bar is ~190px
             tall and would slide under the mobile header, so it scrolls. */}
-        <div className="z-20 border-b border-[#EDEDED] bg-white/90 backdrop-blur-xl lg:sticky lg:top-[57px]">
+        <div className="z-20 border-b border-pn-line bg-white/90 backdrop-blur-xl lg:sticky lg:top-[57px]">
           <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-4">
               <Link
@@ -519,7 +519,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 <ArrowLeft size={16} strokeWidth={2} />
               </Link>
               <div className="min-w-0">
-                <p className="pulse-eyebrow text-[#737373]">
+                <p className="text-[13px] font-medium text-[#737373]">
                   {mode === 'edit' ? 'BLOG DÜZENLE' : 'YENİ BLOG'}
                 </p>
                 <h1
@@ -533,7 +533,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               {success && (
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-700">
                   <CheckCircle2 size={15} />
                   {success}
                 </div>
@@ -562,13 +562,13 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
         <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-6 sm:px-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:py-8">
           <section className="space-y-6">
             {error && (
-              <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+              <div className="rounded-[24px] border border-red-100 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
                 {error}
               </div>
             )}
 
-            <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-7">
-              <label htmlFor={`${fid}-title`} className="pulse-eyebrow text-[#737373]">BAŞLIK</label>
+            <div className="rounded-[28px] border border-pn-line bg-white p-5 sm:p-7">
+              <label htmlFor={`${fid}-title`} className="text-[13px] font-medium text-[#737373]">BAŞLIK</label>
               {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints (CLAUDE.md §25.5/§25.6 paterni) +
                   iOS auto-zoom önleme (text-[16px] mobile baseline). */}
               <input
@@ -584,10 +584,10 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 autoCorrect="on"
                 spellCheck={true}
                 enterKeyHint="next"
-                className="mt-3 w-full border-0 bg-transparent text-[16px] sm:text-3xl font-medium leading-tight tracking-[-0.045em] text-[#0A0A0A] outline-none placeholder:text-[#D4D4D4] sm:text-5xl"
+                className="mt-3 w-full border-0 bg-transparent text-[16px] sm:text-3xl font-medium leading-tight tracking-[-0.045em] text-pn-ink outline-none placeholder:text-[#D4D4D4] sm:text-5xl"
               />
               {/* SEO char counter — Google snippet ~60 char truncate eder. */}
-              <div className="mt-2 flex items-center justify-between text-[11px] font-medium">
+              <div className="mt-2 flex items-center justify-between text-[12px] font-medium">
                 <span className="text-[#737373]">
                   SEO ideal: 50–65 karakter
                 </span>
@@ -620,10 +620,10 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 autoCorrect="on"
                 spellCheck={true}
                 enterKeyHint="next"
-                className="mt-5 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-[16px] sm:text-base font-medium leading-7 text-[#525252] outline-none focus:border-[#C6F24E] focus:bg-white"
+                className="mt-5 w-full resize-none rounded-[24px] border border-pn-line bg-pn-canvas px-5 py-4 text-[16px] sm:text-base font-medium leading-7 text-[#525252] outline-none focus:border-pn-accent focus:bg-white"
               />
               {/* Meta description SEO ideal 140–160 char. */}
-              <div className="mt-2 flex items-center justify-between text-[11px] font-medium">
+              <div className="mt-2 flex items-center justify-between text-[12px] font-medium">
                 <span className="text-[#737373]">
                   SEO ideal: 140–160 karakter
                 </span>
@@ -646,8 +646,8 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-sm">
-              <div className="border-b border-[#EDEDED] bg-[#FAFAFA] p-3">
+            <div className="overflow-hidden rounded-[28px] border border-pn-line bg-white ">
+              <div className="border-b border-pn-line bg-pn-canvas p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <button
@@ -676,7 +676,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 {editorMode === 'write' && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-[#EDEDED] bg-white p-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[24px] border border-pn-line bg-white p-2">
                     {[
                       { label: 'Paragraf', icon: Pilcrow, command: 'formatBlock', value: 'p' },
                       { label: 'H2', icon: Heading2, command: 'formatBlock', value: 'h2' },
@@ -719,26 +719,26 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   onInput={handleEditorInput}
                   onBlur={handleEditorInput}
                   onPaste={handleEditorPaste}
-                  className="min-h-[620px] bg-white px-5 py-6 text-[17px] leading-8 text-[#0A0A0A] outline-none sm:px-8
+                  className="min-h-[620px] bg-white px-5 py-6 text-[17px] leading-8 text-pn-ink outline-none sm:px-8
                     [&_h2]:mt-9 [&_h2]:mb-3 [&_h2]:text-[30px] [&_h2]:font-medium [&_h2]:tracking-[-0.02em]
                     [&_h3]:mt-7 [&_h3]:mb-2 [&_h3]:text-[22px] [&_h3]:font-medium [&_h3]:tracking-[-0.01em]
                     [&_p]:mb-5 [&_p]:text-[#525252]
-                    [&_a]:font-medium [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4
+                    [&_a]:font-medium [&_a]:text-pn-ink [&_a]:underline [&_a]:decoration-pn-accent [&_a]:decoration-2 [&_a]:underline-offset-4
                     [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-2 [&_li]:text-[#525252]
-                    [&_blockquote]:my-7 [&_blockquote]:rounded-[18px] [&_blockquote]:border-l-4 [&_blockquote]:border-[#C6F24E] [&_blockquote]:bg-[#EAF9B8]/70 [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:font-medium [&_blockquote]:text-[#0A0A0A]"
+                    [&_blockquote]:my-7 [&_blockquote]:rounded-[18px] [&_blockquote]:border-l-4 [&_blockquote]:border-pn-accent [&_blockquote]:bg-pn-accent-soft/70 [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:font-medium [&_blockquote]:text-pn-ink"
                   suppressContentEditableWarning
                   dangerouslySetInnerHTML={{ __html: form.content || '<p></p>' }}
                 />
               ) : (
                 <div
                   className="pulse-blog-content min-h-[620px] bg-white px-5 py-6 prose prose-lg max-w-none sm:px-8
-                    prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
+                    prose-headings:font-medium prose-headings:text-pn-ink prose-headings:tracking-[-0.02em]
                     prose-h2:text-[28px] prose-h2:mt-10 prose-h2:mb-4
                     prose-h3:text-[21px] prose-h3:mt-8 prose-h3:mb-3
                     prose-p:text-[#525252] prose-p:leading-[1.7] prose-p:mb-6 prose-p:text-[16px]
-                    prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4
+                    prose-a:text-pn-ink prose-a:font-medium prose-a:underline prose-a:decoration-pn-accent prose-a:decoration-2 prose-a:underline-offset-4
                     prose-li:text-[#525252] prose-li:leading-[1.7]
-                    prose-blockquote:rounded-[20px] prose-blockquote:border-l-4 prose-blockquote:border-[#C6F24E] prose-blockquote:bg-[#EAF9B8]/75 prose-blockquote:px-6 prose-blockquote:py-5 prose-blockquote:text-[#0A0A0A] prose-blockquote:not-italic prose-blockquote:font-medium"
+                    prose-blockquote:rounded-[20px] prose-blockquote:border-l-4 prose-blockquote:border-pn-accent prose-blockquote:bg-pn-accent-soft/75 prose-blockquote:px-6 prose-blockquote:py-5 prose-blockquote:text-pn-ink prose-blockquote:not-italic prose-blockquote:font-medium"
                   dangerouslySetInnerHTML={{ __html: sanitizeBlogContent(form.content) || '<p>Önizleme için içerik yazın.</p>' }}
                 />
               )}
@@ -746,19 +746,19 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
           </section>
 
           <aside className="space-y-5 lg:self-start">
-            <div className="rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
-              <p className="pulse-eyebrow text-[#737373]">YAYIN AYARLARI</p>
-              <p className="mt-2 text-[11px] leading-[1.55] text-[#737373]">
+            <div className="rounded-[28px] border border-pn-line bg-pn-canvas p-5">
+              <p className="text-[13px] font-medium text-[#737373]">YAYIN AYARLARI</p>
+              <p className="mt-2 text-[12px] leading-[1.55] text-[#737373]">
                 Yazının dili, URL adresi, yayın tarihi ve kapak görseli gibi içerik dışı
                 ayarlar. Slug ve okuma süresi alanları yapay zekâ önerisi destekler.
               </p>
               <div className="mt-5 space-y-4">
                 <div>
-                  <p id={`${fid}-locale`} className="text-xs font-semibold text-[#737373]">Dil</p>
+                  <p id={`${fid}-locale`} className="text-xs font-medium text-[#737373]">Dil</p>
                   <div
                     role="group"
                     aria-labelledby={`${fid}-locale`}
-                    className="mt-2 grid grid-cols-2 gap-2 rounded-2xl border border-[#EDEDED] bg-white p-1.5"
+                    className="mt-2 grid grid-cols-2 gap-2 rounded-[24px] border border-pn-line bg-white p-1.5"
                   >
                     {(['tr', 'en'] as const).map(locale => (
                       <button
@@ -786,7 +786,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                           })
                         }
                         aria-pressed={form.locale === locale}
-                        className={`rounded-xl py-2.5 text-xs font-semibold transition-colors ${form.locale === locale ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-[#FAFAFA]'}`}
+                        className={`rounded-[20px] py-2.5 text-xs font-medium transition-colors ${form.locale === locale ? 'bg-pn-ink text-white' : 'text-[#737373] hover:bg-pn-canvas'}`}
                       >
                         {locale.toUpperCase()}
                       </button>
@@ -795,7 +795,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label htmlFor={`${fid}-slug`} className="text-xs font-semibold text-[#737373]">Slug</label>
+                  <label htmlFor={`${fid}-slug`} className="text-xs font-medium text-[#737373]">Slug</label>
                   <div className="mt-2 flex gap-2">
                     {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
                     <input
@@ -812,7 +812,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       autoCorrect="off"
                       spellCheck={false}
                       enterKeyHint="next"
-                      className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[16px] sm:text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                      className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[16px] sm:text-sm font-medium outline-none focus:border-pn-accent"
                     />
                     <button
                       type="button"
@@ -827,7 +827,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       ) : (
                         <>
                           <Sparkles size={14} />
-                          <span className="text-xs font-semibold">AI</span>
+                          <span className="text-xs font-medium">AI</span>
                         </>
                       )}
                     </button>
@@ -835,7 +835,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label htmlFor={`${fid}-author`} className="text-xs font-semibold text-[#737373]">Yazar</label>
+                  <label htmlFor={`${fid}-author`} className="text-xs font-medium text-[#737373]">Yazar</label>
                   {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
                   <input
                     id={`${fid}-author`}
@@ -848,12 +848,12 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     spellCheck={false}
                     autoComplete="name"
                     enterKeyHint="next"
-                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[16px] sm:text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                    className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[16px] sm:text-sm font-medium outline-none focus:border-pn-accent"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor={`${fid}-date`} className="text-xs font-semibold text-[#737373]">Yayın tarihi</label>
+                  <label htmlFor={`${fid}-date`} className="text-xs font-medium text-[#737373]">Yayın tarihi</label>
                   <input
                     id={`${fid}-date`}
                     type="date"
@@ -863,16 +863,16 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       if (!iso) return;
                       setForm((f) => ({ ...f, date: isoToHuman(iso, f.locale) }));
                     }}
-                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold text-[#0A0A0A] outline-none focus:border-[#C6F24E]"
+                    className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-sm font-medium text-pn-ink outline-none focus:border-pn-accent"
                   />
-                  <p className="mt-2 text-[11px] text-[#737373]">
-                    Sayfada görünüm: <strong className="text-[#0A0A0A]">{form.date || '—'}</strong>
+                  <p className="mt-2 text-[12px] text-[#737373]">
+                    Sayfada görünüm: <strong className="text-pn-ink">{form.date || '—'}</strong>
                   </p>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between">
-                    <label htmlFor={`${fid}-readtime`} className="text-xs font-semibold text-[#737373]">Okuma süresi</label>
+                    <label htmlFor={`${fid}-readtime`} className="text-xs font-medium text-[#737373]">Okuma süresi</label>
                     <button
                       type="button"
                       onClick={requestReadTimeSuggestion}
@@ -898,15 +898,15 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     type="text"
                     value={form.readTime}
                     onChange={event => setForm(f => ({ ...f, readTime: event.target.value }))}
-                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                    className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-sm font-medium outline-none focus:border-pn-accent"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor={`${fid}-cover`} className="text-xs font-semibold text-[#737373]">Kapak görseli</label>
+                  <label htmlFor={`${fid}-cover`} className="text-xs font-medium text-[#737373]">Kapak görseli</label>
                   {/* Preview — visible whenever coverImage is set */}
                   {form.coverImage && (
-                    <div className="mt-2 relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FAFAFA]">
+                    <div className="mt-2 relative overflow-hidden rounded-[24px] border border-pn-line bg-pn-canvas">
                       { }
                       <img
                         src={form.coverImage}
@@ -916,7 +916,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       <button
                         type="button"
                         onClick={() => setForm((f) => ({ ...f, coverImage: '' }))}
-                        className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#0A0A0A] shadow-sm hover:bg-white"
+                        className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[12px] font-medium text-pn-ink hover:bg-white"
                         aria-label="Kapağı kaldır"
                       >
                         <Trash2 size={11} /> Kaldır
@@ -932,7 +932,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       type="button"
                       onClick={() => coverFileInputRef.current?.click()}
                       disabled={coverUploading}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-xs font-semibold text-[#0A0A0A] hover:border-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-pn-line bg-white px-4 py-3 text-xs font-medium text-pn-ink hover:border-pn-ink disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {coverUploading ? (
                         <>
@@ -962,20 +962,20 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       value={form.coverImage}
                       onChange={(event) => setForm((f) => ({ ...f, coverImage: event.target.value }))}
                       placeholder="veya URL yapıştır: https://..."
-                      className="w-full min-w-0 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                      className="w-full min-w-0 rounded-[24px] border border-pn-line bg-white px-4 py-3 text-sm font-medium outline-none focus:border-pn-accent"
                     />
                   </div>
-                  <p className="mt-2 text-[11px] text-[#737373] leading-[1.55]">
+                  <p className="mt-2 text-[12px] text-[#737373] leading-[1.55]">
                     JPG/PNG/WebP, en fazla 5 MB. Otomatik 1600×900 (16:9) WebP&apos;ye çevrilir.
                   </p>
                   {coverUploadError && (
-                    <p className="mt-2 text-[12px] font-semibold text-[#991B1B]">{coverUploadError}</p>
+                    <p className="mt-2 text-[12px] font-medium text-[#991B1B]">{coverUploadError}</p>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between rounded-2xl border border-[#EDEDED] bg-white p-4">
+                <div className="flex items-center justify-between rounded-[24px] border border-pn-line bg-white p-4">
                   <div>
-                    <p className="text-sm font-semibold text-[#0A0A0A]">{form.isActive ? 'Yayında' : 'Taslak'}</p>
+                    <p className="text-sm font-medium text-pn-ink">{form.isActive ? 'Yayında' : 'Taslak'}</p>
                     <p className="text-xs font-medium text-[#737373]">Herkese açık görünürlük</p>
                   </div>
                   <button
@@ -984,7 +984,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     aria-checked={form.isActive}
                     aria-label="Yazıyı yayınla"
                     onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                    className={`relative h-7 w-14 rounded-full transition-colors ${form.isActive ? 'bg-[#C6F24E]' : 'bg-[#D4D4D4]'}`}
+                    className={`relative h-7 w-14 rounded-full transition-colors ${form.isActive ? 'bg-pn-accent' : 'bg-[#D4D4D4]'}`}
                   >
                     <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${form.isActive ? 'translate-x-7' : ''}`} />
                   </button>
@@ -992,21 +992,21 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
               </div>
             </div>
 
-            <div className="rounded-[28px] bg-[#C6F24E] p-5 text-[#0A0A0A]">
-              <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em]">
+            <div className="rounded-[28px] bg-pn-accent p-5 text-pn-ink">
+              <div className="flex items-center gap-2 text-[12px] font-medium ">
                 <Sparkles size={15} />
                 İÇERİK DURUMU
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-white/45 p-4">
+                <div className="rounded-[24px] bg-white/45 p-4">
                   <FileText size={18} />
-                  <p className="mt-2 text-2xl font-semibold">{wordCount}</p>
-                  <p className="text-[11px] font-semibold text-[#0A0A0A]/65">Kelime</p>
+                  <p className="mt-2 text-2xl font-medium">{wordCount}</p>
+                  <p className="text-[12px] font-medium text-pn-ink/65">Kelime</p>
                 </div>
-                <div className="rounded-2xl bg-white/45 p-4">
+                <div className="rounded-[24px] bg-white/45 p-4">
                   <Globe size={18} />
-                  <p className="mt-2 text-2xl font-semibold">{form.locale.toUpperCase()}</p>
-                  <p className="text-[11px] font-semibold text-[#0A0A0A]/65">Dil</p>
+                  <p className="mt-2 text-2xl font-medium">{form.locale.toUpperCase()}</p>
+                  <p className="text-[12px] font-medium text-pn-ink/65">Dil</p>
                 </div>
               </div>
             </div>
@@ -1033,23 +1033,23 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 }}
               />
             ) : (
-              <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4 text-[12px] leading-[1.55] text-[#737373]">
-                Yazıyı kaydettikten sonra <strong className="text-[#0A0A0A]">Dil
+              <div className="rounded-[24px] border border-dashed border-pn-line bg-pn-canvas p-4 text-[12px] leading-[1.55] text-[#737373]">
+                Yazıyı kaydettikten sonra <strong className="text-pn-ink">Dil
                 eşleşmesi</strong> bölümünden diğer dildeki karşılığını
                 bağlayabilirsin.
               </div>
             )}
 
             {/* Public görünüm — opsiyonel override'lar; boş bırakılırsa public sayfa default'a düşer */}
-            <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5">
-              <p className="pulse-eyebrow text-[#737373]">YAYINDAKİ GÖRÜNÜM</p>
-              <p className="mt-2 text-[11px] leading-[1.55] text-[#737373]">
+            <div className="rounded-[28px] border border-pn-line bg-white p-5">
+              <p className="text-[13px] font-medium text-[#737373]">YAYINDAKİ GÖRÜNÜM</p>
+              <p className="mt-2 text-[12px] leading-[1.55] text-[#737373]">
                 Boş bırakılan alanlar yayındaki sayfada Buaze&rsquo;nin varsayılan metinleriyle gösterilir.
               </p>
 
               {/* Yazar bio */}
               <div className="mt-5">
-                <label htmlFor={`${fid}-bio`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                <label htmlFor={`${fid}-bio`} className="flex items-center gap-1.5 text-xs font-medium text-[#737373]">
                   <User size={13} />
                   Yazar açıklaması
                 </label>
@@ -1062,13 +1062,13 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   placeholder={form.locale === 'en'
                     ? 'Two short sentences shown next to the author chip on the public page.'
                     : 'Yayındaki sayfada, sağ kenarda yazarın yanında görünen 2 cümlelik açıklama.'}
-                  className="mt-2 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-sm leading-[1.55] text-[#0A0A0A] outline-none focus:border-[#C6F24E] focus:bg-white"
+                  className="mt-2 w-full resize-none rounded-[24px] border border-pn-line bg-pn-canvas px-4 py-3 text-sm leading-[1.55] text-pn-ink outline-none focus:border-pn-accent focus:bg-white"
                 />
               </div>
 
               {/* Yazar rolü */}
               <div className="mt-4">
-                <label htmlFor={`${fid}-role`} className="text-xs font-semibold text-[#737373]">Yazar rolü</label>
+                <label htmlFor={`${fid}-role`} className="text-xs font-medium text-[#737373]">Yazar rolü</label>
                 <input
                   id={`${fid}-role`}
                   type="text"
@@ -1076,13 +1076,13 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   value={form.authorRole}
                   onChange={event => setForm(f => ({ ...f, authorRole: event.target.value }))}
                   placeholder={form.locale === 'en' ? 'Buaze · Author' : 'Buaze · Yazar'}
-                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                  className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-sm font-medium outline-none focus:border-pn-accent"
                 />
               </div>
 
               {/* Tags */}
               <div className="mt-4">
-                <label htmlFor={`${fid}-tags`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                <label htmlFor={`${fid}-tags`} className="flex items-center gap-1.5 text-xs font-medium text-[#737373]">
                   <Tag size={13} />
                   Etiketler
                 </label>
@@ -1091,7 +1091,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     {form.tags.map(tag => (
                       <span
                         key={tag}
-                        className="inline-flex items-center gap-1 rounded-full bg-[#F2F2F2] py-1 pl-3 pr-1 text-xs font-medium text-[#525252]"
+                        className="inline-flex items-center gap-1 rounded-full bg-pn-canvas py-1 pl-3 pr-1 text-xs font-medium text-[#525252]"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       >
                         #{tag}
@@ -1099,7 +1099,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                           type="button"
                           onClick={() => removeTag(tag)}
                           aria-label={`${tag} etiketini kaldır`}
-                          className="ml-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[#737373] hover:bg-white hover:text-[#0A0A0A]"
+                          className="ml-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[#737373] hover:bg-white hover:text-pn-ink"
                         >
                           <X size={11} strokeWidth={2.5} />
                         </button>
@@ -1117,13 +1117,13 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   placeholder={form.locale === 'en'
                     ? 'Type and press Enter… (auto if empty)'
                     : 'Yaz, Enter\'a bas… (boşsa otomatik türetilir)'}
-                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                  className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-sm font-medium outline-none focus:border-pn-accent"
                 />
               </div>
 
               {/* Pull quote */}
               <div className="mt-4">
-                <label htmlFor={`${fid}-quote`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                <label htmlFor={`${fid}-quote`} className="flex items-center gap-1.5 text-xs font-medium text-[#737373]">
                   <Quote size={13} />
                   Vurgulu alıntı
                 </label>
@@ -1136,7 +1136,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   placeholder={form.locale === 'en'
                     ? 'A single sharp sentence highlighted between dark lines mid-article.'
                     : 'Makalenin ortasında koyu çizgiler arasında vurgulanan tek cümle.'}
-                  className="mt-2 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-sm leading-[1.55] text-[#0A0A0A] outline-none focus:border-[#C6F24E] focus:bg-white"
+                  className="mt-2 w-full resize-none rounded-[24px] border border-pn-line bg-pn-canvas px-4 py-3 text-sm leading-[1.55] text-pn-ink outline-none focus:border-pn-accent focus:bg-white"
                 />
                 <input
                   aria-label="Alıntının sahibi"
@@ -1147,13 +1147,13 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   placeholder={form.locale === 'en'
                     ? 'Quote author (defaults to post author)'
                     : 'Alıntının sahibi (boşsa yazar adı)'}
-                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                  className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-sm font-medium outline-none focus:border-pn-accent"
                 />
               </div>
 
               {/* CTA override */}
-              <div className="mt-4 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-                <label htmlFor={`${fid}-cta`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+              <div className="mt-4 rounded-[24px] border border-pn-line bg-pn-canvas p-4">
+                <label htmlFor={`${fid}-cta`} className="flex items-center gap-1.5 text-xs font-medium text-[#737373]">
                   <ExternalLink size={13} />
                   Yazı sonu çağrı kutusu (opsiyonel)
                 </label>
@@ -1166,7 +1166,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   placeholder={form.locale === 'en'
                     ? 'Headline (if empty: Ready to grow…)'
                     : 'Başlık (boş bırakılırsa: Google politikalarına…)'}
-                  className="mt-3 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                  className="mt-3 w-full rounded-[24px] border border-pn-line bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-pn-accent"
                 />
                 <input
                   aria-label="Çağrı kutusu alt metni"
@@ -1175,7 +1175,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   value={form.ctaSubtitle}
                   onChange={event => setForm(f => ({ ...f, ctaSubtitle: event.target.value }))}
                   placeholder={form.locale === 'en' ? 'Subtitle' : 'Alt metin'}
-                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                  className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-pn-accent"
                 />
                 <input
                   aria-label="Çağrı kutusu buton etiketi"
@@ -1184,7 +1184,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   value={form.ctaButtonLabel}
                   onChange={event => setForm(f => ({ ...f, ctaButtonLabel: event.target.value }))}
                   placeholder={form.locale === 'en' ? 'Button label (if empty: Start free)' : 'Buton etiketi (boş bırakılırsa: Ücretsiz başla)'}
-                  className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
+                  className="mt-2 w-full rounded-[24px] border border-pn-line bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-pn-accent"
                 />
               </div>
             </div>

@@ -163,16 +163,16 @@ export default function RedirectThresholdPicker({
               aria-disabled={isPending || undefined}
               onClick={() => persist(option)}
               onKeyDown={(event) => onKeyDown(event, index)}
-              className={`flex min-h-[44px] items-start gap-3 rounded-2xl border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 aria-disabled:cursor-wait ${
+              className={`flex min-h-[44px] items-start gap-3 rounded-[24px] border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 aria-disabled:cursor-wait ${
                 active
-                  ? 'border-[#0A0A0A] bg-[#EAF9B8]/40'
-                  : 'border-[#EDEDED] bg-white hover:border-[#A3A3A3]'
+                  ? 'border-pn-ink bg-pn-accent-soft/40'
+                  : 'border-pn-line bg-white hover:border-[#A3A3A3]'
               }`}
             >
               <span
                 aria-hidden
                 className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                  active ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#525252]'
+                  active ? 'bg-pn-accent text-pn-ink' : 'bg-pn-canvas text-[#525252]'
                 }`}
               >
                 {busy ? (
@@ -184,13 +184,13 @@ export default function RedirectThresholdPicker({
                 )}
               </span>
               <span className="min-w-0">
-                <span className="bz-h-tight block text-[13.5px]">{copy.label(option)}</span>
-                <span className="mt-0.5 block text-[11.5px] leading-[1.5] text-[#525252]">
+                <span className="bz-h-tight block text-[14px]">{copy.label(option)}</span>
+                <span className="mt-0.5 block text-[12px] leading-[1.5] text-[#525252]">
                   {copy.sub(option)}
                 </span>
                 {option === DEFAULT_REDIRECT_MIN_RATING && (
-                  <span className="pulse-eyebrow mt-1.5 inline-flex items-center gap-1.5 text-[9.5px] text-[#525252]">
-                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#A8D62E]" />
+                  <span className="text-[13px] font-medium mt-1.5 inline-flex items-center gap-1.5 text-[12px] text-[#525252]">
+                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-pn-accent-hover" />
                     {copy.defaultTag}
                   </span>
                 )}
@@ -221,7 +221,7 @@ export default function RedirectThresholdPicker({
             </>
           )}
         </p>
-        <p className="text-[11.5px] leading-[1.55] text-[#525252]">{copy.note}</p>
+        <p className="text-[12px] leading-[1.55] text-[#525252]">{copy.note}</p>
       </div>
     </div>
   );

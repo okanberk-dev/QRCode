@@ -498,7 +498,7 @@ export default function AuditBuilderClient({
           stepHeadingRefs.current[index] = el;
         }}
         tabIndex={-1}
-        className="bz-h-tight text-[20px] text-[#0A0A0A] outline-none sm:text-[22px]"
+        className="bz-h-tight text-[20px] text-pn-ink outline-none sm:text-[22px]"
       >
         {text}
       </h2>
@@ -511,7 +511,7 @@ export default function AuditBuilderClient({
       <div>
         <Link
           href={backHref}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-[#0A0A0A] sm:min-h-0 sm:text-[12px]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-pn-ink sm:min-h-0 sm:text-[12px]"
         >
           <ArrowLeft size={13} aria-hidden="true" />{' '}
           {isEdit ? (isTr ? 'Denetime dön' : 'Back to audit') : isTr ? 'Denetim Merkezi' : 'Audit Center'}
@@ -549,9 +549,9 @@ export default function AuditBuilderClient({
         <div ref={errorRef} className="scroll-mt-24">
           <AlertBanner kind="danger" onDismiss={() => setServerError(null)}>
             <div className="space-y-1">
-              <p className="font-semibold">{serverError.title}</p>
+              <p className="font-medium">{serverError.title}</p>
               {serverError.details.length > 0 && (
-                <ul className="list-disc space-y-0.5 pl-5 text-[12.5px]">
+                <ul className="list-disc space-y-0.5 pl-5 text-[13px]">
                   {serverError.details.map((d, i) => (
                     <li key={i}>{d}</li>
                   ))}
@@ -659,12 +659,12 @@ export default function AuditBuilderClient({
         {showKindPicker && suggestions.length > 0 && (
           <div className="bz-card p-4 sm:p-5">
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-[12px] font-semibold text-[#0A0A0A]">
+              <p className="text-[12px] font-medium text-pn-ink">
                 {isTr ? 'Ya da hazır şablonla başla' : 'Or start from a ready-made template'}
               </p>
               <Link
                 href={allTemplatesHref}
-                className="inline-flex min-h-11 items-center gap-1 text-[12px] font-medium text-[#525252] underline-offset-2 hover:text-[#0A0A0A] hover:underline sm:min-h-0"
+                className="inline-flex min-h-11 items-center gap-1 text-[12px] font-medium text-[#525252] underline-offset-2 hover:text-pn-ink hover:underline sm:min-h-0"
               >
                 {isTr ? 'Tüm hazır şablonlar' : 'All ready-made templates'}
                 <ArrowRight size={12} aria-hidden="true" />
@@ -675,24 +675,24 @@ export default function AuditBuilderClient({
                 <li key={tpl.id}>
                   <Link
                     href={templateHref(tpl.id)}
-                    className="group flex min-h-[60px] items-center gap-3 rounded-[10px] border border-[#EDEDED] bg-white p-3 transition-colors hover:border-[#0A0A0A] hover:bg-[#FAFAFA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]"
+                    className="group flex min-h-[60px] items-center gap-3 rounded-[10px] border border-pn-line bg-white p-3 transition-colors hover:border-pn-ink hover:bg-pn-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-accent"
                   >
                     <span
                       aria-hidden="true"
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink"
                     >
                       <Sparkles size={15} strokeWidth={2} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-semibold text-[#0A0A0A]">{tpl.title}</span>
-                      <span className="mt-0.5 block text-[11.5px] text-[#737373]">
+                      <span className="block truncate text-[13px] font-medium text-pn-ink">{tpl.title}</span>
+                      <span className="mt-0.5 block text-[12px] text-[#737373]">
                         {kindLabel(tpl.kind, locale)} · {itemsCount(tpl.itemCount, locale)}
                       </span>
                     </span>
                     <ArrowRight
                       size={14}
                       aria-hidden="true"
-                      className="shrink-0 text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]"
+                      className="shrink-0 text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-pn-ink"
                     />
                   </Link>
                 </li>
@@ -727,7 +727,7 @@ export default function AuditBuilderClient({
           </Badge>
         </div>
         {questionsError && (
-          <p className="text-[12.5px] font-medium text-[#B91C1C]" role="alert">
+          <p className="text-[13px] font-medium text-[#B91C1C]" role="alert">
             {questionsError}
           </p>
         )}
@@ -843,7 +843,7 @@ export default function AuditBuilderClient({
             </Field>
           )}
 
-          <div className="border-t border-[#EDEDED] pt-1">
+          <div className="border-t border-pn-line pt-1">
             <Disclosure open={moreOpen} onToggle={() => setMoreOpen((v) => !v)} controls={`${baseId}-more`}>
               {isTr ? 'Daha fazla ayar' : 'More options'}
             </Disclosure>
@@ -904,7 +904,7 @@ export default function AuditBuilderClient({
 
       {/* Sabit eylem çubuğu — mobilde yüzen alt gezinmenin ÜSTÜNDE (--dash-bottom-nav-h).
           Düz beyaz: yarı saydam yüzeyde arkadaki metin düğmelerin içinden görünüyordu. */}
-      <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-[#EDEDED] bg-white px-4 py-3 sm:-mx-7 sm:px-7 lg:bottom-0">
+      <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-pn-line bg-white px-4 py-3 sm:-mx-7 sm:px-7 lg:bottom-0">
         <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end">
           {step === 0 ? (
             <Link href={backHref} className="bz-btn-ghost hidden min-h-11 sm:mr-auto sm:inline-flex sm:min-h-9">
@@ -1016,13 +1016,13 @@ function SummaryRow({
   onEdit?: () => void;
 }) {
   return (
-    <div className="flex min-w-0 items-start justify-between gap-3 rounded-[10px] bg-[#FAFAFA] px-3 py-2.5">
+    <div className="flex min-w-0 items-start justify-between gap-3 rounded-[10px] bg-pn-canvas px-3 py-2.5">
       <div className="min-w-0">
-        <dt className="flex items-center gap-1.5 text-[11.5px] font-medium text-[#737373]">
+        <dt className="flex items-center gap-1.5 text-[12px] font-medium text-[#737373]">
           {icon}
           {label}
         </dt>
-        <dd className="mt-0.5 break-words text-[13.5px] font-semibold text-[#0A0A0A]">{value}</dd>
+        <dd className="mt-0.5 break-words text-[14px] font-medium text-pn-ink">{value}</dd>
       </div>
       {onEdit && editLabel && (
         <button
@@ -1030,7 +1030,7 @@ function SummaryRow({
           onClick={onEdit}
           aria-label={editLabel}
           title={editLabel}
-          className="bz-btn-icon h-11 w-11 shrink-0 border border-[#EDEDED] bg-white sm:h-8 sm:w-8"
+          className="bz-btn-icon h-11 w-11 shrink-0 border border-pn-line bg-white sm:h-8 sm:w-8"
         >
           <Pencil size={13} aria-hidden="true" />
         </button>
@@ -1079,7 +1079,7 @@ function KindPicker({
   ];
   return (
     <div>
-      <p id={legendId} className="mb-2 text-[12px] font-semibold text-[#0A0A0A]">
+      <p id={legendId} className="mb-2 text-[12px] font-medium text-pn-ink">
         {isTr ? 'Sıfırdan başla' : 'Start from scratch'}
       </p>
       <div role="radiogroup" aria-labelledby={legendId} className="grid gap-2 sm:grid-cols-2">
@@ -1098,31 +1098,31 @@ function KindPicker({
               <span
                 className={[
                   'flex w-full cursor-pointer items-start gap-3 rounded-[12px] border bg-white p-3.5 transition-colors',
-                  'border-[#EDEDED] hover:bg-[#FAFAFA]',
-                  'peer-checked:border-[#0A0A0A] peer-checked:bg-[#FAFAFA]',
-                  'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#C6F24E]',
+                  'border-pn-line hover:bg-pn-canvas',
+                  'peer-checked:border-pn-ink peer-checked:bg-pn-canvas',
+                  'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pn-accent',
                 ].join(' ')}
               >
                 <span
                   aria-hidden="true"
-                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                    selected ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#525252]'
+                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                    selected ? 'bg-pn-accent text-pn-ink' : 'bg-pn-canvas text-[#525252]'
                   }`}
                 >
                   {o.icon}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold text-[#0A0A0A]">{o.title}</span>
+                  <span className="block text-[14px] font-medium text-pn-ink">{o.title}</span>
                   <span className="mt-1 block text-[12px] leading-[1.5] text-[#737373]">{o.body}</span>
                 </span>
                 <span
                   aria-hidden="true"
                   className={[
                     'relative mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 bg-white',
-                    selected ? 'border-[#0A0A0A]' : 'border-[#D4D4D4]',
+                    selected ? 'border-pn-ink' : 'border-pn-line-strong',
                   ].join(' ')}
                 >
-                  {selected && <span className="absolute inset-[2px] rounded-full bg-[#0A0A0A]" />}
+                  {selected && <span className="absolute inset-[2px] rounded-full bg-pn-ink" />}
                 </span>
               </span>
             </label>

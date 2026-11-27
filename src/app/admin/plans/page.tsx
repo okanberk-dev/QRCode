@@ -151,7 +151,7 @@ export default async function AdminPlansPage() {
           deltaKind="neutral"
           deltaSuffix="tüm müşterilerin"
           icon={<TrendingUp size={14} strokeWidth={2} />}
-          accent={paidOwners > 0 ? '#C6F24E' : undefined}
+          accent={paidOwners > 0 ? '#D7FE03' : undefined}
         />
         <StatCard
           label="Aktif denemeler"
@@ -175,7 +175,7 @@ export default async function AdminPlansPage() {
               : undefined
           }
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrrUsd > 0 ? '#C6F24E' : undefined}
+          accent={mrrUsd > 0 ? '#D7FE03' : undefined}
         />
       </div>
 
@@ -194,7 +194,7 @@ export default async function AdminPlansPage() {
                   <div key={b.key}>
                     <div className="flex justify-between text-xs mb-1">
                       <span style={{ fontWeight: 500 }}>{b.label}</span>
-                      <span className="bz-mono text-[#525252]">
+                      <span className="tabular-nums text-[#525252]">
                         {b.count}
                       </span>
                     </div>
@@ -215,7 +215,7 @@ export default async function AdminPlansPage() {
             <Eyebrow>Son katılan ödeyen müşteriler</Eyebrow>
             <Link
               href="/admin/members"
-              className="inline-flex items-center gap-1 text-[12px] font-medium hover:opacity-70 text-[#0A0A0A]"
+              className="inline-flex items-center gap-1 text-[12px] font-medium hover:opacity-70 text-pn-ink"
             >
               Tümü
               <ArrowRight size={12} strokeWidth={2} />
@@ -262,22 +262,22 @@ export default async function AdminPlansPage() {
 
       {/* Ödeme entegrasyonu notu — sade, operatöre yönelik dil (§38.233). */}
       <div
-        className="mt-4 p-4 rounded-xl flex gap-3 flex-col sm:flex-row"
-        style={{ background: '#EAF9B8', border: '1px solid #C6F24E' }}
+        className="mt-4 p-4 rounded-[20px] flex gap-3 flex-col sm:flex-row"
+        style={{ background: '#F3FDC4', border: '1px solid #C6F24E' }}
       >
         <CreditCard
           size={18}
-          color="#0A0A0A"
+          color="#000000"
           strokeWidth={2}
           style={{ flexShrink: 0, marginTop: 2 }}
         />
-        <div style={{ fontSize: 12.5, color: '#0A0A0A', lineHeight: 1.55 }}>
+        <div style={{ fontSize: 12.5, color: '#000000', lineHeight: 1.55 }}>
           <strong>Ödeme entegrasyonu:</strong> Bir pakette ödeme sağlayıcısı olarak
           PayNKolay seçilip TL fiyatı girildiğinde, işletme sahibi
           fiyatlandırma sayfasında ve panelinde &quot;Kartla öde&quot; düğmesini görür.
           Her ödeme bir dönem açar, otomatik çekim yoktur. Manuel plan
           değişiklikleri{' '}
-          <Link href="/admin/members" className="underline text-[#0A0A0A] font-medium">
+          <Link href="/admin/members" className="underline text-pn-ink font-medium">
             İşletme Sahipleri
           </Link>{' '}
           listesinden yapılır.

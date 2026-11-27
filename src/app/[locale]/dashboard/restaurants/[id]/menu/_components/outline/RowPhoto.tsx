@@ -75,7 +75,7 @@ export function RowPhoto({
 
   const shown = preview ?? imageUrl;
   const size =
-    'h-12 w-12 rounded-[10px] pointer-fine:@min-[480px]/outline:h-10 pointer-fine:@min-[480px]/outline:w-10 pointer-fine:@min-[480px]/outline:rounded-lg';
+    'h-12 w-12 rounded-[10px] pointer-fine:@min-[480px]/outline:h-10 pointer-fine:@min-[480px]/outline:w-10 pointer-fine:@min-[480px]/outline:rounded-[14px]';
   const dashed = completion && !shown;
 
   return (
@@ -103,13 +103,13 @@ export function RowPhoto({
         aria-label={shown ? copy.item.photoAria(name) : copy.item.addPhotoAria(name)}
         className={`relative flex shrink-0 items-center justify-center overflow-hidden ${size} ${
           dashed
-            ? 'border-2 border-dashed border-[#D4D4D4] bg-white text-[#525252] hover:border-[#0A0A0A]'
+            ? 'border-2 border-dashed border-pn-line-strong bg-white text-[#525252] hover:border-pn-ink'
             : shown
-              ? 'border border-[#EDEDED] bg-[#F5F5F5]'
+              ? 'border border-pn-line bg-pn-canvas'
               : error
                 ? 'border border-dashed border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
-                : 'border border-[#EDEDED] bg-[#FAFAFA] text-[#A3A3A3] hover:text-[#0A0A0A]'
-        } ${over ? 'ring-2 ring-[#C6F24E]' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]`}
+                : 'border border-pn-line bg-pn-canvas text-[#A3A3A3] hover:text-pn-ink'
+        } ${over ? 'ring-2 ring-pn-accent' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent`}
       >
         {shown ? (
           <img src={shown} alt="" loading="lazy" className="h-full w-full object-cover" />
@@ -125,20 +125,20 @@ export function RowPhoto({
         )}
         {uploading && (
           <span className="absolute inset-0 flex items-center justify-center bg-white/70" aria-hidden="true">
-            <Loader2 size={16} className="animate-spin text-[#0A0A0A]" />
+            <Loader2 size={16} className="animate-spin text-pn-ink" />
           </span>
         )}
         {over && (
-          <span className="absolute inset-0 flex items-center justify-center bg-[#EAF9B8]/90 text-[12px] font-semibold text-[#0A0A0A]">
+          <span className="absolute inset-0 flex items-center justify-center bg-pn-accent-soft/90 text-[12px] font-medium text-pn-ink">
             {copy.photo.dropHere}
           </span>
         )}
       </button>
       {uploading && <span className="sr-only" role="status">{copy.photo.uploading}</span>}
       {error && (
-        <p role="alert" className="absolute left-0 top-full z-10 mt-1 w-[180px] rounded-md bg-white px-2 py-1 text-[12px] leading-snug text-[#991B1B] shadow-sm ring-1 ring-[#FECACA]">
+        <p role="alert" className="absolute left-0 top-full z-10 mt-1 w-[180px] rounded-[10px] bg-white px-2 py-1 text-[12px] leading-snug text-[#991B1B] ring-1 ring-[#FECACA]">
           {error}{' '}
-          <button type="button" onClick={() => fileRef.current?.click()} className="font-semibold underline underline-offset-2">
+          <button type="button" onClick={() => fileRef.current?.click()} className="font-medium underline underline-offset-2">
             {copy.photo.retry}
           </button>
         </p>

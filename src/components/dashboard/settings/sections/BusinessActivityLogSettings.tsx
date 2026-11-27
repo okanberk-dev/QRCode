@@ -166,7 +166,7 @@ export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props)
       {loading ? (
         <ol className="space-y-2" aria-busy="true">
           {Array.from({ length: 3 }).map((_, i) => (
-            <li key={i} className="rounded-xl border border-[#EDEDED] bg-white p-4 space-y-2">
+            <li key={i} className="rounded-[20px] border border-pn-line bg-white p-4 space-y-2">
               <SkBox className="h-4 w-40" />
               <SkBox className="h-3 w-24" />
             </li>
@@ -193,14 +193,14 @@ export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props)
             return (
               <li
                 key={entry.id}
-                className="rounded-xl border border-[#EDEDED] bg-white p-4"
+                className="rounded-[20px] border border-pn-line bg-white p-4"
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0 flex-1">
-                    <span className="text-[13px] font-semibold text-[#0A0A0A]">
+                    <span className="text-[13px] font-medium text-pn-ink">
                       {entryTitle(entry.action, isTr)}
                     </span>
-                    <p className="mt-1 text-[11px] text-[#737373]">
+                    <p className="mt-1 text-[12px] text-[#737373]">
                       <span className="inline-flex items-center gap-1">
                         <Clock size={11} strokeWidth={2} />
                         {relativeTime(entry.createdAt, isTr)}
@@ -215,7 +215,7 @@ export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props)
                       onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                       aria-expanded={isExpanded}
                       aria-controls={detailsId}
-                      className="-my-2 -mr-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-[11px] text-[#737373] hover:text-[#0A0A0A]"
+                      className="-my-2 -mr-2 inline-flex min-h-[40px] items-center gap-1 rounded-full px-2 text-[12px] text-[#737373] hover:text-pn-ink"
                     >
                       {isExpanded ? (
                         <ChevronDown size={12} strokeWidth={2} />
@@ -229,7 +229,7 @@ export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props)
                 {isExpanded && hasDetails && (
                   <ul
                     id={detailsId}
-                    className="mt-3 space-y-1 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2.5 text-[12px] leading-[1.5] text-[#525252]"
+                    className="mt-3 space-y-1 rounded-[14px] border border-pn-line bg-pn-canvas px-3 py-2.5 text-[12px] leading-[1.5] text-[#525252]"
                   >
                     {details.map((line) => (
                       <li key={line}>{line}</li>
@@ -245,7 +245,7 @@ export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props)
             <button
               type="button"
               onClick={() => setVisible((v) => v + PAGE_SIZE)}
-              className="bz-btn-ghost min-h-[40px] text-[12.5px]"
+              className="bz-btn-ghost min-h-[40px] text-[13px]"
             >
               {isTr
                 ? `Daha fazla göster (${data.length - visible} kayıt daha)`

@@ -16,9 +16,9 @@ export function QrGridSkeleton({ count = 6 }: { count?: number }) {
             <SkBox className="h-5 w-40" />
             <SkBox className="-mr-1.5 -mt-1.5 h-11 w-11 shrink-0 sm:h-8 sm:w-8" />
           </div>
-          <SkBox className="h-[186px] w-full rounded-xl" />
-          <SkBox className="mt-3 h-[34px] w-full rounded-lg" />
-          <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-[#EDEDED] pt-3">
+          <SkBox className="h-[186px] w-full rounded-[20px]" />
+          <SkBox className="mt-3 h-[34px] w-full rounded-[14px]" />
+          <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-pn-line pt-3">
             <SkBox className="h-11 w-full sm:h-10" />
             <SkBox className="h-11 w-full sm:h-10" />
           </div>

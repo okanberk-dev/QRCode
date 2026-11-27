@@ -19,6 +19,7 @@ import { getSiteSettings } from '@/lib/site-settings';
 // React Query is only used inside the owner panel (useCurrentRole), so its
 // provider lives here instead of the root layout — public pages don't ship it.
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import '@/components/panel/pano/pano.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,19 +112,19 @@ export default async function DashboardLayout({
     const adminPayload = await verifyAdminTokenForLayout(adminToken);
     if (adminPayload && isAdminRole(adminPayload.role)) {
       return (
-        <div className="bz-panel min-h-dvh bg-[#FFFFFF]">
-          <div className="border-b border-[#EDEDED] bg-[#0A0A0A] text-white">
-            <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-7">
-              <p className="text-[11px] pulse-eyebrow">
-                {locale === 'en' ? 'Admin view' : 'Admin görünümü'} — {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
-              </p>
-              <Link
-                href="/admin/restaurants"
-                className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-[10px] pulse-eyebrow text-white transition-colors hover:bg-white/20"
-              >
-                {locale === 'en' ? '← Admin panel' : '← Admin paneli'}
-              </Link>
-            </div>
+        <div className="bz-panel min-h-dvh bg-pn-canvas">
+          {/* Admin preview of the owner panel: a dark Pano bar instead of the
+              owner navigation (docs/design/DASHBOARD_DESIGN.md §5.1). */}
+          <div className="mx-2 mt-2 flex h-14 items-center justify-between gap-3 rounded-[24px] bg-pn-ink px-5 text-white">
+            <p className="text-[14px] text-white/70">
+              {locale === 'en' ? 'Admin view' : 'Admin görünümü'} · {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
+            </p>
+            <Link
+              href="/admin/restaurants"
+              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-pn-accent px-4 text-[14px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover"
+            >
+              {locale === 'en' ? '← Admin panel' : '← Admin paneli'}
+            </Link>
           </div>
           <QueryProvider>{children}</QueryProvider>
         </div>

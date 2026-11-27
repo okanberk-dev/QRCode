@@ -356,8 +356,8 @@ export default async function AdminDashboardPage() {
       />
 
       {/* Mobile-only "SİSTEM NABZI" hero (mobile-screens-2.jsx MAdminHome line 419-435 1:1) */}
-      <section className="md:hidden rounded-[20px] bg-[#0A0A0A] p-[18px] text-white">
-        <span className="pulse-eyebrow text-[#C6F24E]" style={{ fontSize: 9 }}>SİSTEM NABZI</span>
+      <section className="md:hidden rounded-[20px] bg-pn-ink p-[18px] text-white">
+        <span className="text-[13px] font-medium text-pn-accent" style={{ fontSize: 9 }}>SİSTEM NABZI</span>
         <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
           {formatUsd(mrr)}
         </div>
@@ -366,7 +366,7 @@ export default async function AdminDashboardPage() {
           {mrrThirtyDaysAgo > 0 && (
             <>
               {' · '}
-              <span className={mrrDeltaKind === 'up' ? 'text-[#C6F24E]' : mrrDeltaKind === 'down' ? 'text-[#FB7185]' : ''}>
+              <span className={mrrDeltaKind === 'up' ? 'text-pn-accent' : mrrDeltaKind === 'down' ? 'text-[#FB7185]' : ''}>
                 {mrrDeltaPct >= 0 ? '+' : ''}
                 {mrrDeltaPct}%
               </span>
@@ -375,11 +375,11 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           <div className="rounded-[10px] bg-white/[0.04] p-3">
-            <div className="pulse-eyebrow text-[10px] text-white/45">İŞLETME</div>
+            <div className="text-[13px] font-medium text-[12px] text-white/45">İŞLETME</div>
             <div className="bz-h-tight mt-1 text-[18px]">{totalBusinesses}</div>
           </div>
           <div className="rounded-[10px] bg-white/[0.04] p-3">
-            <div className="pulse-eyebrow text-[10px] text-white/45">AKTİF DENEMELER</div>
+            <div className="text-[13px] font-medium text-[12px] text-white/45">AKTİF DENEMELER</div>
             <div className="bz-h-tight mt-1 text-[18px]">{activeTrials}</div>
           </div>
         </div>
@@ -402,7 +402,7 @@ export default async function AdminDashboardPage() {
           deltaKind={mrrDeltaKind}
           deltaSuffix={mrrDeltaSuffix}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrr > 0 ? '#C6F24E' : undefined}
+          accent={mrr > 0 ? '#D7FE03' : undefined}
         />
         <StatCard
           label="Aktif denemeler"
@@ -446,7 +446,7 @@ export default async function AdminDashboardPage() {
                   {' '}
                   <Link
                     href="/admin/restaurants?menuStatus=draft"
-                    className="font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+                    className="font-medium text-pn-ink underline-offset-2 hover:underline"
                   >
                     Taslakta bekleyen {menusEnabledCount - menusPublishedCount}
                   </Link>
@@ -458,14 +458,14 @@ export default async function AdminDashboardPage() {
           <div className="flex flex-col items-end shrink-0">
             <div
               className="bz-h-tight tabular-nums"
-              style={{ fontSize: 28, color: '#0A0A0A' }}
+              style={{ fontSize: 28, color: '#000000' }}
             >
               {menusEnabledCount > 0
                 ? Math.round((menusPublishedCount / menusEnabledCount) * 100)
                 : 0}
               <span className="text-[14px] text-[#737373]">%</span>
             </div>
-            <div className="pulse-eyebrow text-[#737373]">YAYIN ORANI</div>
+            <div className="text-[13px] font-medium text-[#737373]">YAYIN ORANI</div>
           </div>
         </div>
         {menusEnabledCount > 0 && (

@@ -63,9 +63,9 @@ export function FeedbackListItem({
         aria-selected={isActive}
         aria-label={`${customerLabel}, ${r.rating}/5, ${stateLabel}`}
         onClick={() => onSelect(r.id)}
-        className={`group flex w-full items-start gap-3 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E] sm:px-5 ${
-          isActive ? 'bg-[#EAF9B8]/60 shadow-[inset_3px_0_0_#0A0A0A]' : 'hover:bg-[#FAFAFA]'
-        } ${isPulsed ? 'animate-pulse ring-2 ring-inset ring-[#C6F24E]' : ''}`}
+        className={`group flex w-full items-start gap-3 border-b border-pn-line px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent sm:px-5 ${
+          isActive ? 'bg-pn-accent-soft/60 shadow-[inset_3px_0_0_#0A0A0A]' : 'hover:bg-pn-canvas'
+        } ${isPulsed ? 'animate-pulse ring-2 ring-inset ring-pn-accent' : ''}`}
       >
         <RatingBadge rating={r.rating} isTr={isTr} size="md" />
         <div className="min-w-0 flex-1">
@@ -78,7 +78,7 @@ export function FeedbackListItem({
               />
             )}
             <span
-              className={`truncate text-[14px] text-[#0A0A0A] ${isUnread ? 'font-bold' : 'font-semibold'}`}
+              className={`truncate text-[14px] text-pn-ink ${isUnread ? 'font-medium' : 'font-medium'}`}
             >
               {customerLabel}
             </span>
@@ -92,7 +92,7 @@ export function FeedbackListItem({
           </div>
           <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#525252]">
             {r.redirected ? (
-              <span className="inline-flex items-center rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[12px] font-medium text-[#365314]">
+              <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-[#365314]">
                 {redirectBadgeLabel(r.platform, isTr)}
               </span>
             ) : (

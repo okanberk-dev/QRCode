@@ -466,7 +466,7 @@ export default function RestaurantSettingsClient({
     <div className="relative">
       <Link
         href={`/${locale}/dashboard/restaurants/${id}`}
-        className="inline-flex min-h-[44px] items-center gap-1.5 text-[12px] text-[#737373] hover:text-[#0A0A0A] mb-2 sm:min-h-[32px]"
+        className="inline-flex min-h-[44px] items-center gap-1.5 text-[12px] text-[#737373] hover:text-pn-ink mb-2 sm:min-h-[32px]"
       >
         <ArrowLeft size={13} aria-hidden="true" />
         {isTr ? "İşletme özetine dön" : "Back to business summary"}
@@ -477,7 +477,7 @@ export default function RestaurantSettingsClient({
         title={<span className="break-words [overflow-wrap:anywhere]">{restaurant.name}</span>}
         description={
           <span className="inline-flex flex-wrap items-center gap-2">
-            <span className="bz-mono text-[12px] text-[#737373] break-all">
+            <span className="tabular-nums text-[12px] text-[#737373] break-all">
               /r/{restaurant.slug}
             </span>
             {/* Local badge: BusinessStatusBadge only has Turkish labels. */}
@@ -534,9 +534,9 @@ export default function RestaurantSettingsClient({
       {copyNotice && (
         <p
           aria-hidden="true"
-          className={`pointer-events-none absolute left-0 top-full z-10 mt-1 rounded-full px-3 py-1.5 text-[12px] font-medium shadow-sm sm:left-auto sm:right-0 ${
+          className={`pointer-events-none absolute left-0 top-full z-10 mt-1 rounded-full px-3 py-1.5 text-[12px] font-medium sm:left-auto sm:right-0 ${
             copyNotice.ok
-              ? "bg-[#0A0A0A] text-white"
+              ? "bg-pn-ink text-white"
               : "border border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]"
           }`}
         >

@@ -88,7 +88,7 @@ export function AdminFeedbackFiltersModal({
             {/* Date + rating */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <span id="admin-feedback-filter-date-label" className="text-[12px] font-semibold text-[#525252]">
+                <span id="admin-feedback-filter-date-label" className="text-[12px] font-medium text-[#525252]">
                   {isTr ? 'Tarih' : 'Date'}
                 </span>
                 <PulseSelect
@@ -100,7 +100,7 @@ export function AdminFeedbackFiltersModal({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <span id="admin-feedback-filter-rating-label" className="text-[12px] font-semibold text-[#525252]">
+                <span id="admin-feedback-filter-rating-label" className="text-[12px] font-medium text-[#525252]">
                   {isTr ? 'Puan' : 'Rating'}
                 </span>
                 <PulseSelect
@@ -115,7 +115,7 @@ export function AdminFeedbackFiltersModal({
 
             {/* Platform — chip grid with storage ids (incl. Buaze QR, trendyol_go). */}
             <div className="space-y-1.5">
-              <span className="block text-[12px] font-semibold text-[#525252]">Platform</span>
+              <span className="block text-[12px] font-medium text-[#525252]">Platform</span>
               <div className="flex flex-wrap gap-1.5">
                 <button
                   type="button"
@@ -154,7 +154,7 @@ export function AdminFeedbackFiltersModal({
 
         {/* State — reply / flag / assigned to me */}
         <div className="space-y-1.5">
-          <span className="block text-[12px] font-semibold text-[#525252]">{isTr ? 'Durum' : 'State'}</span>
+          <span className="block text-[12px] font-medium text-[#525252]">{isTr ? 'Durum' : 'State'}</span>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"

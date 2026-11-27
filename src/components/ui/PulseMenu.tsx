@@ -133,7 +133,7 @@ export function PulseMenuItem({
       {icon ? <span aria-hidden="true">{icon}</span> : null}
       <span className="flex-1 truncate">{children}</span>
       {selected ? (
-        <Check size={13} strokeWidth={2.5} className="!text-[#A8D62E]" aria-hidden="true" />
+        <Check size={13} strokeWidth={2.5} className="!text-pn-accent-ink" aria-hidden="true" />
       ) : trailing ? (
         <span aria-hidden="true">{trailing}</span>
       ) : null}

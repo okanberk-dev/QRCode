@@ -41,9 +41,9 @@ export function CategoryRail({
   return (
     <nav
       aria-labelledby="menu-rail-title"
-      className="bz-card sticky top-[128px] hidden max-h-[calc(100dvh-144px)] self-start overflow-y-auto p-2 min-[1600px]:block"
+      className="bz-card sticky top-[72px] hidden max-h-[calc(100dvh-174px)] self-start overflow-y-auto p-2 min-[1600px]:block"
     >
-      <h2 id="menu-rail-title" className="px-2 pb-1.5 pt-1 text-[12px] font-semibold text-[#737373]">
+      <h2 id="menu-rail-title" className="px-2 pb-1.5 pt-1 text-[12px] font-medium text-[#737373]">
         <span className="font-body">{copy.outline.categoriesTitle}</span>
       </h2>
       <DndContext sensors={sensors} collisionDetection={closestCenter} accessibility={accessibility} onDragEnd={onDragEnd}>
@@ -59,7 +59,7 @@ export function CategoryRail({
         <button
           type="button"
           onClick={onAddCategory}
-          className="mt-1.5 flex h-10 w-full items-center gap-2 rounded-lg px-2 text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
+          className="mt-1.5 flex h-10 w-full items-center gap-2 rounded-[14px] px-2 text-[13px] font-medium text-[#525252] hover:bg-pn-canvas hover:text-pn-ink"
         >
           <Plus size={14} strokeWidth={2.25} aria-hidden="true" />
           {copy.toolbar.addCategory}
@@ -88,8 +88,8 @@ function RailRow({
     <li
       ref={setNodeRef}
       style={transform ? { transform: CSS.Translate.toString(transform), transition } : undefined}
-      className={`group/rail relative flex h-10 items-center gap-1 rounded-lg ${
-        active ? 'bg-[#F7FAEF] shadow-[inset_2px_0_0_#C6F24E]' : 'hover:bg-[#FAFAFA]'
+      className={`group/rail relative flex h-10 items-center gap-1 rounded-[14px] ${
+        active ? 'bg-pn-accent-soft shadow-[inset_2px_0_0_#C6F24E]' : 'hover:bg-pn-canvas'
       } ${isDragging ? 'z-10 bg-white bz-elev-3' : ''}`}
     >
       {draggable ? (
@@ -99,7 +99,7 @@ function RailRow({
           {...attributes}
           {...listeners}
           aria-label={copy.item.dragAria(category.name)}
-          className="flex h-8 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-[#A3A3A3] opacity-0 hover:text-[#0A0A0A] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] group-hover/rail:opacity-100 active:cursor-grabbing"
+          className="flex h-8 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-[#A3A3A3] opacity-0 hover:text-pn-ink focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent group-hover/rail:opacity-100 active:cursor-grabbing"
         >
           <GripVertical size={13} strokeWidth={2} />
         </button>
@@ -115,9 +115,9 @@ function RailRow({
           copy.fmt.categoryChipLabel(category.name, items.length),
           !category.isVisible ? copy.category.hidden : soldOut ? copy.item.soldOut : null,
         ].filter(Boolean).join(', ')}
-        className="flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-lg pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+        className="flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-[14px] pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
       >
-        <span className={`min-w-0 flex-1 truncate font-body text-[13.5px] text-[#0A0A0A] ${active ? 'font-semibold' : 'font-medium'}`}>
+        <span className={`min-w-0 flex-1 truncate font-body text-[14px] text-pn-ink ${active ? 'font-medium' : 'font-medium'}`}>
           {category.name}
         </span>
         <span className="shrink-0 text-[12px] tabular-nums text-[#737373]">{items.length}</span>

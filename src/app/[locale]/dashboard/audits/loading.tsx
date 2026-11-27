@@ -31,7 +31,7 @@ export default function Loading() {
           mobilde yer ayırmak kartları ~52px zıplatırdı. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <SkBox className="h-[50px] w-full rounded-[10px] sm:h-[38px] sm:w-[251px]" />
-        <SkBox className="hidden h-[38px] w-[260px] rounded-lg sm:block" />
+        <SkBox className="hidden h-[38px] w-[260px] rounded-[14px] sm:block" />
       </div>
 
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

@@ -143,11 +143,11 @@ export function AccountDangerZone({
       <div className="rounded-[24px] border border-[#FECACA] bg-[#FEF2F2] p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#FEE2E2] text-[#991B1B] ring-1 ring-black/5">
+            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-[#FEE2E2] text-[#991B1B] ring-1 ring-black/5">
               <AlertTriangle size={16} />
             </span>
             <div className="min-w-0">
-              <p className="bz-h-tight text-[16px] font-semibold text-[#0A0A0A]">
+              <p className="bz-h-tight text-[16px] font-medium text-pn-ink">
                 {isTr ? "Tehlikeli bölge — Hesabı sil" : "Danger zone — Delete account"}
               </p>
               <p className="mt-1 max-w-[520px] text-[13px] leading-[1.55] text-[#525252]">
@@ -163,7 +163,7 @@ export function AccountDangerZone({
               type="button"
               onClick={handleCancel}
               disabled={busy}
-              className="inline-flex items-center gap-2 self-start rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-colors hover:bg-[#1A1A1A] disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
+              className="inline-flex items-center gap-2 self-start rounded-full bg-pn-ink px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-pn-ink-2 disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Undo2 size={14} />}
               {isTr ? "Silmeyi iptal et" : "Cancel deletion"}
@@ -173,7 +173,7 @@ export function AccountDangerZone({
               type="button"
               onClick={handleSchedule}
               disabled={busy}
-              className="inline-flex items-center gap-2 self-start rounded-full border border-[#991B1B] bg-white px-4 py-2 text-[13px] font-medium text-[#991B1B] shadow-sm transition-colors hover:bg-[#FEE2E2] disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-[#991B1B] bg-white px-4 py-2 text-[13px] font-medium text-[#991B1B] transition-colors hover:bg-[#FEE2E2] disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
               {isTr ? "Hesabı sil" : "Delete account"}
@@ -182,11 +182,11 @@ export function AccountDangerZone({
         </div>
 
         {scheduled && (
-          <div className="mt-5 rounded-2xl border border-[#FECACA] bg-white p-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#737373]">
+          <div className="mt-5 rounded-[24px] border border-[#FECACA] bg-white p-4">
+            <p className="text-[12px] font-medium text-[#737373]">
               {isTr ? "Silme planı aktif" : "Deletion scheduled"}
             </p>
-            <p className="mt-2 text-[13px] text-[#0A0A0A]">
+            <p className="mt-2 text-[13px] text-pn-ink">
               {isTr
                 ? `Hesabın ${new Date(scheduled).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", timeZone: resolveDisplayTimeZone() })} tarihinde silinecek (${formatDaysRemaining(new Date(scheduled))} gün kaldı).`
                 : `Your account will be deleted on ${new Date(scheduled).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: resolveDisplayTimeZone() })} (${formatDaysRemaining(new Date(scheduled))} days remaining).`}

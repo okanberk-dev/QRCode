@@ -172,7 +172,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
 
       <form onSubmit={handleSubmit} className="bz-card p-5 sm:p-6 space-y-4">
         <div>
-          <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">
+          <h3 className="bz-h-tight text-[16px] text-pn-ink">
             {isTr ? "Profil bilgilerin" : "Your profile"}
           </h3>
           <p className="mt-1 text-[12px] leading-[1.55] text-[#737373]">
@@ -211,7 +211,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
                 </span>
                 {emailVerified && (
                   <span
-                    className="inline-flex items-center gap-1 text-[10px] font-medium text-[#16A34A]"
+                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#16A34A]"
                     title={isTr ? "E-posta doğrulandı" : "Email verified"}
                   >
                     <Check size={10} strokeWidth={2.5} />
@@ -302,7 +302,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
 
       <div className="bz-card p-5 sm:p-6 space-y-4">
         <div>
-          <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">
+          <h3 className="bz-h-tight text-[16px] text-pn-ink">
             {isTr ? "Panel dili" : "Panel language"}
           </h3>
           <p className="mt-1 text-[12px] leading-[1.55] text-[#737373]">

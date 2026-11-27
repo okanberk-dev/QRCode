@@ -57,8 +57,8 @@ export const CategorySection = memo(function CategorySection({
       aria-labelledby={`menu-section-title-${category.id}`}
       data-section-id={category.id}
       className={`bz-card scroll-mt-[124px] overflow-hidden p-0 lg:scroll-mt-[180px] min-[100rem]:scroll-mt-[124px] ${
-        category.isVisible ? '' : 'border-l-[3px] border-l-[#D4D4D4]'
-      } ${highlight ? 'outline-dashed outline-2 outline-offset-2 outline-[#C6F24E]' : ''}`}
+        category.isVisible ? '' : 'border-l-[3px] border-l-pn-line-strong'
+      } ${highlight ? 'outline-dashed outline-2 outline-offset-2 outline-pn-accent' : ''}`}
     >
       <CategoryHeader
         category={category}
@@ -73,7 +73,7 @@ export const CategorySection = memo(function CategorySection({
           <>
             {items.length > 0 ? (
               <SortableContext id={category.id} items={ids} strategy={verticalListSortingStrategy}>
-                <ul role="list" className="divide-y divide-[#EDEDED]">
+                <ul role="list" className="divide-y divide-pn-line">
                   {items.map((item) =>
                     service ? (
                       <ServiceRow key={item.id} item={item} categoryVisible={category.isVisible} feedback={rows[item.id]} />
@@ -99,15 +99,15 @@ export const CategorySection = memo(function CategorySection({
               </SortableContext>
             ) : (
               <div className="min-h-[56px] px-4 py-4">
-                <p className="text-[13px] font-medium text-[#0A0A0A]">{copy.outline.emptyCategory}</p>
+                <p className="text-[13px] font-medium text-pn-ink">{copy.outline.emptyCategory}</p>
                 {!service && (
-                  <p className="mt-0.5 text-[12.5px] text-[#737373]">
+                  <p className="mt-0.5 text-[13px] text-[#737373]">
                     {copy.outline.emptyCategoryBody}{' '}
                     <button
                       type="button"
                       onClick={() => openPasteSheet(category.id)}
                       disabled={!canEdit}
-                      className="min-h-11 font-semibold text-[#0A0A0A] underline underline-offset-2 pointer-fine:min-h-0 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="min-h-11 font-medium text-pn-ink underline underline-offset-2 pointer-fine:min-h-0 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {copy.category.pasteList}
                     </button>
@@ -116,7 +116,7 @@ export const CategorySection = memo(function CategorySection({
               </div>
             )}
             {!service && !filterActive && !selecting && !reorderMode && (
-              <div className="border-t border-[#EDEDED]">
+              <div className="border-t border-pn-line">
                 <QuickAddRow categoryId={category.id} categoryName={category.name} disabled={!canEdit} />
               </div>
             )}

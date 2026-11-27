@@ -90,10 +90,10 @@ const RANGE_LABELS: Record<Range, string> = {
 
 // Tier palette — stacked area order follows the snapshot keys (tier sort
 // order from the server), `other` = paid subscriptions without a tier link.
-const TIER_AREA_COLORS = ['#0A0A0A', '#525252', '#A3A3A3', '#C6F24E', '#737373', '#D4D4D4'];
+const TIER_AREA_COLORS = ['#000000', '#525252', '#A3A3A3', '#D7FE03', '#737373', '#D4D4D4'];
 
 const NPS_PIE_COLORS = {
-  promoters: '#A8D62E',
+  promoters: '#83AF3B',
   passives: '#A3A3A3',
   detractors: '#FB7185',
 };
@@ -177,7 +177,7 @@ export function AdminBiSection() {
 
   return (
     <section className="hidden sm:block mt-6 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EDEDED] pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-pn-line pt-6">
         <div>
           <Eyebrow color="#525252">TÜM İŞLETMELER</Eyebrow>
           <h2 className="bz-h-tight mt-1 text-[18px]">İş zekası göstergeleri</h2>
@@ -187,13 +187,13 @@ export function AdminBiSection() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="grid grid-cols-3 rounded-lg border border-[#EDEDED] bg-white p-0.5">
+          <div className="grid grid-cols-3 rounded-[14px] border border-pn-line bg-white p-0.5">
             {(['30d', '90d', '1y'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
-                className={`pulse-eyebrow rounded-md px-3 py-1.5 transition-colors ${
-                  range === r ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5]'
+                className={`text-[13px] font-medium rounded-[10px] px-3 py-1.5 transition-colors ${
+                  range === r ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas'
                 }`}
                 aria-pressed={range === r}
               >
@@ -214,13 +214,13 @@ export function AdminBiSection() {
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-12 text-[#737373]">
+        <div className="flex items-center justify-center rounded-[24px] border border-pn-line bg-white p-12 text-[#737373]">
           <Loader2 size={20} className="animate-spin" />
         </div>
       )}
 
       {error && !loading && (
-        <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-[12px] text-[#991B1B]">
+        <div className="rounded-[24px] border border-[#FECACA] bg-[#FEF2F2] p-4 text-[12px] text-[#991B1B]">
           {error}
         </div>
       )}
@@ -231,11 +231,11 @@ export function AdminBiSection() {
           <div className="bz-card p-5">
             <div className="flex items-center justify-between gap-2">
               <Eyebrow>MRR TRENDİ</Eyebrow>
-              <span className="bz-mono text-[10px] text-[#737373]">
+              <span className="tabular-nums text-[12px] text-[#737373]">
                 {formatUsd(snapshot.mrr[snapshot.mrr.length - 1]?.total ?? 0)}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">
+            <p className="mt-1 text-[12px] text-[#737373]">
               Son {snapshot.months} ay · tahmini, aktif aboneliklerin paket fiyatlarından (USD)
             </p>
             {mrrKeys.length === 0 ? (
@@ -250,7 +250,7 @@ export function AdminBiSection() {
                     <XAxis
                       dataKey="month"
                       tick={{ fontSize: 10, fill: '#737373' }}
-                      axisLine={{ stroke: '#EDEDED' }}
+                      axisLine={{ stroke: '#ECECF0' }}
                       tickLine={false}
                     />
                     <YAxis
@@ -286,17 +286,17 @@ export function AdminBiSection() {
             <div className="flex items-center justify-between gap-2">
               <Eyebrow>KAYIP ORANI</Eyebrow>
               {snapshot.churn.length > 0 && (
-                <span className="bz-mono inline-flex items-center gap-1 text-[10px]">
+                <span className="tabular-nums inline-flex items-center gap-1 text-[12px]">
                   {snapshot.churn[snapshot.churn.length - 1].ratePct >= 5 ? (
                     <TrendingUp size={11} className="text-[#FB7185]" />
                   ) : (
-                    <TrendingDown size={11} className="text-[#A8D62E]" />
+                    <TrendingDown size={11} className="text-pn-accent-ink" />
                   )}
                   %{snapshot.churn[snapshot.churn.length - 1].ratePct}
                 </span>
               )}
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">Aylık pasifleşen / aktif</p>
+            <p className="mt-1 text-[12px] text-[#737373]">Aylık pasifleşen / aktif</p>
             <div className="mt-4 h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={snapshot.churn} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
@@ -304,7 +304,7 @@ export function AdminBiSection() {
                   <XAxis
                     dataKey="month"
                     tick={{ fontSize: 10, fill: '#737373' }}
-                    axisLine={{ stroke: '#EDEDED' }}
+                    axisLine={{ stroke: '#ECECF0' }}
                     tickLine={false}
                   />
                   <YAxis
@@ -333,11 +333,11 @@ export function AdminBiSection() {
           <div className="bz-card p-5">
             <div className="flex items-center justify-between gap-2">
               <Eyebrow>NPS DAĞILIMI</Eyebrow>
-              <span className="bz-mono text-[10px] text-[#737373]">
+              <span className="tabular-nums text-[12px] text-[#737373]">
                 Skor: {snapshot.nps.score}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">
+            <p className="mt-1 text-[12px] text-[#737373]">
               {snapshot.nps.windowDays ? `Son ${snapshot.nps.windowDays} gün · ` : ''}
               {snapshot.nps.total} yorum · tüm işletmeler
             </p>
@@ -378,12 +378,12 @@ export function AdminBiSection() {
           <div className="bz-card p-5">
             <div className="flex items-center justify-between gap-2">
               <Eyebrow>KOHORT ELDE TUTMA</Eyebrow>
-              <span className="bz-mono inline-flex items-center gap-1 text-[10px] text-[#737373]">
+              <span className="tabular-nums inline-flex items-center gap-1 text-[12px] text-[#737373]">
                 <Users size={11} />
                 {snapshot.cohort.reduce((acc, p) => acc + p.signups, 0)}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">Kayıt ayına göre, bugün hâlâ aktif veya denemede olanlar</p>
+            <p className="mt-1 text-[12px] text-[#737373]">Kayıt ayına göre, bugün hâlâ aktif veya denemede olanlar</p>
             <div className="mt-4 h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={snapshot.cohort} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
@@ -391,7 +391,7 @@ export function AdminBiSection() {
                   <XAxis
                     dataKey="cohortMonth"
                     tick={{ fontSize: 10, fill: '#737373' }}
-                    axisLine={{ stroke: '#EDEDED' }}
+                    axisLine={{ stroke: '#ECECF0' }}
                     tickLine={false}
                   />
                   <YAxis
@@ -403,8 +403,8 @@ export function AdminBiSection() {
                   <Tooltip
                     contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
                   />
-                  <Bar dataKey="retainedActive" stackId="a" fill="#0A0A0A" name="Aktif" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="retainedTrial" stackId="a" fill="#C6F24E" name="Deneme" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="retainedActive" stackId="a" fill="#000000" name="Aktif" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="retainedTrial" stackId="a" fill="#D7FE03" name="Deneme" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -416,12 +416,12 @@ export function AdminBiSection() {
           <div className="bz-card p-5 lg:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <Eyebrow>KURULUM HUNİSİ</Eyebrow>
-              <span className="bz-mono inline-flex items-center gap-1 text-[10px] text-[#737373]">
+              <span className="tabular-nums inline-flex items-center gap-1 text-[12px] text-[#737373]">
                 <Users size={11} />
                 {snapshot.funnel.steps[0]?.count ?? 0}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">
+            <p className="mt-1 text-[12px] text-[#737373]">
               Son {snapshot.funnel.windowDays} günde kaydolan işletme sahipleri, bugüne kadar
               hangi adıma ulaştı. Yeni kaydolanların bir kısmı henüz başındadır.
             </p>
@@ -437,25 +437,25 @@ export function AdminBiSection() {
                     prev && prev > 0 ? Math.round((step.count / prev) * 1000) / 10 : null;
                   return (
                     <li key={step.key} className="grid grid-cols-[180px_1fr_auto] items-center gap-3">
-                      <span className="text-[12px] text-[#1A1A1A]">
+                      <span className="text-[12px] text-pn-ink-2">
                         {step.label}
                         {stepRate !== null && (
-                          <span className="block text-[10px] text-[#737373]">
+                          <span className="block text-[12px] text-[#737373]">
                             önceki adımdan geçiş: %{stepRate}
                           </span>
                         )}
                       </span>
                       <div
-                        className="h-2.5 overflow-hidden rounded-full bg-[#F5F5F5]"
+                        className="h-2.5 overflow-hidden rounded-full bg-pn-canvas"
                         role="img"
                         aria-label={`${step.label}: kaydolanların %${step.pctOfSignups}'i`}
                       >
                         <div
-                          className="h-full rounded-full bg-[#0A0A0A]"
+                          className="h-full rounded-full bg-pn-ink"
                           style={{ width: `${Math.min(100, step.pctOfSignups)}%` }}
                         />
                       </div>
-                      <span className="bz-mono w-[88px] text-right text-[11px] text-[#525252]">
+                      <span className="tabular-nums w-[88px] text-right text-[12px] text-[#525252]">
                         {step.count} · %{step.pctOfSignups}
                       </span>
                     </li>

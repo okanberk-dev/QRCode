@@ -109,7 +109,7 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
             type="button"
             aria-pressed={ready}
             onClick={() => setReady((v) => !v)}
-            className={`min-h-[36px] rounded-lg border px-3 text-[13px] font-medium ${ready ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]' : 'border-[#EDEDED] text-[#525252]'}`}
+            className={`min-h-[36px] rounded-[14px] border px-3 text-[13px] font-medium ${ready ? 'border-pn-accent-hover bg-pn-accent-soft text-pn-ink' : 'border-pn-line text-[#525252]'}`}
           >
             {tr ? 'Ödülü hazır' : 'Reward ready'}
           </button>
@@ -141,12 +141,12 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
         </div>
       )}
 
-      <p className="mt-3 text-[12.5px] text-[#737373]">{items ? (tr ? `${total} üye` : `${total} members`) : ''}</p>
+      <p className="mt-3 text-[13px] text-[#737373]">{items ? (tr ? `${total} üye` : `${total} members`) : ''}</p>
 
       {items === null ? (
         <div className="mt-3 space-y-2" aria-busy="true">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="bz-skeleton h-14 rounded-xl" />
+            <div key={i} className="bz-skeleton h-14 rounded-[20px]" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -190,10 +190,10 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                           setOpen(m);
                         }
                       }}
-                      className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A8D62E]"
+                      className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent-hover"
                     >
                       <td>
-                        <span className="font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz' : 'Unnamed')}</span>
+                        <span className="font-medium text-pn-ink">{m.name || (tr ? 'İsimsiz' : 'Unnamed')}</span>
                         <span className="ml-2 text-[12px] tabular-nums text-[#737373]">
                           {access.manage && m.phone ? formatPhoneForDisplay(m.phone) : m.phoneMasked}
                         </span>
@@ -203,10 +203,10 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                           </Badge>
                         )}
                       </td>
-                      <td className="font-mono text-[12.5px] tracking-[0.08em]">{formatMemberCode(m.code)}</td>
+                      <td className="font-mono text-[13px] ">{formatMemberCode(m.code)}</td>
                       <td className="text-right tabular-nums">
                         {m.balance}
-                        {m.balance >= minCost && <span className="ml-1.5 text-[11px] font-semibold text-[#4D7C0F]">{tr ? 'hazır' : 'ready'}</span>}
+                        {m.balance >= minCost && <span className="ml-1.5 text-[12px] font-medium text-[#4D7C0F]">{tr ? 'hazır' : 'ready'}</span>}
                       </td>
                       <td className="text-right tabular-nums">{m.visits}</td>
                       <td className="text-right tabular-nums">{m.rewardsRedeemed}</td>
@@ -220,17 +220,17 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
           <ul className="mt-2 space-y-2 lg:hidden">
             {items.map((m) => (
               <li key={m.id}>
-                <button type="button" onClick={() => setOpen(m)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#EDEDED] px-4 py-3 text-left">
+                <button type="button" onClick={() => setOpen(m)} className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-pn-line px-4 py-3 text-left">
                   <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz' : 'Unnamed')}</span>
+                    <span className="block truncate text-[14px] font-medium text-pn-ink">{m.name || (tr ? 'İsimsiz' : 'Unnamed')}</span>
                     <span className="text-[12px] text-[#737373]">
                       {access.manage && m.phone ? `${formatPhoneForDisplay(m.phone)} · ` : ''}
                       {formatMemberCode(m.code)} · {m.visits} {tr ? 'ziyaret' : 'visits'} · {relativeDay(m.lastVisitAt, locale)}
                     </span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block text-[16px] font-semibold tabular-nums">{m.balance}</span>
-                    {m.balance >= minCost && <span className="text-[11px] font-semibold text-[#4D7C0F]">{tr ? 'ödül hazır' : 'reward ready'}</span>}
+                    <span className="block text-[16px] font-medium tabular-nums">{m.balance}</span>
+                    {m.balance >= minCost && <span className="text-[12px] font-medium text-[#4D7C0F]">{tr ? 'ödül hazır' : 'reward ready'}</span>}
                   </span>
                 </button>
               </li>

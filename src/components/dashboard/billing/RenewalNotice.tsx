@@ -58,7 +58,7 @@ export default function RenewalNotice({ locale, ...input }: RenewalNoticeInput &
         {action ? (
           <a
             href={`/billing/${locale}/checkout?intent=renew`}
-            className="inline-flex min-h-[32px] items-center font-semibold underline underline-offset-[3px] hover:no-underline"
+            className="inline-flex min-h-[32px] items-center font-medium underline underline-offset-[3px] hover:no-underline"
           >
             {billingText(notice.kind === 'info' ? 'notice.renewNow' : 'hero.payNow', locale)}
           </a>

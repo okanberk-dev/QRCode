@@ -39,11 +39,11 @@ function MainTrendTooltip({ active, payload, isTr }: TooltipContentProps) {
   const row = payload?.find((item) => item.payload)?.payload;
   if (!row) return null;
   return (
-    <div className="rounded-[12px] border border-[#EDEDED] bg-white px-3 py-2.5 shadow-[0_16px_40px_rgba(10,10,10,0.12)]">
-      <div className="bz-mono text-[10.5px] font-semibold text-[#0A0A0A]">
+    <div className="rounded-[12px] border border-pn-line bg-white px-3 py-2.5 shadow-[0_16px_40px_rgba(10,10,10,0.12)]">
+      <div className="tabular-nums text-[12px] font-medium text-pn-ink">
         {row.date}
       </div>
-      <div className="mt-2 grid min-w-[180px] gap-1.5 text-[11.5px] text-[#525252]">
+      <div className="mt-2 grid min-w-[180px] gap-1.5 text-[12px] text-[#525252]">
         {SERIES_META.map((s) => {
           const value = row[s.key];
           if (value === 0) return null;
@@ -52,18 +52,18 @@ function MainTrendTooltip({ active, payload, isTr }: TooltipContentProps) {
               <span className="inline-flex items-center gap-1.5">
                 <span
                   aria-hidden="true"
-                  className="h-2 w-2 rounded-sm"
+                  className="h-2 w-2 rounded-[8px]"
                   style={{ background: s.swatch }}
                 />
                 {isTr ? s.labelTr : s.labelEn}
               </span>
-              <span className="bz-mono tabular-nums text-[#0A0A0A]">{value}</span>
+              <span className="tabular-nums tabular-nums text-pn-ink">{value}</span>
             </div>
           );
         })}
-        <div className="flex items-center justify-between gap-4 border-t border-[#F5F5F5] pt-1.5 mt-0.5">
-          <span className="font-semibold">{isTr ? 'Toplam' : 'Total'}</span>
-          <span className="bz-mono tabular-nums font-semibold text-[#0A0A0A]">{row.total}</span>
+        <div className="flex items-center justify-between gap-4 border-t border-pn-line pt-1.5 mt-0.5">
+          <span className="font-medium">{isTr ? 'Toplam' : 'Total'}</span>
+          <span className="tabular-nums tabular-nums font-medium text-pn-ink">{row.total}</span>
         </div>
       </div>
     </div>
@@ -86,11 +86,11 @@ export default function TrendChartCanvas({
     >
       <defs>
         <linearGradient id="mainTrendBuazeQr" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#C6F24E" stopOpacity={0.6} />
-          <stop offset="100%" stopColor="#C6F24E" stopOpacity={0.05} />
+          <stop offset="0%" stopColor="#D7FE03" stopOpacity={0.6} />
+          <stop offset="100%" stopColor="#D7FE03" stopOpacity={0.05} />
         </linearGradient>
       </defs>
-      <CartesianGrid vertical={false} stroke="#EDEDED" strokeDasharray="0" />
+      <CartesianGrid vertical={false} stroke="#ECECF0" strokeDasharray="0" />
       <XAxis
         dataKey="date"
         axisLine={false}
@@ -106,7 +106,7 @@ export default function TrendChartCanvas({
         width={32}
       />
       <Tooltip
-        cursor={{ stroke: '#0A0A0A', strokeWidth: 1, strokeDasharray: '3 3' }}
+        cursor={{ stroke: '#000000', strokeWidth: 1, strokeDasharray: '3 3' }}
         content={({ active, payload }) => (
           <MainTrendTooltip
             active={active}
@@ -122,9 +122,9 @@ export default function TrendChartCanvas({
         type="monotone"
         dataKey="google"
         stackId="trend"
-        stroke="#0A0A0A"
+        stroke="#000000"
         strokeWidth={1}
-        fill="#0A0A0A"
+        fill="#000000"
         fillOpacity={0.85}
         isAnimationActive={false}
       />
@@ -142,7 +142,7 @@ export default function TrendChartCanvas({
         type="monotone"
         dataKey="buazeQr"
         stackId="trend"
-        stroke="#A8D62E"
+        stroke="#83AF3B"
         strokeWidth={1.5}
         fill="url(#mainTrendBuazeQr)"
         fillOpacity={1}

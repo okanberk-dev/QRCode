@@ -93,7 +93,7 @@ export default function GoogleReviewsEmbedCard({
           {isTr
             ? 'Google hesabını bağlayıp konumunu seçtiğinde yorumların birkaç saat içinde hazırlanır ve kod burada görünür.'
             : 'Once you connect your Google account and pick your location, your reviews are prepared within a few hours and the code appears here.'}{' '}
-          <Link href={`/${locale}/dashboard/google-reviews?restaurantId=${restaurantId}`} className="font-medium text-[#0A0A0A] underline">
+          <Link href={`/${locale}/dashboard/google-reviews?restaurantId=${restaurantId}`} className="font-medium text-pn-ink underline">
             {isTr ? 'Google Yorumları sayfası' : 'Google Reviews page'}
           </Link>
         </p>
@@ -109,20 +109,20 @@ export default function GoogleReviewsEmbedCard({
               )}
             </AlertBanner>
           )}
-          <p className="text-[12.5px] text-[#525252]">
+          <p className="text-[13px] text-[#525252]">
             {isTr
               ? 'Google ortalaman, toplam yorum sayın ve son yorumların "Google yorumları" başlığıyla görünür. Yorumlar 6–12 saatte bir yenilenir.'
               : 'Your Google average, total review count and latest reviews appear under a "Google reviews" heading. Reviews refresh every 6–12 hours.'}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1" role="group" aria-label={isTr ? 'Tema' : 'Theme'}>
+            <div className="inline-flex items-center gap-1 rounded-full border border-pn-line p-1" role="group" aria-label={isTr ? 'Tema' : 'Theme'}>
               {(['light', 'dark'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setTheme(t)}
                   aria-pressed={theme === t}
-                  className={`min-h-[44px] rounded-md px-2.5 py-1 text-[12px] font-medium sm:min-h-0 ${theme === t ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5]'}`}
+                  className={`min-h-[44px] rounded-[10px] px-2.5 py-1 text-[12px] font-medium sm:min-h-0 ${theme === t ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas'}`}
                 >
                   {t === 'light' ? (isTr ? 'Açık' : 'Light') : isTr ? 'Koyu' : 'Dark'}
                 </button>
@@ -138,13 +138,13 @@ export default function GoogleReviewsEmbedCard({
             </a>
           </div>
           <div className="relative">
-            <pre className="overflow-x-auto rounded-lg bg-[#0A0A0A] p-3 pr-12 text-[11.5px] leading-[1.5] text-white">
+            <pre className="overflow-x-auto rounded-[14px] bg-pn-ink p-3 pr-12 text-[12px] leading-[1.5] text-white">
               <code>{snippet}</code>
             </pre>
             <button
               type="button"
               onClick={copy}
-              className="absolute right-2 top-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md bg-white/10 text-white hover:bg-white/20 sm:min-h-8 sm:min-w-8"
+              className="absolute right-2 top-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:min-h-8 sm:min-w-8"
               aria-label={isTr ? 'Kodu kopyala' : 'Copy code'}
             >
               {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}

@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   adminRoleLabel,
   getActiveAdminHref,
-  getAdminMobileNav,
   getAdminNavLeaves,
   toAdminNavRole,
 } from '../src/components/admin/admin-nav';
@@ -35,11 +34,6 @@ test('admin nav: staff grants open exactly the matching pages', () => {
   const perms = new Set(['reviews:read', 'customers:read', 'analytics:read']);
   const pages = hrefs(getAdminNavLeaves('staff', perms));
   assert.deepEqual(pages, ['/admin/dashboard', '/admin/reviews', '/admin/analytics', '/admin/customers', '/admin/profile']);
-});
-
-test('admin mobile nav: never empty for staff and capped at five', () => {
-  assert.deepEqual(hrefs(getAdminMobileNav('staff', none)), ['/admin/profile']);
-  assert.equal(getAdminMobileNav('superadmin', none).length, 5);
 });
 
 test('admin nav: longest matching href wins', () => {

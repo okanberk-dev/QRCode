@@ -139,7 +139,7 @@ export default function LegalVariablesPage() {
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <Link
         href="/admin/legal-documents"
-        className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] text-[#737373] hover:text-[#0A0A0A]"
+        className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-[#737373] hover:text-pn-ink"
       >
         <ArrowLeft size={14} />
         Hukuki metinler
@@ -173,8 +173,8 @@ export default function LegalVariablesPage() {
       )}
 
       <AlertBanner kind="info" className="mb-5">
-        <div className="text-[12.5px] leading-[1.6]">
-          Hukuki metinler içinde <code className="rounded bg-white px-1 py-0.5 text-[11px]">{'{{COMPANY_NAME}}'}</code>
+        <div className="text-[13px] leading-[1.6]">
+          Hukuki metinler içinde <code className="rounded bg-white px-1 py-0.5 text-[12px]">{'{{COMPANY_NAME}}'}</code>
           {' '}gibi placeholder yazıldığında, public sayfa render edildiğinde buradaki değerle değiştirilir.
           Değer boş bırakıldığında varsayılan kullanılır. Yeni bir değişken türü eklemek geliştirici
           desteği gerektirir.
@@ -193,12 +193,12 @@ export default function LegalVariablesPage() {
           {grouped.map((g) =>
             g.items.length === 0 ? null : (
               <div key={g.group} className="bz-card overflow-hidden">
-                <div className="border-b border-[#EDEDED] px-5 py-3">
+                <div className="border-b border-pn-line px-5 py-3">
                   <h2 className="bz-h-tight text-[14px] sm:text-[15px] tracking-[-0.02em]">
                     {g.label}
                   </h2>
                 </div>
-                <div className="divide-y divide-[#EDEDED]">
+                <div className="divide-y divide-pn-line">
                   {g.items.map((row) => {
                     const live =
                       edits[row.key] !== undefined ? edits[row.key] : row.value;
@@ -210,7 +210,7 @@ export default function LegalVariablesPage() {
                       >
                         <div>
                           <div className="flex items-center gap-2">
-                            <code className="text-[11px] font-medium text-[#0A0A0A]">
+                            <code className="text-[12px] font-medium text-pn-ink">
                               {`{{${row.key}}}`}
                             </code>
                             {row.customised && !isDirty && (
@@ -231,7 +231,7 @@ export default function LegalVariablesPage() {
                             className="bz-input w-full"
                             placeholder={row.defaultValue}
                           />
-                          <p className="mt-1 text-[11.5px] text-[#A3A3A3]">
+                          <p className="mt-1 text-[12px] text-[#A3A3A3]">
                             {row.description.tr}
                           </p>
                         </div>
@@ -240,7 +240,7 @@ export default function LegalVariablesPage() {
                             <button
                               type="button"
                               onClick={() => onResetField(row.key)}
-                              className="bz-btn-ghost text-[11.5px]"
+                              className="bz-btn-ghost text-[12px]"
                               title="Varsayılana dön"
                             >
                               <RotateCcw size={12} />

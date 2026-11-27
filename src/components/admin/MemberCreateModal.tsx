@@ -83,8 +83,8 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
       closeGuard={() => invite === null && (email.trim() !== '' || name.trim() !== '')}
       title={
         <div>
-          <p className="pulse-eyebrow text-[#737373]">YENİ KAYIT</p>
-          <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+          <p className="text-[13px] font-medium text-[#737373]">YENİ KAYIT</p>
+          <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
             Yeni işletme sahibi
           </h2>
           <p className="mt-1 text-[12px] text-[#525252]">
@@ -95,10 +95,10 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
     >
       {invite ? (
         <div className="space-y-4">
-          <div className="flex items-start gap-2.5 rounded-2xl border border-[#EAF9B8] bg-[#EAF9B8]/40 p-4">
-            <MailCheck size={18} className="text-[#0A0A0A] mt-0.5 shrink-0" strokeWidth={2} />
-            <div className="text-[13px] text-[#0A0A0A]">
-              <p className="font-semibold">
+          <div className="flex items-start gap-2.5 rounded-[24px] border border-pn-accent-soft bg-pn-accent-soft/40 p-4">
+            <MailCheck size={18} className="text-pn-ink mt-0.5 shrink-0" strokeWidth={2} />
+            <div className="text-[13px] text-pn-ink">
+              <p className="font-medium">
                 {invite.mailSent ? 'Davet maili gönderildi' : 'Hesap oluşturuldu'}
               </p>
               <p className="mt-1 text-[#525252]">
@@ -110,7 +110,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
           </div>
 
           <div className="space-y-1.5">
-            <label className="pulse-eyebrow text-[#737373]">Davet linki</label>
+            <label className="text-[13px] font-medium text-[#737373]">Davet linki</label>
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -127,14 +127,14 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
                 title="Kopyala"
               >
                 {copied ? (
-                  <Check size={14} className="text-[#A8D62E]" strokeWidth={2} />
+                  <Check size={14} className="text-pn-accent-ink" strokeWidth={2} />
                 ) : (
                   <Copy size={14} strokeWidth={2} />
                 )}
                 {copied ? 'Kopyalandı' : 'Kopyala'}
               </button>
             </div>
-            <p className="text-[11px] text-[#A3A3A3] leading-[1.55]">
+            <p className="text-[12px] text-[#A3A3A3] leading-[1.55]">
               Link 30 dakika geçerli. Süre dolarsa detay sayfasından yenisini gönderebilirsin.
             </p>
           </div>
@@ -156,7 +156,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
           )}
 
           <div className="space-y-1.5">
-            <label className="pulse-eyebrow text-[#737373]">Email *</label>
+            <label className="text-[13px] font-medium text-[#737373]">Email *</label>
             <input
               type="email"
               required
@@ -170,7 +170,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
           </div>
 
           <div className="space-y-1.5">
-            <label className="pulse-eyebrow text-[#737373]">İsim</label>
+            <label className="text-[13px] font-medium text-[#737373]">İsim</label>
             <input
               type="text"
               value={name}
@@ -183,7 +183,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="pulse-eyebrow text-[#737373]">Plan</label>
+              <label className="text-[13px] font-medium text-[#737373]">Plan</label>
               <select
                 value={plan}
                 onChange={(e) => setPlan(e.target.value as typeof plan)}
@@ -196,7 +196,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="pulse-eyebrow text-[#737373]">Panel dili</label>
+              <label className="text-[13px] font-medium text-[#737373]">Panel dili</label>
               <select
                 value={locale}
                 onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
@@ -208,7 +208,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
             </div>
           </div>
 
-          <div className="flex items-start gap-1.5 text-[11px] text-[#737373] leading-[1.55]">
+          <div className="flex items-start gap-1.5 text-[12px] text-[#737373] leading-[1.55]">
             <MailCheck size={12} className="mt-0.5 shrink-0" strokeWidth={2} />
             <span>
               Sistem random şifre üretir ve email&apos;e davet linki gönderir. Kullanıcı linkle kendi şifresini belirler. Link 30 dakika geçerli.

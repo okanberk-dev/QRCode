@@ -405,7 +405,7 @@ export function PlacesBusinessPicker({
 
   if (readOnly) {
     return (
-      <p className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[13px] leading-[1.6] text-[#525252]">
+      <p className="rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 text-[13px] leading-[1.6] text-[#525252]">
         {copy.readOnly}
       </p>
     );
@@ -423,7 +423,7 @@ export function PlacesBusinessPicker({
         className="flex flex-col gap-3 sm:flex-row sm:items-end"
       >
         <div className="min-w-0 flex-1">
-          <label htmlFor={inputId} className="mb-1.5 block text-[12.5px] font-medium text-[#262626]">
+          <label htmlFor={inputId} className="mb-1.5 block text-[13px] font-medium text-[#262626]">
             {copy.label}
           </label>
           <input
@@ -454,7 +454,7 @@ export function PlacesBusinessPicker({
       </form>
 
       {dirty && (
-        <p id={hintId} className="text-[12.5px] text-[#92400E]">
+        <p id={hintId} className="text-[13px] text-[#92400E]">
           {copy.dirtyHint}
         </p>
       )}
@@ -494,7 +494,7 @@ export function PlacesBusinessPicker({
       {phase === 'loading' && (
         <ul className="space-y-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
-            <li key={i} className="space-y-2 rounded-xl border border-[#EDEDED] bg-white p-4">
+            <li key={i} className="space-y-2 rounded-[20px] border border-pn-line bg-white p-4">
               <SkBox className="h-4 w-56 max-w-full" />
               <SkBox className="h-3 w-80 max-w-full" />
               <SkBox className="h-5 w-24" />
@@ -504,13 +504,13 @@ export function PlacesBusinessPicker({
       )}
 
       {phase === 'done' && results.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#FAFAFA] px-4 py-4 text-[13px] leading-[1.6] text-[#525252]">
+        <div className="rounded-[20px] border border-dashed border-pn-line-strong bg-pn-canvas px-4 py-4 text-[13px] leading-[1.6] text-[#525252]">
           <p>{copy.zero}</p>
           <a
             href="https://business.google.com/create"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-flex min-h-11 items-center gap-1.5 font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+            className="mt-1 inline-flex min-h-11 items-center gap-1.5 font-medium text-pn-ink underline-offset-2 hover:underline"
           >
             {copy.createProfile}
             <ExternalLink size={13} aria-hidden="true" />
@@ -528,12 +528,12 @@ export function PlacesBusinessPicker({
               return (
                 <li
                   key={row.placeId}
-                  className="flex flex-col gap-3 rounded-xl border border-[#EDEDED] bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4"
+                  className="flex flex-col gap-3 rounded-[20px] border border-pn-line bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="break-words text-[14.5px] font-semibold leading-snug text-[#0A0A0A]">{row.displayName}</p>
+                    <p className="break-words text-[14.5px] font-medium leading-snug text-pn-ink">{row.displayName}</p>
                     {row.formattedAddress && (
-                      <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-[1.5] text-[#525252]">{row.formattedAddress}</p>
+                      <p className="mt-0.5 line-clamp-2 text-[13px] leading-[1.5] text-[#525252]">{row.formattedAddress}</p>
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {row.category && (

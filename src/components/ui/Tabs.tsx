@@ -77,11 +77,9 @@ export function Tabs({
           >
             {it.label}
             {it.count !== undefined && (
-              <span style={{ marginLeft: 6, color: "#A3A3A3", fontWeight: 500 }}>
-                ({it.count})
-              </span>
+              <span className="pn-tab-count">{it.count}</span>
             )}
-            {it.badge && <span style={{ marginLeft: 6 }}>{it.badge}</span>}
+            {it.badge && <span className="ml-1.5">{it.badge}</span>}
           </button>
         );
       })}

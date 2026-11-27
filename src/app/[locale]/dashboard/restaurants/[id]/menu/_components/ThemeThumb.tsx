@@ -46,7 +46,7 @@ export function ThemeThumb({ d, name }: { d: ResolvedMenuDesign; name: string })
         style={{ backgroundImage: `linear-gradient(135deg, ${c.banner}, ${c.bannerEnd})` }}
       >
         <span className="h-4 w-4 shrink-0 rounded-[4px]" style={{ backgroundColor: c.surface, boxShadow: `0 0 0 1px ${c.rule}` }} />
-        <span className="min-w-0 truncate text-[12.5px] leading-none" style={{ ...display, color: c.onBanner }}>
+        <span className="min-w-0 truncate text-[13px] leading-none" style={{ ...display, color: c.onBanner }}>
           {name}
         </span>
       </div>
@@ -69,7 +69,7 @@ export function ThemeThumb({ d, name }: { d: ResolvedMenuDesign; name: string })
   } else if (s.header === 'compact') {
     header = (
       <div className="flex h-[30px] items-center justify-between gap-2 px-2.5">
-        <span className="min-w-0 truncate text-[12.5px] leading-none" style={{ ...display, color: c.ink }}>
+        <span className="min-w-0 truncate text-[13px] leading-none" style={{ ...display, color: c.ink }}>
           {name}
         </span>
         <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: c.accentFill, boxShadow: `inset 0 0 0 1px ${c.accentEdge}` }} />
@@ -109,7 +109,7 @@ export function ThemeThumb({ d, name }: { d: ResolvedMenuDesign; name: string })
   // ── section title ──
   const section = (
     <div className={`flex items-center gap-1.5 px-2.5 pt-1.5 ${s.section === 'chapter' ? 'justify-center' : ''}`}>
-      {s.section === 'numbered' && <span className="text-[7px] font-semibold leading-none" style={{ color: c.accentText }}>01</span>}
+      {s.section === 'numbered' && <span className="text-[7px] font-medium leading-none" style={{ color: c.accentText }}>01</span>}
       <span style={bar('30px', c.ink, 4, 0.85)} />
       {s.section === 'rule' && <span className="h-px flex-1" style={{ backgroundColor: c.accentUi, opacity: 0.7 }} />}
     </div>
@@ -199,7 +199,7 @@ export function ThemeThumb({ d, name }: { d: ResolvedMenuDesign; name: string })
   return (
     <div
       aria-hidden="true"
-      className="relative h-[132px] overflow-hidden rounded-lg"
+      className="relative h-[132px] overflow-hidden rounded-[14px]"
       style={{ backgroundColor: c.bg, boxShadow: `inset 0 0 0 1px ${c.rule}` }}
     >
       {d.scheme === 'dark' && (

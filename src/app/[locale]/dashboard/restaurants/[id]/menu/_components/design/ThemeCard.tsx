@@ -39,7 +39,7 @@ export function ThemeCard({
       disabled={disabled}
       onClick={onSelect}
       onKeyDown={onKeyDown}
-      className={`group relative flex min-w-0 flex-col items-stretch gap-2 rounded-xl bg-white p-1.5 text-left transition-[box-shadow,transform] duration-[160ms] ease-[cubic-bezier(.2,.8,.2,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`group relative flex min-w-0 flex-col items-stretch gap-2 rounded-[20px] bg-white p-1.5 text-left transition-[box-shadow,transform] duration-[160ms] ease-[cubic-bezier(.2,.8,.2,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
         checked
           ? 'shadow-[0_0_0_2px_#0A0A0A]'
           : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3,0_6px_16px_-10px_rgba(10,10,10,0.35)]'
@@ -49,7 +49,7 @@ export function ThemeCard({
         <ThemeThumb d={resolved} name={restaurantName} />
         {checked && (
           <span
-            className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0A] shadow-[0_0_0_2px_#FFFFFF]"
+            className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-pn-ink shadow-[0_0_0_2px_#FFFFFF]"
             aria-hidden="true"
           >
             <Check size={12} strokeWidth={3} className="text-white" />
@@ -58,9 +58,9 @@ export function ThemeCard({
       </span>
       <span className="block px-1 pb-1">
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span className="min-w-0 max-w-full truncate text-[13.5px] font-semibold leading-tight text-[#0A0A0A]">{label}</span>
+          <span className="min-w-0 max-w-full truncate text-[14px] font-medium leading-tight text-pn-ink">{label}</span>
           {customized && (
-            <span className="shrink-0 rounded-full bg-[#EAF9B8] px-1.5 py-px text-[11px] font-medium leading-4 text-[#3F4A00]">
+            <span className="shrink-0 rounded-full bg-pn-accent-soft px-1.5 py-px text-[12px] font-medium leading-4 text-[#3F4A00]">
               {customizedLabel}
             </span>
           )}

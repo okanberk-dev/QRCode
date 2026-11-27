@@ -17,14 +17,14 @@ export default function Loading() {
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
+      <div className="flex flex-wrap items-center gap-2 rounded-[24px] border border-pn-line bg-white p-4 sm:p-5">
         <SkBox className="h-9 w-full sm:w-72" />
         <SkBox className="h-9 w-28" />
         <SkBox className="h-9 w-32" />
         <SkBox className="h-9 w-40" />
         <SkBox className="h-9 w-full sm:w-52" />
       </div>
-      <div className="divide-y divide-[#EDEDED] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white">
+      <div className="divide-y divide-pn-line overflow-hidden rounded-[24px] border border-pn-line bg-white">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 px-5 py-4">
             <SkBox className="h-4 w-48 max-w-[50%]" />

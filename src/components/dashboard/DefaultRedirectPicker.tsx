@@ -59,7 +59,7 @@ interface DefaultRedirectPickerProps {
 const AUTO_KEY = 'auto' as const;
 
 const CHIP_CLASS =
-  'inline-flex min-h-[44px] items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 aria-disabled:cursor-wait sm:min-h-[40px]';
+  'inline-flex min-h-[44px] items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 aria-disabled:cursor-wait sm:min-h-[40px]';
 
 export default function DefaultRedirectPicker({
   restaurantId,
@@ -170,17 +170,17 @@ export default function DefaultRedirectPicker({
           aria-pressed={isAutomatic}
           className={CHIP_CLASS}
           style={{
-            border: `1px solid ${isAutomatic ? '#0A0A0A' : '#EDEDED'}`,
-            background: isAutomatic ? '#0A0A0A' : '#fff',
-            color: isAutomatic ? '#fff' : '#0A0A0A',
+            border: `1px solid ${isAutomatic ? '#000000' : '#ECECF0'}`,
+            background: isAutomatic ? '#000000' : '#fff',
+            color: isAutomatic ? '#fff' : '#000000',
           }}
         >
           <Sparkles size={15} strokeWidth={2} aria-hidden="true" />
           {isTr ? 'Otomatik' : 'Automatic'}
           {pendingId === AUTO_KEY && isPending ? (
-            <Loader2 size={12} strokeWidth={2.5} color="#C6F24E" className="animate-spin" aria-hidden="true" />
+            <Loader2 size={12} strokeWidth={2.5} color="#D7FE03" className="animate-spin" aria-hidden="true" />
           ) : isAutomatic ? (
-            <Check size={12} strokeWidth={2.5} color="#C6F24E" aria-hidden="true" />
+            <Check size={12} strokeWidth={2.5} color="#D7FE03" aria-hidden="true" />
           ) : null}
         </button>
         {enabledPlatforms.map((uiKey) => {
@@ -196,17 +196,17 @@ export default function DefaultRedirectPicker({
               aria-pressed={isDefault}
               className={CHIP_CLASS}
               style={{
-                border: `1px solid ${isDefault ? '#0A0A0A' : '#EDEDED'}`,
-                background: isDefault ? '#0A0A0A' : '#fff',
-                color: isDefault ? '#fff' : '#0A0A0A',
+                border: `1px solid ${isDefault ? '#000000' : '#ECECF0'}`,
+                background: isDefault ? '#000000' : '#fff',
+                color: isDefault ? '#fff' : '#000000',
               }}
             >
               <PlatformChip id={uiKey} size={18} />
               {PLATFORMS[uiKey].label}
               {loading ? (
-                <Loader2 size={12} strokeWidth={2.5} color="#C6F24E" className="animate-spin" aria-hidden="true" />
+                <Loader2 size={12} strokeWidth={2.5} color="#D7FE03" className="animate-spin" aria-hidden="true" />
               ) : isDefault ? (
-                <Check size={12} strokeWidth={2.5} color="#C6F24E" aria-hidden="true" />
+                <Check size={12} strokeWidth={2.5} color="#D7FE03" aria-hidden="true" />
               ) : null}
             </button>
           );
@@ -249,12 +249,12 @@ export default function DefaultRedirectPicker({
         >
           <AlertTriangle size={14} strokeWidth={2.25} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="flex-1">
-            <div className="text-[12px] font-semibold leading-tight">
+            <div className="text-[12px] font-medium leading-tight">
               {isTr
                 ? `Varsayılan "${orphanLabel}" şu an kullanılamıyor`
                 : `Default "${orphanLabel}" is currently unusable`}
             </div>
-            <div className="mt-0.5 text-[11px] leading-snug" style={{ color: '#78350F' }}>
+            <div className="mt-0.5 text-[12px] leading-snug" style={{ color: '#78350F' }}>
               {isTr
                 ? 'Bu platformun linki kaldırılmış ya da kapalı. Yüksek puanlı müşteriler şu an otomatik olarak sıradaki bağlı platforma yönlendiriliyor. Linki yeniden ekleyin ya da başka bir varsayılan seçin.'
                 : "This platform's link was removed or switched off. High-rated customers are currently routed automatically to the next connected platform. Re-add the link or pick another default."}
@@ -263,7 +263,7 @@ export default function DefaultRedirectPicker({
               type="button"
               onClick={() => persistDefault(null, AUTO_KEY)}
               disabled={isPending}
-              className="mt-1.5 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[12px] font-semibold underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] disabled:opacity-50 sm:min-h-[32px]"
+              className="mt-1.5 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[12px] font-medium underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink disabled:opacity-50 sm:min-h-[32px]"
               style={{ color: '#92400E' }}
             >
               {isTr ? 'Otomatik seçime dön' : 'Switch to automatic'}

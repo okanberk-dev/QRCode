@@ -115,7 +115,7 @@ export const ItemRow = memo(function ItemRow({
       {...listeners}
       data-row-control=""
       aria-label={copy.item.dragAria(item.name)}
-      className={`flex cursor-grab touch-none items-center justify-center rounded-md text-[#A3A3A3] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] active:cursor-grabbing ${className}`}
+      className={`flex cursor-grab touch-none items-center justify-center rounded-[10px] text-[#A3A3A3] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent active:cursor-grabbing ${className}`}
     >
       <GripVertical size={14} strokeWidth={2} />
     </button>
@@ -143,7 +143,7 @@ export const ItemRow = memo(function ItemRow({
     ) : null;
 
   const nameClass =
-    'font-body text-[14.5px] font-medium leading-5 text-[#0A0A0A] line-clamp-2 break-words pointer-coarse:text-[15px] pointer-coarse:font-semibold pointer-fine:@min-[480px]/outline:line-clamp-1';
+    'font-body text-[14.5px] font-medium leading-5 text-pn-ink line-clamp-2 break-words pointer-coarse:text-[15px] pointer-coarse:font-medium pointer-fine:@min-[480px]/outline:line-clamp-1';
   const description = item.description?.trim();
   // Studio rows stay calm: one neutral badge and a count (the public menu keeps the tints).
   const shownBadges = item.badges as MenuBadge[];
@@ -198,7 +198,7 @@ export const ItemRow = memo(function ItemRow({
 
       <div className={cells.photo}>
         {temp ? (
-          <span className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] pointer-fine:@min-[480px]/outline:h-10 pointer-fine:@min-[480px]/outline:w-10">
+          <span className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-pn-line bg-pn-canvas pointer-fine:@min-[480px]/outline:h-10 pointer-fine:@min-[480px]/outline:w-10">
             {pending?.status === 'saving' && <Loader2 size={14} className="animate-spin text-[#737373]" aria-hidden="true" />}
           </span>
         ) : (
@@ -229,7 +229,7 @@ export const ItemRow = memo(function ItemRow({
                 toggleSelect(item.id, { range: e.shiftKey });
               }}
               aria-pressed={selected}
-              className="min-w-0 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+              className="min-w-0 rounded-[10px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
             >
               <span className={nameClass}>{item.name}</span>
             </button>
@@ -255,7 +255,7 @@ export const ItemRow = memo(function ItemRow({
               aria-keyshortcuts={ROW_ARIA_KEYS}
               onClick={() => openItem(item.id)}
               aria-label={copy.item.openAria(item.name)}
-              className="min-w-0 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+              className="min-w-0 rounded-[10px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
             >
               <span className={nameClass}>{item.name}</span>
             </button>
@@ -274,7 +274,7 @@ export const ItemRow = memo(function ItemRow({
                 <button
                   type="button"
                   onClick={() => openItem(item.id, 'description')}
-                  className="min-w-0 flex-1 truncate text-left text-[12.5px] text-[#737373] hover:text-[#0A0A0A]"
+                  className="min-w-0 flex-1 truncate text-left text-[13px] text-[#737373] hover:text-pn-ink"
                 >
                   {description}
                 </button>
@@ -282,21 +282,21 @@ export const ItemRow = memo(function ItemRow({
                 <button
                   type="button"
                   onClick={() => openItem(item.id, 'description')}
-                  className={`min-h-11 shrink-0 text-left text-[12.5px] pointer-fine:min-h-0 ${
-                    completion === 'noDescription' ? 'font-semibold text-[#0A0A0A] underline underline-offset-2' : 'text-[#A3A3A3] hover:text-[#525252]'
+                  className={`min-h-11 shrink-0 text-left text-[13px] pointer-fine:min-h-0 ${
+                    completion === 'noDescription' ? 'font-medium text-pn-ink underline underline-offset-2' : 'text-[#A3A3A3] hover:text-[#525252]'
                   }`}
                 >
                   + {copy.item.addDescription}
                 </button>
               ) : null}
               {shownBadges.length > 0 && (
-                <span className={`h-5 shrink-0 items-center gap-1 rounded-full bg-[#F5F5F5] px-2 text-[11.5px] font-medium text-[#525252] ${ONLY_FULL}`}>
+                <span className={`h-5 shrink-0 items-center gap-1 rounded-full bg-pn-canvas px-2 text-[12px] font-medium text-[#525252] ${ONLY_FULL}`}>
                   {BADGE_LABELS[shownBadges[0]]?.[lang] ?? shownBadges[0]}
                   {shownBadges.length > 1 && <span className="tabular-nums text-[#737373]">+{shownBadges.length - 1}</span>}
                 </span>
               )}
               {allergenCount > 0 && (
-                <span className={`shrink-0 text-[11.5px] text-[#737373] ${ONLY_FULL}`}>
+                <span className={`shrink-0 text-[12px] text-[#737373] ${ONLY_FULL}`}>
                   {copy.fmt.allergenCount(allergenCount)}
                 </span>
               )}
@@ -354,7 +354,7 @@ export const ItemRow = memo(function ItemRow({
             </div>
             <div className={CELL_STATUS}>
               {temp ? (
-                pending?.status === 'saving' ? <span className="text-[12.5px] text-[#737373]">{copy.outline.pendingSaving}</span> : null
+                pending?.status === 'saving' ? <span className="text-[13px] text-[#737373]">{copy.outline.pendingSaving}</span> : null
               ) : (
                 <StatusCell item={item} disabled={!canEdit} saving={feedback?.state === 'saving'} />
               )}

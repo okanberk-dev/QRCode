@@ -15,19 +15,19 @@ export default function Loading() {
       </div>
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[260px_1fr] lg:gap-7">
         <div className="bz-card self-start space-y-4 p-5 sm:p-6">
-          <SkBox className="h-14 w-14 rounded-2xl" />
+          <SkBox className="h-14 w-14 rounded-[24px]" />
           <div className="space-y-2">
             <SkBox className="h-3 w-14" />
             <SkBox className="h-5 w-28" />
             <SkBox className="h-3 w-24" />
           </div>
-          <SkBox className="h-20 w-full rounded-xl" />
+          <SkBox className="h-20 w-full rounded-[20px]" />
         </div>
         <div className="space-y-4">
           {[3, 1, 2, 3].map((rows, i) => (
             <div key={i} className="bz-card space-y-3 p-5 sm:p-7">
               <div className="flex items-center gap-2.5">
-                <SkBox className="h-8 w-8 rounded-lg" />
+                <SkBox className="h-8 w-8 rounded-[14px]" />
                 <SkBox className="h-5 w-40" />
               </div>
               {Array.from({ length: rows }).map((_, r) => (

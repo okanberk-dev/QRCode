@@ -88,11 +88,11 @@ export function BranchesCard({
   return (
     <section className="bz-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[#C6F24E]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-ink text-pn-accent">
           <Building2 size={17} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold text-[#0A0A0A]">{tr ? 'Şubeler' : 'Branches'}</h3>
+          <h3 className="text-[15px] font-medium text-pn-ink">{tr ? 'Şubeler' : 'Branches'}</h3>
           <p className="mt-0.5 text-[13px] text-[#737373]">
             {tr
               ? `Kart, ödüller ve müşteri paneli ${homeName} işletmesinden yönetilir. Eklediğiniz şubelerin kasası aynı kartlarla çalışır; müşteri damgasını hangi şubede olursa olsun biriktirir.`
@@ -110,21 +110,21 @@ export function BranchesCard({
       )}
 
       {!chain ? (
-        <div className="bz-skeleton mt-4 h-16 rounded-xl" />
+        <div className="bz-skeleton mt-4 h-16 rounded-[20px]" />
       ) : (
         <div className="mt-4 space-y-3">
           {chain.branches.length > 0 && (
-            <ul className="divide-y divide-[#F0F0F0] rounded-xl border border-[#EDEDED]">
+            <ul className="divide-y divide-[#F0F0F0] rounded-[20px] border border-pn-line">
               {chain.branches.map((b) => (
                 <li key={b.restaurantId} className="flex items-center justify-between gap-3 px-3.5 py-2.5">
-                  <span className="flex min-w-0 items-center gap-2 text-[14px] text-[#0A0A0A]">
+                  <span className="flex min-w-0 items-center gap-2 text-[14px] text-pn-ink">
                     <Store size={15} className="shrink-0 text-[#737373]" aria-hidden="true" />
                     <span className="truncate">{b.name}</span>
                   </span>
                   {canManage && (
                     <button
                       type="button"
-                      className="bz-btn-ghost inline-flex items-center gap-1 text-[12.5px]"
+                      className="bz-btn-ghost inline-flex items-center gap-1 text-[13px]"
                       disabled={busy !== null}
                       onClick={() => void run(`rm-${b.restaurantId}`, { method: 'DELETE' }, `${api}?restaurantId=${encodeURIComponent(b.restaurantId)}`)}
                       aria-label={tr ? `${b.name} şubesini çıkar` : `Remove ${b.name}`}
@@ -140,7 +140,7 @@ export function BranchesCard({
 
           {canManage && candidates.length > 0 && (
             <div>
-              <p className="text-[12.5px] font-medium text-[#525252]">{tr ? 'Şube olarak ekle' : 'Add as a branch'}</p>
+              <p className="text-[13px] font-medium text-[#525252]">{tr ? 'Şube olarak ekle' : 'Add as a branch'}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {candidates.map((c) => (
                   <button
@@ -212,11 +212,11 @@ export function JoinChainCard({
   return (
     <section className="bz-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#3F4A00]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent-soft text-[#3F4A00]">
           <Link2 size={17} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold text-[#0A0A0A]">{tr ? 'Mevcut kartınızı burada da geçerli yapın' : 'Use your existing card here too'}</h3>
+          <h3 className="text-[15px] font-medium text-pn-ink">{tr ? 'Mevcut kartınızı burada da geçerli yapın' : 'Use your existing card here too'}</h3>
           <p className="mt-0.5 text-[13px] text-[#737373]">
             {tr
               ? `${restaurantName} şube olsun: müşteriler aynı kartla iki işletmede de damga biriktirir. Ya da aşağıdan bu işletmeye ayrı bir kart kurun.`

@@ -31,8 +31,8 @@ import {
 const PublicSurveyView = dynamic(() => import('@/app/s/[slug]/PublicSurveyView'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-[#0A0A0A]" role="status">
-      <Loader2 size={22} className="animate-spin text-[#C6F24E]" aria-hidden="true" />
+    <div className="flex h-full w-full items-center justify-center bg-pn-ink" role="status">
+      <Loader2 size={22} className="animate-spin text-pn-accent" aria-hidden="true" />
       <span className="sr-only">…</span>
     </div>
   ),
@@ -111,7 +111,7 @@ export default function SurveyPhonePreview({ locale, form, business }: Props) {
     // (sticky top 88 + caption 26 + restart row 52 + action bar 69 + gap 8).
     <div className="mx-auto w-full max-w-[clamp(280px,calc((100dvh_-_243px)*9/16),360px)]">
       <div
-        className="aspect-[9/16] w-full overflow-hidden rounded-[32px] border-8 border-[#0A0A0A] bg-[#0A0A0A]"
+        className="aspect-[9/16] w-full overflow-hidden rounded-[32px] border-8 border-pn-ink bg-pn-ink"
         data-testid="survey-phone-preview"
       >
         <PublicSurveyView key={`${runs}-${shape}`} survey={survey} preview={{}} />
@@ -119,7 +119,7 @@ export default function SurveyPhonePreview({ locale, form, business }: Props) {
       <div className="mt-2 flex justify-center">
         <button
           type="button"
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-[#525252] hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-[#525252] hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
           onClick={() => setRuns((n) => n + 1)}
         >
           <RotateCcw size={14} aria-hidden="true" />

@@ -149,7 +149,7 @@ export function ReplyTemplatesMenu({ locale, draft, onInsert, triggerClassName =
           size={560}
         >
           <div className="space-y-3">
-            <label className="block text-[12px] font-medium text-[#0A0A0A]">
+            <label className="block text-[12px] font-medium text-pn-ink">
               {isTr ? 'Şablon adı' : 'Template name'}
               <input
                 value={title}
@@ -159,7 +159,7 @@ export function ReplyTemplatesMenu({ locale, draft, onInsert, triggerClassName =
                 placeholder={isTr ? 'örn. Gecikme özrü' : 'e.g. Delay apology'}
               />
             </label>
-            <label className="block text-[12px] font-medium text-[#0A0A0A]">
+            <label className="block text-[12px] font-medium text-pn-ink">
               {isTr ? 'Metin' : 'Text'}
               <textarea
                 value={body}
@@ -180,11 +180,11 @@ export function ReplyTemplatesMenu({ locale, draft, onInsert, triggerClassName =
                 {saving ? (isTr ? 'Kaydediliyor…' : 'Saving…') : isTr ? 'Şablonu kaydet' : 'Save template'}
               </button>
             </div>
-            <ul className="divide-y divide-[#EDEDED] border-t border-[#EDEDED]">
+            <ul className="divide-y divide-pn-line border-t border-pn-line">
               {(templates ?? []).map((t) => (
                 <li key={t.id} className="flex items-start justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-medium text-[#0A0A0A]">{t.title}</p>
+                    <p className="truncate text-[13px] font-medium text-pn-ink">{t.title}</p>
                     <p className="line-clamp-2 text-[12px] text-[#737373]">{t.body}</p>
                   </div>
                   <button

@@ -14,7 +14,7 @@ import type { Locale } from '@/lib/translations';
 // Variants:
 // - `cell` (default): inline dot + label, bg yok — table cell veya mobile card
 //   row için (admin + owner customers/page'lerinde mevcut SentimentCell pattern)
-// - `badge`: rounded-full + bg-[#FAFAFA] + border + dot + label — drawer
+// - `badge`: rounded-full + bg-pn-canvas + border + dot + label — drawer
 //   header chip için (mevcut SentimentBadge pattern)
 
 export interface SentimentBadgeProps {
@@ -41,7 +41,7 @@ export function SentimentBadge({
 
   if (variant === 'badge') {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[11px] text-[#525252] whitespace-nowrap">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-pn-canvas border border-pn-line px-2 py-0.5 text-[12px] text-[#525252] whitespace-nowrap">
         <span
           aria-hidden
           className="h-1.5 w-1.5 rounded-full shrink-0"
@@ -54,7 +54,7 @@ export function SentimentBadge({
 
   // cell (default)
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[#525252] whitespace-nowrap">
+    <span className="inline-flex items-center gap-1.5 text-[12px] text-[#525252] whitespace-nowrap">
       <span
         aria-hidden
         className="h-1.5 w-1.5 rounded-full shrink-0"

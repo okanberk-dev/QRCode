@@ -26,13 +26,13 @@ export default function Loading() {
               </div>
               <SkBox className="h-5 w-14" />
             </div>
-            <SkBox className="h-[186px] w-full rounded-xl" />
-            <SkBox className="mt-3 h-8 w-full rounded-lg" />
+            <SkBox className="h-[186px] w-full rounded-[20px]" />
+            <SkBox className="mt-3 h-8 w-full rounded-[14px]" />
             <div className="mt-3 grid grid-cols-2 gap-2.5">
               <SkBox className="h-9 w-full" />
               <SkBox className="h-9 w-full" />
             </div>
-            <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-[#EDEDED] pt-3">
+            <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-pn-line pt-3">
               <SkBox className="h-10 w-full" />
               <SkBox className="h-10 w-full" />
             </div>

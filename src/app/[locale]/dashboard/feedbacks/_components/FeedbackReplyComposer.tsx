@@ -94,52 +94,52 @@ export function PulseAiSuggestionCard({
       }
       /* Documented dark native-select exception (§38.202). 16px + 44px on
          mobile (iOS zoom, touch target), compact from sm. */
-      className="min-h-[44px] w-full rounded-full border border-white/20 bg-transparent px-3 py-2 text-[16px] font-medium text-white outline-none bz-motion-spring hover:bg-white/10 focus-visible:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] disabled:opacity-50 sm:min-h-0 sm:w-auto sm:py-1.5 sm:text-[12px]"
+      className="min-h-[44px] w-full rounded-full border border-white/20 bg-transparent px-3 py-2 text-[16px] font-medium text-white outline-none bz-motion-spring hover:bg-white/10 focus-visible:border-pn-accent focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pn-ink disabled:opacity-50 sm:min-h-0 sm:w-auto sm:py-1.5 sm:text-[12px]"
       style={{ colorScheme: 'dark' }}
     >
-      <option value="warm" className="text-[#0A0A0A]">
+      <option value="warm" className="text-pn-ink">
         {isTr ? 'Ton: Samimi' : 'Tone: Warm'}
       </option>
-      <option value="formal" className="text-[#0A0A0A]">
+      <option value="formal" className="text-pn-ink">
         {isTr ? 'Ton: Resmi' : 'Tone: Formal'}
       </option>
-      <option value="apologetic" className="text-[#0A0A0A]">
+      <option value="apologetic" className="text-pn-ink">
         {isTr ? 'Ton: Özür' : 'Tone: Apologetic'}
       </option>
     </select>
   );
 
   return (
-    <div className="mt-5 rounded-2xl bg-[#0A0A0A] p-4 text-white sm:p-5">
+    <div className="mt-5 rounded-[24px] bg-pn-ink p-4 text-white sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <span
           aria-hidden="true"
-          className="flex h-6 w-6 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A]"
+          className="flex h-6 w-6 items-center justify-center rounded-[10px] bg-pn-accent text-pn-ink"
         >
           <Sparkles size={13} strokeWidth={2.2} />
         </span>
-        <span className="text-[13px] font-semibold text-[#C6F24E]">
+        <span className="text-[13px] font-medium text-pn-accent">
           {isTr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
         </span>
         {aiLoading ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/70">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[12px] font-medium text-white/70">
             <Loader2 size={11} className="animate-spin" aria-hidden="true" />
             {isTr ? 'Hazırlanıyor' : 'Working'}
           </span>
         ) : (
           <>
             {aiSource === 'openai' && (
-              <span className="rounded-full bg-[#C6F24E] px-2 py-0.5 text-[11px] font-medium text-[#0A0A0A]">
+              <span className="rounded-full bg-pn-accent px-2 py-0.5 text-[12px] font-medium text-pn-ink">
                 AI
               </span>
             )}
             {isTemplate && (
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/70">
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[12px] font-medium text-white/70">
                 {isTr ? 'Şablon' : 'Template'}
               </span>
             )}
             {aiFromBackground && (
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/70">
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[12px] font-medium text-white/70">
                 {isTr ? 'Hazır' : 'Ready'}
               </span>
             )}
@@ -335,7 +335,7 @@ export function ReplyComposerCard({
     // height, so Send stays visible however long the draft gets.
     <div className="lg:flex lg:min-h-0 lg:flex-col">
       <div className="flex items-center justify-between gap-2 lg:shrink-0">
-        <label htmlFor={REPLY_TEXTAREA_ID} className="text-[13px] font-semibold text-[#0A0A0A]">
+        <label htmlFor={REPLY_TEXTAREA_ID} className="text-[13px] font-medium text-pn-ink">
           {isTr ? 'Yanıtınız' : 'Your reply'}
         </label>
         <span className="flex items-center gap-2">
@@ -347,7 +347,7 @@ export function ReplyComposerCard({
               focusReplyTextarea();
             }}
           />
-          <span className="text-[11px] tabular-nums text-[#A3A3A3]" aria-live="polite">
+          <span className="text-[12px] tabular-nums text-[#A3A3A3]" aria-live="polite">
             {replyDraft.length} / {REPLY_MAX_LENGTH}
           </span>
         </span>
@@ -374,7 +374,7 @@ export function ReplyComposerCard({
         enterKeyHint="send"
         autoCorrect="on"
         spellCheck={true}
-        className="mt-2 max-h-[480px] min-h-[84px] w-full resize-none overflow-y-auto rounded-xl border border-[#EDEDED] bg-white px-3.5 py-2.5 text-[16px] leading-[1.55] text-[#0A0A0A] placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:text-[14px] lg:max-h-[200px] lg:min-h-[44px] lg:shrink"
+        className="mt-2 max-h-[480px] min-h-[84px] w-full resize-none overflow-y-auto rounded-[20px] border border-pn-line bg-white px-3.5 py-2.5 text-[16px] leading-[1.55] text-pn-ink placeholder:text-[#A3A3A3] focus:border-pn-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:text-[14px] lg:max-h-[200px] lg:min-h-[44px] lg:shrink"
       />
       <ReplyRiskNotice risk={risk} locale={isTr ? 'tr' : 'en'} className="mt-2 lg:shrink-0" />
       <p id="reply-textarea-hint" className="sr-only">
@@ -383,16 +383,16 @@ export function ReplyComposerCard({
           : 'Press Cmd or Ctrl + Enter to send. Up to 2,000 characters.'}
       </p>
 
-      <div className="mt-2 rounded-lg bg-[#FAFAFA] px-3 py-2 text-[12px] lg:shrink-0 lg:py-1.5">
+      <div className="mt-2 rounded-[14px] bg-pn-canvas px-3 py-2 text-[12px] lg:shrink-0 lg:py-1.5">
         {active.customerEmail ? (
           /* §38.238 — uzun e-posta checkbox'ı ezmesin: items-start + shrink-0
              + min-w-0 break-words. */
-          <label className="flex cursor-pointer items-start gap-2 text-[#0A0A0A]">
+          <label className="flex cursor-pointer items-start gap-2 text-pn-ink">
             <input
               type="checkbox"
               checked={sendEmail}
               onChange={(e) => setSendEmail(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
             />
             <Mail size={12} className="mt-0.5 shrink-0 text-current opacity-60" aria-hidden="true" />
             <span className="min-w-0 break-words">
@@ -420,7 +420,7 @@ export function ReplyComposerCard({
           type="checkbox"
           checked={confirmResponsibility}
           onChange={(e) => setConfirmResponsibility(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+          className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
         />
         <span>
           {isTr ? (
@@ -431,7 +431,7 @@ export function ReplyComposerCard({
                 href={`/${locale}/kabul-edilebilir-kullanim`}
                 target="_blank"
                 rel="noopener"
-                className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                className="font-medium text-pn-ink underline-offset-2 hover:underline"
               >
                 Kabul Edilebilir Kullanım Politikası
               </Link>
@@ -445,7 +445,7 @@ export function ReplyComposerCard({
                 href={`/${locale}/kabul-edilebilir-kullanim`}
                 target="_blank"
                 rel="noopener"
-                className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                className="font-medium text-pn-ink underline-offset-2 hover:underline"
               >
                 Acceptable Use Policy
               </Link>
@@ -470,7 +470,7 @@ export function ReplyComposerCard({
           {replyNotice?.msg}
         </p>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="hidden text-[11px] text-[#A3A3A3] sm:inline" aria-hidden="true">
+          <span className="hidden text-[12px] text-[#A3A3A3] sm:inline" aria-hidden="true">
             ⌘ Enter
           </span>
           <button

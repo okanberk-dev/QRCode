@@ -29,10 +29,10 @@ export default function SeedResultModal({ result, onClose }: Props) {
       <div className="space-y-5">
         <div className="flex items-start gap-3">
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft"
             aria-hidden="true"
           >
-            <CheckCircle2 size={20} strokeWidth={2.25} className="text-[#0A0A0A]" />
+            <CheckCircle2 size={20} strokeWidth={2.25} className="text-pn-ink" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="bz-h-tight text-[18px]">Varsayılan içerik yüklendi</h2>
@@ -45,15 +45,15 @@ export default function SeedResultModal({ result, onClose }: Props) {
 
         <div className="grid grid-cols-3 gap-2">
           <div className="bz-card-soft p-3">
-            <div className="pulse-eyebrow text-[#525252]">Kategori</div>
+            <div className="text-[13px] font-medium text-[#525252]">Kategori</div>
             <div className="bz-h-tight text-[24px] mt-1">{result.categories}</div>
           </div>
           <div className="bz-card-soft p-3">
-            <div className="pulse-eyebrow text-[#525252]">Şablon</div>
+            <div className="text-[13px] font-medium text-[#525252]">Şablon</div>
             <div className="bz-h-tight text-[24px] mt-1">{result.templates}</div>
           </div>
           <div className="bz-card-soft p-3">
-            <div className="pulse-eyebrow text-[#525252]">Soru</div>
+            <div className="text-[13px] font-medium text-[#525252]">Soru</div>
             <div className="bz-h-tight text-[24px] mt-1">{result.questions}</div>
           </div>
         </div>

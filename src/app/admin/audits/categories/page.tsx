@@ -145,9 +145,9 @@ export default function AuditCategoriesPage() {
       body: (
         <div className="space-y-2 text-[13px] text-[#525252]">
           <p>
-            Denetim Merkezi için <strong className="text-[#0A0A0A]">18 kategori</strong>,{' '}
-            <strong className="text-[#0A0A0A]">24 şablon</strong> ve{' '}
-            <strong className="text-[#0A0A0A]">~120 soru</strong> yüklenir veya güncellenir.
+            Denetim Merkezi için <strong className="text-pn-ink">18 kategori</strong>,{' '}
+            <strong className="text-pn-ink">24 şablon</strong> ve{' '}
+            <strong className="text-pn-ink">~120 soru</strong> yüklenir veya güncellenir.
           </p>
           <p>
             Mevcut <em>slug</em> ile eşleşen kategoriler güncellenir; admin tarafından elle eklenen
@@ -260,7 +260,7 @@ export default function AuditCategoriesPage() {
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#C6F24E"
+        eyebrowColor="#D7FE03"
         title="Denetim kategorileri"
         description="Şablonları sektör ve konuya göre gruplayan taksonomi. İşletme sahipleri şablon oluştururken bu kategori listesinden seçer."
         actions={
@@ -320,7 +320,7 @@ export default function AuditCategoriesPage() {
           {grouped.map(([sector, items]) => (
             <section key={sector} className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="pulse-eyebrow text-[#0A0A0A]">{SECTOR_LABEL[sector]}</span>
+                <span className="text-[13px] font-medium text-pn-ink">{SECTOR_LABEL[sector]}</span>
                 <Badge kind={SECTOR_BADGE[sector]}>{items.length}</Badge>
               </div>
               {/* grid-cols-1 (minmax(0,1fr)): without it the single mobile

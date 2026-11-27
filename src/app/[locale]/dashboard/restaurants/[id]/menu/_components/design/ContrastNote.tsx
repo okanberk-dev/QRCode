@@ -25,21 +25,21 @@ export function ContrastNote({ resolved, surfaceName }: { resolved: ResolvedMenu
   );
 
   return (
-    <div role="note" className="flex gap-2.5 rounded-xl border border-[#E5E5E5] bg-[#FAFAFA] p-3">
+    <div role="note" className="flex gap-2.5 rounded-[20px] border border-pn-line-strong bg-pn-canvas p-3">
       <Info size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-[#525252]" aria-hidden="true" />
       <div className="min-w-0 space-y-2">
-        <p className="text-[12.5px] leading-relaxed text-[#404040]">{text}</p>
+        <p className="text-[13px] leading-relaxed text-[#404040]">{text}</p>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[#525252]">
           <span className="inline-flex items-center gap-1.5">
             {dot(colors.accent)}
             {copy.design.contrastPicked}
-            <span className="font-mono text-[11px] text-[#737373]">{colors.accent}</span>
+            <span className="font-mono text-[12px] text-[#737373]">{colors.accent}</span>
           </span>
           <ArrowRight size={12} strokeWidth={2} className="text-[#A3A3A3]" aria-hidden="true" />
           <span className="inline-flex items-center gap-1.5">
             {dot(used)}
             {copy.design.contrastUsed}
-            <span className="font-mono text-[11px] text-[#737373]">{used}</span>
+            <span className="font-mono text-[12px] text-[#737373]">{used}</span>
           </span>
         </p>
       </div>

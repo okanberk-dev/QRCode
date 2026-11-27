@@ -29,7 +29,7 @@ function shortDevice(ua: string | null): string {
 function Block({ title, empty, children, count }: { title: string; empty: string; children: React.ReactNode; count: number }) {
   return (
     <div>
-      <p className="mb-1.5 text-[12px] font-semibold text-[#0A0A0A]">{title}</p>
+      <p className="mb-1.5 text-[12px] font-medium text-pn-ink">{title}</p>
       {count === 0 ? <p className="text-[12px] text-[#737373]">{empty}</p> : <ul className="space-y-1">{children}</ul>}
     </div>
   );
@@ -52,7 +52,7 @@ export default function MemberSupportPanel({ userId }: { userId: string }) {
   }, [userId]);
 
   if (failed) return <p className="text-[12px] text-[#B91C1C]">Destek özeti yüklenemedi.</p>;
-  if (!data) return <div className="bz-skeleton h-32 rounded-xl" aria-hidden="true" />;
+  if (!data) return <div className="bz-skeleton h-32 rounded-[20px]" aria-hidden="true" />;
 
   const lastSeen = data.sessions[0]?.lastSeenAt;
   return (
@@ -81,7 +81,7 @@ export default function MemberSupportPanel({ userId }: { userId: string }) {
         ))}
       </Block>
       <div>
-        <p className="mb-1.5 text-[12px] font-semibold text-[#0A0A0A]">Google ve ödeme</p>
+        <p className="mb-1.5 text-[12px] font-medium text-pn-ink">Google ve ödeme</p>
         <p className="text-[12px] text-[#525252]">
           Google Business: {data.google.connected ? `bağlı (son güncelleme ${fmt.format(new Date(data.google.updatedAt!))})` : 'bağlı değil'}
         </p>
@@ -98,7 +98,7 @@ export default function MemberSupportPanel({ userId }: { userId: string }) {
             ))}
           </ul>
         )}
-        {lastSeen && <p className="mt-2 text-[11px] text-[#737373]">Son görülme: {fmt.format(new Date(lastSeen))}</p>}
+        {lastSeen && <p className="mt-2 text-[12px] text-[#737373]">Son görülme: {fmt.format(new Date(lastSeen))}</p>}
       </div>
     </div>
   );

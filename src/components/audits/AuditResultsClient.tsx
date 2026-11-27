@@ -254,7 +254,7 @@ export default function AuditResultsClient({
       <div>
         <Link
           href={`${base}/${template.id}`}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-[#0A0A0A] sm:min-h-0 sm:text-[12px]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-pn-ink sm:min-h-0 sm:text-[12px]"
         >
           <ArrowLeft size={13} aria-hidden="true" /> {isTr ? 'Denetime dön' : 'Back to audit'}
         </Link>
@@ -373,7 +373,7 @@ export default function AuditResultsClient({
                     {visibleMisses.map((m) => (
                       <li key={m.questionId}>
                         <div className="flex items-start justify-between gap-3">
-                          <p className="min-w-0 break-words text-[14px] leading-snug text-[#0A0A0A]">
+                          <p className="min-w-0 break-words text-[14px] leading-snug text-pn-ink">
                             {m.prompt}
                           </p>
                           <p className="shrink-0 text-right text-[12px] text-[#525252]">
@@ -383,7 +383,7 @@ export default function AuditResultsClient({
                           </p>
                         </div>
                         <div
-                          className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#EDEDED]"
+                          className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-pn-line"
                           role="img"
                           aria-label={`${Math.round(m.missRate * 100)}%`}
                         >
@@ -398,7 +398,7 @@ export default function AuditResultsClient({
                   {misses.items.length > MISS_PREVIEW && (
                     <button
                       type="button"
-                      className="mt-3 min-h-11 text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2 sm:min-h-9"
+                      className="mt-3 min-h-11 text-[13px] font-medium text-pn-ink underline underline-offset-2 sm:min-h-9"
                       onClick={() => setShowAllMisses((v) => !v)}
                     >
                       {showAllMisses
@@ -411,7 +411,7 @@ export default function AuditResultsClient({
                     </button>
                   )}
                   {misses.truncated && (
-                    <p className="mt-2 text-[11px] text-[#737373]">
+                    <p className="mt-2 text-[12px] text-[#737373]">
                       {isTr
                         ? 'Çok sayıda cevap olduğu için en yeni cevaplara göre hesaplandı.'
                         : 'Based on the newest answers because there are very many.'}
@@ -545,15 +545,15 @@ export default function AuditResultsClient({
                           <td>
                             <Link
                               href={`${base}/${template.id}/responses/${r.id}`}
-                              className="text-[14px] text-[#0A0A0A] hover:underline"
+                              className="text-[14px] text-pn-ink hover:underline"
                             >
                               {r.respondentName || (isTr ? 'Anonim' : 'Anonymous')}
                             </Link>
                             {r.respondentEmail && (
-                              <div className="text-[11px] text-[#737373]">{r.respondentEmail}</div>
+                              <div className="text-[12px] text-[#737373]">{r.respondentEmail}</div>
                             )}
                           </td>
-                          <td className="bz-mono text-right">
+                          <td className="tabular-nums text-right">
                             {r.score !== null ? (
                               <>
                                 {r.score}
@@ -603,7 +603,7 @@ export default function AuditResultsClient({
                       className="bz-card flex min-h-14 items-center gap-3 px-4 py-3 hover:border-[#A3A3A3]"
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">
+                        <span className="block truncate text-[14px] font-medium text-pn-ink">
                           {r.respondentName || (isTr ? 'Anonim' : 'Anonymous')}
                         </span>
                         <span className="block truncate text-[12px] text-[#737373]">
@@ -663,7 +663,7 @@ export default function AuditResultsClient({
 function SummaryTile({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="bz-card min-w-0 px-3 py-3 sm:p-4">
-      <div className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-[#525252] sm:text-[11px] sm:tracking-[0.14em]">
+      <div className="truncate text-[12px] font-medium text-[#525252] sm:text-[12px] ">
         {label}
       </div>
       <div className="bz-h-tight mt-1 text-[22px] leading-none sm:text-[26px]">{children}</div>

@@ -54,7 +54,7 @@ interface Props {
 }
 
 const CARD =
-  'group flex h-full w-full flex-col gap-2 rounded-2xl border border-[#EDEDED] bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#0A0A0A] hover:shadow-[0_12px_28px_-18px_rgba(10,10,10,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 active:scale-[0.99] min-h-[132px]';
+  'group flex h-full w-full flex-col gap-2 rounded-[24px] border border-pn-line bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-pn-ink hover:shadow-[0_12px_28px_-18px_rgba(10,10,10,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 active:scale-[0.99] min-h-[132px]';
 
 function TemplateCard({
   template,
@@ -73,17 +73,17 @@ function TemplateCard({
       <span className="flex items-start justify-between gap-2">
         <span
           aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent-soft text-pn-ink"
         >
           <Icon size={19} />
         </span>
         <ArrowRight
           size={16}
           aria-hidden="true"
-          className="mt-1 text-[#A3A3A3] transition-all group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]"
+          className="mt-1 text-[#A3A3A3] transition-all group-hover:translate-x-0.5 group-hover:text-pn-ink"
         />
       </span>
-      <span className="bz-h-tight block text-[16px] leading-tight text-[#0A0A0A]">
+      <span className="bz-h-tight block text-[16px] leading-tight text-pn-ink">
         {template.title[locale]}
       </span>
       <span className="block text-[13px] leading-[1.45] text-[#525252]">
@@ -108,7 +108,7 @@ export default function SurveyTemplatePicker({ locale, sector, sectorLabel, onPi
           <h2 id="survey-tpl-recommended" className="bz-h-tight text-[16px]">
             {isTr ? 'Senin için önerilenler' : 'Recommended for you'}
           </h2>
-          <span className="inline-flex items-center rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[11.5px] font-medium text-[#0A0A0A]">
+          <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2.5 py-1 text-[12px] font-medium text-pn-ink">
             {sectorLabel}
           </span>
         </div>
@@ -124,17 +124,17 @@ export default function SurveyTemplatePicker({ locale, sector, sectorLabel, onPi
               <span className="flex items-start justify-between gap-2">
                 <span
                   aria-hidden="true"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F5F5F5] text-[#0A0A0A]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] bg-pn-canvas text-pn-ink"
                 >
                   <PencilLine size={19} />
                 </span>
                 <ArrowRight
                   size={16}
                   aria-hidden="true"
-                  className="mt-1 text-[#A3A3A3] transition-all group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]"
+                  className="mt-1 text-[#A3A3A3] transition-all group-hover:translate-x-0.5 group-hover:text-pn-ink"
                 />
               </span>
-              <span className="bz-h-tight block text-[16px] leading-tight text-[#0A0A0A]">
+              <span className="bz-h-tight block text-[16px] leading-tight text-pn-ink">
                 {isTr ? 'Boş anketle başla' : 'Start from blank'}
               </span>
               <span className="block text-[13px] leading-[1.45] text-[#525252]">
@@ -146,8 +146,8 @@ export default function SurveyTemplatePicker({ locale, sector, sectorLabel, onPi
       </section>
 
       {others.length > 0 && (
-        <details className="group/more rounded-2xl border border-[#EDEDED] bg-white open:bg-white">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-2xl px-4 py-2 text-[14px] font-medium text-[#0A0A0A] marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
+        <details className="group/more rounded-[24px] border border-pn-line bg-white open:bg-white">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-[24px] px-4 py-2 text-[14px] font-medium text-pn-ink marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
             <span>{isTr ? `Diğer şablonlar (${others.length})` : `More templates (${others.length})`}</span>
             <ChevronDown
               size={16}
@@ -155,7 +155,7 @@ export default function SurveyTemplatePicker({ locale, sector, sectorLabel, onPi
               className="text-[#737373] transition-transform group-open/more:rotate-180"
             />
           </summary>
-          <ul className="grid gap-3 border-t border-[#EDEDED] p-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-3 border-t border-pn-line p-4 sm:grid-cols-2 lg:grid-cols-3">
             {others.map((template) => (
               <li key={template.id}>
                 <TemplateCard template={template} locale={locale} onPick={onPick} />

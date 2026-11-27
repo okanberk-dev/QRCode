@@ -50,8 +50,8 @@ const CREATE_STEPS = [
 ] as const;
 
 // Visible field label (sentence case, not a mono eyebrow).
-const FIELD_LABEL_CLASS = 'text-[12.5px] font-medium text-[#0A0A0A]';
-const FIELD_ERROR_CLASS = 'text-[11.5px] text-[#B91C1C]';
+const FIELD_LABEL_CLASS = 'text-[13px] font-medium text-pn-ink';
+const FIELD_ERROR_CLASS = 'text-[12px] text-[#B91C1C]';
 
 const PLATFORM_INPUTS = [
   { id: 'google', field: 'googlePlaceId', label: 'Google', placeholder: 'https://maps.google.com/... veya Place ID' },
@@ -443,7 +443,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
     <div className="mx-auto max-w-[920px] px-4 sm:px-7 py-6 lg:py-8">
       <Link
         href={`/${locale}/dashboard/restaurants`}
-        className="mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
+        className="mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink sm:min-h-[32px]"
       >
         <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
         {isTr ? 'İşletmelere dön' : 'Back to businesses'}
@@ -502,11 +502,11 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   {isTr ? 'Sayfa adresi' : 'URL slug'}
                 </label>
                 <div
-                  className={`flex items-center gap-2 rounded-lg border bg-white px-3 transition-colors ${
-                    formData.slug && !slugValid ? 'border-[#FCA5A5]' : 'border-[#EDEDED] focus-within:border-[#C6F24E]'
+                  className={`flex items-center gap-2 rounded-[14px] border bg-white px-3 transition-colors ${
+                    formData.slug && !slugValid ? 'border-[#FCA5A5]' : 'border-pn-line focus-within:border-pn-accent'
                   }`}
                 >
-                  <span className="shrink-0 font-mono text-[11px] text-[#737373]" aria-hidden="true">
+                  <span className="shrink-0 font-mono text-[12px] text-[#737373]" aria-hidden="true">
                     buaze.com/r/
                   </span>
                   <input
@@ -519,7 +519,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                       setIsManualSlug(true);
                     }}
                     // 16px below sm stops iOS Safari zooming into the field.
-                    className="min-w-0 w-full bg-transparent py-3 text-[16px] sm:text-[14px] font-medium text-[#0A0A0A] outline-none"
+                    className="min-w-0 w-full bg-transparent py-3 text-[16px] sm:text-[14px] font-medium text-pn-ink outline-none"
                     placeholder="maya-klinik"
                     autoCapitalize="off"
                     autoCorrect="off"
@@ -548,7 +548,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
 
             <fieldset className="space-y-2">
               <legend className={FIELD_LABEL_CLASS}>{isTr ? 'Sektör' : 'Sector'}</legend>
-              <p className="text-[11.5px] leading-[1.5] text-[#737373]">
+              <p className="text-[12px] leading-[1.5] text-[#737373]">
                 {isTr
                   ? 'Önerilen platformlar ve kurulum ipuçları sektöre göre değişir.'
                   : 'Suggested platforms and setup hints follow the sector.'}
@@ -562,23 +562,23 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                       type="button"
                       aria-pressed={active}
                       onClick={() => setFormField('category', sector.label)}
-                      className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 ${
+                      className={`flex items-start gap-3 rounded-[20px] border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 ${
                         active
-                          ? 'border-[#A8D62E] bg-[#F7FAEF]'
-                          : 'border-[#EDEDED] bg-white hover:border-[#C6F24E]'
+                          ? 'border-pn-accent-hover bg-pn-accent-soft'
+                          : 'border-pn-line bg-white hover:border-pn-accent'
                       }`}
                     >
                       <span
                         aria-hidden="true"
                         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                          active ? 'border-[#0A0A0A] bg-[#C6F24E]' : 'border-[#D4D4D4] bg-white'
+                          active ? 'border-pn-ink bg-pn-accent' : 'border-pn-line-strong bg-white'
                         }`}
                       >
-                        {active && <Check size={10} strokeWidth={3} className="text-[#0A0A0A]" />}
+                        {active && <Check size={10} strokeWidth={3} className="text-pn-ink" />}
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-[13px] font-semibold text-[#0A0A0A]">{sector.display[locale]}</span>
-                        <span className="mt-0.5 block text-[11.5px] leading-[1.45] text-[#737373]">{sector.sub[locale]}</span>
+                        <span className="block text-[13px] font-medium text-pn-ink">{sector.display[locale]}</span>
+                        <span className="mt-0.5 block text-[12px] leading-[1.45] text-[#737373]">{sector.sub[locale]}</span>
                       </span>
                     </button>
                   );
@@ -591,7 +591,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
         {/* STEP 1 — Channels (with Google Places search) */}
         {createStep === 1 && (
           <div className="space-y-4">
-            <p className="text-[12.5px] leading-[1.55] text-[#525252]">
+            <p className="text-[13px] leading-[1.55] text-[#525252]">
               {isClinic
                 ? isTr
                   ? 'Klinikler için Google ve Yandex gösterilir; yemek sipariş platformları bu kurulumda yer almaz. Hepsi isteğe bağlı.'
@@ -606,17 +606,17 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
               <section aria-labelledby="cb-google-title" className="bz-card p-4 sm:p-5">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#C6F24E]" aria-hidden="true">
-                      <Search size={15} strokeWidth={2} className="text-[#0A0A0A]" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent" aria-hidden="true">
+                      <Search size={15} strokeWidth={2} className="text-pn-ink" />
                     </div>
                     <div className="min-w-0">
-                      <h2 id="cb-google-title" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+                      <h2 id="cb-google-title" className="text-[14px] font-medium text-pn-ink">
                         {isTr ? "Google'da işletmeni bul" : 'Find your business on Google'}
-                        <span className="ml-1.5 rounded-full bg-[#EAF9B8] px-1.5 py-0.5 align-middle text-[10.5px] font-medium text-[#3F6212]">
+                        <span className="ml-1.5 rounded-full bg-pn-accent-soft px-1.5 py-0.5 align-middle text-[12px] font-medium text-[#3F6212]">
                           {isTr ? 'önerilir' : 'recommended'}
                         </span>
                       </h2>
-                      <p className="mt-0.5 text-[11.5px] leading-snug text-[#737373]">
+                      <p className="mt-0.5 text-[12px] leading-snug text-[#737373]">
                         {isTr
                           ? 'İşletme adını yaz, listeden seç; yorum linkini biz oluştururuz.'
                           : 'Type your name, pick from the list; we build the review link.'}
@@ -635,7 +635,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                 </div>
 
                 {showGoogleInfo && (
-                  <ul className="mb-3 ml-4 list-disc space-y-1 rounded-lg bg-[#FAFAFA] py-2.5 pl-4 pr-3 text-[12px] leading-relaxed text-[#525252]">
+                  <ul className="mb-3 ml-4 list-disc space-y-1 rounded-[14px] bg-pn-canvas py-2.5 pl-4 pr-3 text-[12px] leading-relaxed text-[#525252]">
                     <li>{isTr ? 'İşletme adını + şehir yazarsan sonuç daha isabetli olur.' : 'Add the city for more accurate results.'}</li>
                     <li>{isTr ? 'Bulamazsan Place ID veya yorum linkini elle yapıştırabilirsin.' : 'Not found? Paste the Place ID or review link manually.'}</li>
                   </ul>
@@ -643,17 +643,17 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
 
                 {/* Selected place chip */}
                 {selectedPlace ? (
-                  <div className="flex items-start justify-between gap-3 rounded-lg border border-[#A8D62E] bg-[#F7FAEF] p-3">
+                  <div className="flex items-start justify-between gap-3 rounded-[14px] border border-pn-accent-hover bg-pn-accent-soft p-3">
                     <div className="flex min-w-0 items-start gap-2.5">
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]" aria-hidden="true">
-                        <Check size={13} strokeWidth={2.5} className="text-[#0A0A0A]" />
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pn-accent" aria-hidden="true">
+                        <Check size={13} strokeWidth={2.5} className="text-pn-ink" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">{selectedPlace.displayName}</p>
+                        <p className="truncate text-[13px] font-medium text-pn-ink">{selectedPlace.displayName}</p>
                         {selectedPlace.formattedAddress && (
-                          <p className="mt-0.5 truncate text-[11.5px] text-[#737373]">{selectedPlace.formattedAddress}</p>
+                          <p className="mt-0.5 truncate text-[12px] text-[#737373]">{selectedPlace.formattedAddress}</p>
                         )}
-                        <p className="mt-1 truncate font-mono text-[10.5px] text-[#3F6212]">
+                        <p className="mt-1 truncate font-mono text-[12px] text-[#3F6212]">
                           {isTr ? 'Yorum linki hazır' : 'Review link ready'} · {selectedPlace.placeId}
                         </p>
                       </div>
@@ -713,13 +713,13 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                             <button
                               type="button"
                               onClick={() => selectPlace(place)}
-                              className="flex min-h-[44px] w-full items-start gap-2.5 rounded-lg border border-[#EDEDED] bg-white p-3 text-left transition-colors hover:border-[#C6F24E] hover:bg-[#F7FAEF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A]"
+                              className="flex min-h-[44px] w-full items-start gap-2.5 rounded-[14px] border border-pn-line bg-white p-3 text-left transition-colors hover:border-pn-accent hover:bg-pn-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink"
                             >
                               <MapPin size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-[#737373]" aria-hidden="true" />
                               <span className="min-w-0">
-                                <span className="block truncate text-[13px] font-semibold text-[#0A0A0A]">{place.displayName}</span>
+                                <span className="block truncate text-[13px] font-medium text-pn-ink">{place.displayName}</span>
                                 {place.formattedAddress && (
-                                  <span className="mt-0.5 block truncate text-[11.5px] text-[#737373]">{place.formattedAddress}</span>
+                                  <span className="mt-0.5 block truncate text-[12px] text-[#737373]">{place.formattedAddress}</span>
                                 )}
                               </span>
                             </button>
@@ -760,7 +760,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
             {/* Other platform links — one card, one labelled field each. */}
             {otherPlatformInputs.length > 0 && (
               <section aria-labelledby="cb-other-title" className="bz-card space-y-4 p-4 sm:p-5">
-                <h2 id="cb-other-title" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+                <h2 id="cb-other-title" className="text-[14px] font-medium text-pn-ink">
                   {isTr ? 'Diğer platformlar' : 'Other platforms'}
                 </h2>
                 {otherPlatformInputs.map((input) => {
@@ -826,7 +826,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                     {fieldErrors.notificationEmail}
                   </p>
                 ) : (
-                  <p id="cb-email-help" className="text-[11.5px] text-[#737373]">
+                  <p id="cb-email-help" className="text-[12px] text-[#737373]">
                     {isTr ? 'Yeni yorum ve düşük puan bildirimleri bu adrese gelir.' : 'New review and low-rating alerts go here.'}
                   </p>
                 )}
@@ -871,15 +871,15 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   </label>
                   {/* flex-1 + sm:min-h-0: on sm+ the box stretches to the
                       phone field next to it (same grid row), so both line up. */}
-                  <div className="flex min-h-[44px] flex-1 items-center gap-3 rounded-lg border border-[#E5E5E5] bg-white px-3 shadow-[var(--bz-shadow-xs)] sm:min-h-0">
+                  <div className="flex min-h-[44px] flex-1 items-center gap-3 rounded-[14px] border border-pn-line-strong bg-white px-3 shadow-[var(--bz-shadow-xs)] sm:min-h-0">
                     <input
                       id="cb-color"
                       type="color"
                       value={formData.primaryColor}
                       onChange={(event) => setFormField('primaryColor', event.target.value)}
-                      className="h-8 w-10 cursor-pointer rounded-md border-0 bg-transparent"
+                      className="h-8 w-10 cursor-pointer rounded-[10px] border-0 bg-transparent"
                     />
-                    <span className="font-mono text-[13px] text-[#0A0A0A]">{formData.primaryColor}</span>
+                    <span className="font-mono text-[13px] text-pn-ink">{formData.primaryColor}</span>
                   </div>
                 </div>
               </div>
@@ -888,33 +888,33 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
             {/* Dark summary card — stays dark (§38.202). */}
             <aside
               aria-label={isTr ? 'Özet' : 'Summary'}
-              className="rounded-xl border border-[#EDEDED] bg-[#0A0A0A] p-4 text-white"
+              className="rounded-[20px] border border-pn-line bg-pn-ink p-4 text-white"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[12px] font-medium text-white/70">{isTr ? 'Özet' : 'Summary'}</span>
-                <Sparkles size={15} className="text-[#C6F24E]" aria-hidden="true" />
+                <Sparkles size={15} className="text-pn-accent" aria-hidden="true" />
               </div>
               <div className="mt-4 flex items-center gap-3">
                 <div
-                  className="flex h-11 w-11 items-center justify-center rounded-xl text-[16px] font-semibold text-[#0A0A0A]"
+                  className="flex h-11 w-11 items-center justify-center rounded-[20px] text-[16px] font-medium text-pn-ink"
                   style={{ background: formData.primaryColor || '#C6F24E' }}
                   aria-hidden="true"
                 >
                   {(formData.name || 'B').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[16px] font-semibold">{formData.name || (isTr ? 'Yeni işletme' : 'New business')}</p>
+                  <p className="truncate text-[16px] font-medium">{formData.name || (isTr ? 'Yeni işletme' : 'New business')}</p>
                   <p className="mt-1 text-[12px] text-white/70">{selectedSector?.display[locale] ?? formData.category}</p>
                 </div>
               </div>
-              <dl className="mt-4 space-y-2 rounded-xl bg-white/[0.08] p-3 text-[12px]">
+              <dl className="mt-4 space-y-2 rounded-[20px] bg-white/[0.08] p-3 text-[12px]">
                 <div className="flex items-center justify-between gap-2">
                   <dt className="text-white/70">{isClinic ? (isTr ? 'Hasta geri bildirimi' : 'Patient feedback') : isTr ? 'Yorum akışı' : 'Review flow'}</dt>
-                  <dd className="font-semibold text-[#C6F24E]">{isTr ? 'Hazır' : 'Ready'}</dd>
+                  <dd className="font-medium text-pn-accent">{isTr ? 'Hazır' : 'Ready'}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <dt className="text-white/70">{isTr ? 'Google bağlantısı' : 'Google link'}</dt>
-                  <dd className="font-semibold text-[#C6F24E]">
+                  <dd className="font-medium text-pn-accent">
                     {formData.googlePlaceId ? (isTr ? 'Bağlı' : 'Linked') : (isTr ? 'Yok' : 'None')}
                   </dd>
                 </div>
@@ -941,7 +941,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
             shadow fills the 12px gap so the form does not show through. On phones
             the first step shows "İptal", later steps "Geri" (the back link at
             the top still leaves the wizard). */}
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] lg:bottom-0 -mx-4 flex items-center gap-2 border-t border-[#EDEDED] bg-white px-4 py-3 max-lg:shadow-[0_12px_0_0_#FFFFFF] sm:-mx-7 sm:px-7">
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] lg:bottom-0 -mx-4 flex items-center gap-2 border-t border-pn-line bg-white px-4 py-3 max-lg:shadow-[0_12px_0_0_#FFFFFF] sm:-mx-7 sm:px-7">
           <Link
             href={`/${locale}/dashboard/restaurants`}
             className={`bz-btn-ghost min-h-[44px] justify-center sm:min-h-[36px] ${createStep > 0 ? 'hidden sm:inline-flex' : ''}`}

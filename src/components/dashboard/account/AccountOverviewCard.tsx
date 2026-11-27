@@ -123,8 +123,8 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
         aria-busy="true"
         aria-label={isTr ? "Hesap özeti yükleniyor" : "Loading account overview"}
       >
-        <div className="flex items-center gap-4 border-b border-[#EDEDED] p-5 sm:p-6">
-          <SkBox className="h-[52px] w-[52px] shrink-0 rounded-xl" />
+        <div className="flex items-center gap-4 border-b border-pn-line p-5 sm:p-6">
+          <SkBox className="h-[52px] w-[52px] shrink-0 rounded-[20px]" />
           <div className="min-w-0 flex-1 space-y-2">
             <SkBox className="h-5 w-40 max-w-full" />
             <SkBox className="h-3 w-52 max-w-full" />
@@ -152,15 +152,15 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
           <div className="flex items-center gap-4 min-w-0">
             <Avatar size={52} name={initials(profile.name, profile.email)} />
             <div className="min-w-0">
-              <h3 className="bz-h-tight truncate text-[18px] text-[#0A0A0A]">
+              <h3 className="bz-h-tight truncate text-[18px] text-pn-ink">
                 {profile.name || profile.email}
               </h3>
-              <p className="bz-mono mt-0.5 truncate text-[12px] text-[#737373]">{profile.email}</p>
+              <p className="tabular-nums mt-0.5 truncate text-[12px] text-[#737373]">{profile.email}</p>
             </div>
           </div>
         </div>
         {fetchFailed && (
-          <div className="border-t border-[#EDEDED] bg-[#FFFBEB] px-5 py-3 sm:px-6">
+          <div className="border-t border-pn-line bg-[#FFFBEB] px-5 py-3 sm:px-6">
             <p className="inline-flex items-start gap-2 text-[12px] leading-[1.55] text-[#92400E]">
               <AlertTriangle size={13} className="mt-0.5 shrink-0" strokeWidth={2} />
               <span>
@@ -213,14 +213,14 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
 
   return (
     <div className="bz-card overflow-hidden p-0">
-      <div className="flex flex-col gap-4 border-b border-[#EDEDED] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="flex flex-col gap-4 border-b border-pn-line p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-center gap-4 min-w-0">
           <Avatar size={52} name={initials(data.name, data.email)} />
           <div className="min-w-0">
-            <h3 className="bz-h-tight truncate text-[18px] text-[#0A0A0A]">
+            <h3 className="bz-h-tight truncate text-[18px] text-pn-ink">
               {data.name || data.email}
             </h3>
-            <p className="bz-mono mt-0.5 truncate text-[12px] text-[#737373]">{data.email}</p>
+            <p className="tabular-nums mt-0.5 truncate text-[12px] text-[#737373]">{data.email}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
@@ -242,7 +242,7 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
             key={s.label}
             // 2×2 on phones (bottom border on the first row, right border on
             // the left column); one row of 4 from sm (right borders only).
-            className={`flex flex-col gap-1 border-[#EDEDED] p-4 sm:p-5 ${
+            className={`flex flex-col gap-1 border-pn-line p-4 sm:p-5 ${
               i < 2 ? "border-b sm:border-b-0" : ""
             } ${i % 2 === 0 ? "border-r" : ""} ${
               i < stats.length - 1 ? "sm:border-r" : "sm:border-r-0"
@@ -254,11 +254,11 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
               </span>
               {s.label}
             </span>
-            <span className="bz-h-tight tabular-nums text-[20px] sm:text-[22px] text-[#0A0A0A]">
+            <span className="bz-h-tight tabular-nums text-[20px] sm:text-[22px] text-pn-ink">
               {s.value}
             </span>
             {s.sublabel && (
-              <span className="text-[11px] text-[#737373]">{s.sublabel}</span>
+              <span className="text-[12px] text-[#737373]">{s.sublabel}</span>
             )}
           </div>
         ))}

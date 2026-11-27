@@ -161,7 +161,7 @@ export default function AdminApiPage() {
         }
         actions={
           notice ? (
-            <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-3 py-1.5 text-[#0A0A0A]">
+            <span className="text-[13px] font-medium rounded-full bg-pn-accent-soft px-3 py-1.5 text-pn-ink">
               {notice}
             </span>
           ) : null
@@ -169,17 +169,17 @@ export default function AdminApiPage() {
       />
 
       {newToken && (
-        <section className="rounded-2xl border border-[#C6F24E] bg-[#F7FFE4] p-4">
+        <section className="rounded-[24px] border border-pn-accent bg-[#F7FFE4] p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="pulse-eyebrow text-[#0A0A0A]">{isTr ? 'YENİ ANAHTAR' : 'NEW TOKEN'}</p>
+              <p className="text-[13px] font-medium text-pn-ink">{isTr ? 'YENİ ANAHTAR' : 'NEW TOKEN'}</p>
               <p className="mt-1 text-[12px] text-[#525252]">
                 {isTr ? 'Bu token sadece bir kez gösterilir.' : 'This token is shown only once.'}
               </p>
             </div>
             <button
               onClick={() => onCopy(newToken)}
-              className="inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-[#0A0A0A] bg-white px-3 py-2 font-mono text-[11px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+              className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-pn-ink bg-white px-3 py-2 font-mono text-[12px] text-pn-ink hover:bg-pn-canvas"
             >
               <Copy size={11} />
               <span className="truncate">{newToken}</span>
@@ -189,27 +189,27 @@ export default function AdminApiPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">
+        <div className="flex items-center justify-center rounded-[24px] border border-pn-line bg-white p-20 text-[#737373]">
           <Loader2 className="animate-spin" size={20} />
         </div>
       ) : (
         <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
           <div className="space-y-4">
             {/* API Keys */}
-            <section className="rounded-2xl border border-[#EDEDED] bg-white">
-              <div className="flex items-center justify-between gap-4 border-b border-[#EDEDED] p-5">
+            <section className="rounded-[24px] border border-pn-line bg-white">
+              <div className="flex items-center justify-between gap-4 border-b border-pn-line p-5">
                 <div className="flex items-center gap-2">
-                  <KeyRound size={14} className="text-[#0A0A0A]" />
-                  <p className="pulse-eyebrow text-[#737373]">{isTr ? 'API ANAHTARLARI' : 'API KEYS'}</p>
+                  <KeyRound size={14} className="text-pn-ink" />
+                  <p className="text-[13px] font-medium text-[#737373]">{isTr ? 'API ANAHTARLARI' : 'API KEYS'}</p>
                 </div>
                 <button
                   onClick={() => setShowKey(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-3 py-1.5 text-[12px] font-medium text-pn-ink hover:bg-pn-accent-hover"
                 >
                   <Plus size={12} /> {isTr ? 'Yeni anahtar' : 'New key'}
                 </button>
               </div>
-              <div className="divide-y divide-[#EDEDED]">
+              <div className="divide-y divide-pn-line">
                 {keys.length === 0 ? (
                   <p className="p-8 text-center text-[13px] text-[#737373]">
                     {isTr ? 'Henüz API anahtarı yok.' : 'No API keys yet.'}
@@ -218,15 +218,15 @@ export default function AdminApiPage() {
                   keys.map((k) => (
                     <div key={k.id} className="flex flex-wrap items-center justify-between gap-3 p-5">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-semibold text-[#0A0A0A]">{k.name}</p>
-                        <p className="pulse-eyebrow mt-0.5 text-[#737373]">
+                        <p className="truncate text-[14px] font-medium text-pn-ink">{k.name}</p>
+                        <p className="text-[13px] font-medium mt-0.5 text-[#737373]">
                           {k.scopes.join(' · ')}
                         </p>
                       </div>
                       {k.prefix && (
                         <button
                           onClick={() => onCopy(k.prefix!)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-2.5 py-1.5 font-mono text-[11px] text-[#525252] hover:border-[#0A0A0A]"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-pn-line bg-pn-canvas px-2.5 py-1.5 font-mono text-[12px] text-[#525252] hover:border-pn-ink"
                         >
                           <Copy size={10} /> {k.prefix}
                         </button>
@@ -249,7 +249,7 @@ export default function AdminApiPage() {
                           <Trash2 size={12} />
                         </button>
                       </div>
-                      <p className="pulse-eyebrow w-full text-[#A3A3A3] sm:w-auto">
+                      <p className="text-[13px] font-medium w-full text-[#A3A3A3] sm:w-auto">
                         {k.lastUsedAt
                           ? isTr
                             ? `Son kullanım: ${new Date(k.lastUsedAt).toLocaleString('tr-TR')}`
@@ -265,11 +265,11 @@ export default function AdminApiPage() {
             </section>
 
             {/* Webhooks */}
-            <section className="rounded-2xl border border-[#EDEDED] bg-white">
-              <div className="flex items-center justify-between gap-4 border-b border-[#EDEDED] p-5">
+            <section className="rounded-[24px] border border-pn-line bg-white">
+              <div className="flex items-center justify-between gap-4 border-b border-pn-line p-5">
                 <div className="flex items-center gap-2">
-                  <Webhook size={14} className="text-[#0A0A0A]" />
-                  <p className="pulse-eyebrow text-[#737373]">{isTr ? 'WEBHOOK' : 'WEBHOOKS'}</p>
+                  <Webhook size={14} className="text-pn-ink" />
+                  <p className="text-[13px] font-medium text-[#737373]">{isTr ? 'WEBHOOK' : 'WEBHOOKS'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge kind="ghost">{isTr ? 'Yakında' : 'Coming soon'}</Badge>
@@ -283,11 +283,11 @@ export default function AdminApiPage() {
                   </button>
                 </div>
               </div>
-              <div className="divide-y divide-[#EDEDED]">
+              <div className="divide-y divide-pn-line">
                 {webhooks.length === 0 && (
                   <div className="flex flex-col items-center gap-1.5 p-8 text-center">
                     <Webhook size={18} className="text-[#A3A3A3]" />
-                    <p className="text-[13px] font-medium text-[#0A0A0A]">
+                    <p className="text-[13px] font-medium text-pn-ink">
                       {isTr ? 'Henüz webhook adresi yok' : 'No webhook endpoints yet'}
                     </p>
                     <p className="max-w-sm text-[12px] text-[#737373]">
@@ -300,16 +300,16 @@ export default function AdminApiPage() {
                 {webhooks.map((w) => (
                   <div key={w.id} className="grid gap-3 p-5 md:grid-cols-[1fr_auto]">
                     <div className="min-w-0">
-                      <p className="truncate font-mono text-[13px] text-[#0A0A0A]">{w.url}</p>
-                      <p className="pulse-eyebrow mt-1 text-[#737373]">{w.events.join(' · ')}</p>
+                      <p className="truncate font-mono text-[13px] text-pn-ink">{w.url}</p>
+                      <p className="text-[13px] font-medium mt-1 text-[#737373]">{w.events.join(' · ')}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`pulse-eyebrow rounded px-2 py-1 ${
+                        className={`text-[13px] font-medium rounded px-2 py-1 ${
                           w.status === 'active'
-                            ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                            ? 'bg-pn-accent-soft text-pn-ink'
                             : w.status === 'paused'
-                              ? 'bg-[#F5F5F5] text-[#737373]'
+                              ? 'bg-pn-canvas text-[#737373]'
                               : 'bg-red-50 text-red-700'
                         }`}
                       >
@@ -320,7 +320,7 @@ export default function AdminApiPage() {
                             : isTr ? 'HATA' : 'FAILING'}
                       </span>
                       {w.lastDelivery && (
-                        <span className="pulse-eyebrow text-[#A3A3A3]">
+                        <span className="text-[13px] font-medium text-[#A3A3A3]">
                           {new Date(w.lastDelivery).toLocaleDateString(isTr ? 'tr-TR' : 'en-US')}
                         </span>
                       )}
@@ -331,20 +331,20 @@ export default function AdminApiPage() {
             </section>
 
             {/* OAuth providers hint card */}
-            <section className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-5">
+            <section className="rounded-[24px] border border-dashed border-pn-line bg-pn-canvas p-5">
               <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#0A0A0A] border border-[#EDEDED]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink border border-pn-line">
                   <Globe size={14} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold text-[#0A0A0A]">
+                  <p className="text-[14px] font-medium text-pn-ink">
                     {isTr ? 'Google bağlantıları' : 'Google connections'}
                   </p>
                   <p className="mt-1 text-[12px] text-[#525252]">
                     {isTr
                       ? 'İşletmelerin Google Business Profile bağlantıları '
                       : "Businesses' Google Business Profile connections are tracked on the "}
-                    <Link href="/admin/google" className="font-medium text-[#0A0A0A] underline underline-offset-2">
+                    <Link href="/admin/google" className="font-medium text-pn-ink underline underline-offset-2">
                       {isTr ? 'Google Entegrasyonları' : 'Google Integrations'}
                     </Link>
                     {isTr ? ' sayfasından izlenir.' : ' page.'}
@@ -355,16 +355,16 @@ export default function AdminApiPage() {
           </div>
 
           {/* Activity column */}
-          <section className="rounded-2xl border border-[#EDEDED] bg-white">
-            <div className="flex items-center gap-2 border-b border-[#EDEDED] p-5">
-              <ActivitySquare size={14} className="text-[#0A0A0A]" />
-              <p className="pulse-eyebrow text-[#737373]">{isTr ? 'SON OLAYLAR' : 'RECENT ACTIVITY'}</p>
+          <section className="rounded-[24px] border border-pn-line bg-white">
+            <div className="flex items-center gap-2 border-b border-pn-line p-5">
+              <ActivitySquare size={14} className="text-pn-ink" />
+              <p className="text-[13px] font-medium text-[#737373]">{isTr ? 'SON OLAYLAR' : 'RECENT ACTIVITY'}</p>
             </div>
-            <ul className="divide-y divide-[#EDEDED]">
+            <ul className="divide-y divide-pn-line">
               {activity.length === 0 && (
                 <li className="flex flex-col items-center gap-1.5 p-8 text-center">
                   <ActivitySquare size={18} className="text-[#A3A3A3]" />
-                  <p className="text-[13px] font-medium text-[#0A0A0A]">
+                  <p className="text-[13px] font-medium text-pn-ink">
                     {isTr ? 'Henüz olay kaydı yok' : 'No activity yet'}
                   </p>
                   <p className="max-w-xs text-[12px] text-[#737373]">
@@ -382,12 +382,12 @@ export default function AdminApiPage() {
                         ? 'bg-[#16A34A]'
                         : a.status === 'fail'
                           ? 'bg-red-500'
-                          : 'bg-[#C6F24E]'
+                          : 'bg-pn-accent'
                     }`}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] text-[#0A0A0A]">{a.label}</p>
-                    <p className="pulse-eyebrow mt-0.5 text-[#737373]">
+                    <p className="text-[13px] text-pn-ink">{a.label}</p>
+                    <p className="text-[13px] font-medium mt-0.5 text-[#737373]">
                       {new Date(a.at).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
                     </p>
                   </div>
@@ -404,21 +404,21 @@ export default function AdminApiPage() {
           onClose={() => setShowKey(false)}
           title={
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-[#0A0A0A]" />
+              <ShieldCheck size={16} className="text-pn-ink" />
               <span>{isTr ? 'Yeni API anahtarı' : 'New API key'}</span>
             </div>
           }
         >
           <label className="block">
-            <span className="pulse-eyebrow text-[#737373]">{isTr ? 'AÇIKLAMA' : 'LABEL'}</span>
+            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'AÇIKLAMA' : 'LABEL'}</span>
             <input
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               placeholder={isTr ? 'örn. Retool prod dashboard' : 'e.g. Retool prod dashboard'}
-              className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
+              className="mt-1 w-full rounded-[14px] border border-pn-line bg-white px-3 py-2 text-[13px] outline-none focus:border-pn-ink"
             />
           </label>
-          <p className="mt-3 text-[11px] text-[#737373]">
+          <p className="mt-3 text-[12px] text-[#737373]">
             {isTr
               ? 'Yeni anahtarlar yalnızca yorumları okuma yetkisiyle oluşturulur (feedback:read).'
               : 'New keys are created with read-only access to reviews (feedback:read).'}

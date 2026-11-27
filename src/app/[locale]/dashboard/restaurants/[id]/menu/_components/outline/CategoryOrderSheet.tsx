@@ -55,7 +55,7 @@ export function CategoryOrderSheet({ categories, onClose }: { categories: Catego
       }
     >
       {notice && (
-        <p role="status" className="mb-3 flex items-center gap-2 rounded-lg bg-[#F7FAEF] px-3 py-2 text-[13px] text-[#0A0A0A]">
+        <p role="status" className="mb-3 flex items-center gap-2 rounded-[14px] bg-pn-accent-soft px-3 py-2 text-[13px] text-pn-ink">
           <Check size={14} strokeWidth={2.25} className="shrink-0 text-[#4D5C00]" aria-hidden="true" />
           <span className="flex-1">{notice === 'saved' ? copy.toast.orderSaved : copy.toast.undone}</span>
           {notice === 'saved' && (
@@ -65,7 +65,7 @@ export function CategoryOrderSheet({ categories, onClose }: { categories: Catego
                 await toaster.undoLatest();
                 setNotice('undone');
               }}
-              className="min-h-11 font-semibold underline underline-offset-2 pointer-fine:min-h-8"
+              className="min-h-11 font-medium underline underline-offset-2 pointer-fine:min-h-8"
             >
               {copy.toast.undo}
             </button>
@@ -74,7 +74,7 @@ export function CategoryOrderSheet({ categories, onClose }: { categories: Catego
       )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} accessibility={accessibility} onDragEnd={onDragEnd}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          <ol className="divide-y divide-[#EDEDED] rounded-xl border border-[#EDEDED]">
+          <ol className="divide-y divide-pn-line rounded-[20px] border border-pn-line">
             {categories.map((c, i) => (
               <OrderRow key={c.id} category={c} index={i} total={categories.length} onMove={move} />
             ))}
@@ -108,12 +108,12 @@ function OrderRow({
         {...attributes}
         {...listeners}
         aria-label={copy.item.dragAria(category.name)}
-        className="flex h-11 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-[#737373] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] active:cursor-grabbing"
+        className="flex h-11 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-[10px] text-[#737373] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent active:cursor-grabbing"
       >
         <GripVertical size={15} strokeWidth={2} />
       </button>
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1.5 truncate font-body text-[14.5px] font-semibold text-[#0A0A0A]">
+        <p className="flex items-center gap-1.5 truncate font-body text-[14.5px] font-medium text-pn-ink">
           {!category.isVisible && <EyeOff size={12} strokeWidth={2} className="shrink-0 text-[#737373]" aria-label={copy.category.hidden} />}
           <span className="truncate">{category.name}</span>
         </p>
