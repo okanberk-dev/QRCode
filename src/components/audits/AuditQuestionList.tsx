@@ -225,9 +225,9 @@ const QuestionRow = memo(function QuestionRow({
       style={style}
       data-q-key={q.clientKey}
       className={[
-        'bz-card scroll-mt-24 p-2.5 sm:p-3',
-        isDragging ? 'ring-1 ring-pn-accent' : '',
-        error ? 'border-[#FCA5A5]' : '',
+        'scroll-mt-24 rounded-[16px] bg-pn-canvas [[role=dialog]_&]:bg-[#F6F6F6] p-2.5 transition-[background-color,box-shadow] duration-200 sm:p-3',
+        isDragging ? 'shadow-[inset_0_0_0_1.5px_var(--color-pn-accent)]' : '',
+        error ? 'shadow-[inset_0_0_0_1.5px_#FCA5A5]' : '',
       ].join(' ')}
     >
       <div className="flex items-start gap-1.5 sm:gap-2">
@@ -524,7 +524,7 @@ export default function AuditQuestionList({
   return (
     <div className="space-y-3">
       {/* Hızlı ekleme */}
-      <div className="bz-card space-y-2.5 p-3">
+      <div className="space-y-3 rounded-[18px] bg-pn-canvas p-3 sm:p-4 [[role=dialog]_&]:bg-[#F6F6F6]">
         <label id={quickLabelId} htmlFor={quickInputId} className="sr-only">
           {isTr ? `Yeni ${noun.toLocaleLowerCase('tr-TR')} metni` : `New ${noun.toLowerCase()} text`}
         </label>
@@ -533,7 +533,7 @@ export default function AuditQuestionList({
             id={quickInputId}
             ref={inputRef}
             type="text"
-            className="bz-input min-w-0 flex-1"
+            className="bz-input min-w-0 flex-1 text-[16px] sm:text-[14px]"
             value={text}
             maxLength={2000}
             disabled={atMax}
@@ -557,7 +557,7 @@ export default function AuditQuestionList({
           />
           <button
             type="button"
-            className="bz-btn-primary shrink-0"
+            className="bz-btn-primary min-h-[46px] shrink-0 px-5"
             onClick={add}
             disabled={atMax || text.trim().length === 0}
           >
@@ -565,7 +565,7 @@ export default function AuditQuestionList({
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          <span id={quickTypeLabelId} className="text-[12px] text-[#737373]">
+          <span id={quickTypeLabelId} className="text-[13px] text-[#737373]">
             {isTr ? 'Tür:' : 'Type:'}
           </span>
           <ChipRadioGroup
@@ -586,7 +586,7 @@ export default function AuditQuestionList({
       </div>
 
       {questions.length === 0 ? (
-        <p className="rounded-[20px] border border-dashed border-pn-line-strong bg-pn-canvas px-4 py-5 text-center text-[13px] text-[#737373]">
+        <p className="rounded-[16px] border border-dashed border-pn-line-strong px-4 py-6 text-center text-[14px] text-[#737373]">
           {kind === 'quiz'
             ? isTr
               ? 'Henüz soru yok. Yukarıya ilk soruyu yazıp Enter\'a bas.'

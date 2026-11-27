@@ -17,13 +17,13 @@
  * APCheckbox primitive bu pattern'ı tek source-of-truth'a taşır:
  *  - `checked: boolean` + `indeterminate: boolean` opsiyonel
  *  - 3-state visual: unchecked / checked / indeterminate (− mark)
- *  - purple fill + white tick when checked, grey border default
+ *  - black fill + white tick when checked, grey border default
  *  - A11y: `aria-checked={indeterminate ? 'mixed' : checked}`,
  *    native input sr-only, focus-visible lime ring
  *  - HANDOFF design: lime check icon + indeterminate line + label
  *
  * Pulse §11 + §23.3 disipline:
- *  - pn-* tokens (purple fill + white tick when checked, grey border)
+ *  - pn-* tokens (black fill + white tick when checked, grey border)
  *  - lucide Check + Minus icons
  *  - `bz-motion-spring` transition (Stage 11.34 §38.67 paterni)
  */
@@ -143,7 +143,7 @@ export const APCheckbox = forwardRef<HTMLInputElement, APCheckboxProps>(function
         className="sr-only"
       />
 
-      {/* Visual checkbox — purple fill + white tick when checked */}
+      {/* Visual checkbox — black fill + white tick when checked */}
       <span
         aria-hidden
         data-state={visualState}

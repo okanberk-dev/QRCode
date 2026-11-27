@@ -75,196 +75,164 @@ function ResetPasswordContent() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-white text-pn-ink">
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#EFEAFB_0%,rgba(239,234,251,0)_62%)]"
-      />
-
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1152px] flex-col px-4 sm:px-7 py-6 sm:py-7">
-        <header className="flex items-center justify-between">
-          <Link href="/admin" className="inline-flex items-center gap-2 sm:gap-2.5">
-            <BuazeLogo size={32} />
-            <span className="text-lg sm:text-xl font-medium tracking-tight">
-              buaze<span className="text-pn-accent-ink">.</span>
+    <main className="relative min-h-[100dvh] w-full bg-pn-canvas text-pn-ink">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1152px] flex-col px-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))] pt-[calc(16px+env(safe-area-inset-top,0px))] sm:px-6 sm:pt-6">
+        <header className="flex items-center justify-between gap-3">
+          <Link href="/admin" className="inline-flex items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2">
+            <BuazeLogo size={36} />
+            <span className="text-[20px] font-medium tracking-[-0.03em]">
+              buaze<span className="text-pn-accent">.</span>
             </span>
           </Link>
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-1 rounded-full border border-pn-line px-3 py-1.5 text-[12px] font-medium text-[#525252] hover:border-pn-ink hover:text-pn-ink transition-colors"
-          >
-            <ArrowLeft size={12} strokeWidth={2} />
+          <Link href="/admin" className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] max-sm:bg-[#F6F6F6]">
+            <ArrowLeft size={14} aria-hidden="true" />
             Girişe dön
           </Link>
         </header>
 
-        <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
-          <div className="w-full max-w-[460px]">
-            <div className="mb-6 sm:mb-7 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[24px] bg-pn-accent text-white">
-                <ShieldCheck size={22} strokeWidth={2} />
-              </div>
-              <p className="text-[13px] font-medium text-[#737373]">YÖNETİCİ PANELİ</p>
-              {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
-              <h1 className="mt-2 text-[28px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.04em] text-pn-ink">
-                Yeni şifre belirle
-              </h1>
-              <p className="mt-2.5 text-[13px] sm:text-sm text-[#737373] leading-[1.55] max-w-[360px] mx-auto">
-                E-postana gelen 6 haneli kodu ve yeni şifreni gir.
-              </p>
-            </div>
-
-            <div className="rounded-[28px] sm:rounded-[28px] border border-pn-line bg-white p-5 sm:p-7 shadow-[0_24px_70px_-42px_rgba(10,10,10,0.45)]">
+        <section className="flex flex-1 items-center justify-center py-6 sm:py-10">
+          <div className="bz-fade-in w-full max-w-[460px]">
+            <div className="rounded-[28px] bg-white p-5 sm:p-8">
               {success ? (
-                <div className="text-center py-2">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-pn-accent">
-                    <Check size={26} strokeWidth={3} className="text-white" />
+                <div className="py-2 text-center">
+                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-pn-accent text-white">
+                    <Check size={26} strokeWidth={2.4} aria-hidden="true" />
                   </div>
-                  <h2 className="bz-h-tight" style={{ fontSize: 20 }}>
+                  <h1 className="text-[28px] font-medium leading-[1.15] tracking-[-0.02em] text-pn-ink">
                     Şifren güncellendi
-                  </h2>
-                  <p className="mt-2 text-[13px] text-[#525252] leading-[1.55]">
+                  </h1>
+                  <p className="mt-2 text-[14px] leading-[1.6] text-[#737373]">
                     Birazdan giriş ekranına yönlendireceğiz. Yeni şifrenle giriş yapabilirsin.
                   </p>
-                  <Link
-                    href="/admin"
-                    className="bz-btn-primary mt-5 min-h-[48px] w-full rounded-[24px] text-[14px]"
-                  >
+                  <Link href="/admin" className="bz-btn-primary mt-6 min-h-[48px] w-full text-[15px]">
                     Girişe git
-                    <ArrowRight size={16} strokeWidth={2} />
+                    <ArrowRight size={17} aria-hidden="true" />
                   </Link>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {error && <AlertBanner kind="danger">{error}</AlertBanner>}
-
-                  {/* Username */}
-                  <div className="space-y-2">
-                    <label className="text-[12px] font-medium text-[#737373]">
-                      Kullanıcı adı
-                    </label>
-                    <div className="relative">
-                      <User
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
-                        size={16}
-                        strokeWidth={2}
-                      />
-                      <input
-                        type="text"
-                        required
-                        autoComplete="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-4 text-[14px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-accent focus:bg-white"
-                        placeholder="admin"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 6-digit code */}
-                  <div className="space-y-2">
-                    <label className="text-[12px] font-medium text-[#737373]">
-                      Doğrulama kodu
-                    </label>
-                    <div className="relative">
-                      <KeyRound
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
-                        size={16}
-                        strokeWidth={2}
-                      />
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        required
-                        maxLength={6}
-                        pattern="\d{6}"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-4 text-[16px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] placeholder:tracking-normal placeholder:font-medium focus:border-pn-accent focus:bg-white"
-                        placeholder="000000"
-                        style={{ fontFamily: 'var(--font-mono)' }}
-                      />
-                    </div>
-                    <p className="text-[12px] text-[#737373]">
-                      Kod 15 dakika geçerli. 5+ yanlış denemede 1 saat kilitlenir.
+                <>
+                  <div className="mb-6">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-pn-accent text-white" aria-hidden="true">
+                      <ShieldCheck size={22} />
+                    </span>
+                    <h1 className="mt-5 text-[28px] font-medium leading-[1.15] tracking-[-0.02em] text-pn-ink">
+                      Yeni şifre belirle
+                    </h1>
+                    <p className="mt-2 text-[14px] leading-[1.6] text-[#737373]">
+                      E-postana gelen 6 haneli kodu ve yeni şifreni gir.
                     </p>
                   </div>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
-                  {/* New password */}
-                  <div className="space-y-2">
-                    <label className="text-[12px] font-medium text-[#737373]">
-                      Yeni şifre
-                    </label>
-                    <div className="relative">
-                      <LockKeyhole
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
-                        size={16}
-                        strokeWidth={2}
-                      />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        autoComplete="new-password"
-                        minLength={8}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-12 text-[14px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-accent focus:bg-white"
-                        placeholder="Min 8 karakter"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="bz-btn-icon absolute right-2 top-1/2 -translate-y-1/2"
-                        aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Confirm */}
-                  <div className="space-y-2">
-                    <label className="text-[12px] font-medium text-[#737373]">
-                      Şifreyi tekrarla
-                    </label>
-                    <div className="relative">
-                      <LockKeyhole
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
-                        size={16}
-                        strokeWidth={2}
-                      />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        autoComplete="new-password"
-                        minLength={8}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-4 text-[14px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-accent focus:bg-white"
-                        placeholder="Tekrar gir"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="bz-btn-primary min-h-[48px] w-full rounded-[24px] text-[14px] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {loading ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      <>
-                        Şifreyi sıfırla
-                        <ArrowRight
-                          size={16}
-                          className="transition-transform group-hover:translate-x-0.5"
+                    {/* Username */}
+                    <div className="space-y-2">
+                      <label className="text-[14px] text-[#737373]">
+                        Kullanıcı adı
+                      </label>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]" size={17} aria-hidden="true" />
+                        <input
+                          type="text"
+                          required
+                          autoComplete="username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="bz-input w-full min-h-[48px] pl-11 text-[16px] sm:text-[15px]"
+                          placeholder="admin"
                         />
-                      </>
-                    )}
-                  </button>
-                </form>
+                      </div>
+                    </div>
+
+                    {/* 6-digit code */}
+                    <div className="space-y-2">
+                      <label className="text-[14px] text-[#737373]">
+                        Doğrulama kodu
+                      </label>
+                      <div className="relative">
+                        <KeyRound className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]" size={17} aria-hidden="true" />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          required
+                          maxLength={6}
+                          pattern="\d{6}"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                          className="bz-input w-full min-h-[48px] pl-11 text-[16px] tracking-[0.2em] tabular-nums placeholder:tracking-normal"
+                          placeholder="000000"
+                        />
+                      </div>
+                      <p className="text-[13px] text-[#9A9A9A]">
+                        Kod 15 dakika geçerli. 5+ yanlış denemede 1 saat kilitlenir.
+                      </p>
+                    </div>
+
+                    {/* New password */}
+                    <div className="space-y-2">
+                      <label className="text-[14px] text-[#737373]">
+                        Yeni şifre
+                      </label>
+                      <div className="relative">
+                        <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]" size={17} aria-hidden="true" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          autoComplete="new-password"
+                          minLength={8}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="bz-input w-full min-h-[48px] pl-11 pr-14 text-[16px] sm:text-[15px]"
+                          placeholder="En az 8 karakter"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
+                          aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                        >
+                          {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Confirm */}
+                    <div className="space-y-2">
+                      <label className="text-[14px] text-[#737373]">
+                        Şifreyi tekrarla
+                      </label>
+                      <div className="relative">
+                        <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]" size={17} aria-hidden="true" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          autoComplete="new-password"
+                          minLength={8}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="bz-input w-full min-h-[48px] pl-11 text-[16px] sm:text-[15px]"
+                          placeholder="Tekrar gir"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="bz-btn-primary min-h-[48px] w-full text-[15px] disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <Loader2 className="animate-spin" size={18} aria-hidden="true" />
+                      ) : (
+                        <>
+                          Şifreyi sıfırla
+                          <ArrowRight size={17} aria-hidden="true" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </>
               )}
             </div>
           </div>
@@ -278,8 +246,8 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-[100dvh] items-center justify-center bg-white">
-          <Loader2 className="h-8 w-8 animate-spin text-pn-ink" />
+        <main className="flex min-h-[100dvh] w-full items-center justify-center bg-pn-canvas">
+          <Loader2 className="h-8 w-8 animate-spin text-pn-accent" />
         </main>
       }
     >

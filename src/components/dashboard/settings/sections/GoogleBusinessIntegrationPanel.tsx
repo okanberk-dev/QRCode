@@ -581,7 +581,7 @@ export function GoogleBusinessIntegrationPanel({
 
               {selectedLocation && (
                 <div className="flex flex-col gap-3 rounded-[18px] bg-pn-accent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="max-w-[600px] text-[13px] leading-[1.55] text-[#3B1F8F]">
+                  <p className="max-w-[600px] text-[13px] leading-[1.55] text-[#000000]">
                     {isTr
                       ? "Google Business Profile hesabınızdaki yorumları okumak, AI ile yanıt taslağı oluşturmak ve doğrudan Google üzerinden yanıtlamak için yeni Google Yorumları sayfasına gidebilirsiniz."
                       : "You can go to the new Google Reviews page to read reviews, generate AI reply drafts, and publish replies directly to Google."}

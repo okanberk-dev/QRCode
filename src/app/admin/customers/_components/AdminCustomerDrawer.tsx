@@ -370,7 +370,7 @@ export function AdminCustomerDrawer() {
                     <span className="bz-h-tight text-[20px] tabular-nums text-pn-ink">
                       {data.stats.avgRating != null ? data.stats.avgRating.toFixed(1) : '—'}
                     </span>
-                    <Star size={11} className="text-pn-accent" fill="#5D3EBC" />
+                    <Star size={11} className="text-pn-accent" fill="#111110" />
                   </div>
                 </div>
                                 <div className="bz-card-soft p-3">
@@ -443,7 +443,7 @@ export function AdminCustomerDrawer() {
                                   key={s}
                                   size={11}
                                   className={s <= fb.rating ? 'text-pn-accent' : 'text-pn-line'}
-                                  fill={s <= fb.rating ? '#5D3EBC' : '#EBEBEB'}
+                                  fill={s <= fb.rating ? '#111110' : '#EBEBEB'}
                                 />
                               ))}
                             </span>

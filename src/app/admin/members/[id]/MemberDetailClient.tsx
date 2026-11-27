@@ -392,7 +392,7 @@ export default function MemberDetailClient({
           label="Plan"
           value={planMeta.label}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={user.plan === 'yearly' ? '#5D3EBC' : undefined}
+          accent={user.plan === 'yearly' ? '#111110' : undefined}
         />
         <StatCard
           label={subscription?.renewsAt ? 'Yenileme' : 'Deneme bitiş'}

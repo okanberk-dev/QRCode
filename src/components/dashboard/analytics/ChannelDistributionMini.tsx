@@ -39,35 +39,36 @@ export function ChannelDistributionMini({
   const total = channels.reduce((sum, c) => sum + c.count, 0);
   const sorted = [...channels].sort((a, b) => b.count - a.count);
 
+  // Fintora breakdown list: name with a brand dot, count + share on the
+  // right, a slim bar in the platform colour underneath.
   return (
     <section className={`bz-card p-5 sm:p-6 ${className}`}>
-      <header className="mb-3.5">
-        <span className="text-[13px] font-medium text-[#525252]">{isTr ? 'Kanal dağılımı' : 'Channels'}</span>
-        {caption && <p className="mt-1 text-[12px] text-[#737373]">{caption}</p>}
+      <header className="mb-4">
+        <h2 className="pn-card-title text-pn-ink">{isTr ? 'Kanal dağılımı' : 'Channels'}</h2>
+        {caption && <p className="mt-1 text-[13px] text-[#9A9A9A]">{caption}</p>}
       </header>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-3.5">
         {sorted.map((c) => {
           const pct = total > 0 ? (c.count / total) * 100 : 0;
           return (
-            <li key={c.platform} className="flex items-center gap-3">
-              <span
-                aria-hidden="true"
-                className="shrink-0 inline-block h-2 w-2 rounded-full"
-                style={{ background: c.color }}
-              />
-              <span className="text-[13px] font-medium text-pn-ink min-w-[100px] truncate">
-                {c.label}
-              </span>
-              <div className="flex-1 h-1.5 rounded-full bg-pn-canvas overflow-hidden">
+            <li key={c.platform} className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex min-w-0 items-center gap-2 text-[14px] font-medium text-pn-ink">
+                  <span aria-hidden="true" className="pn-legend-dot" style={{ background: c.color }} />
+                  <span className="truncate">{c.label}</span>
+                </span>
+                <span className="shrink-0 text-[13px] tabular-nums text-[#9A9A9A]">
+                  <span className="font-medium text-pn-ink">{c.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}</span>
+                  {' · '}
+                  {isTr ? `%${Math.round(pct)}` : `${Math.round(pct)}%`}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-pn-canvas">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.max(2, pct)}%`, background: c.color }}
                 />
               </div>
-              <span className="tabular-nums text-[12px] text-[#737373] tabular-nums shrink-0 w-[78px] text-right">
-                {c.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')} ·{' '}
-                {isTr ? `%${Math.round(pct)}` : `${Math.round(pct)}%`}
-              </span>
             </li>
           );
         })}

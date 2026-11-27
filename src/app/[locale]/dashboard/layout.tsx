@@ -114,8 +114,8 @@ export default async function DashboardLayout({
       return (
         <div className="bz-panel min-h-dvh bg-pn-canvas">
           {/* Admin preview of the owner panel: a dark Pano bar instead of the
-              owner navigation (docs/design/DASHBOARD_DESIGN.md §5.1), deep purple. */}
-          <div className="mx-2 mt-2 flex h-14 items-center justify-between gap-3 rounded-[24px] bg-[#3B1F8F] px-5 text-white">
+              owner navigation (docs/design/DASHBOARD_DESIGN.md §5.1), black. */}
+          <div className="mx-2 mt-2 flex h-14 items-center justify-between gap-3 rounded-[24px] bg-[#000000] px-5 text-white">
             <p className="min-w-0 truncate text-[13px] text-white/70 sm:text-[14px]">
               {locale === 'en' ? 'Admin view' : 'Admin görünümü'} · {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
             </p>

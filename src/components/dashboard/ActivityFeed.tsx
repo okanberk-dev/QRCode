@@ -20,7 +20,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowRight,
+  ArrowUpRight,
   MessageSquare,
   Reply,
   Settings,
@@ -44,14 +44,14 @@ const SENTIMENT_DOT: Record<ActivitySentiment, string> = {
   neg: '#DC2626',
 };
 
-const TYPE_META: Record<
-  ActivityType,
-  { icon: typeof MessageSquare; tint: string; bg: string }
-> = {
-  feedback: { icon: MessageSquare, tint: '#000000', bg: '#F6F6F6' },
-  reply: { icon: Reply, tint: '#5D3EBC', bg: '#EFEAFB' },
-  ai_draft: { icon: Sparkles, tint: '#FFFFFF', bg: '#5D3EBC' },
-  system: { icon: Settings, tint: '#737373', bg: '#F5F5F5' },
+// Icon circle per event type (Fintora notification list): black with a
+// white icon for feedback and AI drafts, light green with a black icon for
+// replies, white with a grey icon for system events.
+const TYPE_META: Record<ActivityType, { icon: typeof MessageSquare; circle: string }> = {
+  feedback: { icon: MessageSquare, circle: 'bg-pn-accent text-white' },
+  reply: { icon: Reply, circle: 'bg-pn-accent-soft text-pn-accent' },
+  ai_draft: { icon: Sparkles, circle: 'bg-pn-accent text-white' },
+  system: { icon: Settings, circle: 'bg-pn-accent-soft text-pn-accent' },
 };
 
 const TOAST_AUTO_DISMISS_MS = 5000;
@@ -210,7 +210,7 @@ function NewEventsToast({
     <div
       role="status"
       aria-live="polite"
-      className="mb-3 inline-flex items-center gap-2 rounded-full border border-pn-accent-hover bg-pn-accent-soft px-3 py-1.5 text-[12px] text-pn-ink"
+      className="mb-3 inline-flex items-center gap-2 rounded-full bg-pn-accent-soft py-1 pl-3 pr-1 text-[13px] font-medium text-pn-accent"
     >
       <Sparkles size={12} aria-hidden="true" />
       <span>
@@ -225,7 +225,7 @@ function NewEventsToast({
       <button
         type="button"
         onClick={onDismiss}
-        className="bz-btn-icon ml-1"
+        className="bz-btn-icon ml-1 h-8 w-8"
         aria-label={isTr ? 'Bildirimi kapat' : 'Dismiss notification'}
       >
         <X size={12} aria-hidden="true" />
@@ -263,17 +263,17 @@ export function ActivityFeed({
 
   if (events.length === 0) {
     return (
-      <section className={`bz-card p-5 sm:p-7 ${className}`} aria-busy={status === 'connecting'}>
-        <header className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="pn-card-title">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
+      <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
+        <header className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
           <ConnectionBadge status={status} isTr={isTr} />
         </header>
-        <div className="flex flex-col items-center gap-2.5 py-6 text-center">
+        <div className="flex flex-col items-center gap-2.5 rounded-[16px] bg-pn-canvas px-4 py-6 text-center">
           <span
             aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-pn-canvas"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-pn-accent-soft text-pn-accent"
           >
-            <Sparkles size={16} strokeWidth={1.6} className="text-[#A3A3A3]" />
+            <Sparkles size={17} aria-hidden="true" />
           </span>
           <p className="text-[13px] leading-[1.5] text-[#525252] max-w-[260px]">
             {isTr
@@ -286,29 +286,20 @@ export function ActivityFeed({
   }
 
   return (
-    <section className={`bz-card p-5 sm:p-7 ${className}`} aria-busy={status === 'connecting'}>
-      <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h2 className="pn-card-title">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
+    <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
           <ConnectionBadge status={status} isTr={isTr} />
         </div>
-        {/*
-          Stage 80 §38.160 — "Tüm aktiviteyi gör" CTA mobile 44px
-          touch target garantisi (WCAG 2.5.5). sm:+ desktop'ta
-          mevcut compact link intact. Realtime push state (§38.86)
-          aria-live polite NotificationBell ile aynı paterni paralel.
-
-          Stage 81 §38.161 — `min-h-[44px] sm:min-h-0` inline pattern
-          → `bz-touch-target` utility migrate (CLAUDE.md §38.49 dead
-          utility class disipline, callsite adopt). sm:+ desktop'ta
-          override gerekmez (utility sadece mobile'da min-h sağlar).
-        */}
+        {/* §38.160 — 44px hit area; Fintora ↗ circle. */}
         <Link
           href={viewAllHref}
-          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-pn-ink bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 -my-3 sm:m-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:rounded-none hover:bg-pn-canvas sm:hover:bg-transparent"
+          className="pn-arrow-btn"
+          aria-label={isTr ? 'Tüm aktiviteyi gör' : 'See all activity'}
+          title={isTr ? 'Tümü' : 'All'}
         >
-          {isTr ? 'Tümü' : 'All'}
-          <ArrowRight size={11} strokeWidth={2} />
+          <ArrowUpRight size={18} aria-hidden="true" />
         </Link>
       </header>
 
@@ -321,13 +312,13 @@ export function ActivityFeed({
         isTr={isTr}
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {groupedEvents.map((group) => (
           <section key={group.label} aria-label={group.label}>
-            <h3 className="mb-1 text-[13px] font-normal text-[#9A9A9A]">
+            <h3 className="mb-2 text-[13px] font-normal text-[#9A9A9A]">
               {group.label}
             </h3>
-            <ol className="flex flex-col">
+            <ol className="flex flex-col gap-2">
               {group.events.map((event) => {
                 const dotColor = SENTIMENT_DOT[event.sentiment];
                 const meta = TYPE_META[event.type];
@@ -354,13 +345,14 @@ export function ActivityFeed({
                   ? event.target?.replace(/^★+\s*[—-]?\s*/, '').trim() ?? ''
                   : event.target;
 
-                // Pano "History" row (DASHBOARD_DESIGN.md §5.4): black icon
-                // circle, name over a grey action line, the clock on the right.
+                // Fintora notification row: icon circle (sentiment dot on its
+                // corner), name over a grey action line, rating + clock on
+                // the right, a black dot on rows that just arrived.
                 const inner = (
                   <>
                     <span
                       aria-hidden="true"
-                      className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+                      className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${meta.circle}`}
                     >
                       <Icon size={17} />
                       <span
@@ -369,7 +361,10 @@ export function ActivityFeed({
                       />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-medium text-pn-ink">{event.actor}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-[15px] font-medium text-pn-ink">{event.actor}</span>
+                        {isNew && <span className="pn-new-dot" aria-hidden="true" />}
+                      </span>
                       <span className="block truncate text-[13px] text-[#9A9A9A]">
                         {event.action}
                         {targetWithoutStars ? ` · ${targetWithoutStars}` : ''}
@@ -378,10 +373,10 @@ export function ActivityFeed({
                     <span className="flex shrink-0 flex-col items-end gap-0.5">
                       {inlineRating !== null && (
                         <span
-                          className="inline-flex items-center gap-1 text-[15px] text-pn-ink"
+                          className="inline-flex items-center gap-1 text-[15px] font-medium text-pn-ink"
                           aria-label={`${inlineRating} ${isTr ? 'yıldız' : 'stars'}`}
                         >
-                          <Star size={13} fill="currentColor" aria-hidden="true" />
+                          <Star size={13} className="text-pn-accent" fill="currentColor" aria-hidden="true" />
                           {inlineRating}
                         </span>
                       )}
@@ -392,17 +387,14 @@ export function ActivityFeed({
                     </span>
                   </>
                 );
-                const baseClass = 'group flex min-h-[56px] items-center gap-3.5 py-2';
+                const baseClass = 'pn-row min-h-[64px]';
                 const slideStyle = isNew
                   ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }
                   : undefined;
                 return (
                   <li key={event.id} style={slideStyle}>
                     {event.href ? (
-                      <Link
-                        href={event.href}
-                        className={`${baseClass} -mx-3 rounded-[20px] px-3 transition-colors duration-200 hover:bg-pn-canvas`}
-                      >
+                      <Link href={event.href} className={baseClass}>
                         {inner}
                       </Link>
                     ) : (

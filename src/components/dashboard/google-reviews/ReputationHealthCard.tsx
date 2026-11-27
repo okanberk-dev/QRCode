@@ -306,7 +306,7 @@ function BreakdownBar({ label, value }: { label: string; value: number }) {
         <span className="text-[13px] text-[#666666]">{label}</span>
         <span className="tabular-nums text-[20px] font-medium leading-none tracking-[-0.02em] text-pn-ink">{value}</span>
       </div>
-      {/* Pano progress: purple fill, hatched grey remainder. */}
+      {/* Pano progress: black fill, hatched grey remainder. */}
       <div className="pn-hatch h-2.5 overflow-hidden rounded-full">
         <div
           className="h-full rounded-full bg-pn-accent transition-[width] duration-500"

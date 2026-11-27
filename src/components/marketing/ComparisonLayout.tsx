@@ -137,7 +137,7 @@ export default function ComparisonLayout({
                 <div
                   key={group.title}
                   className={`rounded-[20px] border p-6 sm:p-8 ${
-                    gi === 0 ? 'border-[#EDEDED] bg-white' : 'border-[#8C6CF0] bg-[#EFEAFB]/50'
+                    gi === 0 ? 'border-[#EDEDED] bg-white' : 'border-[#C6F24E] bg-[#EAF9B8]/50'
                   }`}
                 >
                   <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A]">{group.title}</h3>
@@ -147,10 +147,10 @@ export default function ComparisonLayout({
                         <span
                           aria-hidden="true"
                           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                            gi === 0 ? 'bg-[#F2F2F2]' : 'bg-[#5D3EBC]'
+                            gi === 0 ? 'bg-[#F2F2F2]' : 'bg-[#C6F24E]'
                           }`}
                         >
-                          <Check size={12} strokeWidth={2.75} className={gi === 0 ? 'text-[#0A0A0A]' : 'text-white'} />
+                          <Check size={12} strokeWidth={2.75} className="text-[#0A0A0A]" />
                         </span>
                         {item}
                       </li>
@@ -175,7 +175,7 @@ export default function ComparisonLayout({
                 <li key={step.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[14px] font-semibold text-white"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
                   >
                     {i + 1}
                   </span>

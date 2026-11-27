@@ -138,7 +138,7 @@ export function PhonePreview({
 
   const highlight =
     focusItemId && SAFE_ID.test(focusItemId) ? (
-      <style>{`[data-preview-root="${uid}"] [data-pid="${focusItemId}"]{outline:2px solid #5D3EBC;outline-offset:3px;border-radius:14px;box-shadow:0 0 0 6px rgba(93,62,188,.18)}`}</style>
+      <style>{`[data-preview-root="${uid}"] [data-pid="${focusItemId}"]{outline:2px solid #111110;outline-offset:3px;border-radius:14px;box-shadow:0 0 0 6px rgba(17,17,16,.18)}`}</style>
     ) : null;
 
   // The frame (fixed size, zoom, containment) does not scroll; the scroller inside it does.

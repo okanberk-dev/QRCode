@@ -23,7 +23,7 @@ interface AdminFeedbackListItemProps {
  * Admin review row — same anatomy as the owner row (Fintora list row: 40px
  * rating circle · name + age · two-line comment · platform / business /
  * status chips) with a bulk-select checkbox column first. Unread rows keep
- * the grey fill and a purple dot; the open review is lavender. The business
+ * the grey fill and a black dot; the open review is light green. The business
  * name is always shown: the admin inbox spans every business.
  */
 export function AdminFeedbackListItem({

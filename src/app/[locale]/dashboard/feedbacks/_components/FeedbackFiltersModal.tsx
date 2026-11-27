@@ -11,10 +11,10 @@ import type { Locale } from '@/lib/translations';
 import type { HasReplyFilter, PlatformFilter } from './types';
 
 /**
- * Mobile (< md) filter sheet. md+ shows the same filters inline in the
- * toolbar (selects + "Yanıtsızlar" / "Yalnız işaretliler" toggles, same
- * labels as here), so there is no md+ modal any more. Every control applies
- * immediately; the footer button only closes the sheet.
+ * Filter sheet for the owner review inbox, opened by the toolbar's
+ * "Filtreler" button on every width (date, rating, platform and the state
+ * toggles). Every control applies immediately; the footer button only
+ * closes the sheet.
  */
 interface FeedbackFiltersModalProps {
   open: boolean;
@@ -38,6 +38,10 @@ interface FeedbackFiltersModalProps {
   flaggedOnly: boolean;
   setFlaggedOnly: (v: boolean) => void;
 
+  /** "Yönlendirmeler": high ratings sent to a platform (no text). */
+  redirectsOnly?: boolean;
+  setRedirectsOnly?: (v: boolean) => void;
+
   hasActiveFilter: boolean;
   onResetFilters: () => void;
 }
@@ -57,6 +61,8 @@ export function FeedbackFiltersModal({
   setHasReplyFilter,
   flaggedOnly,
   setFlaggedOnly,
+  redirectsOnly,
+  setRedirectsOnly,
   hasActiveFilter,
   onResetFilters,
 }: FeedbackFiltersModalProps) {
@@ -144,6 +150,21 @@ export function FeedbackFiltersModal({
             >
               {isTr ? 'Yalnız işaretliler' : 'Flagged only'}
             </button>
+            {setRedirectsOnly && (
+              <button
+                type="button"
+                onClick={() => setRedirectsOnly(!redirectsOnly)}
+                className={`${redirectsOnly ? 'bz-btn-lime' : 'bz-btn'} sm:min-h-10 sm:px-4 sm:text-[13px]`}
+                aria-pressed={Boolean(redirectsOnly)}
+                title={
+                  isTr
+                    ? 'Yüksek puanla platforma yönlendirilen müşteriler (metin yok)'
+                    : 'Customers sent to a platform with a high rating (no text)'
+                }
+              >
+                {isTr ? 'Yönlendirmeler' : 'Redirects'}
+              </button>
+            )}
           </div>
         </div>
       </div>

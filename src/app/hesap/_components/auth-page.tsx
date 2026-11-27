@@ -54,7 +54,7 @@ export async function renderAccountPage(searchParams: AccountSearchParams, mode:
   return (
     <AccountShell locale={locale} signedIn={false}>
       {deleted && (
-        <p role="status" className="mb-4 rounded-[20px] bg-[#EFEAFB] px-4 py-3 text-[14px] text-[#3B1F8F]">
+        <p role="status" className="mb-4 rounded-[20px] bg-[#F1FDF3] px-4 py-3 text-[14px] text-[#000000]">
           {locale === 'tr' ? 'Hesabınız silindi.' : 'Your account was deleted.'}
         </p>
       )}

@@ -23,6 +23,15 @@ interface BarChartProps {
   secondaryValues?: { label: string; values: number[] };
 }
 
+const HATCH = "repeating-linear-gradient(-45deg, rgba(255,255,255,0.26) 0 3px, transparent 3px 8px)";
+const IDLE_BAR = "#E3E3E6";
+
+/**
+ * Small bar chart (Fintora "Transaction Volume", docs/design/DASHBOARD_DESIGN.md
+ * §5.9): thin round bars, the peak bar black with a diagonal hatch, the
+ * rest light grey; 12px grey labels with the peak one in ink; a black
+ * tooltip.
+ */
 export function BarChart({
   data,
   maxValue,
@@ -34,14 +43,13 @@ export function BarChart({
 }: BarChartProps) {
   if (!data?.length) return null;
   const max = maxValue || Math.max(...data.map((d) => d.value)) || 1;
-  // showValues mode'da üstte value badge için 24px ek alan ayır (eski versiyon
-  // peak bar'da badge container'dan taşıyordu — Pzt 5 yorum, badge "5" üstte
-  // kayboluyordu).
+  // showValues mode reserves 24px on top for the value label.
   const topReserve = showValues ? 24 : 0;
   const innerMaxBarHeight = Math.max(height - 24 - topReserve, 4);
+  const peakFill = `${HATCH}, ${accent}`;
   return (
     <div
-      className={`flex items-end gap-2 ${className}`}
+      className={`flex items-end gap-1.5 sm:gap-2 ${className}`}
       style={{ height, padding: `${topReserve}px 0 24px` }}
       role="img"
       aria-label="bar chart"
@@ -55,50 +63,55 @@ export function BarChart({
           tooltipParts.push(`${secondaryValues.label}: ${secVal}`);
         }
         const tooltipText = tooltipParts.join("\n");
+        const label = (
+          <div
+            className="absolute whitespace-nowrap"
+            style={{
+              bottom: -22,
+              fontSize: 12,
+              color: isPeak ? "var(--color-pn-ink)" : "#9A9A9A",
+              fontWeight: isPeak ? 500 : 400,
+            }}
+          >
+            {d.label}
+          </div>
+        );
 
         if (showValues) {
           return (
             <button
               key={`${d.label}-${i}`}
               type="button"
-              className="group flex-1 flex flex-col items-center gap-1.5 relative h-full justify-end bg-transparent border-0 p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 rounded"
+              className="group relative flex h-full flex-1 cursor-pointer flex-col items-center justify-end gap-1.5 rounded-full border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
               title={tooltipText}
               aria-label={tooltipText.replace(/\n/g, ", ")}
             >
-              {/* Value badge above bar — 6px gap, top alan padding-top ile ayrılmış */}
+              {/* Value above the bar, 6px gap; the top padding keeps it inside. */}
               <span
-                className="absolute font-semibold text-pn-ink transition-opacity"
+                className="absolute tabular-nums transition-opacity"
                 style={{
                   bottom: Math.max(h, 4) + 6,
-                  fontSize: 11,
-                  fontFamily: "var(--font-mono)",
+                  fontSize: 12,
+                  fontWeight: isPeak ? 500 : 400,
+                  color: isPeak ? "var(--color-pn-ink)" : "#737373",
                 }}
               >
                 {d.value}
               </span>
               <div
-                className="w-full rounded-full transition-colors duration-200 group-hover:opacity-90"
+                className="w-full rounded-full transition-[filter] duration-200 group-hover:brightness-95"
                 style={{
-                  maxWidth: 28,
+                  maxWidth: 24,
                   height: Math.max(h, 4),
-                  background: isPeak ? accent : "#D4D4D4",
+                  background: isPeak ? peakFill : IDLE_BAR,
                 }}
               />
-              <div
-                className="absolute font-medium"
-                style={{ bottom: -22, fontSize: 10, color: "#737373" }}
-              >
-                {d.label}
-              </div>
-              {/* Hover tooltip card — hidden by default, shown on group-hover */}
+              {label}
+              {/* Black tooltip — shown on hover / focus. */}
               {secondaryValues && secVal !== undefined && (
                 <span
-                  className="pointer-events-none absolute z-10 rounded-full bg-pn-ink px-3 py-1.5 text-[12px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-                  style={{
-                    bottom: Math.max(h, 4) + 56,
-                    fontFamily: "var(--font-mono)",
-                    whiteSpace: "nowrap",
-                  }}
+                  className="pointer-events-none absolute z-10 whitespace-nowrap rounded-[12px] bg-pn-ink px-3 py-1.5 text-[12px] font-medium tabular-nums text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                  style={{ bottom: Math.max(h, 4) + 28 }}
                 >
                   {secondaryValues.label}: {secVal}
                 </span>
@@ -110,23 +123,18 @@ export function BarChart({
         return (
           <div
             key={`${d.label}-${i}`}
-            className="flex-1 flex flex-col items-center gap-1.5 relative h-full justify-end"
+            className="relative flex h-full flex-1 flex-col items-center justify-end gap-1.5"
           >
             <div
               className="w-full rounded-full transition-all duration-200"
               style={{
-                maxWidth: 28,
+                maxWidth: 24,
                 height: Math.max(h, 4),
-                background: isPeak ? accent : "#E5E5E5",
+                background: isPeak ? peakFill : IDLE_BAR,
               }}
               title={tooltipText}
             />
-            <div
-              className="absolute font-medium"
-              style={{ bottom: -22, fontSize: 10, color: "#737373" }}
-            >
-              {d.label}
-            </div>
+            {label}
           </div>
         );
       })}

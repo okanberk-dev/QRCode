@@ -475,7 +475,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
         </div>
       ) : (
         /* §38.224 — Tier card grid (marketing /pricing parity).
-           Featured tier deep purple variant (#3B1F8F + lavender accent), normal tier
+           Featured tier black variant (#000000 + light green accent), normal tier
            white + EDEDED border. InlinePriceCell'lar hero price'ın altında —
            Stage 139 inline edit pattern korunur, modal full-form ile aynı. */
         <div
@@ -497,7 +497,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 key={p.id}
                 className={`relative flex flex-col rounded-[28px] p-6 sm:p-7 ${
                   isDark
-                    ? 'bg-[#3B1F8F] text-white shadow-[0_20px_60px_rgba(59,31,143,0.22)]'
+                    ? 'bg-[#000000] text-white shadow-[0_20px_60px_rgba(59,31,143,0.22)]'
                     : 'border border-pn-line bg-white'
                 } ${!p.isActive ? 'opacity-70' : ''}`}
               >
@@ -561,7 +561,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     >
                       <span
                         className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          isDark ? 'bg-[#DCD3F6]' : userCount > 0 ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
+                          isDark ? 'bg-[#CDEFD6]' : userCount > 0 ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
                         }`}
                       />
                       {userCount > 0
@@ -648,7 +648,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     >
                       <span
                         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                          isDark ? 'bg-[#DCD3F6]' : 'bg-pn-accent-soft'
+                          isDark ? 'bg-[#CDEFD6]' : 'bg-pn-accent-soft'
                         }`}
                       >
                         <Crown size={9} className="text-pn-ink" strokeWidth={3} />

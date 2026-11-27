@@ -53,7 +53,7 @@ export function CategoryChips({
             aria-current={active ? 'true' : undefined}
             aria-label={[copy.fmt.categoryChipLabel(c.name, count), c.isVisible ? null : copy.category.hidden].filter(Boolean).join(', ')}
             className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${
-              active ? 'border-[#DCD3F6] bg-pn-accent-soft text-pn-accent' : 'border-pn-line-strong bg-white text-[#525252] hover:text-pn-ink'
+              active ? 'border-[#CDEFD6] bg-pn-accent-soft text-pn-accent' : 'border-pn-line-strong bg-white text-[#525252] hover:text-pn-ink'
             }`}
           >
             {!c.isVisible && <EyeOff size={12} strokeWidth={2} aria-hidden="true" />}

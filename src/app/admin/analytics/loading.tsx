@@ -47,7 +47,7 @@ export default function Loading() {
         <SkBox className="h-5 w-28" />
         <SkBox className="h-64 w-full" />
       </div>
-      <div className="h-40 rounded-[18px] bg-[#3B1F8F]" aria-hidden="true" />
+      <div className="h-40 rounded-[18px] bg-[#000000]" aria-hidden="true" />
     </SkPageShell>
   );
 }

@@ -55,7 +55,7 @@ export function TypefacePicker({
             onClick={() => onChange(key)}
             onKeyDown={(e) => onKeyDown(e, index)}
             className={`relative flex min-w-0 items-center gap-3.5 rounded-[20px] bg-white p-3 text-left transition-shadow duration-[160ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-              on ? 'shadow-[0_0_0_2px_#5D3EBC]' : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3]'
+              on ? 'shadow-[0_0_0_2px_#111110]' : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3]'
             }`}
             style={{ fontSynthesis: 'none' }}
           >

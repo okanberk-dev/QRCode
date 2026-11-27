@@ -63,7 +63,7 @@ export function PanelSelectionBar({
       aria-label={ariaLabel}
       className="fixed inset-x-3 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 lg:bottom-4 sm:left-1/2 sm:right-auto sm:w-[min(720px,calc(100vw-32px))] sm:-translate-x-1/2"
     >
-      <div className="flex flex-col gap-3 rounded-[28px] bg-[#3B1F8F] p-3 text-white shadow-[0_24px_60px_-20px_rgba(59,31,143,0.55)] sm:flex-row sm:items-center sm:rounded-full sm:pl-5">
+      <div className="flex flex-col gap-3 rounded-[28px] bg-[#000000] p-3 text-white shadow-[0_24px_60px_-20px_rgba(59,31,143,0.55)] sm:flex-row sm:items-center sm:rounded-full sm:pl-5">
         <div className="flex items-center gap-2 sm:contents">
           <div className="min-w-0 flex-1 sm:order-1 sm:flex-none sm:pl-1">
             <div className={countClassName} aria-live="polite">

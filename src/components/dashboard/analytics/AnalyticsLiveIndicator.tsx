@@ -25,30 +25,18 @@ export interface AnalyticsLiveIndicatorProps {
 export function AnalyticsLiveIndicator({ isTr = true }: AnalyticsLiveIndicatorProps) {
   return (
     <div
-      className="inline-flex items-center gap-2"
+      className="inline-flex h-8 items-center gap-2 rounded-full bg-white px-3"
       role="status"
       aria-live="polite"
       aria-label={
         isTr ? 'Analitik verileri bu sayfada güncel' : 'Analytics data live on this page'
       }
     >
-      <span
-        aria-hidden="true"
-        className="relative inline-flex h-1.5 w-1.5"
-      >
-        <span
-          className="absolute inset-0 rounded-full"
-          style={{
-            background: '#22C55E',
-            boxShadow: '0 0 0 3px rgba(34,197,94,0.18)',
-          }}
-        />
+      <span aria-hidden="true" className="relative inline-flex h-2 w-2">
+        <span className="absolute inset-0 rounded-full bg-[#23863A] shadow-[0_0_0_3px_rgba(35,134,58,0.16)]" />
       </span>
-      <span
-        className="text-[13px] font-medium text-[12px]"
-        style={{ color: '#22C55E', letterSpacing: '0.18em' }}
-      >
-        {isTr ? 'GÜNCEL · BU SAYFA' : 'LIVE · THIS PAGE'}
+      <span className="text-[13px] font-medium text-[#23863A]">
+        {isTr ? 'Güncel · bu sayfa' : 'Live · this page'}
       </span>
     </div>
   );

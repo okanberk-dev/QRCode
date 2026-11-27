@@ -2,7 +2,7 @@ import { AlertTriangle, Award, Sparkles, TrendingUp } from 'lucide-react';
 import { toSentenceCase } from '@/components/panel/pano/sentence-case';
 
 // AI insights card (owner + admin analytics). Fintora list card: white card,
-// a 40px purple sparkle circle in the header, one grey row per insight (icon
+// a 40px black sparkle circle in the header, one grey row per insight (icon
 // circle + short title + explanation) and an optional quiet source footer.
 // No dark fill, gradient or glow.
 //

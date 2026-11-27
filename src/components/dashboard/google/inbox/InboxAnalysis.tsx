@@ -123,7 +123,7 @@ export function InboxAnalysis({
                         <span className="h-2 flex-1 overflow-hidden rounded-full bg-black/[0.06]">
                           <span
                             className="block h-full rounded-full"
-                            style={{ width: `${(d.count / max) * 100}%`, background: d.rating >= 4 ? '#5D3EBC' : d.rating === 3 ? '#D97706' : '#D92D20' }}
+                            style={{ width: `${(d.count / max) * 100}%`, background: d.rating >= 4 ? '#111110' : d.rating === 3 ? '#D97706' : '#D92D20' }}
                           />
                         </span>
                         <span className="w-10 text-right tabular-nums text-[#525252]">{d.count}</span>

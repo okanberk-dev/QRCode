@@ -60,7 +60,7 @@ export default function FaqAccordion({ faqs, defaultOpen = [0, 1], headingLevel 
             onClick={() => toggle(i)}
             aria-expanded={isOpen}
             aria-controls={panelId}
-            className="flex w-full items-start justify-between gap-5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-4"
+            className="flex w-full items-start justify-between gap-5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-4"
           >
             <span
               className="text-[18px] sm:text-[20px] font-medium leading-[1.25] tracking-[-0.015em] text-[#0A0A0A]"
@@ -89,7 +89,7 @@ export default function FaqAccordion({ faqs, defaultOpen = [0, 1], headingLevel 
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="inline-flex min-h-[44px] items-center text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+                        className="inline-flex min-h-[44px] items-center text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                       >
                         {link.label}
                       </Link>

@@ -188,7 +188,7 @@ export default function UserDetailPage({
           label="Rol"
           value={roleMeta.label}
           icon={<ShieldCheck size={14} strokeWidth={2} />}
-          accent={user.role === 'superadmin' ? '#5D3EBC' : undefined}
+          accent={user.role === 'superadmin' ? '#111110' : undefined}
         />
         <StatCard
           label="Kapsam"

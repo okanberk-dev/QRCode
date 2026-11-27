@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BedDouble, Check, ChevronDown, ChevronRight, Coffee, Croissant, ListPlus,
+  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BedDouble, ChevronDown, ChevronRight, Coffee, Croissant, ListPlus,
   Loader2, PartyPopper, PencilLine, Pizza, Plus, Trash2, Truck, UtensilsCrossed, Wine,
 } from 'lucide-react';
-import { AlertBanner, ProgressBar, WizardSteps, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, ProgressBar, useConfirmDialog } from '@/components/ui';
+import {
+  WIZARD_BACK_CLASS,
+  WIZARD_NEXT_CLASS,
+  WizardCheck,
+  WizardFooter,
+  WizardSteps,
+  wizardChoiceClass,
+  wizardChoiceIconClass,
+} from '@/components/ui/WizardSteps';
 import { formatPrice } from '@/lib/format';
 import { MENU_BULK_MAX_ITEMS } from '@/lib/menu-bulk-parse';
 import type { SectorKey } from '@/lib/sector-platforms';
@@ -24,19 +33,7 @@ type Step = 0 | 1 | 2;
 
 // ── Preset cards (ported from the old wizard) ──
 
-const PRESET_PALETTE: Record<StarterPreset['id'], { bg: string; fg: string }> = {
-  restaurant: { bg: '#FEF3C7', fg: '#854D0E' },
-  cafe: { bg: '#F5F3FF', fg: '#5B21B6' },
-  fastfood: { bg: '#FEF2F2', fg: '#991B1B' },
-  bakery: { bg: '#FFEDD5', fg: '#9A3412' },
-  bar: { bg: '#ECFEFF', fg: '#155E75' },
-  hotel: { bg: '#EFF6FF', fg: '#1E40AF' },
-  winebar: { bg: '#FAE8FF', fg: '#86198F' },
-  foodtruck: { bg: '#FEF3C7', fg: '#A16207' },
-  catering: { bg: '#ECFDF5', fg: '#14532D' },
-};
-
-function PresetGlyph({ id }: { id: StarterPreset['id'] }) {
+function PresetGlyph({ id, selected }: { id: StarterPreset['id']; selected: boolean }) {
   const Icon =
     id === 'restaurant' ? UtensilsCrossed
     : id === 'cafe' ? Coffee
@@ -46,10 +43,9 @@ function PresetGlyph({ id }: { id: StarterPreset['id'] }) {
     : id === 'foodtruck' ? Truck
     : id === 'catering' ? PartyPopper
     : Wine;
-  const { bg, fg } = PRESET_PALETTE[id];
   return (
-    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: bg, color: fg }} aria-hidden="true">
-      <Icon size={15} strokeWidth={2} />
+    <span className={wizardChoiceIconClass(selected)} aria-hidden="true">
+      <Icon size={17} strokeWidth={1.8} />
     </span>
   );
 }
@@ -74,32 +70,41 @@ function PresetCard({
       onClick={onPick}
       disabled={disabled}
       aria-pressed={selected}
-      className={`group relative flex min-h-[44px] w-full flex-col items-start gap-2 rounded-[20px] border bg-white p-3.5 text-left transition-[border-color,box-shadow] duration-[120ms] hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-60 ${
-        selected ? 'border-pn-accent shadow-[0_0_0_1px_#5D3EBC]' : 'border-pn-line-strong'
-      }`}
+      className={`${wizardChoiceClass(selected, 'card', 'stack')} h-full active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`}
     >
-      <span className="flex w-full items-center justify-between gap-2">
-        <span className="inline-flex min-w-0 items-center gap-2">
-          <PresetGlyph id={preset.id} />
-          <span className="truncate text-[14px] font-medium text-pn-ink">{localized.label}</span>
+      <span className="flex w-full items-center justify-between gap-3">
+        <span className="inline-flex min-w-0 items-center gap-3">
+          <PresetGlyph id={preset.id} selected={selected} />
+          <span className="min-w-0">
+            <span className="block truncate text-[14px] font-medium text-pn-ink">{localized.label}</span>
+            <span className="block text-[13px] leading-[1.4] text-[#737373]">{localized.hint}</span>
+          </span>
         </span>
         {selected ? (
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white" aria-hidden="true">
-            <Check size={12} strokeWidth={3} />
-          </span>
+          <WizardCheck selected />
         ) : (
-          <ChevronRight size={14} strokeWidth={2} className="shrink-0 text-[#A3A3A3] group-hover:text-pn-ink" aria-hidden="true" />
+          <span
+            className="hidden h-8 shrink-0 items-center rounded-full bg-pn-accent px-3.5 text-[13px] font-medium text-white transition-colors group-hover:bg-pn-accent-hover @min-[400px]:inline-flex"
+            aria-hidden="true"
+          >
+            {isTr ? 'Kullan' : 'Use'}
+          </span>
         )}
       </span>
-      <span className="text-[13px] text-[#737373]">{localized.hint}</span>
-      <span className="flex flex-wrap gap-1">
+      {/* Soft preview: the template's first categories. */}
+      <span className="flex flex-wrap gap-1.5">
         {localized.categories.slice(0, CARD_CHIPS).map((c) => (
-          <span key={c} className="inline-flex items-center rounded-full border border-pn-line bg-pn-canvas px-2 py-0.5 text-[12px] font-medium text-[#525252]">
+          <span
+            key={c}
+            className={`inline-flex h-7 items-center rounded-full px-2.5 text-[12px] font-medium text-[#525252] ${
+              selected ? 'bg-white' : 'bg-white max-sm:bg-[#F6F6F6]'
+            }`}
+          >
             {c}
           </span>
         ))}
         {extra > 0 && (
-          <span className="inline-flex items-center rounded-full border border-dashed border-pn-line-strong px-2 py-0.5 text-[12px] font-medium text-[#737373]">
+          <span className="inline-flex h-7 items-center rounded-full px-2.5 text-[12px] font-medium text-[#737373]">
             +{extra}
           </span>
         )}
@@ -308,14 +313,14 @@ export function SetupWizard({
         className="outline-none"
       >
         <span className="sr-only">{f.stepOf(index + 1)}: </span>
-        <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-pn-ink sm:text-[20px]">{title}</span>
+        <span className="text-[18px] font-medium leading-6 tracking-[-0.015em] text-pn-ink">{title}</span>
       </h3>
-      <p className="text-[13px] leading-[1.55] text-[#525252]">{body}</p>
+      <p className="text-[14px] leading-[1.5] text-[#737373]">{body}</p>
     </div>
   );
 
   const presetGrid = (list: StarterPreset[]) => (
-    <div className="grid gap-2.5 @min-[560px]:grid-cols-2">
+    <div className="grid gap-2 @min-[560px]:grid-cols-2">
       {list.map((p) => (
         <PresetCard key={p.id} preset={p} isTr={isTr} selected={choice === p.id} disabled={locked} onPick={() => pick(p.id)} />
       ))}
@@ -333,7 +338,7 @@ export function SetupWizard({
     <section
       ref={topRef}
       aria-labelledby="menu-setup-wizard-title"
-      className="@container scroll-mt-[124px] sm:rounded-xl sm:border sm:border-pn-line-strong sm:bg-white sm:px-6 sm:py-6 sm:shadow-[0_1px_2px_rgba(10,10,10,0.05)] lg:scroll-mt-[72px] lg:px-8 lg:py-8"
+      className="bz-card @container scroll-mt-[124px] p-5 sm:p-7 lg:scroll-mt-[72px]"
     >
       <div className="space-y-5">
         {restored && (
@@ -347,15 +352,15 @@ export function SetupWizard({
           </AlertBanner>
         )}
 
-        <div className="flex items-start gap-3.5">
-          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink sm:inline-flex" aria-hidden="true">
-            <UtensilsCrossed size={18} strokeWidth={2} />
+        <div className="flex items-start gap-3">
+          <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white sm:inline-flex" aria-hidden="true">
+            <UtensilsCrossed size={17} strokeWidth={1.8} />
           </span>
           <div className="min-w-0">
             <h2 id="menu-setup-wizard-title">
-              <span className="bz-h-tight [word-spacing:0.1em] text-[20px] text-pn-ink sm:text-[22px]">{s.title}</span>
+              <span className="text-[20px] font-medium leading-[26px] tracking-[-0.015em] text-pn-ink">{s.title}</span>
             </h2>
-            <p className="mt-1 max-w-[560px] text-[13px] leading-relaxed text-[#525252]">{s.body}</p>
+            <p className="mt-1 max-w-[560px] text-[14px] leading-[1.5] text-[#737373]">{s.body}</p>
           </div>
         </div>
 
@@ -366,6 +371,8 @@ export function SetupWizard({
           canSelect={(i) => !locked && i <= reached}
           onSelect={(i) => goTo(i as Step)}
           ariaLabel={s.stepsAria}
+          locale={isTr ? 'tr' : 'en'}
+          surface="card"
         />
 
         {error && <AlertBanner kind="danger">{error}</AlertBanner>}
@@ -382,7 +389,7 @@ export function SetupWizard({
                   type="button"
                   onClick={() => setShowMore((v) => !v)}
                   aria-expanded={showMore}
-                  className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-pn-ink"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-pn-canvas px-4 text-[13px] font-medium text-pn-ink transition-colors hover:bg-[#EBEBEB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
                 >
                   <ChevronDown size={14} strokeWidth={2} className={showMore ? 'rotate-180' : ''} aria-hidden="true" />
                   {showMore ? s.lessTemplates : `${s.moreTemplates} (${others.length})`}
@@ -393,18 +400,20 @@ export function SetupWizard({
                 onClick={() => pick('custom')}
                 disabled={locked}
                 aria-pressed={choice === 'custom'}
-                className={`flex min-h-[56px] w-full items-center gap-3 rounded-[20px] border border-dashed bg-white p-3.5 text-left transition-colors hover:border-pn-ink disabled:opacity-60 ${
-                  choice === 'custom' ? 'border-pn-accent shadow-[0_0_0_1px_#5D3EBC]' : 'border-pn-line-strong'
-                }`}
+                className={`${wizardChoiceClass(choice === 'custom')} active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:opacity-60`}
               >
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pn-canvas text-[#525252]" aria-hidden="true">
-                  <PencilLine size={15} strokeWidth={2} />
+                <span className={wizardChoiceIconClass(choice === 'custom')} aria-hidden="true">
+                  <PencilLine size={17} strokeWidth={1.8} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[14px] font-medium text-pn-ink">{s.custom}</span>
                   <span className="block text-[13px] text-[#737373]">{s.customHint}</span>
                 </span>
-                <ChevronRight size={14} strokeWidth={2} className="shrink-0 text-[#A3A3A3]" aria-hidden="true" />
+                {choice === 'custom' ? (
+                  <WizardCheck selected />
+                ) : (
+                  <ChevronRight size={16} strokeWidth={1.8} className="shrink-0 text-[#9A9A9A]" aria-hidden="true" />
+                )}
               </button>
             </>
           ) : (
@@ -415,7 +424,7 @@ export function SetupWizard({
               </label>
               <textarea
                 id="menu-setup-paste"
-                className="bz-input min-h-[200px] font-mono text-[16px] sm:text-[14px]"
+                className="bz-input min-h-[200px] text-[16px] sm:text-[14px]"
                 rows={10}
                 value={pasteText}
                 placeholder={s.pastePlaceholder}
@@ -433,7 +442,7 @@ export function SetupWizard({
         <div hidden={step !== 1} className="space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-2">
             {heading(1, s.s1Title, s.s1Body)}
-            <span className="rounded-full bg-pn-canvas px-2.5 py-1 text-[12px] font-medium text-[#525252]">
+            <span className="inline-flex h-7 items-center rounded-full bg-pn-accent-soft px-3 text-[12px] font-medium text-pn-accent">
               {copy.fmt.categoryCount(totals.categories)}
             </span>
           </div>
@@ -447,7 +456,7 @@ export function SetupWizard({
               const err = attempted ? validation.errors[c.key] : undefined;
               const errId = `setup-cat-err-${c.key}`;
               return (
-                <li key={c.key} className="rounded-[20px] border border-pn-line bg-white p-2.5 sm:p-3">
+                <li key={c.key} className="rounded-[16px] bg-pn-canvas p-2 sm:p-2.5">
                   <div className="flex items-center gap-1.5">
                     <div className="flex shrink-0 items-center">
                       <button
@@ -474,7 +483,7 @@ export function SetupWizard({
                         if (el) inputRefs.current.set(c.key, el);
                         else inputRefs.current.delete(c.key);
                       }}
-                      className={`bz-input min-w-0 flex-1 font-body ${err ? 'border-[#DC2626]' : ''}`}
+                      className={`bz-input min-w-0 flex-1 font-body text-[16px] sm:text-[14px] ${err ? 'border-[#DC2626]' : ''}`}
                       value={c.name}
                       maxLength={SETUP_CATEGORY_NAME_MAX + 20}
                       placeholder={s.categoryPlaceholder}
@@ -517,9 +526,9 @@ export function SetupWizard({
             type="button"
             onClick={() => addCategory()}
             disabled={locked || categories.length >= SETUP_MAX_CATEGORIES + 5}
-            className="bz-btn-ghost min-h-11 w-full justify-center sm:w-auto pointer-fine:min-h-9"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-dashed border-pn-line-strong px-5 text-[14px] font-medium text-pn-ink transition-colors hover:border-pn-accent hover:bg-pn-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:w-auto"
           >
-            <Plus size={14} strokeWidth={2.25} aria-hidden="true" />
+            <Plus size={15} strokeWidth={2} aria-hidden="true" />
             {s.addCategory}
           </button>
         </div>
@@ -535,13 +544,13 @@ export function SetupWizard({
                 const open = openKey === c.key;
                 const panelId = `setup-items-${c.key}`;
                 return (
-                  <li key={c.key} className="overflow-hidden rounded-[20px] border border-pn-line bg-white">
+                  <li key={c.key} className="overflow-hidden rounded-[16px] bg-pn-canvas">
                     <button
                       type="button"
                       onClick={() => setOpenKey(open ? null : c.key)}
                       aria-expanded={open}
                       aria-controls={panelId}
-                      className="flex min-h-[52px] w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left hover:bg-pn-canvas"
+                      className="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent"
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-body text-[14px] font-medium text-pn-ink">{c.name.trim()}</span>
@@ -551,13 +560,13 @@ export function SetupWizard({
                       </span>
                       <ChevronDown size={16} strokeWidth={2} className={`shrink-0 text-[#737373] ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
                     </button>
-                    <div id={panelId} hidden={!open} className="space-y-2 border-t border-pn-line px-3.5 py-3">
+                    <div id={panelId} hidden={!open} className="space-y-2.5 border-t border-pn-line px-4 py-3">
                       <label className="sr-only" htmlFor={`${panelId}-text`}>
                         {f.itemsFor(c.name.trim())}
                       </label>
                       <textarea
                         id={`${panelId}-text`}
-                        className="bz-input min-h-[120px] font-mono text-[16px] sm:text-[13px]"
+                        className="bz-input min-h-[120px] text-[16px] sm:text-[14px]"
                         value={c.itemsText}
                         placeholder={s.itemsPlaceholder}
                         disabled={locked}
@@ -568,7 +577,7 @@ export function SetupWizard({
                           {preview.items.slice(0, MENU_BULK_MAX_ITEMS).map((it, idx) => (
                             <li
                               key={`${it.name}-${idx}`}
-                              className="inline-flex items-center gap-1 rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-ink"
+                              className="inline-flex h-7 items-center gap-1 rounded-full bg-pn-accent-soft px-2.5 text-[12px] font-medium text-pn-ink"
                             >
                               {it.name}
                               <span className="text-[#525252]">· {money(it.priceCents)}</span>
@@ -585,51 +594,53 @@ export function SetupWizard({
           </ul>
         </div>
 
-        {/* ── Actions — above the floating bottom nav on phones ── */}
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 space-y-2.5 rounded-[20px] border border-pn-line bg-white/95 px-3 py-3 backdrop-blur sm:px-4 lg:bottom-4">
-          {creating && (
-            <ProgressBar
-              value={creating.done}
-              max={Math.max(1, creating.total)}
-              ariaLabel={f.creating(creating.done, creating.total)}
-              color="#5D3EBC"
-              height={4}
-            />
-          )}
-          <div className="flex flex-wrap items-center gap-2">
+        {/* ── Actions — a floating white bar pinned to the bottom ── */}
+        <WizardFooter
+          variant="float"
+          top={
+            creating ? (
+              <ProgressBar
+                value={creating.done}
+                max={Math.max(1, creating.total)}
+                ariaLabel={f.creating(creating.done, creating.total)}
+                color="#111110"
+                height={4}
+              />
+            ) : undefined
+          }
+        >
+          <button
+            type="button"
+            onClick={() => (step === 0 ? onExit() : goTo((step - 1) as Step))}
+            disabled={locked}
+            className={`${WIZARD_BACK_CLASS} sm:mr-auto`}
+          >
+            <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
+            {s.back}
+          </button>
+          {step < 2 ? (
             <button
               type="button"
-              onClick={() => (step === 0 ? onExit() : goTo((step - 1) as Step))}
-              disabled={locked}
-              className="bz-btn-ghost min-h-11 justify-center pointer-fine:min-h-9"
+              onClick={() => goTo((step + 1) as Step)}
+              disabled={locked || !canNext}
+              className={WIZARD_NEXT_CLASS}
             >
-              <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
-              {s.back}
+              {s.next}
+              <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
             </button>
-            {step < 2 ? (
-              <button
-                type="button"
-                onClick={() => goTo((step + 1) as Step)}
-                disabled={locked || !canNext}
-                className="bz-btn-primary ml-auto min-h-11 flex-1 justify-center sm:flex-none pointer-fine:min-h-9"
-              >
-                {s.next}
-                <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void create()}
-                disabled={locked || totals.categories === 0}
-                aria-busy={creating !== null || undefined}
-                className="bz-btn-lime ml-auto min-h-11 flex-1 justify-center sm:flex-none pointer-fine:min-h-9"
-              >
-                {creating ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <ListPlus size={14} strokeWidth={2} aria-hidden="true" />}
-                {creating ? f.creating(creating.done, creating.total) : f.create(totals.categories, totals.items)}
-              </button>
-            )}
-          </div>
-        </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void create()}
+              disabled={locked || totals.categories === 0}
+              aria-busy={creating !== null || undefined}
+              className={`${WIZARD_NEXT_CLASS} leading-tight`}
+            >
+              {creating ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <ListPlus size={15} strokeWidth={2} aria-hidden="true" />}
+              {creating ? f.creating(creating.done, creating.total) : f.create(totals.categories, totals.items)}
+            </button>
+          )}
+        </WizardFooter>
       </div>
       {confirmEl}
     </section>

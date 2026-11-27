@@ -12,7 +12,7 @@ import {
 } from '@/lib/loyalty';
 
 // Buaze default when the business picked no card colour; a chosen colour wins.
-const DEFAULT_BG = '#5D3EBC';
+const DEFAULT_BG = '#111110';
 const INK = '#111110';
 
 function isLight(hex: string): boolean {

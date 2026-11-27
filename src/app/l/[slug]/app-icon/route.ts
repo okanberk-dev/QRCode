@@ -85,7 +85,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     }
   } catch {
     // Buaze default: purple tile, purple dots on the white card.
-    png = await sharp(Buffer.from(glyph(size, '#5D3EBC', '#5D3EBC'))).png().toBuffer();
+    png = await sharp(Buffer.from(glyph(size, '#111110', '#111110'))).png().toBuffer();
   }
   return new NextResponse(new Uint8Array(png), {
     headers: {

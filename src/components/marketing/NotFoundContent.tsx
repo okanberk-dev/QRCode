@@ -42,7 +42,7 @@ export default function NotFoundContent({
         {isEn ? 'This page has no pulse.' : 'Bu sayfa nabız vermiyor.'}
       </h1>
 
-      <p className="mx-auto mt-3 max-w-[480px] text-[15px] leading-[1.6] text-white/75 sm:text-[16px]">
+      <p className="mx-auto mt-3 max-w-[480px] text-[15px] leading-[1.6] text-[#A3A3A3] sm:text-[16px]">
         {isEn
           ? 'The page you are looking for may have been moved or removed, or it never existed.'
           : 'Aradığınız sayfa taşınmış, silinmiş ya da hiç var olmamış olabilir.'}
@@ -51,13 +51,13 @@ export default function NotFoundContent({
       <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <Link
           href={`/${locale}`}
-          className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-white px-6 py-3 text-[14px] font-semibold text-[#5D3EBC] transition-colors hover:bg-[#EFEAFB]"
+          className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-6 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
         >
           {isEn ? 'Back to home' : 'Ana sayfaya dön'}
         </Link>
         <Link
           href={`/${locale}/help`}
-          className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border border-white/40 px-6 py-3 text-[14px] font-medium text-white transition-colors hover:border-white/60"
+          className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border border-[#333] px-6 py-3 text-[14px] font-medium text-white transition-colors hover:border-white/60"
         >
           {isEn ? 'Get help' : 'Yardım al'}
         </Link>

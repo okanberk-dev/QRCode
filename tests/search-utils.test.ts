@@ -88,7 +88,7 @@ test('recent list: newest first, deduplicated, capped, rejects foreign paths', (
 });
 
 test('readableOn and businessAvatarColor', () => {
-  assert.equal(readableOn('#5D3EBC'), '#FFFFFF');
+  assert.equal(readableOn('#111110'), '#FFFFFF');
   assert.equal(readableOn('#FFD400'), '#111110');
   assert.equal(businessAvatarColor('#C6F24E'), null);
   assert.equal(businessAvatarColor('nope'), null);

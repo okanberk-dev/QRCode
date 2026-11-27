@@ -264,7 +264,7 @@ export default function CardView({
   if (left) {
     return (
       <div className="py-10 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFEAFB] text-[#5D3EBC]">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F1FDF3] text-[#111110]">
           <Check size={22} />
         </span>
         <p className="mt-4 text-[16px] font-medium">{t.leaveDone}</p>
@@ -290,13 +290,13 @@ export default function CardView({
       {staffHref && (
         <a
           href={staffHref}
-          className="bzl-tap flex min-h-[52px] items-center justify-between gap-3 rounded-full bg-[#5D3EBC] py-1.5 pl-4 pr-1.5 text-white transition-colors duration-200 hover:bg-[#4C2FA3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2"
+          className="bzl-tap flex min-h-[52px] items-center justify-between gap-3 rounded-full bg-[#111110] py-1.5 pl-4 pr-1.5 text-white transition-colors duration-200 hover:bg-[#2B2B2A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2"
         >
           <span className="flex min-w-0 items-center gap-2 text-[14px]">
             <Eye size={15} className="shrink-0" aria-hidden="true" />
             <span className="truncate">{tr ? 'Müşterinin gördüğü kart' : 'What the customer sees'}</span>
           </span>
-          <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-white px-4 text-[13px] font-semibold text-[#5D3EBC]">
+          <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-white px-4 text-[13px] font-semibold text-[#111110]">
             {tr ? 'Kasa moduna dön' : 'Back to staff mode'}
           </span>
         </a>
@@ -330,7 +330,7 @@ export default function CardView({
         >
           { }
           <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} width={196} height={196} className="h-[196px] w-[196px]" />
-          <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#5D3EBC] text-white">
+          <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#111110] text-white">
             <Maximize2 size={15} aria-hidden="true" />
           </span>
         </button>
@@ -355,13 +355,13 @@ export default function CardView({
             const ready = member.balance >= r.cost;
             const pct = Math.min(100, Math.round((member.balance / r.cost) * 100));
             return (
-              <li key={r.id} className={`overflow-hidden rounded-[20px] ${ready ? 'bg-[#EFEAFB] text-[#111110]' : 'bg-[var(--p-bg)]'}`}>
+              <li key={r.id} className={`overflow-hidden rounded-[20px] ${ready ? 'bg-[#F1FDF3] text-[#111110]' : 'bg-[var(--p-bg)]'}`}>
                 <div className="flex items-center justify-between gap-3 px-3.5 py-3">
                   <span className="flex min-w-0 items-center gap-2 text-[14.5px] font-medium">
                     <Gift size={16} className="shrink-0" aria-hidden="true" />
                     <span className="truncate">{r.title}</span>
                   </span>
-                  <span className={`shrink-0 text-[13px] font-semibold ${ready ? 'text-[#5D3EBC]' : 'text-[color:var(--p-muted)]'}`}>
+                  <span className={`shrink-0 text-[13px] font-semibold ${ready ? 'text-[#111110]' : 'text-[color:var(--p-muted)]'}`}>
                     {ready ? t.rewardReady : t.rewardLeft(r.cost - member.balance, unitLabel(kind, r.cost - member.balance, locale))}
                   </span>
                 </div>
@@ -554,7 +554,7 @@ function FullScreenQr({
       <button
         type="button"
         onClick={onClose}
-        className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-[#5D3EBC] px-6 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[#4C2FA3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2"
+        className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-[#111110] px-6 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[#2B2B2A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2"
       >
         <X size={18} aria-hidden="true" /> {tr ? 'Kapat' : 'Close'}
       </button>

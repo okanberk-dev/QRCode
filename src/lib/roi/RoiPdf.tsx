@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Buaze ROI estimate — server-side PDF attached to the /roi report e-mail.
-// Buaze brand: ink #0A0A0A text, purple #5D3EBC accent, deep purple #3B1F8F
-// dark cards (white text on them), lavender #EFEAFB soft fills, white.
+// Pulse brand (CLAUDE.md §11): graphite #0A0A0A + lime #C6F24E + white.
 //
 // Content rules (marketing spec D9): every number comes from the values the
 // visitor entered (src/lib/roi/roi-model.ts). The PDF says so on the cover,
@@ -31,11 +30,9 @@ Font.registerHyphenationCallback((word) => [word]);
 
 const C = {
   graphite: '#0A0A0A',
-  // Key names are historical; the values are the purple palette.
-  lime: '#5D3EBC',
-  limeDeep: '#5D3EBC',
-  limeSoft: '#EFEAFB',
-  deep: '#3B1F8F',
+  lime: '#C6F24E',
+  limeDeep: '#A8D62E',
+  limeSoft: '#EAF9B8',
   white: '#FFFFFF',
   n50: '#FAFAFA',
   n200: '#EDEDED',
@@ -65,9 +62,9 @@ const styles = StyleSheet.create({
   lead: { fontSize: 10, color: C.n500, lineHeight: 1.5, marginBottom: 16 },
   body: { fontSize: 9.5, color: C.n800, lineHeight: 1.5 },
 
-  hero: { backgroundColor: C.deep, borderRadius: 14, padding: 20, marginBottom: 12 },
-  heroEyebrow: { fontFamily: 'Inter-Bold', fontSize: 8, letterSpacing: 1.6, color: C.white, textTransform: 'uppercase' },
-  heroValue: { fontFamily: 'Inter-Bold', fontSize: 30, lineHeight: 1.1, color: C.white, marginTop: 6, marginBottom: 8 },
+  hero: { backgroundColor: C.graphite, borderRadius: 14, padding: 20, marginBottom: 12 },
+  heroEyebrow: { fontFamily: 'Inter-Bold', fontSize: 8, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
+  heroValue: { fontFamily: 'Inter-Bold', fontSize: 30, lineHeight: 1.1, color: C.lime, marginTop: 6, marginBottom: 8 },
   heroSub: { fontSize: 9.5, color: '#FFFFFFCC', lineHeight: 1.5 },
 
   kpiRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
@@ -75,15 +72,15 @@ const styles = StyleSheet.create({
   kpiValue: { fontFamily: 'Inter-Bold', fontSize: 14, lineHeight: 1.1, color: C.graphite, marginBottom: 3 },
   kpiLabel: { fontFamily: 'Inter-Bold', fontSize: 7, letterSpacing: 0.8, color: C.n500, textTransform: 'uppercase' },
 
-  insightCard: { backgroundColor: C.deep, borderRadius: 14, padding: 18 },
-  insightEyebrow: { fontFamily: 'Inter-Bold', fontSize: 8, letterSpacing: 1.6, color: C.white, textTransform: 'uppercase' },
+  insightCard: { backgroundColor: C.graphite, borderRadius: 14, padding: 18 },
+  insightEyebrow: { fontFamily: 'Inter-Bold', fontSize: 8, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
   insightSummary: { marginTop: 6, fontSize: 10, lineHeight: 1.55, color: '#FFFFFFE6' },
-  insightHighlight: { marginTop: 10, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: 'rgba(255,255,255,0.12)', borderLeftWidth: 3, borderLeftColor: C.white, borderRadius: 6 },
-  insightHighlightEyebrow: { fontFamily: 'Inter-Bold', fontSize: 7.5, letterSpacing: 1.4, color: C.white, textTransform: 'uppercase', marginBottom: 3 },
+  insightHighlight: { marginTop: 10, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: 'rgba(198,242,78,0.14)', borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: 6 },
+  insightHighlightEyebrow: { fontFamily: 'Inter-Bold', fontSize: 7.5, letterSpacing: 1.4, color: C.lime, textTransform: 'uppercase', marginBottom: 3 },
   insightHighlightBody: { fontSize: 9.5, lineHeight: 1.5, color: C.white },
   insightStepsLabel: { marginTop: 12, fontFamily: 'Inter-Bold', fontSize: 7.5, letterSpacing: 1.4, color: '#FFFFFF8C', textTransform: 'uppercase', marginBottom: 6 },
   insightStep: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5 },
-  insightStepNum: { width: 20, fontFamily: 'Inter-Bold', fontSize: 9.5, color: C.white, paddingTop: 1 },
+  insightStepNum: { width: 20, fontFamily: 'Inter-Bold', fontSize: 9.5, color: C.lime, paddingTop: 1 },
   insightStepText: { flex: 1, fontSize: 9.5, lineHeight: 1.5, color: '#FFFFFFE6' },
 
   columns: { flexDirection: 'row', gap: 12, marginBottom: 16 },
@@ -103,7 +100,7 @@ const styles = StyleSheet.create({
   note: { backgroundColor: C.n50, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.n200, marginBottom: 14 },
   noteTitle: { fontFamily: 'Inter-Bold', fontSize: 10, color: C.graphite, marginBottom: 3 },
 
-  cta: { backgroundColor: C.limeSoft, borderRadius: 14, padding: 16 },
+  cta: { backgroundColor: C.lime, borderRadius: 14, padding: 16 },
   ctaTitle: { fontFamily: 'Inter-Bold', fontSize: 13, color: C.graphite, marginBottom: 4, letterSpacing: -0.2 },
   ctaBody: { fontSize: 9.5, color: C.graphite, lineHeight: 1.5 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
@@ -441,7 +438,7 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           <View style={styles.flow}>
             <View style={styles.flowRow}>
               <View style={[styles.flowChip, { backgroundColor: C.lime }]}>
-                <Text style={[styles.flowChipText, { color: C.white }]}>{L.flowHighChip}</Text>
+                <Text style={[styles.flowChipText, { color: C.graphite }]}>{L.flowHighChip}</Text>
               </View>
               <Text style={styles.flowDesc}>{L.flowHighDesc}</Text>
             </View>

@@ -32,7 +32,7 @@ function RatingBadge({ rating }: { rating: number }) {
       ? 'bg-[#FEE2E2] text-[#991B1B]'
       : rating === 3
         ? 'bg-[#FEF3C7] text-[#92400E]'
-        : 'bg-[#EFEAFB] text-[#4C2FA3]';
+        : 'bg-[#EAF9B8] text-[#3F5408]';
   return (
     <span
       className={`flex h-9 w-9 shrink-0 items-center justify-center gap-0.5 rounded-[10px] text-[13px] font-semibold ${tone}`}
@@ -155,7 +155,7 @@ export function InboxMock({ locale }: { locale: Locale }) {
       <div className="flex items-center gap-2 px-4 py-3 text-[12px] text-[#525252] sm:px-5">
         <Mail size={14} strokeWidth={2} className="shrink-0 text-[#0A0A0A]" />
         <span className="min-w-0 flex-1">{tr ? '1–3 yıldızda anında e-posta' : 'Instant e-mail for 1–3★'}</span>
-        <span className="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-[#5D3EBC]">
+        <span className="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-[#C6F24E]">
           <span className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-[#0A0A0A]" />
         </span>
       </div>
@@ -199,8 +199,8 @@ export function PulseAiMock({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      <div className="rounded-[14px] border border-[#8C6CF0] bg-white p-3.5 shadow-[0_0_0_3px_rgba(93,62,188,0.18)]">
-        <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#4C2FA3]">
+      <div className="rounded-[14px] border border-[#C6F24E] bg-white p-3.5 shadow-[0_0_0_3px_rgba(198,242,78,0.18)]">
+        <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3F5408]">
           <Sparkles size={13} strokeWidth={2} />
           {tr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
         </p>
@@ -244,7 +244,7 @@ const HEAT: readonly (readonly number[])[] = [
   [0, 0, 0, 1, 2, 4, 3, 2, 3, 4, 4, 3],
   [0, 0, 0, 1, 3, 4, 3, 2, 2, 3, 3, 1],
 ];
-const HEAT_FILL = ['#F2F2F2', '#DCD3F6', '#8C6CF0', '#5D3EBC', '#3B1F8F'];
+const HEAT_FILL = ['#F2F2F2', '#E3F6A8', '#C6F24E', '#8DB31F', '#3F5408'];
 
 export function AnalyticsMock({ locale }: { locale: Locale }) {
   const tr = locale === 'tr';
@@ -327,7 +327,7 @@ export function MenuMock({ locale }: { locale: Locale }) {
     {
       name: tr ? 'Serpme kahvaltı' : 'Breakfast spread',
       price: '₺640',
-      badge: { label: tr ? 'Şef Önerisi' : "Chef's Pick", tone: 'bg-[#5D3EBC] text-white' },
+      badge: { label: tr ? 'Şef Önerisi' : "Chef's Pick", tone: 'bg-[#0A0A0A] text-[#C6F24E]' },
       allergens: tr ? 'Gluten, Süt / laktoz, Yumurta' : 'Gluten, Milk / lactose, Egg',
       soldOut: false,
     },
@@ -343,7 +343,7 @@ export function MenuMock({ locale }: { locale: Locale }) {
   return (
     <div className="p-4 sm:p-5">
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5D3EBC] text-[15px] font-semibold text-white">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] text-[15px] font-semibold text-[#C6F24E]">
           {tr ? 'Ö' : 'S'}
         </span>
         <div>
@@ -446,7 +446,7 @@ export function AuditMock({ locale }: { locale: Locale }) {
         </li>
         <li className="flex items-center justify-between gap-3 rounded-[12px] border border-[#EDEDED] px-3 py-2.5">
           <span className="min-w-0 text-[13px] text-[#1A1A1A]">{tr ? 'Hazırlık alanının fotoğrafı' : 'Photo of the prep area'}</span>
-          <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-[#4C2FA3]">
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-[#3F5408]">
             <Camera size={14} strokeWidth={2} />
             {tr ? 'Eklendi' : 'Added'}
           </span>
@@ -457,7 +457,7 @@ export function AuditMock({ locale }: { locale: Locale }) {
         <span className="text-[12px] text-white/75">{tr ? 'Puan' : 'Score'}</span>
         <span className="flex items-center gap-2">
           <span className="bz-h-tight text-[24px] leading-none text-white">93</span>
-          <span className="rounded-full bg-[#5D3EBC] px-2 py-0.5 text-[11px] font-semibold text-white">
+          <span className="rounded-full bg-[#C6F24E] px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
             {tr ? 'Geçti' : 'Passed'}
           </span>
         </span>
@@ -518,7 +518,7 @@ export function SurveyMock({ locale }: { locale: Locale }) {
             {tr ? '4 soru · adım adım' : '4 questions · step by step'}
           </p>
         </div>
-        <span className="shrink-0 whitespace-nowrap rounded-full bg-[#EFEAFB] px-2.5 py-1 text-[11px] font-semibold text-[#4C2FA3]">
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[11px] font-semibold text-[#3F5408]">
           {tr ? 'Yayında' : 'Published'}
         </span>
       </div>
@@ -584,8 +584,8 @@ export function HubMock({ locale }: { locale: Locale }) {
           </span>
           <MessageSquareText size={15} strokeWidth={2} className="shrink-0 text-[#737373]" />
         </div>
-        <div className="rounded-[12px] border border-[#8C6CF0] p-3">
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4C2FA3]">
+        <div className="rounded-[12px] border border-[#C6F24E] p-3">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#3F5408]">
             <Sparkles size={12} strokeWidth={2} />
             {tr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
           </p>

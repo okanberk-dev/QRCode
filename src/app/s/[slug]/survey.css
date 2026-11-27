@@ -85,7 +85,7 @@
 /* Keyboard focus — purple ring on white screens, white ring on the purple
    hero (intro / thanks). */
 .bz-survey-tap:focus-visible {
-  outline: 2px solid #5d3ebc;
+  outline: 2px solid #111110;
   outline-offset: 3px;
 }
 .bz-survey-on-hero .bz-survey-tap:focus-visible {
@@ -112,9 +112,9 @@
   transition: border-color 200ms, box-shadow 200ms, background-color 200ms;
 }
 .bz-survey-field:focus {
-  border-color: #5d3ebc;
+  border-color: #111110;
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(93, 62, 188, 0.14);
+  box-shadow: 0 0 0 4px rgba(17, 17, 16, 0.14);
 }
 /* #737373 on #F6F6F6 / white. Firefox dims placeholders with a default
    opacity — pin it so the ratio holds. */
@@ -129,7 +129,7 @@
    would otherwise leave a ring behind; older engines fall back to
    :focus-within (ring after click is acceptable there). */
 .bz-survey-consent:focus-within {
-  outline: 2px solid #5d3ebc;
+  outline: 2px solid #111110;
   outline-offset: 3px;
 }
 @supports selector(:has(*)) {
@@ -137,7 +137,7 @@
     outline: none;
   }
   .bz-survey-consent:has(:focus-visible) {
-    outline: 2px solid #5d3ebc;
+    outline: 2px solid #111110;
     outline-offset: 3px;
   }
 }

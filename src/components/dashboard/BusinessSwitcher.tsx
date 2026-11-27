@@ -86,8 +86,8 @@ function BusinessChip({
   locale: 'tr' | 'en';
 }) {
   // The business colour is owner data; the initial picks ink or white,
-  // whichever reads better on it (white on the purple fallback).
-  const fill = business?.primaryColor || '#5D3EBC';
+  // whichever reads better on it (white on the black fallback).
+  const fill = business?.primaryColor || '#111110';
   return (
     <span
       aria-hidden="true"

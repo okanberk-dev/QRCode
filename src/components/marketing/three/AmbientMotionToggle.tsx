@@ -81,7 +81,7 @@ export default function AmbientMotionToggle({
       // other for screen readers).
       aria-label={label}
       title={label}
-      className={`inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 ${
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
         tone === 'dark' ? 'focus-visible:ring-offset-[#0A0A0A]' : 'focus-visible:ring-offset-white'
       } ${toneClass} ${className}`}
     >

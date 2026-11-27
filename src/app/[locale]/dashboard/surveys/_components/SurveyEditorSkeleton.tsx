@@ -28,23 +28,23 @@ export default function SurveyEditorSkeleton() {
       <div className="[@media(min-width:1024px)_and_(min-height:740px)]:grid [@media(min-width:1024px)_and_(min-height:740px)]:grid-cols-[minmax(0,1fr)_380px] [@media(min-width:1024px)_and_(min-height:740px)]:items-start [@media(min-width:1024px)_and_(min-height:740px)]:gap-6">
         <div className="min-w-0 space-y-5">
           {/* Title card */}
-          <div className="bz-card space-y-4 p-4 sm:p-5">
+          <div className="bz-card space-y-5 p-5 sm:p-7">
             <div className="space-y-2">
               <SkBox className="h-3 w-24" />
               <SkBox className="h-3 w-64 max-w-full" />
-              <SkBox className="h-11 w-full" />
+              <SkBox className="h-[46px] w-full rounded-full" />
             </div>
-            <SkBox className="h-5 w-36" />
+            <SkBox className="h-11 w-40 rounded-full" />
           </div>
 
           {/* Questions */}
           <div className="space-y-3">
             <div className="flex items-baseline justify-between gap-3">
-              <SkBox className="h-5 w-20" />
+              <SkBox className="h-6 w-24" />
               <SkBox className="h-4 w-40" />
             </div>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="bz-card space-y-3 p-4 sm:p-5">
+              <div key={i} className="bz-card space-y-3 p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <SkBox className="h-7 w-7 rounded-full" />
@@ -58,16 +58,23 @@ export default function SurveyEditorSkeleton() {
                 </div>
               </div>
             ))}
-            <SkBox className="h-[92px] w-full rounded-[20px]" />
+            <div className="bz-card space-y-3 p-5 sm:p-6">
+              <SkBox className="h-4 w-28" />
+              <div className="flex flex-wrap gap-2">
+                {['w-28', 'w-24', 'w-32', 'w-20', 'w-28'].map((w, i) => (
+                  <SkBox key={i} className={`h-11 ${w} rounded-full`} />
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Settings card */}
-          <div className="bz-card flex min-h-[64px] items-center justify-between gap-3 px-4 py-3 sm:px-5">
+          <div className="bz-card flex min-h-[72px] items-center justify-between gap-3 px-5 py-4 sm:px-7">
             <div className="space-y-2">
-              <SkBox className="h-4 w-40" />
-              <SkBox className="h-3 w-64 max-w-full" />
+              <SkBox className="h-5 w-48" />
+              <SkBox className="h-3.5 w-64 max-w-full" />
             </div>
-            <SkBox className="h-4 w-4" />
+            <SkBox className="h-10 w-10 rounded-full" />
           </div>
         </div>
 

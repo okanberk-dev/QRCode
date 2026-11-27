@@ -174,7 +174,7 @@ function RelativeTime({ iso, locale, full = false }: { iso: string; locale: UiLo
 function StatusBadge({ status, locale }: { status: PlacesProfile['businessStatus']; locale: UiLocale }) {
   const copy = useCopy(locale);
   if (status === 'UNKNOWN') return null;
-  // Light palette on the deep purple hero — status chips keep their meaning.
+  // Light palette on the black hero — status chips keep their meaning.
   const tone =
     status === 'OPERATIONAL'
       ? { cls: 'bg-[#E7F6EA] text-[#23863A]', label: copy.operating }
@@ -238,7 +238,7 @@ export function RatingCard({
   return (
     <section
       aria-labelledby={headingId}
-      className={`relative overflow-hidden rounded-[18px] bg-[#3B1F8F] p-5 text-white sm:p-6 ${className}`}
+      className={`relative overflow-hidden rounded-[18px] bg-[#000000] p-5 text-white sm:p-6 ${className}`}
     >
       <p className="text-[13px] font-medium text-white">{copy.eyebrow}</p>
       <h2

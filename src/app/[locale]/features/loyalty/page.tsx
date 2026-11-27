@@ -56,7 +56,7 @@ function LoyaltyMock({ locale }: { locale: FeatureLocale }) {
         <p className="text-[12px] font-medium text-[#737373]">{tr ? 'Kasa ekranı' : 'Counter screen'}</p>
         <div className="mt-2 flex items-center justify-between gap-3">
           <span className="text-[14px] font-semibold text-[#0A0A0A]">Ayşe · KX7 M42</span>
-          <span className="rounded-[10px] bg-[#5D3EBC] px-3 py-2 text-[13px] font-semibold text-white">
+          <span className="rounded-[10px] bg-[#C6F24E] px-3 py-2 text-[13px] font-semibold text-[#0A0A0A]">
             {tr ? '+1 damga ekle' : 'Add 1 stamp'}
           </span>
         </div>

@@ -147,10 +147,10 @@ export default function NfcDialog({
           {message}
         </p>
         {mode === 'write' && url && phase === 'waiting' && (
-          <p className="mt-2 max-w-full break-all font-mono text-[12px] text-[#737373]">{url}</p>
+          <p className="mt-2 max-w-full break-all text-[12px] text-[#737373]">{url}</p>
         )}
         {canLock && phase === 'waiting' && (
-          <label className="mt-4 flex w-full cursor-pointer items-start gap-2.5 rounded-[20px] border border-pn-line bg-pn-canvas p-3 text-left">
+          <label className="mt-4 flex w-full cursor-pointer items-start gap-2.5 rounded-[18px] bg-[#F6F6F6] p-3 text-left">
             <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink" checked={lock} onChange={(e) => setLock(e.target.checked)} />
             <span className="text-[13px] leading-relaxed text-[#404040]">
               <strong className="text-pn-ink">{tr ? 'Yazdıktan sonra kilitle' : 'Lock after writing'}</strong>{' '}

@@ -108,7 +108,7 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
         ? 'bg-[#FDECEC] text-[#D92D20]'
         : 'bg-[#F6F6F6] text-[#525252]';
 
-  // Fintora list: a grey panel inside the white detail card, a purple
+  // Fintora list: a grey panel inside the white detail card, a black
   // sparkle circle in the header and one white row per signal.
   return (
     <section

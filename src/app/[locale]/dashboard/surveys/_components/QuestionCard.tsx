@@ -172,7 +172,7 @@ export default function QuestionCard({
   }
 
   return (
-    <li className="bz-card space-y-3 p-4 sm:p-5">
+    <li className="bz-card space-y-3 p-5 sm:p-6">
       {/* Header: number + type, and the "..." menu */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -185,7 +185,7 @@ export default function QuestionCard({
 
           {typeLocked ? (
             <span
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-pn-line bg-pn-canvas px-3 text-[13px] font-medium text-[#525252]"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-pn-canvas px-3.5 text-[13px] font-medium text-[#525252]"
               title={
                 isTr
                   ? 'Bu sorunun yanıtları olduğu için tipi değiştirilemez.'
@@ -208,7 +208,7 @@ export default function QuestionCard({
               trigger={
                 <button
                   type="button"
-                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-pn-line bg-white px-3 text-[13px] font-medium text-pn-ink transition-colors hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-pn-canvas px-3.5 text-[13px] font-medium text-pn-ink transition-colors hover:bg-[#EBEBEB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
                   aria-label={`${isTr ? 'Soru tipi' : 'Question type'}: ${typeLabel}`}
                 >
                   <TypeIcon size={15} aria-hidden="true" />

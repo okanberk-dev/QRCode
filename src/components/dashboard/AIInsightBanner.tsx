@@ -71,7 +71,7 @@ export function AIInsightBanner({
     <section
       role="status"
       aria-label={isTr ? 'AI içgörü' : 'AI insight'}
-      // Fintora card: white, borderless, a 40px purple sparkle circle, the
+      // Fintora card: white, borderless, a 40px black sparkle circle, the
       // weekly summary (two lines) and a grey "Detay ↗" pill + close circle.
       className="bz-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5"
     >

@@ -345,7 +345,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
-              <tr className="bg-[#3B1F8F] text-[13px] font-medium text-white/80">
+              <tr className="bg-[#000000] text-[13px] font-medium text-white/80">
                 <th className="px-3 py-4 sm:px-6">YÖNETİCİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">ROL / YETKİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">RESTORAN / ŞUBE</th>

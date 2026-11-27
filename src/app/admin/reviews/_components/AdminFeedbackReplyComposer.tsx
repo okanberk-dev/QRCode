@@ -38,7 +38,7 @@ export function AdminPulseAiCard({
   const hasDraft = aiSource !== null;
 
   return (
-    // Fintora calm AI panel (owner parity): lavender surface, a small purple
+    // Fintora calm AI panel (owner parity): light green surface, a small black
     // sparkle circle, ink text — no dark fill, no gradient, no glow.
     <div className="mt-5 rounded-[20px] bg-pn-accent-soft p-4 text-pn-ink sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
@@ -117,7 +117,7 @@ export function AdminPulseAiCard({
           onChange={(e) => setAiTone(e.target.value as AiTone)}
           disabled={suggesting}
           aria-label={isTr ? 'Pulse AI yanıt tonu' : 'Pulse AI reply tone'}
-          /* Native select as a white pill on the lavender AI panel (owner
+          /* Native select as a white pill on the light green AI panel (owner
              parity). 16px + 44px on mobile (iOS zoom, touch target). */
           className="min-h-[44px] w-full cursor-pointer rounded-full border-0 bg-white px-4 py-2 text-[16px] font-medium text-pn-ink outline-none transition-colors duration-200 hover:bg-[#FBFAFE] focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:min-h-10 sm:w-auto sm:py-0 sm:text-[13px]"
         >
@@ -224,7 +224,7 @@ export function AdminReplyComposerCard({
         enterKeyHint="send"
         autoCorrect="on"
         spellCheck={true}
-        className="mt-2 max-h-[480px] min-h-[96px] w-full resize-none overflow-y-auto rounded-[20px] border-0 bg-[#F6F6F6] px-4 py-3 text-[16px] leading-[1.55] text-pn-ink transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:outline-none focus:shadow-[0_0_0_2px_#5D3EBC] sm:text-[14px] lg:max-h-[200px] lg:min-h-[48px] lg:shrink"
+        className="mt-2 max-h-[480px] min-h-[96px] w-full resize-none overflow-y-auto rounded-[20px] border-0 bg-[#F6F6F6] px-4 py-3 text-[16px] leading-[1.55] text-pn-ink transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:outline-none focus:shadow-[0_0_0_2px_#111110] sm:text-[14px] lg:max-h-[200px] lg:min-h-[48px] lg:shrink"
       />
       <ReplyRiskNotice risk={risk} locale={isTr ? 'tr' : 'en'} className="mt-2 lg:shrink-0" />
       <p id="admin-reply-textarea-hint" className="sr-only">

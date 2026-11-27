@@ -73,11 +73,11 @@ export default function TrialBanner({
 
   return (
     <div className="legal-print-hide mx-auto w-full max-w-[1440px] px-4 pt-4 sm:px-7">
-      {/* Pano: a deep purple pill with a white call to action (DASHBOARD_DESIGN.md §5.4). */}
+      {/* Pano: a black pill with a white call to action (DASHBOARD_DESIGN.md §5.4). */}
       <div
         role="status"
         aria-live="polite"
-        className="flex items-center gap-3 rounded-[28px] bg-[#3B1F8F] py-2 pl-5 pr-2 text-[14px] text-white sm:rounded-full"
+        className="flex items-center gap-3 rounded-[28px] bg-[#000000] py-2 pl-5 pr-2 text-[14px] text-white sm:rounded-full"
       >
         <Crown size={18} className="shrink-0 text-white" aria-hidden="true" />
         {/* Wraps instead of truncating: on a phone the ellipsis cut off the

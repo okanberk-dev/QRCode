@@ -82,7 +82,7 @@ export function PlatformSummaryLine({
 
 /**
  * Which business the platform page is editing (Fintora profile strip): a
- * purple initial circle, the business name and its sector, and the way to
+ * black initial circle, the business name and its sector, and the way to
  * that business's settings. The review-link counts live in the stat cards
  * right under it. The business itself is picked with the shell's business
  * switcher (sidebar / mobile top bar) — the page follows it through

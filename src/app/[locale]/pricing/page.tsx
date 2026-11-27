@@ -365,7 +365,7 @@ export default async function PricingPage({
                 <li key={tick} className="flex items-center gap-2 text-[15px] text-[#525252]">
                   <span
                     aria-hidden="true"
-                    className="flex h-5 w-5 items-center justify-center rounded-full bg-[#5D3EBC] text-white"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]"
                   >
                     <Check size={12} strokeWidth={2.75} />
                   </span>
@@ -395,13 +395,13 @@ export default async function PricingPage({
                   <Link
                     href={`${base}/auth/register`}
                     rel="nofollow"
-                    className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#0A0A0A] px-6 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#0A0A0A] px-6 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                   >
                     {copy.empty.trial}
                   </Link>
                   <Link
                     href={`${base}/contact`}
-                    className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#0A0A0A] bg-white px-6 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#0A0A0A] bg-white px-6 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                   >
                     {copy.empty.contact}
                   </Link>
@@ -424,14 +424,14 @@ export default async function PricingPage({
                 <li key={item.title} className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
                   <span
                     aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#EFEAFB] text-[#0A0A0A]"
+                    className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
                   >
                     <item.icon size={20} strokeWidth={1.8} />
                   </span>
                   <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">
                     <Link
                       href={`${base}${item.href}`}
-                      className="rounded-sm decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+                      className="rounded-sm decoration-[#C6F24E] decoration-2 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                     >
                       {item.title}
                     </Link>

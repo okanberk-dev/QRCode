@@ -1268,7 +1268,7 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
                   </td>
                   <td className="max-w-[300px]">
                     <div className="flex min-w-0 items-center gap-3">
-                      <Avatar name={r.name} size={32} color={r.primaryColor || '#5D3EBC'} fg={readableOn(r.primaryColor || '#5D3EBC')} />
+                      <Avatar name={r.name} size={32} color={r.primaryColor || '#111110'} fg={readableOn(r.primaryColor || '#111110')} />
                       <div className="min-w-0">
                         <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-medium text-pn-ink hover:underline underline-offset-2">
                           {r.name}
@@ -1313,7 +1313,7 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
               <li key={r.id} className={`bz-card p-4 ${selected ? 'border-pn-accent-hover bg-pn-accent-soft' : ''}`}>
                 <div className="flex items-start gap-3">
                   <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} className="mt-1.5" />
-                  <Avatar name={r.name} size={36} color={r.primaryColor || '#5D3EBC'} fg={readableOn(r.primaryColor || '#5D3EBC')} />
+                  <Avatar name={r.name} size={36} color={r.primaryColor || '#111110'} fg={readableOn(r.primaryColor || '#111110')} />
                   <div className="min-w-0 flex-1">
                     <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-medium text-pn-ink">
                       {r.name}

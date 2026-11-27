@@ -5,7 +5,7 @@ import { PlatformOrbitFallback } from './fallbacks';
 /**
  * Square box with the platform-orbit scene (CLAUDE.md §50): ten
  * brand-colored nodes for the review platforms whose links Buaze manages,
- * around a purple core. Decorative only — render the platform names as HTML
+ * around a lime core. Decorative only — render the platform names as HTML
  * next to it. Server component; the SVG fallback is in the HTML and three.js
  * loads only on capable devices.
  */

@@ -25,7 +25,15 @@ import {
   Tag,
   Wand2,
 } from "lucide-react";
-import { Field, Modal, PlatformChip, PulseSelect, RadioCard, type PlatformId } from "@/components/ui";
+import { Field, Modal, PlatformChip, PulseSelect, type PlatformId } from "@/components/ui";
+import {
+  WIZARD_BACK_CLASS,
+  WIZARD_NEXT_CLASS,
+  WizardCheck,
+  WizardChoice,
+  WizardSteps,
+  WizardSummaryRow,
+} from "@/components/ui/WizardSteps";
 import { getSectorPlatforms } from "@/lib/sector-platforms";
 import {
   QR_PRESETS,
@@ -561,27 +569,25 @@ export function CreateQRWizard({
       onClose={onClose}
       size={620}
       footer={
-        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={stepIndex === 0 ? onClose : goBack}
-              className="bz-btn-ghost inline-flex items-center justify-center gap-1.5"
-              disabled={submitting}
-            >
-              {stepIndex === 0 ? (
-                isTr ? "İptal" : "Cancel"
-              ) : (
-                <>
-                  <ArrowLeft size={13} strokeWidth={2.2} />
-                  {isTr ? "Geri" : "Back"}
-                </>
-              )}
-            </button>
-            <span className="tabular-nums hidden text-[12px] text-[#737373] sm:inline">
-              {stepIndex + 1} / {STEPS.length}
-            </span>
-          </div>
+        <div className="flex w-full items-center gap-2">
+          <button
+            type="button"
+            onClick={stepIndex === 0 ? onClose : goBack}
+            className={`${WIZARD_BACK_CLASS} sm:mr-auto`}
+            disabled={submitting}
+          >
+            {stepIndex === 0 ? (
+              isTr ? "İptal" : "Cancel"
+            ) : (
+              <>
+                <ArrowLeft size={15} strokeWidth={2} />
+                {isTr ? "Geri" : "Back"}
+              </>
+            )}
+          </button>
+          <span className="hidden text-[13px] tabular-nums text-[#9A9A9A] sm:inline">
+            {stepIndex + 1} / {STEPS.length}
+          </span>
           {stepIndex < STEPS.length - 1 ? (
             <button
               type="button"
@@ -590,22 +596,22 @@ export function CreateQRWizard({
                 (currentStep.id === "target" && !canAdvanceFromTarget) ||
                 (currentStep.id === "color" && !canAdvanceFromColor)
               }
-              className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
+              className={WIZARD_NEXT_CLASS}
             >
               {isTr ? "Devam et" : "Continue"}
-              <ArrowRight size={13} strokeWidth={2.2} />
+              <ArrowRight size={15} strokeWidth={2} />
             </button>
           ) : (
             <button
               type="button"
               onClick={submit}
               disabled={submitting || !canSubmit}
-              className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
+              className={WIZARD_NEXT_CLASS}
             >
               {submitting ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={15} className="animate-spin" />
               ) : (
-                <QrCode size={14} strokeWidth={2.2} />
+                <QrCode size={15} strokeWidth={2} />
               )}
               {submitting
                 ? isTr
@@ -620,49 +626,20 @@ export function CreateQRWizard({
       }
     >
       <div ref={headerRef} className="flex flex-col gap-5">
-        {/* Stepper — desktop pill row + mobile segmented progress */}
-        <div className="bz-card-soft flex items-center gap-1 p-1.5 sm:p-2">
-          {STEPS.map((s, idx) => {
-            const active = idx === stepIndex;
-            const done = idx < stepIndex;
-            const reachable =
-              idx <= stepIndex ||
-              (idx === 1 && canAdvanceFromTarget) ||
-              (idx === 2 && canAdvanceFromTarget && canAdvanceFromColor);
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => jumpTo(idx)}
-                disabled={!reachable}
-                aria-current={active ? "step" : undefined}
-                className="group flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-[14px] px-2 py-2 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
-                style={{
-                  background: active ? "#5D3EBC" : "transparent",
-                  color: active
-                    ? "#FFFFFF"
-                    : done
-                      ? "#0A0A0A"
-                      : reachable
-                        ? "#525252"
-                        : "#A3A3A3",
-                }}
-              >
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
-                  style={{
-                    background: active ? "#FFFFFF" : done ? "#EFEAFB" : "#F6F6F6",
-                    color: active || done ? "#5D3EBC" : "#0A0A0A",
-                    border: !active && !done ? "1px solid #EBEBEB" : "none",
-                  }}
-                >
-                  {done ? <Check size={11} strokeWidth={2.6} /> : s.icon}
-                </span>
-                <span className="truncate">{isTr ? s.labelTr : s.labelEn}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Stepper — pill row from 640px, "Adım 2 / 3" line + progress on phones */}
+        <WizardSteps
+          ariaLabel={isTr ? "QR sihirbazı adımları" : "QR wizard steps"}
+          locale={isTr ? "tr" : "en"}
+          surface="card"
+          steps={STEPS.map((st) => ({ label: isTr ? st.labelTr : st.labelEn }))}
+          current={stepIndex}
+          canSelect={(idx) =>
+            idx <= stepIndex ||
+            (idx === 1 && canAdvanceFromTarget) ||
+            (idx === 2 && canAdvanceFromTarget && canAdvanceFromColor)
+          }
+          onSelect={jumpTo}
+        />
 
         {/* ───── STEP 1: TARGET ───────────────────────────────────────── */}
         {currentStep.id === "target" && (
@@ -734,21 +711,29 @@ export function CreateQRWizard({
               }
             >
               <div className="flex flex-col gap-2">
-                <RadioCard
-                  active={linkType === "default"}
+                <WizardChoice
+                  role="radio"
+                  aria-checked={linkType === "default"}
+                  selected={linkType === "default"}
+                  tone="plain"
                   onClick={() => setLinkType("default")}
+                  icon={<Sparkles size={17} strokeWidth={1.8} />}
                   title={isTr ? "Varsayılan platforma gönder" : "Use default platform"}
-                  body={
+                  description={
                     isTr
                       ? "İşletme ayarlarındaki varsayılan platform kullanılır"
                       : "Uses the default platform from business settings"
                   }
                 />
-                <RadioCard
-                  active={linkType === "platform"}
+                <WizardChoice
+                  role="radio"
+                  aria-checked={linkType === "platform"}
+                  selected={linkType === "platform"}
+                  tone="plain"
                   onClick={() => setLinkType("platform")}
+                  icon={<Link2 size={17} strokeWidth={1.8} />}
                   title={isTr ? "Belirli bir platforma sabitle" : "Pin to specific platform"}
-                  body={
+                  description={
                     isTr
                       ? "Bu QR'ı tarayan müşteri yalnızca bu platforma yönlendirilir"
                       : "Customer scanning this QR is sent only to this platform"
@@ -764,24 +749,22 @@ export function CreateQRWizard({
                           type="button"
                           onClick={() => setPlatform(p.key)}
                           aria-pressed={active}
-                          className="flex min-h-[44px] items-center gap-2 px-3 py-2.5 rounded-[14px] text-[13px] font-medium transition-colors text-left"
-                          style={{
-                            border: `1px solid ${active ? "#5D3EBC" : "#EBEBEB"}`,
-                            background: active ? "#EFEAFB" : "#fff",
-                          }}
+                          className={`flex min-h-[52px] items-center gap-2.5 rounded-[16px] px-3 py-2 text-left text-[14px] font-medium text-pn-ink transition-[background-color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${
+                            active
+                              ? "bg-pn-accent-soft shadow-[inset_0_0_0_1.5px_var(--color-pn-accent)]"
+                              : "bg-[#F6F6F6] hover:bg-[#EDEDED]"
+                          }`}
                         >
-                          <PlatformChip id={p.chipId} size={20} />
-                          <span className="truncate">{p.label}</span>
-                          {active && (
-                            <Check size={13} strokeWidth={2.6} className="ml-auto text-pn-accent" />
-                          )}
+                          <PlatformChip id={p.chipId} size={22} />
+                          <span className="min-w-0 flex-1 truncate">{p.label}</span>
+                          <WizardCheck selected={active} />
                         </button>
                       );
                     })}
                   </div>
                 )}
                 {linkType === "platform" && platformLocked && activeRestaurant && (
-                  <div className="mt-1 rounded-[20px] border border-dashed border-pn-line bg-pn-canvas px-3 py-3 text-[13px] leading-relaxed text-[#525252]">
+                  <div className="mt-1 rounded-[18px] border border-dashed border-pn-line-strong px-4 py-3.5 text-[13px] leading-relaxed text-[#525252]">
                     <p className="font-medium text-pn-ink">
                       {isTr
                         ? "Bu işletme için yapılandırılmış platform yok."
@@ -794,7 +777,7 @@ export function CreateQRWizard({
                     </p>
                     <Link
                       href={`${panelBase}/restaurants/${activeRestaurant.id}`}
-                      className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-pn-ink underline decoration-pn-accent decoration-2 underline-offset-4 hover:decoration-pn-accent-ink"
+                      className="mt-2.5 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-pn-accent-soft px-3.5 text-[13px] font-medium text-pn-accent transition-colors hover:bg-[#E4DCF8]"
                     >
                       <Link2 size={12} />
                       {isTr ? "Platform URL'lerini düzenle" : "Edit platform URLs"}
@@ -812,10 +795,10 @@ export function CreateQRWizard({
             {/* Left — preset grid + custom panel */}
             <div className="flex flex-1 flex-col gap-4">
               <div>
-                <span className="text-[13px] font-medium text-[#737373]">
-                  {isTr ? "HAZIR ŞABLONLAR" : "PRESETS"}
+                <span className="text-[14px] font-medium text-pn-ink">
+                  {isTr ? "Hazır renkler" : "Presets"}
                 </span>
-                <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                <div className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {QR_PRESETS.map((p) => {
                     const active = presetId === p.id;
                     return (
@@ -825,11 +808,11 @@ export function CreateQRWizard({
                         onClick={() => applyPreset(p.id)}
                         aria-pressed={active}
                         title={isTr ? p.hintTr : p.hintEn}
-                        className="group flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
-                        style={{
-                          border: `1px solid ${active ? "#5D3EBC" : "#EBEBEB"}`,
-                          background: active ? "#EFEAFB" : "#FFFFFF",
-                        }}
+                        className={`group flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[16px] px-2 py-2.5 transition-[background-color,box-shadow,transform] duration-200 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${
+                          active
+                            ? "bg-pn-accent-soft shadow-[inset_0_0_0_1.5px_var(--color-pn-accent)]"
+                            : "bg-[#F6F6F6] hover:bg-[#EDEDED]"
+                        }`}
                       >
                         <span
                           aria-hidden="true"
@@ -865,11 +848,11 @@ export function CreateQRWizard({
                       onClick={() => applyPreset("brand")}
                       aria-pressed={isBrandPreset}
                       title={isTr ? "Marka rengini kullan" : "Use brand colour"}
-                      className="flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
-                      style={{
-                        border: `1px solid ${isBrandPreset ? "#5D3EBC" : "#EBEBEB"}`,
-                        background: isBrandPreset ? "#EFEAFB" : "#FFFFFF",
-                      }}
+                      className={`flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[16px] px-2 py-2.5 transition-[background-color,box-shadow,transform] duration-200 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${
+                        isBrandPreset
+                          ? "bg-pn-accent-soft shadow-[inset_0_0_0_1.5px_var(--color-pn-accent)]"
+                          : "bg-[#F6F6F6] hover:bg-[#EDEDED]"
+                      }`}
                     >
                       <span
                         aria-hidden="true"
@@ -901,11 +884,11 @@ export function CreateQRWizard({
                     onClick={() => applyPreset("custom")}
                     aria-pressed={isCustomPalette}
                     title={isTr ? "Kendi renklerini gir" : "Pick your own colours"}
-                    className="flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
-                    style={{
-                      border: `1px solid ${isCustomPalette ? "#5D3EBC" : "#EBEBEB"}`,
-                      background: isCustomPalette ? "#EFEAFB" : "#FFFFFF",
-                    }}
+                    className={`flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[16px] px-2 py-2.5 transition-[background-color,box-shadow,transform] duration-200 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${
+                      isCustomPalette
+                        ? "bg-pn-accent-soft shadow-[inset_0_0_0_1.5px_var(--color-pn-accent)]"
+                        : "bg-[#F6F6F6] hover:bg-[#EDEDED]"
+                    }`}
                   >
                     <span
                       aria-hidden="true"
@@ -924,10 +907,10 @@ export function CreateQRWizard({
               </div>
 
               {(isCustomPalette || isBrandPreset) && (
-                <div className="rounded-[20px] border border-pn-line bg-pn-canvas p-3.5">
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-[13px] font-medium text-[#737373]">
+                <div className="rounded-[18px] bg-[#F6F6F6] p-4">
+                  <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+                    <label className="flex min-w-0 flex-col gap-1.5">
+                      <span className="text-[13px] font-medium text-pn-ink">
                         {isTr ? "Ön plan (modüller)" : "Foreground (modules)"}
                       </span>
                       <div className="flex items-center gap-2">
@@ -940,7 +923,7 @@ export function CreateQRWizard({
                             if (presetId !== "custom") setPresetId("custom");
                           }}
                           aria-label={isTr ? "Ön plan rengi" : "Foreground colour"}
-                          className="h-11 w-11 shrink-0 cursor-pointer rounded-[10px] border border-pn-line bg-white p-0"
+                          className="h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-full border border-pn-line bg-white p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
                         />
                         <input
                           type="text"
@@ -955,12 +938,12 @@ export function CreateQRWizard({
                           autoCapitalize="off"
                           autoCorrect="off"
                           inputMode="text"
-                          className="bz-input bz-mono flex-1 uppercase"
+                          className="bz-input min-w-0 flex-1 text-[16px] tabular-nums uppercase sm:text-[14px]"
                         />
                       </div>
                     </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-[13px] font-medium text-[#737373]">
+                    <label className="flex min-w-0 flex-col gap-1.5">
+                      <span className="text-[13px] font-medium text-pn-ink">
                         {isTr ? "Arka plan" : "Background"}
                       </span>
                       <div className="flex items-center gap-2">
@@ -972,7 +955,7 @@ export function CreateQRWizard({
                             if (presetId !== "custom") setPresetId("custom");
                           }}
                           aria-label={isTr ? "Arka plan rengi" : "Background colour"}
-                          className="h-11 w-11 shrink-0 cursor-pointer rounded-[10px] border border-pn-line bg-white p-0"
+                          className="h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-full border border-pn-line bg-white p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
                         />
                         <input
                           type="text"
@@ -987,7 +970,7 @@ export function CreateQRWizard({
                           autoCapitalize="off"
                           autoCorrect="off"
                           inputMode="text"
-                          className="bz-input bz-mono flex-1 uppercase"
+                          className="bz-input min-w-0 flex-1 text-[16px] tabular-nums uppercase sm:text-[14px]"
                         />
                       </div>
                     </label>
@@ -1002,21 +985,13 @@ export function CreateQRWizard({
 
               {colorsValid && contrast && (
                 <div
-                  className="flex items-center gap-3 rounded-[20px] border p-3"
-                  style={{
-                    borderColor:
-                      contrast.level === "risky"
-                        ? "#FECACA"
-                        : contrast.level === "passable"
-                          ? "#FDE68A"
-                          : "#D1FAE5",
-                    background:
-                      contrast.level === "risky"
-                        ? "#FEF2F2"
-                        : contrast.level === "passable"
-                          ? "#FFFBEB"
-                          : "#F0FDF4",
-                  }}
+                  className={`flex items-center gap-3 rounded-[18px] px-4 py-3 ${
+                    contrast.level === "risky"
+                      ? "bg-[#FDECEC]"
+                      : contrast.level === "passable"
+                        ? "bg-[#FFF6DB]"
+                        : "bg-[#ECF7E6]"
+                  }`}
                 >
                   {contrast.level === "risky" ? (
                     <AlertTriangle size={16} strokeWidth={2.2} className="shrink-0 text-[#DC2626]" />
@@ -1031,7 +1006,7 @@ export function CreateQRWizard({
                     </p>
                     <p className="mt-0.5 text-[12px] text-[#525252]">
                       {isTr ? "Kontrast" : "Contrast"}:{" "}
-                      <span className="bz-mono">{contrast.ratio.toFixed(2)}:1</span>
+                      <span className="tabular-nums">{contrast.ratio.toFixed(2)}:1</span>
                       {contrast.level === "risky" && (
                         <span className="ml-1 text-[#991B1B]">
                           {isTr ? "· Devam edemezsin" : "· Cannot proceed"}
@@ -1051,12 +1026,12 @@ export function CreateQRWizard({
                 overflow. Single background (SVG paints its own light bg
                 via the `light` palette) — outer container only provides
                 the rounded frame. */}
-            <div className="mx-auto flex w-full max-w-[240px] shrink-0 flex-col items-center gap-2 rounded-[24px] border border-pn-line bg-white p-4 lg:mx-0 lg:w-[240px] lg:sticky lg:top-0">
-              <span className="text-[13px] font-medium text-[#737373]">
-                {isTr ? "CANLI ÖNİZLEME" : "LIVE PREVIEW"}
+            <div className="mx-auto flex w-full max-w-[240px] shrink-0 flex-col items-center gap-2.5 rounded-[24px] bg-[#F6F6F6] p-4 lg:mx-0 lg:w-[240px] lg:sticky lg:top-0">
+              <span className="text-[14px] font-medium text-pn-ink">
+                {isTr ? "Canlı önizleme" : "Live preview"}
               </span>
               <div
-                className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-[20px] border border-pn-line"
+                className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-[18px]"
                 style={{ background: normLight ?? "#FFFFFF" }}
               >
                 {previewing && !previewSvgFluid ? (
@@ -1083,7 +1058,7 @@ export function CreateQRWizard({
         {/* ───── STEP 3: PREVIEW & CREATE ─────────────────────────────── */}
         {currentStep.id === "preview" && (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col items-center gap-3 rounded-[24px] border border-pn-line bg-white p-5 sm:p-6">
+            <div className="flex flex-col items-center gap-3 rounded-[24px] bg-[#F6F6F6] p-5 sm:p-6">
               {/* Layout-shift fix (2026-05-14): aspect-square + fluid
                   max-width replaces the fixed 220/260 box. The SVG is
                   injected with `[&>svg]:h-full [&>svg]:w-full` so the
@@ -1092,7 +1067,7 @@ export function CreateQRWizard({
                   the rounded frame. Honours iOS Safari narrow modal widths
                   (modal hits 92vw bottom-sheet mode at sm-). */}
               <div
-                className="relative flex aspect-square w-full max-w-[260px] items-center justify-center overflow-hidden rounded-[20px] border border-pn-line"
+                className="relative flex aspect-square w-full max-w-[260px] items-center justify-center overflow-hidden rounded-[20px]"
                 style={{ background: normLight ?? "#FFFFFF" }}
               >
                 {previewing && !previewSvgFluid ? (
@@ -1107,30 +1082,36 @@ export function CreateQRWizard({
                   <QrCode size={64} className="text-[#D4D4D4]" strokeWidth={1.2} />
                 )}
               </div>
-              <p className="text-center text-[12px] leading-[1.55] text-[#525252]">
+              <p className="text-center text-[13px] leading-[1.55] text-[#737373]">
                 {isTr
-                  ? "Bu, oluşturulacak QR'ın görsel önizlemesidir. Yeşil butona basınca panelinde kayıtlı olur ve indirebilirsin."
-                  : "This is a preview of the QR. Press the green button to save it to your panel and download."}
+                  ? "Bu, oluşturulacak QR'ın görsel önizlemesidir. «QR oluştur»a basınca panelinde kayıtlı olur ve indirebilirsin."
+                  : "This is a preview of the QR. Press “Generate QR” to save it to your panel and download."}
               </p>
             </div>
 
-            <div className="bz-card flex flex-col divide-y divide-pn-line">
-              <SummaryRow
+            <div className="space-y-2">
+              <WizardSummaryRow
+                tone="plain"
+                icon={<Tag size={16} strokeWidth={1.8} />}
                 label={isTr ? "İşletme" : "Location"}
                 value={summaryRestaurantName}
               />
               {tableNumber.trim() && (
-                <SummaryRow
+                <WizardSummaryRow
+                  tone="plain"
+                  icon={<Hash size={16} strokeWidth={1.8} />}
                   label={isTr ? "Masa" : "Table"}
-                  value={<span className="bz-mono">{tableNumber.trim()}</span>}
+                  value={<span className="tabular-nums">{tableNumber.trim()}</span>}
                 />
               )}
-              <SummaryRow
+              <WizardSummaryRow
+                tone="plain"
+                icon={<Link2 size={16} strokeWidth={1.8} />}
                 label={isTr ? "Yönlendirme" : "Redirect"}
                 value={
                   linkType === "platform" ? (
                     <span className="inline-flex items-center gap-1.5">
-                      <PlatformChip id={PLATFORM_META[platform]?.chipId ?? "google"} size={14} />
+                      <PlatformChip id={PLATFORM_META[platform]?.chipId ?? "google"} size={16} />
                       {summaryPlatformLabel}
                     </span>
                   ) : (
@@ -1138,34 +1119,32 @@ export function CreateQRWizard({
                   )
                 }
               />
-              <SummaryRow
+              <WizardSummaryRow
+                tone="plain"
+                icon={<Palette size={16} strokeWidth={1.8} />}
                 label={isTr ? "Renk" : "Colour"}
                 value={
                   <span className="inline-flex items-center gap-1.5">
                     <span
                       aria-hidden="true"
-                      className="inline-block h-3.5 w-3.5 rounded-[8px]"
-                      style={{
-                        background: normDark ?? "#000",
-                        border: "1px solid #EBEBEB",
-                      }}
+                      className="inline-block h-4 w-4 rounded-full border border-pn-line"
+                      style={{ background: normDark ?? "#000" }}
                     />
-                    <span className="tabular-nums text-[12px]">{normDark}</span>
-                    <ChevronRight size={10} className="text-[#A3A3A3]" />
+                    <span className="tabular-nums text-[13px]">{normDark}</span>
+                    <ChevronRight size={12} className="text-[#A3A3A3]" />
                     <span
                       aria-hidden="true"
-                      className="inline-block h-3.5 w-3.5 rounded-[8px]"
-                      style={{
-                        background: normLight ?? "#FFF",
-                        border: "1px solid #EBEBEB",
-                      }}
+                      className="inline-block h-4 w-4 rounded-full border border-pn-line"
+                      style={{ background: normLight ?? "#FFF" }}
                     />
-                    <span className="tabular-nums text-[12px]">{normLight}</span>
+                    <span className="tabular-nums text-[13px]">{normLight}</span>
                   </span>
                 }
               />
               {name.trim() && (
-                <SummaryRow
+                <WizardSummaryRow
+                  tone="plain"
+                  icon={<QrCode size={16} strokeWidth={1.8} />}
                   label={isTr ? "İç ad" : "Internal name"}
                   value={<span className="truncate">{name.trim()}</span>}
                 />
@@ -1173,7 +1152,7 @@ export function CreateQRWizard({
             </div>
 
             {error && (
-              <div className="rounded-[14px] border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+              <div className="rounded-[18px] bg-[#FDECEC] px-4 py-3 text-[13px] text-[#B42318]">
                 {error}
               </div>
             )}
@@ -1181,17 +1160,6 @@ export function CreateQRWizard({
         )}
       </div>
     </Modal>
-  );
-}
-
-function SummaryRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-      <span className="text-[13px] font-medium text-[#737373]">{label}</span>
-      <span className="min-w-0 truncate text-right text-[13px] font-medium text-pn-ink">
-        {value}
-      </span>
-    </div>
   );
 }
 

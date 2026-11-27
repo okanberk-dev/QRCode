@@ -60,7 +60,7 @@ test('normalizePortalImage accepts only stored loyalty images', () => {
 });
 
 test('portalPalette keeps button text readable for any card colour', () => {
-  const colours = [null, '#5D3EBC', '#C6F24E', '#0A0A0A', '#FFFFFF', '#FFD400', '#1D4ED8', '#E11D48', '#10B981', '#F97316', '#808080'];
+  const colours = [null, '#111110', '#C6F24E', '#0A0A0A', '#FFFFFF', '#FFD400', '#1D4ED8', '#E11D48', '#10B981', '#F97316', '#808080'];
   for (const theme of ['light', 'dark', 'brand'] as const) {
     for (const c of colours) {
       const p = portalPalette(theme, c);
@@ -71,17 +71,17 @@ test('portalPalette keeps button text readable for any card colour', () => {
   }
 });
 
-test('portalPalette: Buaze default (no card colour) is purple with white text', () => {
+test('portalPalette: Buaze default (no card colour) is green with black text', () => {
   const light = portalPalette('light', null);
-  assert.equal(light.accent, '#5D3EBC');
-  assert.equal(light.onAccent, '#FFFFFF');
-  assert.equal(light.band, '#5D3EBC');
-  assert.equal(light.onBand, '#FFFFFF');
-  assert.equal(portalPalette('brand', null).band, '#5D3EBC');
+  assert.equal(light.accent, '#78FC90');
+  assert.equal(light.onAccent, '#111110');
+  assert.equal(light.band, '#78FC90');
+  assert.equal(light.onBand, '#111110');
+  assert.equal(portalPalette('brand', null).band, '#78FC90');
   const dark = portalPalette('dark', null);
-  assert.equal(dark.onAccent, '#FFFFFF');
+  assert.equal(dark.onAccent, '#111110');
   assert.equal(dark.onBand, '#FFFFFF');
-  // The lifted purple still stands out from the near-black page (non-text 3:1).
+  // The green button stands out from the near-black page (non-text 3:1).
   assert.ok(contrast(dark.accent, dark.bg) >= 3, `dark button ${dark.accent} on ${dark.bg}`);
   // A colour the business chose is kept as is.
   assert.equal(portalPalette('light', '#1D4ED8').accent, '#1D4ED8');

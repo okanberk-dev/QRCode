@@ -109,7 +109,7 @@ export default function HelpSearchResults({
       </div>
       <ol role="list" className="mt-6 border-t border-[#EDEDED]">
         {results.map((entry) => (
-          <li key={entry.slug} className="group relative border-b border-[#EDEDED] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2">
+          <li key={entry.slug} className="group relative border-b border-[#EDEDED] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2">
             <div className="flex items-start justify-between gap-6 py-6">
               <div className="min-w-0">
                 {entry.icon && (
@@ -121,7 +121,7 @@ export default function HelpSearchResults({
                 <h3 className="mt-3 text-pretty text-[18px] font-medium leading-[1.3] tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
                   <Link
                     href={`${base}/help/${entry.slug}`}
-                    className="decoration-[#5D3EBC] decoration-2 underline-offset-4 after:absolute after:inset-0 group-hover:underline focus-visible:outline-none"
+                    className="decoration-[#C6F24E] decoration-2 underline-offset-4 after:absolute after:inset-0 group-hover:underline focus-visible:outline-none"
                   >
                     {entry.title}
                   </Link>

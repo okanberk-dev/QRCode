@@ -47,6 +47,7 @@ import {
   PageHeader,
   useConfirmDialog,
 } from '@/components/ui';
+import { WIZARD_BACK_CLASS, WIZARD_BACK_DESKTOP_CLASS, WIZARD_NEXT_CLASS, WizardFooter } from '@/components/ui/WizardSteps';
 import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 import { detectSector } from '@/lib/sector-platforms';
 import { SECTORS } from '@/lib/sectors';
@@ -620,125 +621,119 @@ export default function SurveyEditorClient({
   }
 
   const stickyBar = (
-    <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-pn-line bg-white/95 px-4 py-3 backdrop-blur sm:-mx-7 sm:px-7 lg:bottom-0">
-      {missingMessage && (
-        <p
-          role="status"
-          aria-live="polite"
-          className="mb-2 text-[13px] font-medium text-[#B91C1C] sm:text-right"
-        >
-          {missingMessage}
-        </p>
-      )}
-      <div className="flex items-center gap-2 sm:justify-end">
-        <Link
-          href={detailHref}
-          className="bz-btn-ghost hidden min-h-11 sm:mr-auto sm:inline-flex"
-        >
-          {isEdit ? (isTr ? 'Vazgeç' : 'Discard') : isTr ? 'İptal' : 'Cancel'}
-        </Link>
+    <WizardFooter
+      top={
+        missingMessage ? (
+          <p role="status" aria-live="polite" className="text-[13px] font-medium text-[#B91C1C] sm:text-right">
+            {missingMessage}
+          </p>
+        ) : undefined
+      }
+    >
+      <Link href={detailHref} className={`${WIZARD_BACK_DESKTOP_CLASS} sm:mr-auto`}>
+        {isEdit ? (isTr ? 'Vazgeç' : 'Discard') : isTr ? 'İptal' : 'Cancel'}
+      </Link>
 
-        <button
-          type="button"
-          className="bz-btn-ghost min-h-11 min-w-11 justify-center [@media(min-width:1024px)_and_(min-height:740px)]:hidden"
-          aria-label={isTr ? 'Önizle' : 'Preview'}
-          onClick={() => setPreviewOpen(true)}
-        >
-          <Smartphone size={16} aria-hidden="true" />
-          <span className="hidden sm:inline">{isTr ? 'Önizle' : 'Preview'}</span>
-        </button>
+      <button
+        type="button"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[#F6F6F6] text-[14px] font-medium text-pn-ink transition-[background-color,transform] duration-200 hover:bg-[#EBEBEB] active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 sm:w-auto sm:px-5 [@media(min-width:1024px)_and_(min-height:740px)]:hidden"
+        aria-label={isTr ? 'Önizle' : 'Preview'}
+        onClick={() => setPreviewOpen(true)}
+      >
+        <Smartphone size={16} aria-hidden="true" />
+        <span className="hidden sm:inline">{isTr ? 'Önizle' : 'Preview'}</span>
+      </button>
 
-        {isEdit ? (
-          <>
-            <button
-              type="button"
-              id={`${uid}-save`}
-              className={`${showSaveAndPublish ? 'bz-btn-ghost' : 'bz-btn-primary'} min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4`}
-              disabled={busy}
-              onClick={() => void submit('save')}
-            >
-              {submitting === 'save' ? (
-                <Loader2 size={15} className="animate-spin" aria-hidden="true" />
-              ) : (
-                <Save size={15} aria-hidden="true" />
-              )}
-              {submitting === 'save'
-                ? isTr
-                  ? 'Kaydediliyor…'
-                  : 'Saving…'
-                : isPublished
-                  ? isTr
-                    ? 'Değişiklikleri kaydet'
-                    : 'Save changes'
-                  : isTr
-                    ? 'Kaydet'
-                    : 'Save'}
-            </button>
-            {showSaveAndPublish && (
-              <button
-                type="button"
-                id={`${uid}-save-publish`}
-                className="bz-btn-primary min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4"
-                disabled={busy}
-                onClick={() => void submit('saveAndPublish')}
-              >
-                {submitting === 'saveAndPublish' ? (
-                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Send size={15} aria-hidden="true" />
-                )}
-                {submitting === 'saveAndPublish'
-                  ? isTr
-                    ? 'Yayınlanıyor…'
-                    : 'Publishing…'
-                  : isTr
-                    ? 'Kaydet ve yayınla'
-                    : 'Save & publish'}
-              </button>
+      {isEdit ? (
+        <>
+          <button
+            type="button"
+            id={`${uid}-save`}
+            className={`${showSaveAndPublish ? WIZARD_BACK_CLASS : WIZARD_NEXT_CLASS} whitespace-normal leading-tight sm:whitespace-nowrap`}
+            disabled={busy}
+            onClick={() => void submit('save')}
+          >
+            {submitting === 'save' ? (
+              <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Save size={15} aria-hidden="true" />
             )}
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              id={`${uid}-draft`}
-              className="bz-btn-ghost min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4"
-              disabled={busy}
-              onClick={() => void submit('draft')}
-            >
-              {submitting === 'draft' && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
-              {submitting === 'draft'
+            {submitting === 'save'
+              ? isTr
+                ? 'Kaydediliyor…'
+                : 'Saving…'
+              : isPublished
                 ? isTr
-                  ? 'Kaydediliyor…'
-                  : 'Saving…'
+                  ? 'Değişiklikleri kaydet'
+                  : 'Save changes'
                 : isTr
-                  ? 'Taslak olarak kaydet'
-                  : 'Save as draft'}
-            </button>
+                  ? 'Kaydet'
+                  : 'Save'}
+          </button>
+          {showSaveAndPublish && (
             <button
               type="button"
-              id={`${uid}-publish`}
-              className="bz-btn-primary min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4"
+              id={`${uid}-save-publish`}
+              className={`${WIZARD_NEXT_CLASS} whitespace-normal leading-tight sm:whitespace-nowrap`}
               disabled={busy}
-              onClick={() => void submit('publish')}
+              onClick={() => void submit('saveAndPublish')}
             >
-              {submitting === 'publish' ? (
+              {submitting === 'saveAndPublish' ? (
                 <Loader2 size={15} className="animate-spin" aria-hidden="true" />
               ) : (
                 <Send size={15} aria-hidden="true" />
               )}
-              {submitting === 'publish'
+              {submitting === 'saveAndPublish'
                 ? isTr
                   ? 'Yayınlanıyor…'
                   : 'Publishing…'
                 : isTr
-                  ? 'Yayınla ve paylaş'
-                  : 'Publish & share'}
+                  ? 'Kaydet ve yayınla'
+                  : 'Save & publish'}
             </button>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            id={`${uid}-draft`}
+            className={`${WIZARD_BACK_CLASS} whitespace-normal leading-tight sm:whitespace-nowrap`}
+            disabled={busy}
+            onClick={() => void submit('draft')}
+          >
+            {submitting === 'draft' && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+            {submitting === 'draft'
+              ? isTr
+                ? 'Kaydediliyor…'
+                : 'Saving…'
+              : isTr
+                ? 'Taslak olarak kaydet'
+                : 'Save as draft'}
+          </button>
+          <button
+            type="button"
+            id={`${uid}-publish`}
+            className={`${WIZARD_NEXT_CLASS} whitespace-normal leading-tight sm:whitespace-nowrap`}
+            disabled={busy}
+            onClick={() => void submit('publish')}
+          >
+            {submitting === 'publish' ? (
+              <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Send size={15} aria-hidden="true" />
+            )}
+            {submitting === 'publish'
+              ? isTr
+                ? 'Yayınlanıyor…'
+                : 'Publishing…'
+              : isTr
+                ? 'Yayınla ve paylaş'
+                : 'Publish & share'}
+          </button>
+        </>
+      )}
+    </WizardFooter>
   );
 
   // `relative` on the wrapper: `sr-only` helpers and the switch internals are
@@ -833,7 +828,7 @@ export default function SurveyEditorClient({
           <div className="[@media(min-width:1024px)_and_(min-height:740px)]:grid [@media(min-width:1024px)_and_(min-height:740px)]:grid-cols-[minmax(0,1fr)_380px] [@media(min-width:1024px)_and_(min-height:740px)]:items-start [@media(min-width:1024px)_and_(min-height:740px)]:gap-6">
             <div className="min-w-0 space-y-5">
               {/* 1 · Title */}
-              <section className="bz-card space-y-4 p-4 sm:p-5" aria-label={isTr ? 'Anket başlığı' : 'Survey title'}>
+              <section className="bz-card space-y-5 p-5 sm:p-7" aria-label={isTr ? 'Anket başlığı' : 'Survey title'}>
                 <Field
                   label={isTr ? 'Anket başlığı' : 'Survey title'}
                   required
@@ -847,7 +842,7 @@ export default function SurveyEditorClient({
                 >
                   <input
                     id={ids.title}
-                    className="bz-input min-h-11 scroll-mt-24 scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+120px)]"
+                    className="bz-input min-h-11 scroll-mt-24 scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+120px)] text-[16px] sm:text-[14px]"
                     value={form.title}
                     maxLength={TITLE_MAX}
                     autoComplete="off"
@@ -878,7 +873,7 @@ export default function SurveyEditorClient({
                 ) : (
                   <button
                     type="button"
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 -ml-3 text-[13px] font-medium text-pn-ink hover:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-pn-canvas px-4 text-[14px] font-medium text-pn-ink transition-colors hover:bg-[#EBEBEB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
                     onClick={() => {
                       setDescriptionOpen(true);
                       window.requestAnimationFrame(() => document.getElementById(ids.description)?.focus());
@@ -893,7 +888,7 @@ export default function SurveyEditorClient({
               {/* 2 · Questions */}
               <section aria-labelledby={`${uid}-questions-h`} className="space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                  <h2 id={`${uid}-questions-h`} className="bz-h-tight text-[16px]">
+                  <h2 id={`${uid}-questions-h`} className="text-[20px] font-medium leading-[26px] tracking-[-0.015em] text-pn-ink">
                     {isTr ? 'Sorular' : 'Questions'}
                   </h2>
                   <p className="text-[13px] text-[#525252]" data-testid="survey-summary">
@@ -902,7 +897,7 @@ export default function SurveyEditorClient({
                       : `${questionCount} ${questionCount === 1 ? 'question' : 'questions'} · about ${duration.replace('~', '')}`}
                   </p>
                 </div>
-                <p className="text-[12px] text-[#737373]">
+                <p className="text-[14px] text-[#737373]">
                   {isTr
                     ? '3–5 soru en iyisidir; uzun anketler yarım bırakılır.'
                     : '3–5 questions work best; long surveys get abandoned.'}
@@ -935,8 +930,8 @@ export default function SurveyEditorClient({
                   ))}
                 </ol>
 
-                <div className="bz-card-soft space-y-2 p-4">
-                  <p id={ids.addLabel} className="text-[12px] font-medium text-pn-ink">
+                <div className="bz-card space-y-3 p-5 sm:p-6">
+                  <p id={ids.addLabel} className="text-[14px] font-medium text-pn-ink">
                     {isTr ? 'Soru ekle' : 'Add a question'}
                     {maxReached && (
                       <span className="ml-2 font-normal text-[#737373]">
@@ -954,7 +949,7 @@ export default function SurveyEditorClient({
                           key={type}
                           id={i === 0 ? `${uid}-add-first` : undefined}
                           type="button"
-                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-pn-line bg-white px-3.5 text-[13px] font-medium text-pn-ink transition-colors hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-pn-line"
+                          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-pn-canvas px-4 text-[14px] font-medium text-pn-ink transition-[background-color,color,transform] duration-200 hover:bg-pn-accent hover:text-white active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-pn-canvas disabled:hover:text-pn-ink"
                           disabled={maxReached}
                           onClick={() => addQuestion(type)}
                         >
@@ -982,30 +977,31 @@ export default function SurveyEditorClient({
               <section className="bz-card overflow-hidden">
                 <button
                   type="button"
-                  className="flex min-h-[64px] w-full items-center justify-between gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent sm:px-5"
+                  className="flex min-h-[72px] w-full items-center justify-between gap-3 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent sm:px-7"
                   aria-expanded={settingsOpen}
                   aria-controls={ids.settings}
                   onClick={() => setSettingsOpen((v) => !v)}
                 >
                   <span className="min-w-0">
-                    <span className="bz-h-tight block text-[16px]">
+                    <span className="block text-[20px] font-medium leading-[26px] tracking-[-0.015em] text-pn-ink">
                       {isTr ? 'Görünüm ve ayarlar' : 'Appearance and settings'}
                     </span>
-                    <span className="mt-0.5 block text-[12px] text-[#737373]">
+                    <span className="mt-1 block text-[14px] text-[#737373]">
                       {isTr
                         ? 'Renk, teşekkür mesajı, iletişim bilgisi, kupon'
                         : 'Colour, thank-you message, contact details, coupon'}
                     </span>
                   </span>
-                  <ChevronDown
-                    size={18}
+                  <span
                     aria-hidden="true"
-                    className={`shrink-0 text-[#737373] transition-transform ${settingsOpen ? 'rotate-180' : ''}`}
-                  />
+                    className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${settingsOpen ? 'bg-pn-accent text-white' : 'bg-pn-canvas text-pn-ink'}`}
+                  >
+                    <ChevronDown size={18} className={`transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
+                  </span>
                 </button>
 
                 {settingsOpen && (
-                  <div id={ids.settings} className="space-y-5 border-t border-pn-line p-4 sm:p-5">
+                  <div id={ids.settings} className="space-y-5 border-t border-pn-line p-5 sm:p-7">
                     <AccentPicker
                       locale={locale}
                       value={form.accentColor}
@@ -1040,8 +1036,8 @@ export default function SurveyEditorClient({
                       }
                     />
 
-                    <fieldset className="space-y-3 rounded-[20px] border border-pn-line p-4">
-                      <legend className="px-1 text-[12px] font-medium text-pn-ink">
+                    <fieldset className="space-y-3 rounded-[18px] bg-pn-canvas p-4">
+                      <legend className="float-left mb-1 w-full text-[14px] font-medium text-pn-ink">
                         {isTr ? 'Teşekkür kuponu (isteğe bağlı)' : 'Thank-you coupon (optional)'}
                       </legend>
                       <p className="text-[12px] leading-[1.45] text-[#737373]">
@@ -1089,7 +1085,7 @@ export default function SurveyEditorClient({
               className="hidden self-start [@media(min-width:1024px)_and_(min-height:740px)]:sticky [@media(min-width:1024px)_and_(min-height:740px)]:top-[88px] [@media(min-width:1024px)_and_(min-height:740px)]:block"
               aria-label={isTr ? 'Müşterinin göreceği ekran' : 'What customers will see'}
             >
-              <p className="mb-2 text-center text-[12px] font-medium text-[#525252]">
+              <p className="mb-2 text-center text-[14px] font-medium text-pn-ink">
                 {isTr ? 'Müşterinin göreceği ekran' : 'What customers will see'}
               </p>
               {isDesktop && previewBusiness && (
@@ -1167,7 +1163,7 @@ function AccentPicker({
 
   return (
     <div>
-      <p id={groupId} className="mb-1.5 text-[12px] font-medium text-pn-ink">
+      <p id={groupId} className="mb-2 text-[14px] font-medium text-pn-ink">
         {isTr ? 'Vurgu rengi' : 'Accent colour'}
       </p>
       <div role="radiogroup" aria-labelledby={groupId} className="flex flex-wrap items-center gap-x-0.5 gap-y-1">
@@ -1186,7 +1182,7 @@ function AccentPicker({
             >
               <span
                 aria-hidden="true"
-                className={`flex h-7 w-7 items-center justify-center rounded-full border border-black/10 ${selected ? 'ring-2 ring-pn-ink ring-offset-2' : ''}`}
+                className={`flex h-7 w-7 items-center justify-center rounded-full border border-black/10 ${selected ? 'ring-2 ring-pn-accent ring-offset-2' : ''}`}
                 style={{ background: s.hex }}
               >
                 {selected && <Check size={14} className="text-pn-ink mix-blend-multiply" strokeWidth={3} />}
@@ -1200,7 +1196,7 @@ function AccentPicker({
             type="button"
             role="radio"
             aria-checked={current === brand}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-1 ${current === brand ? 'border-pn-ink bg-pn-canvas' : 'border-pn-line bg-white hover:border-pn-ink'}`}
+            className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-1 ${current === brand ? 'border-pn-accent bg-pn-accent-soft' : 'border-pn-line bg-white hover:bg-pn-canvas'}`}
             onClick={() => onChange(brand)}
           >
             <span aria-hidden="true" className="h-5 w-5 rounded-full border border-black/10" style={{ background: brand }} />
@@ -1209,7 +1205,7 @@ function AccentPicker({
         )}
 
         <label
-          className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-within:ring-2 focus-within:ring-pn-ink focus-within:ring-offset-1 ${custom ? 'border-pn-ink bg-pn-canvas' : 'border-pn-line bg-white hover:border-pn-ink'}`}
+          className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-within:ring-2 focus-within:ring-pn-ink focus-within:ring-offset-1 ${custom ? 'border-pn-accent bg-pn-accent-soft' : 'border-pn-line bg-white hover:bg-pn-canvas'}`}
         >
           <span
             aria-hidden="true"

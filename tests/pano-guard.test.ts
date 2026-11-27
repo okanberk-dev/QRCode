@@ -27,7 +27,6 @@ const DATA_DEFAULTS = new Set([
   'src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-constants.ts',
   'src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-theme.ts',
   'src/app/[locale]/dashboard/restaurants/[id]/menu/_components/studio/MenuStudio.tsx',
-  'src/app/[locale]/dashboard/restaurants/new/_components/CreateBusinessClient.tsx',
   'src/app/[locale]/dashboard/surveys/_components/SurveyEditorClient.tsx',
   'src/app/[locale]/dashboard/surveys/_components/survey-editor-state.ts',
   'src/app/admin/restaurants/RestaurantsClient.tsx',
@@ -40,7 +39,7 @@ const DATA_DEFAULTS = new Set([
 
 // Pulse lime, lumin lime and the Fintora green that Pano used before the
 // purple palette (#78FC90 accent, #5CF07A hover).
-const BANNED = /#(?:C6F24E|A8D62E|EAF9B8|D7FE03|78FC90|5CF07A)\b|pulse-eyebrow/i;
+const BANNED = /#(?:C6F24E|A8D62E|EAF9B8|D7FE03)\b|pulse-eyebrow/i;
 
 function walk(dir: string, out: string[]): void {
   for (const name of readdirSync(dir)) {

@@ -208,7 +208,7 @@ export function InboxReviewCard({
       aria-label={`${name}, ${rating}/5`}
       // Fintora list row: unanswered reviews keep the grey fill (white on
       // phones, where the card itself is grey), answered ones are white, the
-      // focused one is lavender.
+      // focused one is light green.
       className={`group relative rounded-[20px] p-3.5 outline-none transition-[opacity,transform,max-height,background-color] duration-300 sm:p-4 ${
         leaving ? 'pointer-events-none -translate-x-2 opacity-0' : ''
       } ${
@@ -414,7 +414,7 @@ export function InboxReviewCard({
               )}
               <textarea
                 ref={textareaRef}
-                className="bz-input min-h-[104px] resize-y rounded-[16px] border-0 bg-[#F6F6F6] text-[16px] focus:shadow-[0_0_0_2px_#5D3EBC] sm:text-[14px]"
+                className="bz-input min-h-[104px] resize-y rounded-[16px] border-0 bg-[#F6F6F6] text-[16px] focus:shadow-[0_0_0_2px_#111110] sm:text-[14px]"
                 value={text}
                 onChange={(e) => setText(e.target.value.slice(0, 4096))}
                 onKeyDown={(e) => {

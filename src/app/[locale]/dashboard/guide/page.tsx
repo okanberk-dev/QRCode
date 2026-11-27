@@ -358,7 +358,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
           kısa kurallar. CLAUDE.md §11 Pulse Voice — net + actionable. */}
       <section
         aria-label={isTr ? 'İpuçları' : 'Tips'}
-        className="overflow-hidden rounded-[24px] bg-[#3B1F8F] text-white"
+        className="overflow-hidden rounded-[24px] bg-[#000000] text-white"
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
           <h2 className="bz-h-tight text-[20px] sm:text-[22px]">

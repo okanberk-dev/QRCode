@@ -165,7 +165,7 @@ export default function PricingPlans({ locale, plans }: Props) {
             {toggleBadge ? (
               <span
                 className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${
-                  billing === 'yearly' ? 'bg-[#5D3EBC] text-white' : 'bg-[#EFEAFB] text-[#0A0A0A]'
+                  billing === 'yearly' ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
                 }`}
               >
                 {toggleBadge}
@@ -226,7 +226,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                 {billing === 'monthly' && hasMonthlyDiscount && p.discount.label ? (
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold ${
-                      dark ? 'bg-[#5D3EBC] text-white' : 'bg-[#EFEAFB] text-[#0A0A0A]'
+                      dark ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
                     }`}
                   >
                     {p.discount.label}
@@ -242,7 +242,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                 <p className="flex items-baseline gap-1.5">
                   <span
                     className={`text-[48px] leading-none tabular-nums ${
-                      dark ? 'text-white' : 'text-[#0A0A0A]'
+                      dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
                     }`}
                   >
                     {price === 0 ? copy.free : fmt(price)}
@@ -267,7 +267,7 @@ export default function PricingPlans({ locale, plans }: Props) {
               </div>
 
               {p.maxBusinesses != null ? (
-                <p className={`mt-6 text-[15px] font-semibold ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>
+                <p className={`mt-6 text-[15px] font-semibold ${dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'}`}>
                   {businessCountLabel(p.maxBusinesses, locale)}
                 </p>
               ) : null}
@@ -278,10 +278,10 @@ export default function PricingPlans({ locale, plans }: Props) {
                       <span
                         aria-hidden="true"
                         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                          dark ? 'bg-[#5D3EBC]' : 'bg-[#EFEAFB]'
+                          dark ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
                         }`}
                       >
-                        <Check size={12} className={dark ? 'text-white' : 'text-[var(--rt-brand-700)]'} strokeWidth={2.5} />
+                        <Check size={12} className="text-[var(--rt-brand-700)]" strokeWidth={2.5} />
                       </span>
                       <span className={dark ? 'text-white' : 'text-[#0A0A0A]'}>{feat}</span>
                     </li>
@@ -303,10 +303,10 @@ export default function PricingPlans({ locale, plans }: Props) {
                   <a
                     href={`/api/billing/paynkolay/checkout?planId=${encodeURIComponent(p.id)}&cycle=${billing}&locale=${locale}`}
                     rel="nofollow"
-                    className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] ${
+                    className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
                       dark
-                        ? 'text-white decoration-[#DCD3F6] hover:decoration-white'
-                        : 'text-[#0A0A0A] decoration-[#5D3EBC] hover:decoration-[#0A0A0A]'
+                        ? 'text-white decoration-[#C6F24E] hover:text-[#C6F24E]'
+                        : 'text-[#0A0A0A] decoration-[#C6F24E] hover:decoration-[#0A0A0A]'
                     }`}
                   >
                     {copy.subscribe} · {formatTry(checkoutTry as number, locale)}
@@ -315,10 +315,10 @@ export default function PricingPlans({ locale, plans }: Props) {
                 {billing === 'yearly' && price > 0 && !checkoutReady ? (
                   <Link
                     href={`${base}/contact`}
-                    className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] ${
+                    className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
                       dark
-                        ? 'text-white decoration-[#DCD3F6] hover:decoration-white'
-                        : 'text-[#0A0A0A] decoration-[#5D3EBC] hover:decoration-[#0A0A0A]'
+                        ? 'text-white decoration-[#C6F24E] hover:text-[#C6F24E]'
+                        : 'text-[#0A0A0A] decoration-[#C6F24E] hover:decoration-[#0A0A0A]'
                     }`}
                   >
                     {copy.yearlyContact}
@@ -330,7 +330,7 @@ export default function PricingPlans({ locale, plans }: Props) {
         })}
       </div>
       <p className="mt-8 text-center text-[14px] text-[#525252]">
-        <Link href={`${base}/contact`} className="underline decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:text-[#0A0A0A]">
+        <Link href={`${base}/contact`} className="underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:text-[#0A0A0A]">
           {copy.enterprise}
         </Link>
       </p>

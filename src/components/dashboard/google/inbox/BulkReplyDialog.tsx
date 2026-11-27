@@ -70,7 +70,7 @@ function ItemEditor({
         </button>
       </div>
       <textarea
-        className="bz-input min-h-[76px] resize-y rounded-[16px] border-0 text-[16px] focus:shadow-[0_0_0_2px_#5D3EBC] sm:text-[14px]"
+        className="bz-input min-h-[76px] resize-y rounded-[16px] border-0 text-[16px] focus:shadow-[0_0_0_2px_#111110] sm:text-[14px]"
         value={item.body}
         onChange={(e) => onChange(e.target.value.slice(0, 4096))}
         aria-label={isTr ? 'Yanıt metni' : 'Reply text'}

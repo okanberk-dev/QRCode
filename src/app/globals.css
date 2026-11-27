@@ -28,16 +28,15 @@
   --color-text-muted: #525252;
   --color-text-light: #737373;
 
-  /* Pano panel tokens (docs/design/DASHBOARD_DESIGN.md §2). Outside the panels the
-   * accent family is the same purple (white text on it) and the neutrals stay
-   * Pulse; `pano.css` swaps them for the Pano
+  /* Pano panel tokens (docs/design/DASHBOARD_DESIGN.md §2). These are the
+   * Pulse values used outside the panels; `pano.css` swaps them for the Pano
    * values under `:root:has(.bz-panel)`, so shared components (ui, audits,
    * reply, loyalty) get the right colour on both surfaces. */
-  --color-pn-accent: #5D3EBC;
-  --color-pn-accent-hover: #4C2FA3;
-  --color-pn-accent-soft: #EFEAFB;
-  --color-pn-accent-ink: #5D3EBC;
-  --color-pn-olive: #A68FEB;
+  --color-pn-accent: #C6F24E;
+  --color-pn-accent-hover: #A8D62E;
+  --color-pn-accent-soft: #EAF9B8;
+  --color-pn-accent-ink: #A8D62E;
+  --color-pn-olive: #A8D62E;
   --color-pn-canvas: #FAFAFA;
   --color-pn-line: #EDEDED;
   --color-pn-line-strong: #D4D4D4;
@@ -172,11 +171,11 @@ body {
 
 .pulse-blog-content blockquote {
   position: relative;
-  border-left: 4px solid #5D3EBC !important;
+  border-left: 4px solid #C6F24E !important;
   border-radius: 20px;
   background:
-    radial-gradient(circle at 18px 18px, rgba(93, 62, 188, 0.18), transparent 32px),
-    linear-gradient(135deg, #F7F4FE 0%, #EFEAFB 100%);
+    radial-gradient(circle at 18px 18px, rgba(198, 242, 78, 0.55), transparent 32px),
+    linear-gradient(135deg, #F8FFE0 0%, #EAF9B8 100%);
   color: #0A0A0A !important;
   padding: 24px 26px 24px 58px !important;
   font-weight: 500;
@@ -265,8 +264,8 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #5D3EBC;
-  box-shadow: 0 0 0 6px rgba(93, 62, 188, 0.18);
+  background: #C6F24E;
+  box-shadow: 0 0 0 6px rgba(198, 242, 78, 0.18);
 }
 
 .pulse-blog-content p:first-of-type {
@@ -294,7 +293,7 @@ body {
 }
 
 .pulse-blog-content li::marker {
-  color: #4C2FA3;
+  color: #A8D62E;
   font-weight: 700;
 }
 
@@ -302,18 +301,18 @@ body {
   color: #0A0A0A;
   font-weight: 500;
   text-decoration-line: underline;
-  text-decoration-color: #5D3EBC;
+  text-decoration-color: #C6F24E;
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
 
 .pulse-blog-content a:hover {
-  color: #4C2FA3;
+  color: #A8D62E;
 }
 
 .pulse-blog-content code {
   border-radius: 8px;
-  background: #EFEAFB;
+  background: #EAF9B8;
   color: #0A0A0A;
   padding: 2px 6px;
   font-family: var(--font-mono);
@@ -349,8 +348,7 @@ body {
 }
 .pulse-blog-lead::first-letter {
   float: left;
-  background: #5D3EBC;
-  color: #FFFFFF;
+  background: #C6F24E;
   font-family: var(--font-heading);
   font-size: 64px;
   line-height: 0.85;
@@ -477,9 +475,9 @@ body {
  * (`bz-mob-sheet-in` paterni reuse, CLAUDE.md §38.61).
  */
 @keyframes activity-row-in {
-  0%   { transform: translateY(-4px); background-color: rgba(93, 62, 188, 0.14); }
-  60%  { background-color: rgba(93, 62, 188, 0.09); }
-  100% { transform: translateY(0); background-color: rgba(93, 62, 188, 0); }
+  0%   { transform: translateY(-4px); background-color: rgba(198, 242, 78, 0.18); }
+  60%  { background-color: rgba(198, 242, 78, 0.12); }
+  100% { transform: translateY(0); background-color: rgba(198, 242, 78, 0); }
 }
 
 /* Stage 32 §38.112 — Premium editorial cookie consent banner.
@@ -728,12 +726,12 @@ input::-webkit-inner-spin-button {
 }
 .bz-btn:hover { background: #FAFAFA; border-color: #D4D4D4; }
 .bz-btn:active { transform: scale(0.98); }
-.bz-btn:focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(93,62,188,0.4); }
+.bz-btn:focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.4); }
 .bz-btn:disabled { background: #F5F5F5; color: #A3A3A3; cursor: not-allowed; transform: none; }
 
 .bz-btn-primary {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  background: #5D3EBC; color: #fff;
+  background: #0A0A0A; color: #fff;
   min-height: 38px;
   font-size: 13px; font-weight: 600;
   padding: 10px 16px; border-radius: 999px; border: 0;
@@ -742,14 +740,14 @@ input::-webkit-inner-spin-button {
   white-space: nowrap;
   outline: none;
 }
-.bz-btn-primary:hover { background: #4C2FA3; transform: translateY(-1px); }
+.bz-btn-primary:hover { background: #1A1A1A; transform: translateY(-1px); }
 .bz-btn-primary:active { transform: scale(0.98); }
-.bz-btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(93,62,188,0.5); }
+.bz-btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(198,242,78,0.5); }
 .bz-btn-primary:disabled { background: #EDEDED; color: #6B7280; cursor: not-allowed; transform: none; }
 
 .bz-btn-lime {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  background: #5D3EBC; color: #FFFFFF;
+  background: #C6F24E; color: #0A0A0A;
   min-height: 38px;
   font-size: 13px; font-weight: 600;
   padding: 10px 16px; border-radius: 999px; border: 0;
@@ -758,7 +756,7 @@ input::-webkit-inner-spin-button {
   white-space: nowrap;
   outline: none;
 }
-.bz-btn-lime:hover { background: #4C2FA3; }
+.bz-btn-lime:hover { background: #A8D62E; }
 .bz-btn-lime:active { transform: scale(0.98); }
 .bz-btn-lime:focus-visible { box-shadow: 0 0 0 3px rgba(10,10,10,0.4); }
 .bz-btn-lime:disabled { background: #EDEDED; color: #6B7280; cursor: not-allowed; }
@@ -776,7 +774,7 @@ input::-webkit-inner-spin-button {
   outline: none;
 }
 .bz-btn-ghost:hover { background: #FAFAFA; border-color: #D4D4D4; }
-.bz-btn-ghost:focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(93,62,188,0.4); }
+.bz-btn-ghost:focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.4); }
 
 .bz-btn-danger {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -826,7 +824,7 @@ input::-webkit-inner-spin-button {
 }
 .bz-btn-on-dark:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.28); }
 .bz-btn-on-dark:active { transform: scale(0.98); }
-.bz-btn-on-dark:focus-visible { box-shadow: 0 0 0 3px rgba(255,255,255,0.45); }
+.bz-btn-on-dark:focus-visible { box-shadow: 0 0 0 3px rgba(198,242,78,0.35); }
 .bz-btn-on-dark:disabled { color: rgba(255,255,255,0.45); cursor: not-allowed; transform: none; }
 
 .bz-btn-icon {
@@ -837,14 +835,14 @@ input::-webkit-inner-spin-button {
   outline: none;
 }
 .bz-btn-icon:hover { background: #F2F2F2; color: #0A0A0A; }
-.bz-btn-icon:focus-visible { box-shadow: 0 0 0 2px rgba(93,62,188,0.6); color: #0A0A0A; }
+.bz-btn-icon:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); color: #0A0A0A; }
 
 .bz-btn-icon-on-dark {
   color: rgba(255,255,255,0.72);
   border-color: transparent;
 }
 .bz-btn-icon-on-dark:hover { background: rgba(255,255,255,0.12); color: #FFFFFF; }
-.bz-btn-icon-on-dark:focus-visible { box-shadow: 0 0 0 2px rgba(255,255,255,0.6); color: #FFFFFF; }
+.bz-btn-icon-on-dark:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.55); color: #FFFFFF; }
 
 /* §38.74 — Mobile-kritik close button variant. WCAG 2.5.5 (44x44px touch
    target) modal/drawer kapatma butonları için. Hover+focus ile bz-btn-icon
@@ -859,7 +857,7 @@ input::-webkit-inner-spin-button {
   outline: none;
 }
 .bz-btn-icon-lg:hover { background: #F2F2F2; color: #0A0A0A; }
-.bz-btn-icon-lg:focus-visible { box-shadow: 0 0 0 2px rgba(93,62,188,0.6); color: #0A0A0A; }
+.bz-btn-icon-lg:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); color: #0A0A0A; }
 
 /* Small variant — bz-btn/primary/lime/ghost/danger/warn/on-dark ile birlikte kullanılır.
    tokens.css line 127 birebir port. */
@@ -901,12 +899,12 @@ input::-webkit-inner-spin-button {
 .bz-badge--danger .dot { background: #DC2626; }
 .bz-badge--info   { background: #EFF6FF; color: #1E40AF; border-color: #BFDBFE; }
 .bz-badge--info .dot   { background: #2563EB; }
-.bz-badge--lime   { background: #EFEAFB; color: #3B1F8F; border-color: #DCD3F6; }
-.bz-badge--lime .dot   { background: #5D3EBC; }
+.bz-badge--lime   { background: #EAF9B8; color: #4D5C00; border-color: #D9EE7A; }
+.bz-badge--lime .dot   { background: #A8D62E; }
 .bz-badge--ghost  { background: #F2F2F2; color: #525252; border-color: #EDEDED; }
 /* Owner / superadmin scope için graphite + lime accent. tokens.css line 151-152 birebir port. */
-.bz-badge--dark   { background: #3B1F8F; color: #FFFFFF; border-color: #3B1F8F; }
-.bz-badge--dark .dot { background: #FFFFFF; }
+.bz-badge--dark   { background: #0A0A0A; color: #C6F24E; border-color: #0A0A0A; }
+.bz-badge--dark .dot { background: #C6F24E; }
 
 /* ── Inputs ── */
 .bz-input {
@@ -926,7 +924,7 @@ input::-webkit-inner-spin-button {
 }
 .bz-input::placeholder { color: #A3A3A3; }
 .bz-input:hover:not(:disabled) { border-color: #D4D4D4; }
-.bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(93,62,188,0.35); }
+.bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.35); }
 .bz-input:disabled { background: #FAFAFA; color: #737373; cursor: not-allowed; }
 /* ── Pulse-themed native <select> (Stage 97) ──
    Native picker preserved (best mobile UX — iOS/Android open native sheet).
@@ -992,7 +990,7 @@ select.bz-input option:disabled {
   color: #A3A3A3;
 }
 select.bz-input option:checked {
-  background: linear-gradient(0deg, #EFEAFB 0%, #EFEAFB 100%);
+  background: linear-gradient(0deg, #EAF9B8 0%, #EAF9B8 100%);
   color: #0A0A0A;
 }
 
@@ -1035,7 +1033,7 @@ select.bz-input option:checked {
 /* ── Avatar ── */
 .bz-avatar {
   display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 8px; background: #5D3EBC; color: #FFFFFF;
+  border-radius: 8px; background: #0A0A0A; color: #C6F24E;
   font-weight: 600; font-family: var(--font-heading); flex-shrink: 0;
   font-size: 12px; width: 32px; height: 32px;
   letter-spacing: -0.02em;
@@ -1107,7 +1105,7 @@ select.bz-input option:checked {
   outline: none;
 }
 .bz-tab-vertical:hover { background: #FAFAFA; color: #1A1A1A; }
-.bz-tab-vertical:focus-visible { box-shadow: 0 0 0 2px rgba(93,62,188,0.6); }
+.bz-tab-vertical:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); }
 .bz-tab-vertical[aria-selected="true"] {
   background: #0A0A0A;
   color: #fff;
@@ -1123,7 +1121,7 @@ select.bz-input option:checked {
   top: 6px;
   bottom: 6px;
   width: 3px;
-  background: #5D3EBC;
+  background: #C6F24E;
   border-radius: 0 2px 2px 0;
 }
 .bz-tab-vertical[aria-selected="true"]::after { content: none; }
@@ -1135,7 +1133,7 @@ select.bz-input option:checked {
 }
 .bz-pulse-dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: #4C2FA3;
+  background: #A8D62E;
   animation: bz-pulse-dot 1.6s ease-in-out infinite;
   display: inline-block;
 }
@@ -1153,7 +1151,7 @@ select.bz-input option:checked {
  * toast simply appears, and the flash becomes a static lime tint for the
  * same 900ms (no fade). */
 @keyframes bz-row-flash {
-  from { background-color: #EFEAFB; }
+  from { background-color: #EAF9B8; }
   to { background-color: transparent; }
 }
 .bz-row-flash { animation: bz-row-flash 900ms ease-out 1; }
@@ -1183,8 +1181,8 @@ select.bz-input option:checked {
   z-index: 200;
   padding: 8px 14px;
   border-radius: 8px;
-  background: #5D3EBC;
-  color: #FFFFFF;
+  background: #0A0A0A;
+  color: #C6F24E;
   font-size: 13px;
   font-weight: 600;
   font-family: var(--font-body);
@@ -1193,7 +1191,7 @@ select.bz-input option:checked {
 }
 .bz-skip-link:focus {
   top: 12px;
-  outline: 2px solid #5D3EBC;
+  outline: 2px solid #C6F24E;
   outline-offset: 2px;
 }
 
@@ -1265,7 +1263,7 @@ select.bz-input option:checked {
 .bz-menu-item:focus-visible {
   outline: none;
   background: #FAFAFA;
-  box-shadow: inset 0 0 0 2px rgba(93, 62, 188, 0.55);
+  box-shadow: inset 0 0 0 2px rgba(198, 242, 78, 0.55);
 }
 .bz-menu-item[aria-selected="true"],
 .bz-menu-item.is-selected {
@@ -1274,7 +1272,7 @@ select.bz-input option:checked {
 }
 .bz-menu-item[data-active="true"],
 .bz-menu-item.is-active {
-  background: #EFEAFB;
+  background: #EAF9B8;
 }
 .bz-menu-item.danger { color: #B91C1C; }
 .bz-menu-item.danger > svg { color: currentColor; }
@@ -1446,13 +1444,13 @@ select.bz-input option:checked {
 .prose-legal a {
   color: #0A0A0A;
   text-decoration: underline;
-  text-decoration-color: #5D3EBC;
+  text-decoration-color: #C6F24E;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
   transition: text-decoration-color 0.15s ease;
 }
 .prose-legal a:hover {
-  text-decoration-color: #4C2FA3;
+  text-decoration-color: #A8D62E;
 }
 .prose-legal code {
   background: #F5F5F5;

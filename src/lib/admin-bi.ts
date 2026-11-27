@@ -169,7 +169,7 @@ export interface PlanDistributionBucket {
   count: number;
 }
 
-const TIER_COLORS = ['#0A0A0A', '#404040', '#737373', '#A3A3A3', '#D4D4D4'];
+const TIER_COLORS = ['#111110', '#404040', '#737373', '#A3A3A3', '#D4D4D4'];
 
 /**
  * Plan distribution across owners — one bucket per live tier (sortOrder),
@@ -221,7 +221,7 @@ export function buildPlanDistribution({
   });
   const extras: PlanDistributionBucket[] = [
     { key: 'other_paid', label: 'Diğer ücretli', color: '#525252', count: otherPaid },
-    { key: 'trial', label: 'Deneme', color: '#5D3EBC', count: counts.trial },
+    { key: 'trial', label: 'Deneme', color: '#78FC90', count: counts.trial },
     { key: 'trial_expired', label: 'Deneme süresi bitti', color: '#D97706', count: counts.trial_expired },
     { key: 'free', label: 'Ücretsiz / süresi dolmuş', color: '#D4D4D4', count: counts.free },
   ];

@@ -167,7 +167,7 @@ function CatalogCard({
         <div className="flex items-start justify-between gap-3">
           <span
             aria-hidden="true"
-            className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EFEAFB] text-[#0A0A0A]"
+            className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
           >
             <Icon size={20} strokeWidth={2} />
           </span>

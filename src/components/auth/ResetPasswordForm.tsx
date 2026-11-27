@@ -70,8 +70,8 @@ export default function ResetPasswordForm({ locale }: Props) {
 
   if (done) {
     return (
-      <div className="rounded-2xl border border-[#8C6CF0] bg-[#EFEAFB] p-6 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#5D3EBC] text-white">
+      <div className="rounded-2xl border border-[#C6F24E] bg-[#EAF9B8] p-6 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
           <Check size={22} strokeWidth={2.5} />
         </div>
         <p className="text-[15px] font-medium text-[#0A0A0A]">
@@ -104,7 +104,7 @@ export default function ResetPasswordForm({ locale }: Props) {
             value={token}
             onChange={(e) => setToken(e.target.value.trim())}
             placeholder={locale === 'tr' ? 'E-postanızdaki bağlantıyı kullanın' : 'Use the link from your email'}
-            className="min-h-[44px] w-full px-4 py-3 bg-white rounded-xl border border-[#EDEDED] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all font-mono text-[11px] text-[#0A0A0A] placeholder:text-[#A3A3A3] truncate"
+            className="min-h-[44px] w-full px-4 py-3 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-mono text-[11px] text-[#0A0A0A] placeholder:text-[#A3A3A3] truncate"
           />
           <p className="text-[12px] text-[#737373] ml-1">
             {locale === 'tr'
@@ -130,7 +130,7 @@ export default function ResetPasswordForm({ locale }: Props) {
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="••••••"
-          className="min-h-[56px] w-full px-4 py-4 bg-white rounded-xl border border-[#EDEDED] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all font-medium text-2xl text-center tracking-[0.5em] font-mono text-[#0A0A0A] placeholder:text-[#A3A3A3]"
+          className="min-h-[56px] w-full px-4 py-4 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all font-medium text-2xl text-center tracking-[0.5em] font-mono text-[#0A0A0A] placeholder:text-[#A3A3A3]"
         />
       </div>
 
@@ -149,7 +149,7 @@ export default function ResetPasswordForm({ locale }: Props) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={locale === 'tr' ? 'En az 8 karakter' : 'At least 8 characters'}
-            className="min-h-[44px] w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
+            className="min-h-[44px] w-full px-4 py-3.5 bg-white rounded-xl border border-[#EDEDED] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
           />
           <button
             type="button"
@@ -165,7 +165,7 @@ export default function ResetPasswordForm({ locale }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#5D3EBC] text-white font-medium py-3.5 rounded-full hover:bg-[#4C2FA3] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading
@@ -180,7 +180,7 @@ export default function ResetPasswordForm({ locale }: Props) {
         {locale === 'tr' ? 'Kod süresi doldu mu?' : 'Code expired?'}{' '}
         <Link
           href={`/${locale}/auth/forgot-password`}
-          className="font-semibold text-[#0A0A0A] hover:text-[#5D3EBC] transition-colors"
+          className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
         >
           {locale === 'tr' ? 'Yeni kod iste' : 'Request a new code'}
         </Link>
@@ -190,7 +190,7 @@ export default function ResetPasswordForm({ locale }: Props) {
         {locale === 'tr' ? 'Hatırladın mı?' : 'Remembered it?'}{' '}
         <Link
           href={`/${locale}/auth/login`}
-          className="font-semibold text-[#0A0A0A] hover:text-[#5D3EBC] transition-colors"
+          className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
         >
           {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
         </Link>

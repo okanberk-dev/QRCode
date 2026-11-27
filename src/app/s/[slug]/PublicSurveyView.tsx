@@ -6,7 +6,7 @@
 // reached via QR scan at /s/[slug].
 //
 // Three stages (purple + white design, CLAUDE.md §63 palette):
-//   1. intro  — purple hero (#5D3EBC, white text), brand pill + table label
+//   1. intro  — purple hero (#111110, white text), brand pill + table label
 //               (only when ?table= is present), "type · minutes" line,
 //               bold h1, sub copy, "Neler soracağız" numbered list (first 4
 //               + overflow), pill CTA in the owner's accent (heroAccentPair),
@@ -70,14 +70,14 @@ import { contrastRatio } from '@/lib/qr-colors';
 // question screens. The owner's accent (resolveSurveyAccent) still paints the
 // CTAs, stars, progress and selected states — only Buaze's own surfaces,
 // labels and neutrals use these.
-const SURVEY_HERO = '#5D3EBC';
-const SURVEY_HERO_DEEP = '#3B1F8F';
+const SURVEY_HERO = '#111110';
+const SURVEY_HERO_DEEP = '#000000';
 const SURVEY_TEXT = '#111110';
 const SURVEY_TEXT_2 = '#737373';
 const SURVEY_LINE = '#EBEBEB';
 const SURVEY_CANVAS = '#F6F6F6';
-const SURVEY_LAVENDER = '#EFEAFB';
-const SURVEY_LAVENDER_LINE = '#DCD3F6';
+const SURVEY_LAVENDER = '#F1FDF3';
+const SURVEY_LAVENDER_LINE = '#CDEFD6';
 const SURVEY_ERROR_TEXT = '#B42318';
 const SURVEY_ERROR = '#D92D20';
 
@@ -207,7 +207,7 @@ const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
 };
 
 // KVKK / Açık Rıza / Ticari İleti links sit INSIDE a ConsentRow, which is
-// white (unchecked) or lavender #EFEAFB (checked). Purple reads on both
+// white (unchecked) or lavender #F1FDF3 (checked). Purple reads on both
 // (7.6:1 on white, 6.2:1 on lavender).
 const LEGAL_LINK_STYLE: React.CSSProperties = {
   color: SURVEY_HERO,

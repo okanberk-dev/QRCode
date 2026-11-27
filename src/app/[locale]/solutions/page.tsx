@@ -314,7 +314,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 const FOCUS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
 const BTN = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors ${FOCUS}`;
 
 export default async function SolutionsHubPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -438,7 +438,7 @@ export default async function SolutionsHubPage({ params }: { params: Promise<{ l
                       <li key={step.title} className="flex gap-4">
                         <span
                           aria-hidden="true"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[13px] font-semibold text-white"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[13px] font-semibold text-[#C6F24E]"
                         >
                           {i + 1}
                         </span>
@@ -448,7 +448,7 @@ export default async function SolutionsHubPage({ params }: { params: Promise<{ l
                           {i === 1 ? (
                             <span aria-hidden="true" className="mt-2.5 flex gap-1">
                               {[0, 1, 2, 3, 4].map((star) => (
-                                <Star key={star} size={16} className="fill-[#5D3EBC] text-[#5D3EBC]" strokeWidth={1.5} />
+                                <Star key={star} size={16} className="fill-[#C6F24E] text-[#0A0A0A]" strokeWidth={1.5} />
                               ))}
                             </span>
                           ) : null}
@@ -499,12 +499,12 @@ export default async function SolutionsHubPage({ params }: { params: Promise<{ l
                     return (
                       <li
                         key={entry.slug}
-                        className="group relative flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2 sm:p-6"
+                        className="group relative flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:p-6"
                       >
                         <div className="flex items-center gap-3">
                           <span
                             aria-hidden="true"
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EFEAFB] text-[#0A0A0A]"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
                           >
                             <Icon size={18} strokeWidth={2} />
                           </span>
@@ -560,7 +560,7 @@ export default async function SolutionsHubPage({ params }: { params: Promise<{ l
                 <li key={item.title} className={FEATURE_CARD}>
                   <span
                     aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EFEAFB] text-[#0A0A0A]"
+                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
                   >
                     <Icon size={20} strokeWidth={2} />
                   </span>
@@ -576,26 +576,26 @@ export default async function SolutionsHubPage({ params }: { params: Promise<{ l
       {/* 4 · Free QR generator */}
       <section aria-labelledby="solutions-tool-title" className={`bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}>
         <div className={FEATURE_CONTAINER}>
-          <div className="relative overflow-hidden rounded-[28px] bg-[#5D3EBC] px-6 py-10 text-white sm:px-12 sm:py-14">
+          <div className="relative overflow-hidden rounded-[28px] bg-[#0A0A0A] px-6 py-10 text-white sm:px-12 sm:py-14">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -right-28 -top-28 h-[360px] w-[360px] rounded-full"
-              style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.14), transparent 70%)' }}
+              style={{ background: 'radial-gradient(circle, rgba(198,242,78,0.16), transparent 70%)' }}
             />
             <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
               <div className="max-w-[640px]">
-                <p className="pulse-eyebrow text-white/85">{copy.tool.eyebrow}</p>
+                <p className="pulse-eyebrow text-[#C6F24E]">{copy.tool.eyebrow}</p>
                 <h2
                   id="solutions-tool-title"
                   className="mt-4 text-balance text-[28px] leading-[1.08] text-white sm:text-[40px]"
                 >
                   {copy.tool.title}
                 </h2>
-                <p className="mt-5 text-[16px] leading-[1.6] text-white/85 sm:text-[17px]">{copy.tool.lead}</p>
+                <p className="mt-5 text-[16px] leading-[1.6] text-white/75 sm:text-[17px]">{copy.tool.lead}</p>
               </div>
               <Link
                 href={`${base}/solutions/qr-generator`}
-                className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-[#5D3EBC] transition-colors hover:bg-[#EFEAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#5D3EBC]"
+                className={`${BTN} shrink-0 bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E] focus-visible:ring-offset-[#0A0A0A]`}
               >
                 <QrCode size={18} aria-hidden="true" />
                 {copy.tool.cta}

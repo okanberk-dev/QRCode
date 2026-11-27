@@ -178,7 +178,7 @@ export default async function HelpCenterPage({
                     <div className="flex items-start gap-4 lg:col-start-1 lg:row-start-1">
                       <span
                         aria-hidden="true"
-                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#5D3EBC] text-white"
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#C6F24E] text-[#0A0A0A]"
                       >
                         <HelpCategoryIcon icon={featured.icon} size={20} />
                       </span>
@@ -186,7 +186,7 @@ export default async function HelpCenterPage({
                         <h3 className="text-[22px] leading-[1.2] tracking-[-0.02em] text-white sm:text-[26px]">
                           <Link
                             href={`${base}/help/category/${featured.slug}`}
-                            className="rounded-sm hover:underline hover:decoration-[#DCD3F6] hover:decoration-2 hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                            className="rounded-sm hover:underline hover:decoration-[#C6F24E] hover:decoration-2 hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
                           >
                             {featured[lang].title}
                           </Link>
@@ -199,7 +199,7 @@ export default async function HelpCenterPage({
                         <li key={item.slug} className="border-b border-white/10">
                           <Link
                             href={`${base}/help/${item.slug}`}
-                            className="group flex min-h-[52px] items-center justify-between gap-4 py-3 text-[15px] font-medium text-white transition-colors hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0]"
+                            className="group flex min-h-[52px] items-center justify-between gap-4 py-3 text-[15px] font-medium text-white transition-colors hover:text-[#C6F24E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
                           >
                             <span className="text-pretty">{item.title}</span>
                             <ArrowRight size={16} aria-hidden="true" className="shrink-0 transition-transform group-hover:translate-x-0.5" />
@@ -209,7 +209,7 @@ export default async function HelpCenterPage({
                     </ul>
                     <Link
                       href={`${base}/help/category/${featured.slug}`}
-                      className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 self-start text-[14px] font-semibold text-white hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] lg:col-start-1 lg:row-start-2 lg:mt-6 lg:self-end lg:pl-[60px]"
+                      className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 self-start text-[14px] font-semibold text-[#C6F24E] hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] lg:col-start-1 lg:row-start-2 lg:mt-6 lg:self-end lg:pl-[60px]"
                     >
                       {labels.seeAll(counts[featured.slug] ?? 0)}
                       <ArrowRight size={14} aria-hidden="true" />
@@ -220,11 +220,11 @@ export default async function HelpCenterPage({
               {otherTopics.map((category) => (
                 <li
                   key={category.slug}
-                  className="group relative flex gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2 sm:flex-col sm:gap-0 sm:p-8"
+                  className="group relative flex gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:flex-col sm:gap-0 sm:p-8"
                 >
                   <span
                     aria-hidden="true"
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[var(--rt-cream)] text-[var(--rt-ink-900)] transition-colors group-hover:bg-[#5D3EBC] group-hover:text-white"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#F5F5F5] text-[#0A0A0A] transition-colors group-hover:bg-[#C6F24E]"
                   >
                     <HelpCategoryIcon icon={category.icon} size={20} />
                   </span>
@@ -265,7 +265,7 @@ export default async function HelpCenterPage({
                   return (
                     <li
                       key={item.slug}
-                      className="group relative flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2 sm:p-8"
+                      className="group relative flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:p-8"
                     >
                       {category && (
                         <p lang={lang} className="pulse-eyebrow flex items-center gap-2 text-[#737373]">

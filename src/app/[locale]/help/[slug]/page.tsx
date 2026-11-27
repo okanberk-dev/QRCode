@@ -240,7 +240,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
                       <li key={entry.id}>
                         <a
                           href={`#${entry.id}`}
-                          className="-ml-px flex gap-2 border-l-2 border-transparent py-2 pl-4 text-[13px] leading-[1.45] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0]"
+                          className="-ml-px flex gap-2 border-l-2 border-transparent py-2 pl-4 text-[13px] leading-[1.45] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
                         >
                           <span aria-hidden="true" className="w-5 shrink-0 font-mono text-[11px] leading-[1.75] text-[#A3A3A3] tabular-nums">
                             {String(index + 1).padStart(2, '0')}
@@ -284,7 +284,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
                   <HelpArticleBody body={struct} locale={lang} />
                 ) : (
                   <article
-                    className="pulse-blog-content break-words [&_a]:font-medium [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#5D3EBC] [&_a]:decoration-2 [&_a]:underline-offset-4 [&_h2]:scroll-mt-28 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6"
+                    className="pulse-blog-content break-words [&_a]:font-medium [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4 [&_h2]:scroll-mt-28 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6"
                     dangerouslySetInnerHTML={{ __html: dbHtml ?? '' }}
                   />
                 )}
@@ -310,7 +310,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
                 </h2>
                 <Link
                   href={`${base}/help/category/${article.category}`}
-                  className="inline-flex min-h-[44px] items-center gap-1.5 self-start text-[15px] font-medium text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 sm:self-auto"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 self-start text-[15px] font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 sm:self-auto"
                 >
                   {copy.seeAll}
                   <ArrowRight size={14} aria-hidden="true" />
@@ -320,7 +320,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
                 {related.map((item) => (
                   <li
                     key={item.slug}
-                    className="group relative flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2"
+                    className="group relative flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2"
                   >
                     <h3 className="text-pretty text-[18px] font-medium leading-[1.3] tracking-[-0.015em] text-[#0A0A0A]">
                       <Link href={`${base}/help/${item.slug}`} className="after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none">

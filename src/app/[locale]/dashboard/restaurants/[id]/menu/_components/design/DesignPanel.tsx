@@ -251,9 +251,9 @@ export function DesignPanel({
   const styleTab = (
     <div className="space-y-4">
       {refreshNote && (
-        <div role="note" className="flex items-start gap-2.5 rounded-[20px] bg-[#F6F3FD] p-3 ring-1 ring-[#DCD3F6]">
+        <div role="note" className="flex items-start gap-2.5 rounded-[20px] bg-[#F6F3FD] p-3 ring-1 ring-[#CDEFD6]">
           <Sparkles size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-pn-accent" aria-hidden="true" />
-          <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[#3B1F8F]">{copy.design.refreshNote}</p>
+          <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[#000000]">{copy.design.refreshNote}</p>
           <button type="button" onClick={dismissRefresh} className="bz-btn-ghost min-h-11 shrink-0 px-3 pointer-fine:min-h-8">
             {copy.design.refreshDismiss}
           </button>

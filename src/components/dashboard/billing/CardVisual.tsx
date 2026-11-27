@@ -54,13 +54,13 @@ export default function CardVisual({
       <div
         role="img"
         aria-label={cardAriaLabel(card, locale)}
-        className={`relative w-full aspect-[1.586/1] overflow-hidden rounded-[14px] bg-[#3B1F8F] text-white ring-1 ring-inset ring-white/[0.06] shadow-[0_12px_32px_rgba(10,10,10,0.18)] ${
+        className={`relative w-full aspect-[1.586/1] overflow-hidden rounded-[14px] bg-[#000000] text-white ring-1 ring-inset ring-white/[0.06] shadow-[0_12px_32px_rgba(10,10,10,0.18)] ${
           sm ? 'p-3.5' : 'p-4 sm:p-5'
         } ${card.expired ? 'grayscale opacity-70' : ''} motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-0.5`}
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_100%_0%,rgba(140,108,240,0.5),transparent_60%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_100%_0%,rgba(120,252,144,0.5),transparent_60%)]"
         />
         <svg
           aria-hidden="true"
@@ -71,7 +71,7 @@ export default function CardVisual({
         >
           <path
             d="M0 32 H120 L134 32 L146 8 L160 54 L172 20 L182 38 L194 32 H340"
-            stroke="#DCD3F6"
+            stroke="#CDEFD6"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -84,8 +84,8 @@ export default function CardVisual({
             <span className={`tabular-nums shrink-0 text-white/80 ${sm ? 'text-[12px]' : 'text-[12px]'}`}>{brand}</span>
           </div>
           <svg aria-hidden="true" width={sm ? 24 : 28} height={sm ? 17 : 20} viewBox="0 0 28 20" fill="none">
-            <rect x="0.5" y="0.5" width="27" height="19" rx="4" stroke="#DCD3F6" strokeOpacity="0.7" />
-            <path d="M0.5 7H9.5V13H0.5M27.5 7H18.5V13H27.5M9.5 10H18.5M14 0.5V7M14 13V19.5" stroke="#DCD3F6" strokeOpacity="0.45" />
+            <rect x="0.5" y="0.5" width="27" height="19" rx="4" stroke="#CDEFD6" strokeOpacity="0.7" />
+            <path d="M0.5 7H9.5V13H0.5M27.5 7H18.5V13H27.5M9.5 10H18.5M14 0.5V7M14 13V19.5" stroke="#CDEFD6" strokeOpacity="0.45" />
           </svg>
           <div className="flex items-end justify-between gap-3">
             <span

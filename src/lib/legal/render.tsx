@@ -65,7 +65,7 @@ function renderInline(text: string, baseKey: string, locale: 'tr' | 'en'): React
         <a
           key={`${baseKey}-link-${i++}`}
           href={legalHref(path, locale)}
-          className="text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-2"
+          className="text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-2"
         >
           {label}
         </a>,

@@ -26,16 +26,26 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Check, ClipboardList, Link2, ListChecks, Loader2, Pencil, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, Check, ClipboardList, Languages, Link2, ListChecks, Loader2, Pencil, Save, Sparkles } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
   Field,
   PageHeader,
   PulseSelect,
-  WizardSteps,
   useConfirmDialog,
 } from '@/components/ui';
+import {
+  WIZARD_BACK_CLASS,
+  WIZARD_NEXT_CLASS,
+  WizardCheck,
+  WizardFooter,
+  WizardPanel,
+  WizardSteps,
+  WizardSummaryRow,
+  wizardChoiceClass,
+  wizardChoiceIconClass,
+} from '@/components/ui/WizardSteps';
 import { getTranslations, type Locale } from '@/lib/translations';
 import {
   AUDIT_SCORING_MODES,
@@ -491,27 +501,22 @@ export default function AuditBuilderClient({
   const languageLabel = auditLocale === 'en' ? 'English' : 'Türkçe';
 
   // Adım numarası üstteki adım göstergesinde; burada ikinci bir "Adım 1 / 3" etiketi yok.
-  const stepHeading = (index: WizardStepIndex, text: string, sub: string) => (
-    <div className="space-y-1">
-      <h2
-        ref={(el) => {
-          stepHeadingRefs.current[index] = el;
-        }}
-        tabIndex={-1}
-        className="bz-h-tight text-[20px] text-pn-ink outline-none sm:text-[22px]"
-      >
-        {text}
-      </h2>
-      <p className="text-[13px] leading-[1.55] text-[#525252]">{sub}</p>
-    </div>
-  );
+  // Her adımın başlığı kendi beyaz kartının başlığıdır (WizardPanel).
+  const stepHeading = (index: WizardStepIndex, text: string, sub: string) => ({
+    headingId: `${baseId}-s${index}`,
+    headingRef: (el: HTMLHeadingElement | null) => {
+      stepHeadingRefs.current[index] = el;
+    },
+    title: text,
+    description: sub,
+  });
 
   return (
-    <div ref={topRef} className="mx-auto max-w-[920px] scroll-mt-24 space-y-5 px-4 py-6 sm:px-7 lg:py-8">
+    <div ref={topRef} className="mx-auto max-w-[920px] scroll-mt-24 space-y-4 px-4 py-6 sm:space-y-5 sm:px-7 lg:py-8">
       <div>
         <Link
           href={backHref}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-pn-ink sm:min-h-0 sm:text-[12px]"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full text-[13px] font-medium text-[#737373] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:min-h-8"
         >
           <ArrowLeft size={13} aria-hidden="true" />{' '}
           {isEdit ? (isTr ? 'Denetime dön' : 'Back to audit') : isTr ? 'Denetim Merkezi' : 'Audit Center'}
@@ -527,6 +532,7 @@ export default function AuditBuilderClient({
         canSelect={(i) => isEdit || i <= reached}
         onSelect={(i) => goTo(i as WizardStepIndex)}
         ariaLabel={isTr ? 'Denetim adımları' : 'Audit steps'}
+        locale={isTr ? 'tr' : 'en'}
       />
 
       {forkMissing && (
@@ -572,9 +578,11 @@ export default function AuditBuilderClient({
       )}
 
       {/* ── Adım 1 · Başla ─────────────────────────────────────────────── */}
-      <section hidden={step !== 0} aria-labelledby={`${baseId}-s0`} className="space-y-4">
-        <div id={`${baseId}-s0`}>
-          {stepHeading(
+      <section hidden={step !== 0} aria-labelledby={`${baseId}-s0`} className="space-y-2.5">
+        {/* Sıfırdan: tür + ad + dil tek kartta; hazır şablon ayrı kartta. */}
+        <WizardPanel
+          as="div"
+          {...stepHeading(
             0,
             isEdit
               ? isTr
@@ -603,109 +611,117 @@ export default function AuditBuilderClient({
                     ? 'Kontrol listesi ya da test seç, adını yaz.'
                     : 'Pick a checklist or a test and give it a name.',
           )}
-        </div>
+        >
+          <div className="space-y-5">
+            {showKindPicker && (
+              <KindPicker locale={locale} value={startKind} onChange={setStartKind} name={`${baseId}-kind`} />
+            )}
+            <Field label={isTr ? 'Denetimin adı' : 'Audit name'} required htmlFor={IDS.title} error={titleError}>
+              <input
+                id={IDS.title}
+                className="bz-input text-[16px] sm:text-[14px]"
+                value={title}
+                maxLength={200}
+                autoComplete="off"
+                enterKeyHint="next"
+                placeholder={isTr ? 'Örn. Mutfak açılış kontrolü' : 'e.g. Kitchen opening check'}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    goTo(1);
+                  }
+                }}
+              />
+            </Field>
 
-        {/* Sıfırdan: tür + ad + dil tek kartta; hazır şablon ayrı kartta. */}
-        <div className="bz-card space-y-4 p-4 sm:p-5">
-          {showKindPicker && (
-            <KindPicker locale={locale} value={startKind} onChange={setStartKind} name={`${baseId}-kind`} />
-          )}
-          <Field label={isTr ? 'Denetimin adı' : 'Audit name'} required htmlFor={IDS.title} error={titleError}>
-            <input
-              id={IDS.title}
-              className="bz-input"
-              value={title}
-              maxLength={200}
-              autoComplete="off"
-              enterKeyHint="next"
-              placeholder={isTr ? 'Örn. Mutfak açılış kontrolü' : 'e.g. Kitchen opening check'}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  goTo(1);
-                }
-              }}
-            />
-          </Field>
-
-          <Field
-            label={isTr ? 'Dil' : 'Language'}
-            htmlFor={IDS.locale}
-            hint={
-              localeLocked
-                ? isTr
-                  ? 'Yanıt almış denetimin dili değişmez.'
-                  : "The language can't change once the audit has responses."
-                : isTr
-                  ? 'Linki açanların göreceği dil. Evet/Hayır sözcükleri buna göre yazılır.'
-                  : 'The language people see when they open the link. Yes/No words follow it.'
-            }
-          >
-            <PulseSelect
-              id={IDS.locale}
-              className="w-full sm:max-w-[240px]"
-              value={auditLocale}
-              disabled={localeLocked}
-              onChange={(v) => changeAuditLocale(v === 'en' ? 'en' : 'tr')}
-              options={[
-                { value: 'tr', label: 'Türkçe' },
-                { value: 'en', label: 'English' },
-              ]}
-            />
-          </Field>
-        </div>
+            <Field
+              label={isTr ? 'Dil' : 'Language'}
+              htmlFor={IDS.locale}
+              hint={
+                localeLocked
+                  ? isTr
+                    ? 'Yanıt almış denetimin dili değişmez.'
+                    : "The language can't change once the audit has responses."
+                  : isTr
+                    ? 'Linki açanların göreceği dil. Evet/Hayır sözcükleri buna göre yazılır.'
+                    : 'The language people see when they open the link. Yes/No words follow it.'
+              }
+            >
+              <PulseSelect
+                id={IDS.locale}
+                className="w-full sm:max-w-[240px]"
+                value={auditLocale}
+                disabled={localeLocked}
+                onChange={(v) => changeAuditLocale(v === 'en' ? 'en' : 'tr')}
+                options={[
+                  { value: 'tr', label: 'Türkçe' },
+                  { value: 'en', label: 'English' },
+                ]}
+              />
+            </Field>
+          </div>
+        </WizardPanel>
 
         {showKindPicker && suggestions.length > 0 && (
-          <div className="bz-card p-4 sm:p-5">
-            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-[12px] font-medium text-pn-ink">
-                {isTr ? 'Ya da hazır şablonla başla' : 'Or start from a ready-made template'}
-              </p>
+          <WizardPanel
+            as="div"
+            title={isTr ? 'Ya da hazır şablonla başla' : 'Or start from a ready-made template'}
+            description={isTr ? 'Maddeler hazır gelir; sonraki adımda değiştirebilirsin.' : 'The items come ready; you can change them in the next step.'}
+            actions={
               <Link
                 href={allTemplatesHref}
-                className="inline-flex min-h-11 items-center gap-1 text-[12px] font-medium text-[#525252] underline-offset-2 hover:text-pn-ink hover:underline sm:min-h-0"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-pn-canvas px-4 text-[13px] font-medium text-pn-ink transition-colors hover:bg-[#EBEBEB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:min-h-9"
               >
-                {isTr ? 'Tüm hazır şablonlar' : 'All ready-made templates'}
-                <ArrowRight size={12} aria-hidden="true" />
+                {isTr ? 'Tüm şablonlar' : 'All templates'}
+                <ArrowRight size={14} aria-hidden="true" />
               </Link>
-            </div>
-            <ul className="grid gap-2 sm:grid-cols-2">
+            }
+          >
+            <ul className="grid gap-2.5 sm:grid-cols-2">
               {suggestions.map((tpl) => (
                 <li key={tpl.id}>
                   <Link
                     href={templateHref(tpl.id)}
-                    className="group flex min-h-[60px] items-center gap-3 rounded-[10px] border border-pn-line bg-white p-3 transition-colors hover:border-pn-ink hover:bg-pn-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-accent"
+                    className="group flex h-full flex-col gap-3 rounded-[18px] bg-pn-canvas p-3 transition-[background-color,transform] duration-200 hover:bg-pn-accent-soft active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
                   >
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink"
-                    >
-                      <Sparkles size={15} strokeWidth={2} />
+                    {/* Soft preview: a few checklist lines. */}
+                    <span aria-hidden="true" className="flex flex-col gap-1.5 rounded-[14px] bg-white p-3 max-sm:bg-[#F6F6F6]">
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} className="flex items-center gap-2">
+                          <span className={`h-3.5 w-3.5 shrink-0 rounded-full ${i === 0 ? 'bg-pn-accent' : 'bg-pn-line'}`} />
+                          <span className={`h-1.5 rounded-full bg-pn-line ${i === 0 ? 'w-3/4' : i === 1 ? 'w-1/2' : 'w-2/3'}`} />
+                        </span>
+                      ))}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-medium text-pn-ink">{tpl.title}</span>
-                      <span className="mt-0.5 block text-[12px] text-[#737373]">
-                        {kindLabel(tpl.kind, locale)} · {itemsCount(tpl.itemCount, locale)}
+                    <span className="flex min-w-0 items-end gap-3 px-1 pb-1">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-medium text-pn-ink">{tpl.title}</span>
+                        <span className="mt-0.5 block text-[13px] text-[#737373]">
+                          {kindLabel(tpl.kind, locale)} · {itemsCount(tpl.itemCount, locale)}
+                        </span>
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-pn-accent px-3.5 text-[13px] font-medium text-white transition-colors group-hover:bg-pn-accent-hover"
+                      >
+                        <Sparkles size={13} />
+                        {isTr ? 'Kullan' : 'Use'}
                       </span>
                     </span>
-                    <ArrowRight
-                      size={14}
-                      aria-hidden="true"
-                      className="shrink-0 text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-pn-ink"
-                    />
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </WizardPanel>
         )}
       </section>
 
       {/* ── Adım 2 · Maddeler ──────────────────────────────────────────── */}
-      <section hidden={step !== 1} aria-labelledby={`${baseId}-s1`} className="space-y-3">
-        <div id={`${baseId}-s1`} className="flex flex-wrap items-end justify-between gap-2">
-          {stepHeading(
+      <section hidden={step !== 1} aria-labelledby={`${baseId}-s1`}>
+        <WizardPanel
+          as="div"
+          {...stepHeading(
             1,
             kind === 'quiz'
               ? isTr
@@ -722,33 +738,38 @@ export default function AuditBuilderClient({
                 ? 'Her madde için bir cümle yaz, Enter’a bas. Sırayı sürükleyerek değiştirebilirsin.'
                 : 'Write one sentence per item and press Enter. Drag to reorder.',
           )}
-          <Badge kind={kindBadgeKind(kind)} dot={false}>
-            {kindLabel(kind, locale)} · {itemsCount(filledQuestions, locale)}
-          </Badge>
-        </div>
-        {questionsError && (
-          <p className="text-[13px] font-medium text-[#B91C1C]" role="alert">
-            {questionsError}
-          </p>
-        )}
-        <AuditQuestionList
-          key={showKindPicker ? startKind : 'fixed'}
-          locale={locale}
-          auditLocale={auditLocale}
-          kind={kind}
-          startKind={startKind}
-          questions={questions}
-          onChange={setQuestions}
-          answeredIds={answeredIds}
-          errors={questionErrors}
-          inputId={IDS.quick}
-        />
+          actions={
+            <Badge kind={kindBadgeKind(kind)} dot={false}>
+              {kindLabel(kind, locale)} · {itemsCount(filledQuestions, locale)}
+            </Badge>
+          }
+        >
+          {questionsError && (
+            <p className="mb-3 text-[13px] font-medium text-[#B91C1C]" role="alert">
+              {questionsError}
+            </p>
+          )}
+          <AuditQuestionList
+            key={showKindPicker ? startKind : 'fixed'}
+            locale={locale}
+            auditLocale={auditLocale}
+            kind={kind}
+            startKind={startKind}
+            questions={questions}
+            onChange={setQuestions}
+            answeredIds={answeredIds}
+            errors={questionErrors}
+            inputId={IDS.quick}
+          />
+        </WizardPanel>
       </section>
 
       {/* ── Adım 3 · Yayınla / Ayarlar ─────────────────────────────────── */}
-      <section hidden={step !== 2} aria-labelledby={`${baseId}-s2`} className="space-y-4">
-        <div id={`${baseId}-s2`}>
-          {stepHeading(
+      <section hidden={step !== 2} aria-labelledby={`${baseId}-s2`} className="space-y-2.5">
+        {/* Özet — oluşturulacak denetimin dökümü */}
+        <WizardPanel
+          as="div"
+          {...stepHeading(
             2,
             isEdit ? (isTr ? 'Son ayarlar' : 'Final settings') : isTr ? 'Kontrol et ve yayınla' : 'Review and publish',
             isEdit
@@ -759,45 +780,46 @@ export default function AuditBuilderClient({
                 ? 'Yayınlayınca bir link oluşur; ekibin telefondan açıp doldurur. Taslak olarak saklayıp sonra da yayınlayabilirsin.'
                 : 'Publishing creates a link your team opens on their phone. You can also save a draft and publish later.',
           )}
-        </div>
-
-        {/* Özet */}
-        <div className="bz-card p-4 sm:p-5">
-          <dl className="grid gap-3 sm:grid-cols-2">
-            <SummaryRow
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            <WizardSummaryRow
+              icon={<ClipboardList size={16} aria-hidden="true" />}
               label={isTr ? 'Ad' : 'Name'}
               value={title.trim() || (isTr ? '— (yazılmadı)' : '— (missing)')}
-              icon={<ClipboardList size={14} aria-hidden="true" />}
-              editLabel={isTr ? 'Adı düzenle' : 'Edit name'}
-              onEdit={() => goTo(0)}
+              action={<SummaryEdit label={isTr ? 'Adı düzenle' : 'Edit name'} onEdit={() => goTo(0)} />}
             />
-            <SummaryRow
+            <WizardSummaryRow
+              icon={<ListChecks size={16} aria-hidden="true" />}
               label={heading}
               value={`${kindLabel(kind, locale)} · ${itemsCount(filledQuestions, locale)}`}
-              icon={<ListChecks size={14} aria-hidden="true" />}
-              editLabel={isTr ? 'Maddeleri düzenle' : 'Edit items'}
-              onEdit={() => goTo(1)}
+              action={<SummaryEdit label={isTr ? 'Maddeleri düzenle' : 'Edit items'} onEdit={() => goTo(1)} />}
             />
-            <SummaryRow
+            <WizardSummaryRow
+              icon={<Languages size={16} aria-hidden="true" />}
               label={isTr ? 'Dil' : 'Language'}
               value={languageLabel}
-              editLabel={isTr ? 'Dili değiştir' : 'Change language'}
-              onEdit={() => goTo(0)}
+              action={<SummaryEdit label={isTr ? 'Dili değiştir' : 'Change language'} onEdit={() => goTo(0)} />}
             />
-            <SummaryRow
+            <WizardSummaryRow
+              icon={<Building2 size={16} aria-hidden="true" />}
               label={isTr ? 'İşletme' : 'Business'}
               value={activeRestaurant?.name ?? '—'}
             />
-          </dl>
-        </div>
+          </div>
+        </WizardPanel>
 
-        <div className="bz-card space-y-4 p-4 sm:p-5">
+        <WizardPanel
+          as="div"
+          title={isTr ? 'Açıklama ve puan' : 'Description and score'}
+          description={isTr ? 'İkisi de isteğe bağlı.' : 'Both are optional.'}
+          className="space-y-5"
+        >
           <Field
             label={isTr ? 'Açıklama (isteğe bağlı)' : 'Description (optional)'}
             hint={isTr ? 'Linki açan kişi bu açıklamayı en üstte görür.' : 'Whoever opens the link sees this at the top.'}
           >
             <textarea
-              className="bz-input min-h-[84px]"
+              className="bz-input min-h-[92px] text-[16px] sm:text-[14px]"
               value={description}
               maxLength={4000}
               placeholder={
@@ -829,7 +851,7 @@ export default function AuditBuilderClient({
               <div className="flex items-center gap-2">
                 <input
                   id={IDS.passing}
-                  className="bz-input w-24"
+                  className="bz-input w-24 text-center text-[16px] tabular-nums sm:text-[14px]"
                   type="text"
                   inputMode="numeric"
                   autoComplete="off"
@@ -838,7 +860,7 @@ export default function AuditBuilderClient({
                   placeholder="80"
                   onChange={(e) => setPassingInput(sanitizePassingInput(e.target.value))}
                 />
-                <span className="text-[13px] text-[#737373]">/ 100</span>
+                <span className="text-[14px] text-[#737373]">/ 100</span>
               </div>
             </Field>
           )}
@@ -848,7 +870,7 @@ export default function AuditBuilderClient({
               {isTr ? 'Daha fazla ayar' : 'More options'}
             </Disclosure>
             {moreOpen && (
-              <div id={`${baseId}-more`} className="mt-2 grid gap-3 sm:grid-cols-2">
+              <div id={`${baseId}-more`} className="mt-3 grid gap-4 sm:grid-cols-2">
                 <Field label={isTr ? 'Sektör' : 'Sector'} htmlFor={`${baseId}-sector`}>
                   <PulseSelect
                     id={`${baseId}-sector`}
@@ -899,143 +921,118 @@ export default function AuditBuilderClient({
               </div>
             )}
           </div>
-        </div>
+        </WizardPanel>
       </section>
 
-      {/* Sabit eylem çubuğu — mobilde yüzen alt gezinmenin ÜSTÜNDE (--dash-bottom-nav-h).
-          Düz beyaz: yarı saydam yüzeyde arkadaki metin düğmelerin içinden görünüyordu. */}
-      <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-pn-line bg-white px-4 py-3 sm:-mx-7 sm:px-7 lg:bottom-0">
-        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end">
-          {step === 0 ? (
-            <Link href={backHref} className="bz-btn-ghost hidden min-h-11 sm:mr-auto sm:inline-flex sm:min-h-9">
-              {isTr ? 'Vazgeç' : 'Cancel'}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              className="bz-btn-ghost min-h-11 justify-center sm:mr-auto sm:min-h-9"
-              onClick={() => goTo((step - 1) as WizardStepIndex)}
-              disabled={busy}
-            >
-              <ArrowLeft size={14} aria-hidden="true" />
-              {isTr ? 'Geri' : 'Back'}
-            </button>
-          )}
+      {/* Eylem çubuğu — telefonda altta sabit (beyaz, ince çizgi, güvenli alan),
+          640px'ten itibaren yüzen beyaz çubuk. */}
+      <WizardFooter>
+        {step === 0 ? (
+          <Link href={backHref} className={`${WIZARD_BACK_CLASS} sm:mr-auto`}>
+            {isTr ? 'Vazgeç' : 'Cancel'}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className={`${WIZARD_BACK_CLASS} sm:mr-auto`}
+            onClick={() => goTo((step - 1) as WizardStepIndex)}
+            disabled={busy}
+          >
+            <ArrowLeft size={15} aria-hidden="true" />
+            {isTr ? 'Geri' : 'Back'}
+          </button>
+        )}
 
-          {isEdit && (
-            <button
-              type="button"
-              id="audit-builder-save"
-              className={`${step === WIZARD_LAST_STEP ? 'bz-btn-primary' : 'bz-btn-ghost'} min-h-11 flex-1 justify-center sm:min-h-9 sm:flex-none`}
-              onClick={() => void save('save')}
-              disabled={busy}
-            >
-              {saving === 'save' ? (
-                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-              ) : (
-                <Save size={14} aria-hidden="true" />
-              )}
-              {saving === 'save' ? (isTr ? 'Kaydediliyor…' : 'Saving…') : isTr ? 'Kaydet' : 'Save'}
-            </button>
-          )}
+        {isEdit && (
+          <button
+            type="button"
+            id="audit-builder-save"
+            className={step === WIZARD_LAST_STEP ? WIZARD_NEXT_CLASS : WIZARD_BACK_CLASS}
+            onClick={() => void save('save')}
+            disabled={busy}
+          >
+            {saving === 'save' ? (
+              <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Save size={15} aria-hidden="true" />
+            )}
+            {saving === 'save' ? (isTr ? 'Kaydediliyor…' : 'Saving…') : isTr ? 'Kaydet' : 'Save'}
+          </button>
+        )}
 
-          {step < WIZARD_LAST_STEP ? (
-            <button
-              type="button"
-              id="audit-builder-next"
-              className="bz-btn-primary min-h-11 flex-1 justify-center sm:min-h-9 sm:flex-none"
-              onClick={() => goTo((step + 1) as WizardStepIndex)}
-              disabled={busy}
-            >
-              {isTr ? 'İleri' : 'Next'}
-              <ArrowRight size={14} aria-hidden="true" />
-            </button>
-          ) : (
-            !isEdit && (
-              <>
-                <button
-                  type="button"
-                  id="audit-builder-draft"
-                  className="bz-btn-ghost min-h-11 flex-1 justify-center leading-tight sm:min-h-9 sm:flex-none"
-                  onClick={() => void save('draft')}
-                  disabled={busy}
-                >
-                  {saving === 'draft' && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-                  {saving === 'draft'
-                    ? isTr
-                      ? 'Kaydediliyor…'
-                      : 'Saving…'
-                    : isTr
-                      ? 'Taslak olarak kaydet'
-                      : 'Save as draft'}
-                </button>
-                <button
-                  type="button"
-                  id="audit-builder-publish"
-                  className="bz-btn-lime min-h-11 w-full justify-center leading-tight sm:min-h-9 sm:w-auto"
-                  onClick={() => void save('publish')}
-                  disabled={busy}
-                >
-                  {saving === 'publish' ? (
-                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Link2 size={14} aria-hidden="true" />
-                  )}
-                  {saving === 'publish'
-                    ? isTr
-                      ? 'Yayınlanıyor…'
-                      : 'Publishing…'
-                    : isTr
-                      ? 'Yayınla ve linki al'
-                      : 'Publish and get link'}
-                </button>
-              </>
-            )
-          )}
-        </div>
-      </div>
+        {step < WIZARD_LAST_STEP ? (
+          <button
+            type="button"
+            id="audit-builder-next"
+            className={WIZARD_NEXT_CLASS}
+            onClick={() => goTo((step + 1) as WizardStepIndex)}
+            disabled={busy}
+          >
+            {isTr ? 'İleri' : 'Next'}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        ) : (
+          !isEdit && (
+            <>
+              <button
+                type="button"
+                id="audit-builder-draft"
+                className={`${WIZARD_BACK_CLASS} leading-tight`}
+                onClick={() => void save('draft')}
+                disabled={busy}
+              >
+                {saving === 'draft' && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+                {saving === 'draft'
+                  ? isTr
+                    ? 'Kaydediliyor…'
+                    : 'Saving…'
+                  : isTr
+                    ? 'Taslak olarak kaydet'
+                    : 'Save as draft'}
+              </button>
+              <button
+                type="button"
+                id="audit-builder-publish"
+                className={`${WIZARD_NEXT_CLASS} leading-tight max-sm:basis-full`}
+                onClick={() => void save('publish')}
+                disabled={busy}
+              >
+                {saving === 'publish' ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Link2 size={15} aria-hidden="true" />
+                )}
+                {saving === 'publish'
+                  ? isTr
+                    ? 'Yayınlanıyor…'
+                    : 'Publishing…'
+                  : isTr
+                    ? 'Yayınla ve linki al'
+                    : 'Publish and get link'}
+              </button>
+            </>
+          )
+        )}
+      </WizardFooter>
 
       {confirmEl}
     </div>
   );
 }
 
-// ─── Özet satırı ────────────────────────────────────────────────────────
+// ─── Özet satırı: düzenle düğmesi ───────────────────────────────────────
 
-function SummaryRow({
-  label,
-  value,
-  icon,
-  editLabel,
-  onEdit,
-}: {
-  label: string;
-  value: string;
-  icon?: React.ReactNode;
-  editLabel?: string;
-  onEdit?: () => void;
-}) {
+function SummaryEdit({ label, onEdit }: { label: string; onEdit: () => void }) {
   return (
-    <div className="flex min-w-0 items-start justify-between gap-3 rounded-[10px] bg-pn-canvas px-3 py-2.5">
-      <div className="min-w-0">
-        <dt className="flex items-center gap-1.5 text-[12px] font-medium text-[#737373]">
-          {icon}
-          {label}
-        </dt>
-        <dd className="mt-0.5 break-words text-[14px] font-medium text-pn-ink">{value}</dd>
-      </div>
-      {onEdit && editLabel && (
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label={editLabel}
-          title={editLabel}
-          className="bz-btn-icon h-11 w-11 shrink-0 border border-pn-line bg-white sm:h-8 sm:w-8"
-        >
-          <Pencil size={13} aria-hidden="true" />
-        </button>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink transition-colors hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent max-sm:bg-[#F6F6F6] sm:h-9 sm:w-9"
+    >
+      <Pencil size={14} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -1079,7 +1076,7 @@ function KindPicker({
   ];
   return (
     <div>
-      <p id={legendId} className="mb-2 text-[12px] font-medium text-pn-ink">
+      <p id={legendId} className="mb-2 text-[14px] font-medium text-pn-ink">
         {isTr ? 'Sıfırdan başla' : 'Start from scratch'}
       </p>
       <div role="radiogroup" aria-labelledby={legendId} className="grid gap-2 sm:grid-cols-2">
@@ -1097,33 +1094,19 @@ function KindPicker({
               />
               <span
                 className={[
-                  'flex w-full cursor-pointer items-start gap-3 rounded-[12px] border bg-white p-3.5 transition-colors',
-                  'border-pn-line hover:bg-pn-canvas',
-                  'peer-checked:border-pn-ink peer-checked:bg-pn-canvas',
+                  wizardChoiceClass(selected, 'card', 'row-start'),
+                  'cursor-pointer',
                   'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pn-accent',
                 ].join(' ')}
               >
-                <span
-                  aria-hidden="true"
-                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                    selected ? 'bg-pn-accent text-white' : 'bg-pn-canvas text-[#525252]'
-                  }`}
-                >
+                <span aria-hidden="true" className={wizardChoiceIconClass(selected)}>
                   {o.icon}
                 </span>
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 flex-1 pt-0.5">
                   <span className="block text-[14px] font-medium text-pn-ink">{o.title}</span>
-                  <span className="mt-1 block text-[12px] leading-[1.5] text-[#737373]">{o.body}</span>
+                  <span className="mt-0.5 block text-[13px] leading-[1.45] text-[#737373]">{o.body}</span>
                 </span>
-                <span
-                  aria-hidden="true"
-                  className={[
-                    'relative mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 bg-white',
-                    selected ? 'border-pn-ink' : 'border-pn-line-strong',
-                  ].join(' ')}
-                >
-                  {selected && <span className="absolute inset-[2px] rounded-full bg-pn-ink" />}
-                </span>
+                <WizardCheck selected={selected} />
               </span>
             </label>
           );

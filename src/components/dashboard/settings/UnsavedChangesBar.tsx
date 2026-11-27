@@ -141,7 +141,7 @@ export function UnsavedChangesBar({
                   width: 8,
                   height: 8,
                   borderRadius: 999,
-                  background: error ? "#DC2626" : dirty ? "#5D3EBC" : "#16A34A",
+                  background: error ? "#DC2626" : dirty ? "#111110" : "#16A34A",
                 }}
               />
               <span className="tabular-nums text-[12px] text-pn-ink sm:truncate">

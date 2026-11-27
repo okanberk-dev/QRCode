@@ -181,7 +181,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
 
   return (
     <div className="space-y-2.5">
-      {/* Fintora calm AI note: lavender panel + purple sparkle circle. */}
+      {/* Fintora calm AI note: light green panel + black sparkle circle. */}
       <div role="note" className="flex items-start gap-3 rounded-[20px] bg-pn-accent-soft p-4">
         <span
           aria-hidden="true"

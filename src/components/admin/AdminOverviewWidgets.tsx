@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, AlertCircle } from 'lucide-react';
-import { Avatar, Badge, type BadgeKind, Eyebrow, Skeleton } from '@/components/ui';
+import { ArrowUpRight, AlertCircle } from 'lucide-react';
+import { Avatar, Badge, type BadgeKind, Skeleton } from '@/components/ui';
 
 export interface RecentMember {
   id: string;
@@ -145,136 +145,104 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
     };
   }, [isTr, hasServerData]);
 
+  const attentionTone: Record<AttentionRow['kind'], { circle: string; pill: string }> = {
+    danger: { circle: 'bg-[#FDECEC] text-[#D92D20]', pill: 'pn-change--down' },
+    warn: { circle: 'bg-[#FFF4D6] text-[#8A5A00]', pill: 'bg-[#FFF4D6] text-[#8A5A00]' },
+    info: { circle: 'bg-pn-accent-soft text-pn-accent', pill: 'pn-change--flat' },
+  };
+  const rowSkeleton = (key: number) => (
+    <div key={key} className="flex min-h-[60px] items-center gap-3 rounded-[16px] bg-pn-canvas px-3 py-2.5">
+      <Skeleton width={40} height={40} rounded={999} />
+      <div className="min-w-0 flex-1">
+        <Skeleton height={14} width="48%" />
+        <Skeleton height={12} width="64%" className="mt-1.5" />
+      </div>
+      <Skeleton width={56} height={24} rounded={999} />
+    </div>
+  );
+
+  // Fintora list cards (docs/design/DASHBOARD_DESIGN.md §5.4): title over a
+  // grey line, ↗ to the full list, grey 16px rows with a 40px circle.
   return (
-    <div className="grid gap-3.5 lg:grid-cols-2">
+    <div className="grid gap-2.5 lg:grid-cols-2">
       {/* Recently joined */}
-      <div className="bz-card overflow-hidden">
-        <div
-          className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid #EBEBEB' }}
-        >
-          <Eyebrow>{isTr ? 'SON KATILAN İŞLETMELER' : 'RECENTLY JOINED'}</Eyebrow>
+      <section className="bz-card p-5 sm:p-6" aria-label={isTr ? 'Son katılan işletmeler' : 'Recently joined'}>
+        <header className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="pn-card-title text-pn-ink">{isTr ? 'Son katılan işletmeler' : 'Recently joined'}</h2>
+            <p className="mt-1 text-[13px] text-[#9A9A9A]">{isTr ? 'En yeni kayıtlar' : 'Latest sign-ups'}</p>
+          </div>
           <Link
             href="/admin/members"
-            className="inline-flex items-center gap-1 text-[12px] font-medium hover:opacity-70"
-            style={{ color: '#000000' }}
+            className="pn-arrow-btn"
+            aria-label={isTr ? 'Tüm işletme sahipleri' : 'All owners'}
+            title={isTr ? 'Tümü' : 'All'}
           >
-            {isTr ? 'Tümü' : 'All'}
-            <ArrowRight size={12} strokeWidth={2} />
+            <ArrowUpRight size={18} aria-hidden="true" />
           </Link>
-        </div>
+        </header>
         {loading ? (
-          // Row geometry matches the final loaded list (lines below): px-5 py-3
-          // container, 32x32 avatar (rounded={8} = `.bz-avatar` 8px), 13px title
-          // + 11px subline, 22px-tall badge (`.bz-badge` height = 22px).
-          <div>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 px-5 py-3"
-                style={{ borderBottom: '1px solid #F5F5F5' }}
-              >
-                <Skeleton width={32} height={32} rounded={8} />
-                <div className="flex-1 min-w-0">
-                  <Skeleton height={13} width="48%" />
-                  <Skeleton height={11} width="64%" className="mt-1" />
-                </div>
-                <Skeleton width={56} height={22} rounded={6} />
-              </div>
-            ))}
-          </div>
+          <div className="flex flex-col gap-2">{Array.from({ length: 4 }).map((_, i) => rowSkeleton(i))}</div>
         ) : !members || members.length === 0 ? (
-          <div className="p-8 text-center" style={{ fontSize: 13, color: '#737373' }}>
+          <p className="rounded-[16px] bg-pn-canvas px-4 py-6 text-center text-[14px] text-[#737373]">
             {isTr ? 'Henüz kayıt yok.' : 'No registrations yet.'}
-          </div>
+          </p>
         ) : (
-          members.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center gap-3 px-5 py-3 last:border-b-0"
-              style={{ borderBottom: '1px solid #F5F5F5' }}
-            >
-              <Avatar name={m.name} size={32} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span style={{ fontSize: 13, fontWeight: 600 }} className="truncate">
-                    {m.name}
-                  </span>
+          <ul className="flex flex-col gap-2">
+            {members.map((m) => (
+              <li key={m.id} className="pn-row min-h-[60px] py-2.5">
+                <Avatar name={m.name} size={40} className="shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[15px] font-medium text-pn-ink">{m.name}</div>
+                  <div className="truncate text-[13px] text-[#9A9A9A]">{m.subline}</div>
                 </div>
-                <div className="truncate" style={{ fontSize: 11, color: '#737373' }}>
-                  {m.subline}
-                </div>
-              </div>
-              <Badge kind={planBadgeKind(m.plan)}>{planLabel(m.plan, isTr)}</Badge>
-            </div>
-          ))
+                <Badge kind={planBadgeKind(m.plan)}>{planLabel(m.plan, isTr)}</Badge>
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
+      </section>
 
       {/* Needs attention */}
-      <div className="bz-card overflow-hidden">
-        <div
-          className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid #EBEBEB' }}
-        >
-          <Eyebrow color="#DC2626">{isTr ? 'DİKKAT GEREKTİREN' : 'NEEDS ATTENTION'}</Eyebrow>
-          <span style={{ fontSize: 11, color: '#737373' }}>
-            <AlertCircle size={11} className="inline-block -mt-0.5" strokeWidth={2} />{' '}
-            {isTr ? 'Operatör görevleri' : 'Operator tasks'}
-          </span>
-        </div>
+      <section className="bz-card p-5 sm:p-6" aria-label={isTr ? 'Dikkat gerektiren' : 'Needs attention'}>
+        <header className="mb-4">
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Dikkat gerektiren' : 'Needs attention'}</h2>
+          <p className="mt-1 text-[13px] text-[#9A9A9A]">{isTr ? 'Operatör görevleri' : 'Operator tasks'}</p>
+        </header>
         {loading ? (
-          // Row geometry matches the final attention rows (px-5 py-3.5
-          // container, 13px label, 22px-tall badge `.bz-badge` height).
-          <div>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center px-5 py-3.5"
-                style={{ borderBottom: '1px solid #F5F5F5' }}
-              >
-                <Skeleton height={13} width="58%" />
-                <Skeleton width={36} height={22} rounded={6} />
-              </div>
-            ))}
-          </div>
+          <div className="flex flex-col gap-2">{Array.from({ length: 4 }).map((_, i) => rowSkeleton(i))}</div>
         ) : (
-          attention.map((row, i) => {
-            const badge = (
-              <Badge kind={row.kind === 'danger' ? 'danger' : row.kind === 'warn' ? 'warn' : 'info'}>
-                {row.n}
-              </Badge>
-            );
-            const label = (
-              <span style={{ fontSize: 13, color: '#1A1A1A' }}>{row.k}</span>
-            );
-            if (row.href) {
-              return (
-                <Link
-                  key={i}
-                  href={row.href}
-                  className="flex justify-between items-center px-5 py-3.5 last:border-b-0 transition-colors hover:bg-pn-canvas focus-visible:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-inset"
-                  style={{ borderBottom: '1px solid #F5F5F5' }}
-                  aria-label={`${row.k} (${row.n})`}
-                >
-                  {label}
-                  {badge}
-                </Link>
+          <ul className="flex flex-col gap-2">
+            {attention.map((row, i) => {
+              const tone = attentionTone[row.kind];
+              const inner = (
+                <>
+                  <span aria-hidden="true" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${tone.circle}`}>
+                    <AlertCircle size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1 text-[15px] font-medium text-pn-ink">{row.k}</span>
+                  <span className={`pn-change shrink-0 px-2.5 ${row.n > 0 ? tone.pill : 'pn-change--flat'}`}>{row.n}</span>
+                </>
               );
-            }
-            return (
-              <div
-                key={i}
-                className="flex justify-between items-center px-5 py-3.5 last:border-b-0"
-                style={{ borderBottom: '1px solid #F5F5F5' }}
-              >
-                {label}
-                {badge}
-              </div>
-            );
-          })
+              return (
+                <li key={i}>
+                  {row.href ? (
+                    <Link
+                      href={row.href}
+                      className="pn-row min-h-[60px] py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
+                      aria-label={`${row.k} (${row.n})`}
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div className="pn-row min-h-[60px] py-2.5">{inner}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }

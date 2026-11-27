@@ -214,7 +214,7 @@ export default function AuthView({
         <input type="checkbox" className={CHECKBOX} checked={form.terms} onChange={(e) => set('terms', e.target.checked)} required />
         <span>
           {c.consentTerms}{' '}
-          <a href={legal.terms} target="_blank" rel="noopener" className="font-medium text-[#5D3EBC] underline underline-offset-2">
+          <a href={legal.terms} target="_blank" rel="noopener" className="font-medium text-[#111110] underline underline-offset-2">
             {c.terms}
           </a>
         </span>
@@ -223,7 +223,7 @@ export default function AuthView({
         <input type="checkbox" className={CHECKBOX} checked={form.privacy} onChange={(e) => set('privacy', e.target.checked)} required />
         <span>
           {c.consentPrivacy}{' '}
-          <a href={legal.privacy} target="_blank" rel="noopener" className="font-medium text-[#5D3EBC] underline underline-offset-2">
+          <a href={legal.privacy} target="_blank" rel="noopener" className="font-medium text-[#111110] underline underline-offset-2">
             {c.privacy}
           </a>
         </span>
@@ -232,7 +232,7 @@ export default function AuthView({
         <input type="checkbox" className={CHECKBOX} checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} />
         <span>
           {c.marketing}{' '}
-          <a href={legal.commercial} target="_blank" rel="noopener" className="text-[#5D3EBC] underline underline-offset-2">
+          <a href={legal.commercial} target="_blank" rel="noopener" className="text-[#111110] underline underline-offset-2">
             ETK
           </a>
         </span>
@@ -299,7 +299,7 @@ export default function AuthView({
 
   return (
     <section className={CARD}>
-      {intro && <p className="mb-4 inline-flex rounded-full bg-[#EFEAFB] px-3 py-1.5 text-[13px] font-medium text-[#5D3EBC]">{intro}</p>}
+      {intro && <p className="mb-4 inline-flex rounded-full bg-[#F1FDF3] px-3 py-1.5 text-[13px] font-medium text-[#111110]">{intro}</p>}
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] sm:text-[28px]">{mode === 'login' ? c.loginTitle : c.registerTitle}</h1>
       <p className={`mt-1.5 text-[14.5px] leading-relaxed ${MUTED}`}>{mode === 'login' ? c.loginLead : c.registerLead}</p>
 
@@ -307,7 +307,7 @@ export default function AuthView({
         type="button"
         onClick={() => void startGoogle()}
         disabled={busy !== null}
-        className="mt-6 flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-[#747775] bg-white text-[15px] font-medium text-[#1F1F1F] transition-colors duration-200 hover:bg-[#F8F8F8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2 disabled:opacity-60"
+        className="mt-6 flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-[#747775] bg-white text-[15px] font-medium text-[#1F1F1F] transition-colors duration-200 hover:bg-[#F8F8F8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2 disabled:opacity-60"
       >
         {busy === 'google' ? <Loader2 size={18} className="animate-spin" /> : <GoogleMark />}
         {busy === 'google' ? c.googleBusy : c.google}

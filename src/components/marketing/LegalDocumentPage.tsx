@@ -100,7 +100,7 @@ export default function LegalDocumentPage({
                 {isTr ? 'Sorularınız için ' : 'Questions? '}
                 <a
                   href={`mailto:${SUPPORT_EMAIL}`}
-                  className="font-medium text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-[3px] transition-colors hover:decoration-[#4C2FA3]"
+                  className="font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-[3px] transition-colors hover:decoration-[#A8D62E]"
                 >
                   {SUPPORT_EMAIL}
                 </a>

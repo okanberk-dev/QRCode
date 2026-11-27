@@ -2,9 +2,10 @@
 
 // Reads the QR on a customer's loyalty card with the device camera (§60).
 // Uses the browser's BarcodeDetector (Chrome / Edge / Android); where it is
-// missing (iOS Safari, Firefox) the dialog explains the other two ways: the
-// phone's own Camera app (opens the card in staff mode, §61) or the code
-// under the card. No extra library.
+// missing (iOS Safari, Firefox) frames are decoded with jsQR, loaded only
+// when the dialog opens. Only when the camera itself is unavailable or
+// denied does the dialog explain the other ways (the phone's Camera app,
+// which opens the card in staff mode §61, or the code under the card).
 //
 // Motion (loyalty-motion.css): a viewfinder with breathing corners and a
 // sweeping line; on a read the corners lock in, the view flashes, a check
@@ -26,17 +27,24 @@ type BarcodeDetectorCtor = new (opts: { formats: string[] }) => BarcodeDetectorL
 /** How long the "read" moment shows before the value is handed over. */
 const SUCCESS_MS = 560;
 
+/** The browser can open the camera from the page (every modern phone). */
 export function cameraScanSupported(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    'BarcodeDetector' in window &&
-    typeof navigator !== 'undefined' &&
-    Boolean(navigator.mediaDevices?.getUserMedia)
-  );
+  return typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
 }
 
-// Lavender reads on the dimmed camera picture (purple on near-black does not).
-const CORNER = 'absolute h-8 w-8 border-[#DCD3F6]';
+/** Chrome / Edge / Android ship a native QR reader; Safari does not, so
+ *  there the frames are decoded with jsQR (loaded only when needed). */
+function nativeDetectorAvailable(): boolean {
+  return typeof window !== 'undefined' && 'BarcodeDetector' in window;
+}
+
+/** Longest side of the frame handed to jsQR: enough for a card QR, light on CPU. */
+const FALLBACK_SIZE = 640;
+/** jsQR pass interval (the native reader runs every frame). */
+const FALLBACK_INTERVAL_MS = 140;
+
+// Green reads well on the dimmed camera picture.
+const CORNER = 'absolute h-8 w-8 border-[#78FC90]';
 
 export default function ScanDialog({
   locale,
@@ -62,22 +70,49 @@ export default function ScanDialog({
     let raf = 0;
     let stopped = false;
     let handOver = 0;
-    const Detector = (window as unknown as { BarcodeDetector: BarcodeDetectorCtor }).BarcodeDetector;
-    const detector = new Detector({ formats: ['qr_code'] });
+    let timer = 0;
 
     (async () => {
       try {
+        // Native reader where the browser has one, jsQR elsewhere (iPhone).
+        let readFrame: (video: HTMLVideoElement) => Promise<string | null>;
+        if (nativeDetectorAvailable()) {
+          const Detector = (window as unknown as { BarcodeDetector: BarcodeDetectorCtor }).BarcodeDetector;
+          const detector = new Detector({ formats: ['qr_code'] });
+          readFrame = async (video) => (await detector.detect(video))[0]?.rawValue ?? null;
+        } else {
+          const { default: jsQR } = await import('jsqr');
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          readFrame = async (video) => {
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            if (!ctx || !w || !h) return null;
+            const scale = Math.min(1, FALLBACK_SIZE / Math.max(w, h));
+            canvas.width = Math.round(w * scale);
+            canvas.height = Math.round(h * scale);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            return jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'dontInvert' })?.data || null;
+          };
+        }
+        const nativeReader = nativeDetectorAvailable();
+
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         const video = videoRef.current;
         if (!video || stopped) return;
         video.srcObject = stream;
         await video.play();
         setReady(true);
+        const next = () => {
+          if (stopped) return;
+          if (nativeReader) raf = window.requestAnimationFrame(() => void tick());
+          else timer = window.setTimeout(() => void tick(), FALLBACK_INTERVAL_MS);
+        };
         const tick = async () => {
           if (stopped || !videoRef.current) return;
           try {
-            const codes = await detector.detect(videoRef.current);
-            const value = codes[0]?.rawValue;
+            const value = await readFrame(videoRef.current);
             if (value) {
               stopped = true;
               videoRef.current?.pause();
@@ -90,7 +125,7 @@ export default function ScanDialog({
           } catch {
             /* frame not ready */
           }
-          raf = window.requestAnimationFrame(() => void tick());
+          next();
         };
         void tick();
       } catch {
@@ -101,6 +136,7 @@ export default function ScanDialog({
     return () => {
       stopped = true;
       window.cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
       window.clearTimeout(handOver);
       stream?.getTracks().forEach((t) => t.stop());
     };
@@ -131,7 +167,7 @@ export default function ScanDialog({
                     className="bzl-scan-sweep absolute inset-x-0 top-0 h-full"
                     style={{
                       background:
-                        'linear-gradient(180deg, rgba(166, 143, 235, 0) 0%, rgba(166, 143, 235, 0) 62%, rgba(166, 143, 235, 0.3) 94%, #A68FEB 100%)',
+                        'linear-gradient(180deg, rgba(166, 143, 235, 0) 0%, rgba(166, 143, 235, 0) 62%, rgba(166, 143, 235, 0.3) 94%, #78FC90 100%)',
                     }}
                   />
                 </span>
@@ -184,10 +220,10 @@ function ScanHelp({ locale, denied }: { locale: 'tr' | 'en'; denied: boolean }) 
             ? 'Kameraya izin verilmedi. Tarayıcı ayarlarından kamera iznini açabilir ya da aşağıdaki yollardan birini kullanabilirsiniz.'
             : 'Camera access was denied. Allow it in the browser settings, or use one of the ways below.'
           : tr
-            ? 'Bu tarayıcı panel içinden kamerayla okutmayı desteklemiyor (iPhone Safari gibi).'
-            : 'This browser cannot scan from inside the panel (iPhone Safari, for example).'}
+            ? 'Bu tarayıcı kameraya erişemiyor.'
+            : 'This browser cannot open the camera.'}
       </p>
-      <div className="flex gap-3 rounded-[20px] border border-pn-line bg-pn-canvas p-3">
+      <div className="flex gap-3 rounded-[18px] bg-[#F6F6F6] p-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent text-white">
           <Camera size={17} aria-hidden="true" />
         </span>
@@ -198,7 +234,7 @@ function ScanHelp({ locale, denied }: { locale: 'tr' | 'en'; denied: boolean }) 
             : 'If you are signed in to the panel on this phone, the customer’s card opens straight in staff mode: add stamps and give rewards there.'}
         </p>
       </div>
-      <div className="flex gap-3 rounded-[20px] border border-pn-line bg-pn-canvas p-3">
+      <div className="flex gap-3 rounded-[18px] bg-[#F6F6F6] p-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-white text-[#525252] ring-1 ring-pn-line">
           <Keyboard size={17} aria-hidden="true" />
         </span>

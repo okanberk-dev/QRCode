@@ -46,7 +46,7 @@ export default function AdminAuditsHubPage() {
     <div className="mx-auto max-w-[1440px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#5D3EBC"
+        eyebrowColor="#111110"
         title="Denetim Merkezi"
         description="Hazır şablon kataloğu, kategori taksonomisi ve sistem genelinde kullanım istatistikleri. İşletme sahipleri bu şablonları kopyalayıp kendi denetimlerine uyarlar."
       />

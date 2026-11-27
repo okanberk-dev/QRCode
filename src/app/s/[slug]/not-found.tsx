@@ -35,11 +35,11 @@ export default async function SurveyNotAccepting() {
       style={
         {
           fontFamily: 'var(--font-body)',
-          '--bz-survey-stage-mobile': '#5D3EBC',
+          '--bz-survey-stage-mobile': '#111110',
         } as React.CSSProperties
       }
     >
-      <div className="bz-survey-frame" style={{ background: '#5D3EBC' }}>
+      <div className="bz-survey-frame" style={{ background: '#111110' }}>
         <div
           className="relative flex flex-1 flex-col items-center justify-center text-center"
           style={{ padding: '48px 28px', color: '#fff' }}
@@ -67,7 +67,7 @@ export default async function SurveyNotAccepting() {
               borderRadius: 999,
               marginBottom: 28,
               background: '#fff',
-              color: '#5D3EBC',
+              color: '#111110',
             }}
           >
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">

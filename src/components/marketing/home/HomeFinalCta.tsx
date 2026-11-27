@@ -5,7 +5,7 @@ import { Scribble } from '../ritim/icons';
 import { SITE_VIDEOS, img } from '../ritim/media';
 
 /**
- * Closing brand band. Two CTAs only; facts are verifiable (14-day trial, no
+ * Closing lime band. Two CTAs only; facts are verifiable (14-day trial, no
  * card at sign-up, cancel any time with access to the end of the period).
  * Register links carry rel="nofollow" (spec §5: /auth/* is noindex).
  */
