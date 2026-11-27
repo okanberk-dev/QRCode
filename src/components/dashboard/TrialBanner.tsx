@@ -73,17 +73,17 @@ export default function TrialBanner({
 
   return (
     <div className="legal-print-hide mx-auto w-full max-w-[1440px] px-4 pt-4 sm:px-7">
-      {/* Pano: a black pill with a lime call to action (DASHBOARD_DESIGN.md §5.4). */}
+      {/* Pano: a deep purple pill with a white call to action (DASHBOARD_DESIGN.md §5.4). */}
       <div
         role="status"
         aria-live="polite"
-        className="flex items-center gap-3 rounded-[28px] bg-pn-ink py-2 pl-5 pr-2 text-[14px] text-white sm:rounded-full"
+        className="flex items-center gap-3 rounded-[28px] bg-[#3B1F8F] py-2 pl-5 pr-2 text-[14px] text-white sm:rounded-full"
       >
-        <Crown size={18} className="shrink-0 text-pn-accent" aria-hidden="true" />
+        <Crown size={18} className="shrink-0 text-white" aria-hidden="true" />
         {/* Wraps instead of truncating: on a phone the ellipsis cut off the
             number of days, the one thing the banner is for. */}
         <span className="min-w-0 flex-1 leading-snug">
-          <span className="font-medium" style={{ color: palette.text === '#991B1B' ? '#FF8A80' : undefined }}>
+          <span className="font-medium" style={{ color: palette.text === '#991B1B' ? '#FFC4C0' : undefined }}>
             {message}
           </span>{' '}
           <span className="hidden text-white/60 sm:inline">
@@ -92,7 +92,7 @@ export default function TrialBanner({
         </span>
         <Link
           href={`/${locale}/pricing`}
-          className="inline-flex h-10 shrink-0 items-center rounded-full bg-pn-accent px-5 text-[14px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="inline-flex h-10 shrink-0 items-center rounded-full bg-white px-5 text-[14px] font-medium text-pn-accent transition-colors hover:bg-pn-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           {isTr ? 'Yükselt' : 'Upgrade'}
         </Link>
@@ -100,7 +100,7 @@ export default function TrialBanner({
           type="button"
           onClick={dismiss}
           aria-label={isTr ? 'Uyarıyı kapat' : 'Dismiss notice'}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <X size={16} aria-hidden="true" />
         </button>

@@ -55,8 +55,8 @@ export default function ForgotPasswordForm({ locale }: Props) {
   if (sent) {
     return (
       <div className="flex flex-col gap-3.5">
-        <div className="rounded-[14px] border border-[#C6F24E] bg-[#EAF9B8] p-5 text-center">
-          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+        <div className="rounded-[14px] border border-[#8C6CF0] bg-[#EFEAFB] p-5 text-center">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#5D3EBC] text-white">
             <Check size={20} strokeWidth={2.5} />
           </div>
           <p className="text-[14px] font-medium text-[#0A0A0A]">
@@ -78,7 +78,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
               router.push(`/${locale}/auth/reset-password`);
             }
           }}
-          className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors"
+          className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#5D3EBC] text-white font-medium py-3.5 rounded-full hover:bg-[#4C2FA3] transition-colors"
         >
           {locale === 'tr' ? 'Kodu gir' : 'Enter code'}
           <ArrowRight size={18} strokeWidth={2} />
@@ -100,7 +100,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
           {locale === 'tr' ? 'Hatırladın mı?' : 'Remembered it?'}{' '}
           <Link
             href={`/${locale}/auth/login`}
-            className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+            className="font-semibold text-[#0A0A0A] hover:text-[#5D3EBC] transition-colors"
           >
             {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
           </Link>
@@ -130,14 +130,14 @@ export default function ForgotPasswordForm({ locale }: Props) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="emre@arkbistro.com"
-          className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
+          className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#5D3EBC] text-white font-medium py-3.5 rounded-full hover:bg-[#4C2FA3] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading
@@ -152,7 +152,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
         {locale === 'tr' ? 'Hatırladın mı?' : 'Remembered it?'}{' '}
         <Link
           href={`/${locale}/auth/login`}
-          className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+          className="font-semibold text-[#0A0A0A] hover:text-[#5D3EBC] transition-colors"
         >
           {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
         </Link>

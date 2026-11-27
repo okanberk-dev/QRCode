@@ -56,12 +56,12 @@ export default async function RegisterPage({
 
   return (
     <div className="min-h-screen bg-white font-sans lg:grid lg:grid-cols-2">
-      {/* LEFT — Lime hero */}
-      <div className="relative flex min-h-[420px] lg:min-h-screen flex-col justify-between bg-[#C6F24E] px-6 py-10 sm:px-10 sm:py-12 lg:px-14 lg:py-12">
+      {/* LEFT — Purple brand hero (white text on #5D3EBC) */}
+      <div className="relative flex min-h-[420px] lg:min-h-screen flex-col justify-between bg-[#5D3EBC] px-6 py-10 sm:px-10 sm:py-12 lg:px-14 lg:py-12">
         <Link href={`/${locale}`} className="inline-flex items-center gap-2 self-start group">
-          <BuazeLogo size={32} variant="on-lime" imageUrl={logoUrl} />
+          <BuazeLogo size={32} variant="on-brand" imageUrl={logoUrl} />
           <span
-            className="text-[20px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
+            className="text-[20px] font-medium tracking-[-0.03em] text-white"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             buaze<span>.</span>
@@ -69,11 +69,11 @@ export default async function RegisterPage({
         </Link>
 
         <div className="py-8">
-          <span className="pulse-eyebrow text-[#0A0A0A] inline-block">
+          <span className="pulse-eyebrow text-white inline-block">
             {isTr ? '14 GÜN ÜCRETSİZ' : '14 DAYS FREE'}
           </span>
           <h2
-            className="mt-4 text-[36px] sm:text-[52px] lg:text-[64px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]"
+            className="mt-4 text-[36px] sm:text-[52px] lg:text-[64px] font-medium leading-[0.98] tracking-[-0.035em] text-white"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr ? (
@@ -85,8 +85,8 @@ export default async function RegisterPage({
 
           <ul className="mt-7 space-y-2.5">
             {benefits.map((feat) => (
-              <li key={feat} className="flex items-center gap-2.5 text-[14px] font-medium text-[#0A0A0A]">
-                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+              <li key={feat} className="flex items-center gap-2.5 text-[14px] font-medium text-white">
+                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-white text-[#5D3EBC]">
                   <Check size={11} strokeWidth={3} />
                 </span>
                 {feat}
@@ -95,7 +95,7 @@ export default async function RegisterPage({
           </ul>
         </div>
 
-        <p className="pulse-eyebrow text-[#0A0A0A]/70">© {new Date().getFullYear()} BUAZE</p>
+        <p className="pulse-eyebrow text-white/80">© {new Date().getFullYear()} BUAZE</p>
       </div>
 
       {/* RIGHT — Form */}

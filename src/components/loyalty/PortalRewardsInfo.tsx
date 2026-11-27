@@ -26,8 +26,8 @@ export default function PortalRewardsInfo({
   return (
     <section
       aria-labelledby="portal-how"
-      className="rounded-[22px] border p-4"
-      style={{ background: 'var(--p-surface)', borderColor: 'var(--p-border)' }}
+      className="rounded-[24px] p-5"
+      style={{ background: 'var(--p-surface)' }}
     >
       <h2 id="portal-how" className="text-[16px] font-semibold">
         {tr ? 'Nasıl çalışır?' : 'How it works'}

@@ -409,7 +409,7 @@ export default async function IntegrationsPage({
                 <li key={item.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[14px] font-semibold text-white"
                   >
                     {i + 1}
                   </span>
@@ -435,7 +435,7 @@ export default async function IntegrationsPage({
                   {item.key === 'web' ? (
                     <span
                       aria-hidden="true"
-                      className="flex h-10 w-10 items-center justify-center gap-0.5 rounded-[10px] bg-[#EAF9B8] text-[#0A0A0A]"
+                      className="flex h-10 w-10 items-center justify-center gap-0.5 rounded-[10px] bg-[#EFEAFB] text-[#0A0A0A]"
                     >
                       <Globe size={16} strokeWidth={1.8} />
                       <CalendarCheck size={14} strokeWidth={1.8} />

@@ -254,7 +254,7 @@ export default function SavedCardPanel({
         tabIndex={-1}
         role="status"
         aria-live="polite"
-        className={`mt-3 min-h-[18px] text-[12px] leading-[1.45] focus:outline-none ${status?.tone === 'error' ? 'text-[#991B1B]' : 'text-[#4D5C00]'}`}
+        className={`mt-3 min-h-[18px] text-[12px] leading-[1.45] focus:outline-none ${status?.tone === 'error' ? 'text-[#991B1B]' : 'text-[#23863A]'}`}
       >
         {status?.text ?? ''}
       </p>

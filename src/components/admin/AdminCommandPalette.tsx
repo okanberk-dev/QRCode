@@ -1,40 +1,51 @@
 'use client';
 
 /**
- * Admin Cmd+K command palette.
+ * Admin search palette (⌘K / Ctrl K).
  *
  * Trigger paths:
  *   • Cmd+K (Mac) / Ctrl+K (Win) — global keyboard listener
- *   • `buaze:admin-search-open` CustomEvent — dispatched by the topbar and
- *     the mobile top bar. One palette instance serves both.
+ *   • `buaze:admin-search-open` CustomEvent — dispatched by the top-bar field
+ *     and the mobile bar. One palette instance serves both.
  *
  * Sources:
- *   1. Pages — the shared admin navigation (admin-nav.ts), already filtered
+ *   1. Quick actions + recently opened (localStorage, admin paths only) —
+ *      shown before typing.
+ *   2. Pages — the shared admin navigation (admin-nav.ts), already filtered
  *      by role and staff grants. Matched instantly on the client.
- *   2. Businesses and customers — the latest few when the query is empty,
- *      a server-side search once two characters are typed (same behaviour as
- *      the owner palette). Only offered when the admin can open the
- *      matching list page.
+ *   3. Businesses and customers — the latest few when the query is empty,
+ *      a server-side search once two characters are typed. Only offered
+ *      when the admin can open the matching list page.
  *
- * a11y: input auto-focus, focus restored on close, ESC + backdrop close,
- * ↑↓ move, Enter opens.
+ * Rendering, focus trap/restore and ARIA live in `PaletteFrame`.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { BarChart3, History, Network, Reply, ScrollText, type LucideIcon } from 'lucide-react';
 import {
-  ArrowDown,
-  ArrowUp,
-  CornerDownLeft,
-  Loader2,
-  Search as SearchIcon,
-  Store,
-  Users,
-  X,
-} from 'lucide-react';
+  GroupAction,
+  Highlight,
+  PaletteAvatar,
+  PaletteEmpty,
+  PaletteFrame,
+  PaletteGroup,
+  PaletteIcon,
+  PaletteOption,
+  PaletteSkeletonRow,
+} from '@/components/panel/search/PaletteFrame';
+import {
+  ADMIN_RECENT_KEY,
+  clearRecent,
+  formatPaletteDate,
+  matchesQuery,
+  readRecent,
+  rememberRecent,
+  type RecentEntry,
+} from '@/components/panel/search/search-utils';
 import { useAdminTranslation } from './AdminTranslationProvider';
 import {
-  getAdminNavLeaves,
+  getAdminNav,
   toAdminNavRole,
   type AdminNavLeaf,
   type AdminNavLocale,
@@ -55,14 +66,67 @@ interface CustomerHit {
   restaurantName?: string | null;
 }
 
-type Hit =
-  | { kind: 'nav'; href: string; label: string }
-  | RestaurantHit
-  | CustomerHit;
+interface QuickAction {
+  key: string;
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  keywords: string[];
+}
+
+type Item =
+  | { kind: 'action'; key: string; action: QuickAction }
+  | { kind: 'recent'; key: string; entry: RecentEntry }
+  | { kind: 'nav'; key: string; leaf: AdminNavLeaf; group: string | null }
+  | { kind: 'restaurant'; key: string; hit: RestaurantHit }
+  | { kind: 'customer'; key: string; hit: CustomerHit };
+
+interface Section {
+  id: string;
+  title: string;
+  items: Item[];
+  count?: number;
+  action?: ReactNode;
+  pending?: boolean;
+}
 
 const RESULT_LIMIT = 8;
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_SEARCH_LENGTH = 2;
+const EMPTY_PAGE_LIMIT = 12;
+const ADMIN_PREFIX = '/admin';
+
+type Copy = Record<AdminNavLocale, string>;
+
+/** One-line description per admin page; the nav group name is the fallback. */
+const PAGE_DESCRIPTIONS: Record<string, Copy> = {
+  '/admin/dashboard': { tr: 'Platformun genel durumu', en: 'Platform overview' },
+  '/admin/reviews': { tr: 'Tüm işletmelerin yorum kutusu', en: 'Review inbox across businesses' },
+  '/admin/analytics': { tr: 'Puan, hacim ve büyüme raporları', en: 'Rating, volume and growth reports' },
+  '/admin/qr': { tr: 'İşletmelerin QR kodları', en: "Businesses' QR codes" },
+  '/admin/restaurants': { tr: "İşletmeler ve franchise'lar", en: 'Businesses and franchises' },
+  '/admin/audits/templates': { tr: 'Hazır denetim şablonları', en: 'Ready-made audit templates' },
+  '/admin/audits/categories': { tr: 'Şablon kategorileri', en: 'Template categories' },
+  '/admin/audits/stats': { tr: 'Denetim sonuçlarının özeti', en: 'Summary of audit results' },
+  '/admin/members': { tr: 'Hesaplar, paketler ve faturalar', en: 'Accounts, plans and billing' },
+  '/admin/users': { tr: 'Buaze ekibi ve yetkiler', en: 'Buaze team and permissions' },
+  '/admin/customers': { tr: 'Geri bildirim bırakan müşteriler', en: 'Customers who left feedback' },
+  '/admin/plans': { tr: 'Paketler ve modüller', en: 'Plans and modules' },
+  '/admin/blog': { tr: 'Blog yazıları', en: 'Blog posts' },
+  '/admin/announcements': { tr: 'Panel duyuruları', en: 'Panel announcements' },
+  '/admin/legal-documents': { tr: 'KVKK, koşullar ve değişkenler', en: 'Privacy, terms and variables' },
+  '/admin/site-settings': { tr: 'Logo, paylaşım görseli ve site bilgileri', en: 'Logo, share image and site details' },
+  '/admin/newsletters': { tr: 'Bülten aboneleri', en: 'Newsletter subscribers' },
+  '/admin/newsletters/campaigns': { tr: 'Aylık bülten gönderimleri', en: 'Monthly newsletter sends' },
+  '/admin/mail-templates': { tr: 'E-posta metinleri', en: 'Email copy' },
+  '/admin/dev/lifecycle-emails': { tr: 'Otomatik e-posta kayıtları', en: 'Automatic email log' },
+  '/admin/dev/mail-preview': { tr: 'E-posta şablonlarını önizleyin', en: 'Preview email templates' },
+  '/admin/api': { tr: 'API anahtarları', en: 'API keys' },
+  '/admin/audit-logs': { tr: 'Kim, ne zaman, neyi değiştirdi', en: 'Who changed what, and when' },
+  '/admin/google': { tr: 'Business Profile bağlantıları', en: 'Business Profile connections' },
+  '/admin/profile': { tr: 'Hesabınız, şifre ve dil', en: 'Your account, password and language' },
+};
 
 const COPY: Record<
   AdminNavLocale,
@@ -70,51 +134,79 @@ const COPY: Record<
     title: string;
     placeholder: string;
     close: string;
-    loading: string;
-    empty: string;
+    cancel: string;
+    clear: string;
+    results: string;
     move: string;
     open: string;
+    actions: string;
+    recent: string;
+    clearRecent: string;
+    pages: string;
+    businesses: string;
+    newBusinesses: string;
+    customers: string;
+    latestCustomers: string;
     business: string;
     customer: string;
+    page: string;
+    searching: string;
+    noResults: (q: string) => string;
+    noResultsBody: string;
+    count: (n: number) => string;
   }
 > = {
   tr: {
-    title: 'Yönetim araması',
-    placeholder: 'Sayfa, işletme veya müşteri ara…',
+    title: 'Yönetimde ara',
+    placeholder: 'Sayfa, işletme ya da müşteri ara',
     close: 'Kapat',
-    loading: 'Yükleniyor…',
-    empty: 'Eşleşen sonuç yok.',
-    move: 'Gez',
-    open: 'Aç',
+    cancel: 'Vazgeç',
+    clear: 'Aramayı temizle',
+    results: 'Arama sonuçları',
+    move: 'gez',
+    open: 'aç',
+    actions: 'Hızlı işlemler',
+    recent: 'Son açılanlar',
+    clearRecent: 'Temizle',
+    pages: 'Sayfalar',
+    businesses: 'İşletmeler',
+    newBusinesses: 'Yeni işletmeler',
+    customers: 'Müşteriler',
+    latestCustomers: 'Son müşteriler',
     business: 'İşletme',
     customer: 'Müşteri',
+    page: 'Sayfa',
+    searching: 'Aranıyor',
+    noResults: (q) => `“${q}” için sonuç yok`,
+    noResultsBody: 'Farklı bir kelime deneyin ya da kısaltın. İşletmeler adıyla, müşteriler ad ve e-postayla aranır.',
+    count: (n) => `${n} sonuç`,
   },
   en: {
-    title: 'Admin search',
-    placeholder: 'Search pages, businesses or customers…',
+    title: 'Search admin',
+    placeholder: 'Search pages, businesses or customers',
     close: 'Close',
-    loading: 'Loading…',
-    empty: 'No matching results.',
-    move: 'Move',
-    open: 'Open',
+    cancel: 'Cancel',
+    clear: 'Clear search',
+    results: 'Search results',
+    move: 'move',
+    open: 'open',
+    actions: 'Quick actions',
+    recent: 'Recently opened',
+    clearRecent: 'Clear',
+    pages: 'Pages',
+    businesses: 'Businesses',
+    newBusinesses: 'New businesses',
+    customers: 'Customers',
+    latestCustomers: 'Latest customers',
     business: 'Business',
     customer: 'Customer',
+    page: 'Page',
+    searching: 'Searching',
+    noResults: (q) => `No results for “${q}”`,
+    noResultsBody: 'Try another word or a shorter one. Businesses are searched by name, customers by name and email.',
+    count: (n) => `${n} results`,
   },
 };
-
-function normalize(s: string): string {
-  return s
-    .toLocaleLowerCase('tr-TR')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
-}
-
-function navMatches(item: AdminNavLeaf, q: string): boolean {
-  if (!q) return true;
-  const nq = normalize(q);
-  if (normalize(item.label.tr).includes(nq) || normalize(item.label.en).includes(nq)) return true;
-  return (item.keywords ?? []).some((k) => normalize(k).includes(nq));
-}
 
 function parseRestaurants(data: unknown): RestaurantHit[] {
   const body = data as { data?: unknown; items?: unknown } | null;
@@ -162,6 +254,8 @@ async function fetchJson(url: string, signal?: AbortSignal): Promise<unknown> {
   }
 }
 
+const pathOf = (href: string) => href.split('?')[0];
+
 const NO_PERMISSIONS: string[] = [];
 
 interface AdminCommandPaletteProps {
@@ -176,18 +270,25 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
   const { locale } = useAdminTranslation();
   const navLocale: AdminNavLocale = locale === 'en' ? 'en' : 'tr';
   const copy = COPY[navLocale];
+  const listId = useId();
 
-  const navLeaves = useMemo(
-    () => getAdminNavLeaves(toAdminNavRole(role), new Set(permissions)),
-    [role, permissions],
-  );
-  const canSeeRestaurants = navLeaves.some((leaf) => leaf.href === '/admin/restaurants');
-  const canSeeCustomers = navLeaves.some((leaf) => leaf.href === '/admin/customers');
+  // Visible pages (role + staff grants applied) with their nav group name.
+  const navLeaves = useMemo(() => {
+    const out: Array<{ leaf: AdminNavLeaf; group: string | null }> = [];
+    for (const entry of getAdminNav(toAdminNavRole(role), new Set(permissions))) {
+      if (entry.type === 'item') out.push({ leaf: entry, group: null });
+      else for (const child of entry.children) out.push({ leaf: child, group: entry.label[navLocale] });
+    }
+    return out;
+  }, [role, permissions, navLocale]);
+  const leafByPath = useMemo(() => new Map(navLeaves.map((n) => [n.leaf.href, n.leaf])), [navLeaves]);
+  const canSeeRestaurants = leafByPath.has('/admin/restaurants');
+  const canSeeCustomers = leafByPath.has('/admin/customers');
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [recent, setRecent] = useState<{ restaurants: RestaurantHit[]; customers: CustomerHit[] }>({
+  const [latest, setLatest] = useState<{ restaurants: RestaurantHit[]; customers: CustomerHit[] }>({
     restaurants: [],
     customers: [],
   });
@@ -197,8 +298,8 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
   });
   const [loading, setLoading] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
+  const [recent, setRecent] = useState<RecentEntry[]>([]);
+  const [now, setNow] = useState(() => Date.now());
 
   // Keyboard shortcut + custom event listener.
   useEffect(() => {
@@ -218,26 +319,24 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
     };
   }, []);
 
-  // Focus management — restore focus on close.
+  // Fresh start on every open; recents re-read from storage.
   useEffect(() => {
     if (open) {
-      previouslyFocused.current = document.activeElement as HTMLElement;
-      const t = window.setTimeout(() => inputRef.current?.focus(), 30);
-      return () => window.clearTimeout(t);
+      setRecent(readRecent(ADMIN_RECENT_KEY, ADMIN_PREFIX));
+      setNow(Date.now());
+      return;
     }
-    const prev = previouslyFocused.current;
-    if (prev && typeof prev.focus === 'function') prev.focus();
     setQuery('');
     setDebounced('');
     setActiveIdx(0);
   }, [open]);
 
   // Latest businesses / customers, loaded once on first open.
-  const recentStartedRef = useRef(false);
+  const latestStartedRef = useRef(false);
   useEffect(() => {
-    if (!open || recentStartedRef.current) return;
+    if (!open || latestStartedRef.current) return;
     if (!canSeeRestaurants && !canSeeCustomers) return;
-    recentStartedRef.current = true;
+    latestStartedRef.current = true;
     let cancelled = false;
     setLoading(true);
     (async () => {
@@ -246,7 +345,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
         canSeeCustomers ? fetchJson(`/api/admin/customers?limit=${RESULT_LIMIT}`) : null,
       ]);
       if (cancelled) return;
-      setRecent({ restaurants: parseRestaurants(restData), customers: parseCustomers(custData) });
+      setLatest({ restaurants: parseRestaurants(restData), customers: parseCustomers(custData) });
       setLoading(false);
     })();
     return () => {
@@ -261,7 +360,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
     return () => window.clearTimeout(id);
   }, [query, open]);
 
-  // Server-side search — the recent lists only hold a handful of rows, so
+  // Server-side search — the latest lists only hold a handful of rows, so
   // filtering them locally could never find an older business or customer.
   useEffect(() => {
     if (!open) return;
@@ -288,224 +387,307 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
     return () => controller.abort();
   }, [debounced, open, canSeeRestaurants, canSeeCustomers]);
 
-  // Body scroll lock.
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
+  // Quick actions, only for pages this admin can open.
+  const actions = useMemo<QuickAction[]>(() => {
+    const isTr = navLocale === 'tr';
+    const list: Array<QuickAction & { requires: string }> = [
+      {
+        key: 'action-unanswered',
+        requires: '/admin/reviews',
+        href: '/admin/reviews?hasReply=pending',
+        label: isTr ? 'Yanıtsız yorumlar' : 'Unanswered reviews',
+        description: isTr ? 'Tüm işletmelerde yanıt bekleyenler' : 'Waiting for a reply, all businesses',
+        icon: Reply,
+        keywords: ['yanıt', 'yanıtsız', 'reply', 'unanswered', 'yorum', 'review'],
+      },
+      {
+        key: 'action-franchise',
+        requires: '/admin/restaurants',
+        href: '/admin/restaurants?view=franchise',
+        label: isTr ? "Franchise'ları gör" : 'View franchises',
+        description: isTr ? 'Birden çok işletmesi olan sahipler' : 'Owners with more than one business',
+        icon: Network,
+        keywords: ['franchise', 'zincir', 'chain', 'şube', 'branch', 'sahip', 'owner'],
+      },
+      {
+        key: 'action-analytics',
+        requires: '/admin/analytics',
+        href: '/admin/analytics',
+        label: isTr ? 'Analitik raporu' : 'Analytics report',
+        description: isTr ? 'Puan, hacim ve büyüme raporları' : 'Rating, volume and growth reports',
+        icon: BarChart3,
+        keywords: ['analitik', 'rapor', 'analytics', 'report'],
+      },
+      {
+        key: 'action-audit-log',
+        requires: '/admin/audit-logs',
+        href: '/admin/audit-logs',
+        label: isTr ? 'Son değişiklikler' : 'Recent changes',
+        description: isTr ? 'Denetim kaydında kim, neyi değiştirdi' : 'Who changed what, from the audit log',
+        icon: ScrollText,
+        keywords: ['denetim', 'kayıt', 'audit', 'log', 'değişiklik', 'changes'],
+      },
+    ];
+    return list.filter((a) => leafByPath.has(a.requires));
+  }, [leafByPath, navLocale]);
 
-  const hits = useMemo<Hit[]>(() => {
-    const q = query.trim();
-    const navHits: Hit[] = navLeaves
-      .filter((leaf) => navMatches(leaf, q))
-      .map((leaf) => ({ kind: 'nav' as const, href: leaf.href, label: leaf.label[navLocale] }));
-    if (q.length < MIN_SEARCH_LENGTH) {
-      return [...navHits.slice(0, 12), ...recent.restaurants, ...recent.customers];
-    }
-    return [...navHits, ...found.restaurants, ...found.customers];
-  }, [query, navLeaves, navLocale, recent, found]);
+  const q = query.trim();
 
-  const navigate = useCallback(
-    (hit: Hit) => {
-      let href: string;
-      if (hit.kind === 'nav') href = hit.href;
-      else if (hit.kind === 'restaurant') href = `/admin/restaurants/${hit.id}`;
-      // The customers page opens its detail drawer from `?detail=<row key>`.
-      else href = `/admin/customers?detail=${encodeURIComponent(hit.id)}`;
-      setOpen(false);
-      router.push(href);
-    },
-    [router],
+  const visibleRecent = useMemo(
+    () =>
+      recent.filter((entry) =>
+        entry.kind === 'business' ? canSeeRestaurants : leafByPath.has(pathOf(entry.href)),
+      ),
+    [recent, canSeeRestaurants, leafByPath],
   );
+
+  const sections = useMemo<Section[]>(() => {
+    const out: Section[] = [];
+    const pages: Item[] = navLeaves
+      .filter(({ leaf }) => matchesQuery([leaf.label.tr, leaf.label.en, ...(leaf.keywords ?? [])], q))
+      .map(({ leaf, group }) => ({ kind: 'nav', key: `nav-${leaf.href}`, leaf, group }));
+    const toRestaurantItems = (list: RestaurantHit[]): Item[] =>
+      list.map((hit) => ({ kind: 'restaurant', key: `restaurant-${hit.id}`, hit }));
+    const toCustomerItems = (list: CustomerHit[]): Item[] =>
+      list.map((hit) => ({ kind: 'customer', key: `customer-${hit.id}`, hit }));
+
+    if (!q) {
+      if (actions.length > 0) {
+        out.push({ id: 'actions', title: copy.actions, items: actions.map((action) => ({ kind: 'action', key: action.key, action })) });
+      }
+      if (visibleRecent.length > 0) {
+        out.push({
+          id: 'recent',
+          title: copy.recent,
+          items: visibleRecent.map((entry) => ({ kind: 'recent', key: `recent-${entry.href}`, entry })),
+          action: (
+            <GroupAction
+              label={copy.clearRecent}
+              onClick={() => {
+                clearRecent(ADMIN_RECENT_KEY);
+                setRecent([]);
+                setActiveIdx(0);
+              }}
+            />
+          ),
+        });
+      }
+      out.push({ id: 'pages', title: copy.pages, items: pages.slice(0, EMPTY_PAGE_LIMIT) });
+      if (latest.restaurants.length > 0) {
+        out.push({ id: 'restaurants', title: copy.newBusinesses, items: toRestaurantItems(latest.restaurants) });
+      }
+      if (latest.customers.length > 0) {
+        out.push({ id: 'customers', title: copy.latestCustomers, items: toCustomerItems(latest.customers) });
+      }
+      return out;
+    }
+
+    const matchingActions = actions.filter((a) => matchesQuery([a.label, ...a.keywords], q));
+    if (matchingActions.length > 0) {
+      out.push({ id: 'actions', title: copy.actions, items: matchingActions.map((action) => ({ kind: 'action', key: action.key, action })) });
+    }
+    if (pages.length > 0) out.push({ id: 'pages', title: copy.pages, items: pages, count: pages.length });
+
+    // One character: narrow the latest lists locally; two or more: server results.
+    const server = q.length >= MIN_SEARCH_LENGTH;
+    const searching = server && (debounced !== q || loading);
+    const restaurants = server
+      ? found.restaurants
+      : latest.restaurants.filter((r) => matchesQuery([r.name, r.category], q));
+    const customers = server
+      ? found.customers
+      : latest.customers.filter((c) => matchesQuery([c.name, c.email, c.restaurantName], q));
+    if (canSeeRestaurants && (restaurants.length > 0 || searching)) {
+      out.push({
+        id: 'restaurants',
+        title: copy.businesses,
+        items: toRestaurantItems(restaurants),
+        count: restaurants.length > 0 && !searching ? restaurants.length : undefined,
+        pending: searching,
+      });
+    }
+    if (canSeeCustomers && (customers.length > 0 || searching)) {
+      out.push({
+        id: 'customers',
+        title: copy.customers,
+        items: toCustomerItems(customers),
+        count: customers.length > 0 && !searching ? customers.length : undefined,
+        pending: searching,
+      });
+    }
+    return out;
+  }, [actions, canSeeCustomers, canSeeRestaurants, copy, debounced, found, latest, loading, navLeaves, q, visibleRecent]);
+
+  const flat = useMemo(() => sections.flatMap((s) => s.items), [sections]);
 
   // Keep the selection inside the list as results change.
   useEffect(() => {
-    if (activeIdx >= hits.length) setActiveIdx(Math.max(0, hits.length - 1));
-  }, [hits, activeIdx]);
+    if (activeIdx >= flat.length) setActiveIdx(Math.max(0, flat.length - 1));
+  }, [flat.length, activeIdx]);
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
+  const navigate = useCallback(
+    (item: Item) => {
+      let href: string;
+      if (item.kind === 'action') {
+        href = item.action.href;
+        rememberRecent(ADMIN_RECENT_KEY, ADMIN_PREFIX, { href, label: item.action.label, kind: 'page' });
+      } else if (item.kind === 'recent') {
+        href = item.entry.href;
+        rememberRecent(ADMIN_RECENT_KEY, ADMIN_PREFIX, {
+          href,
+          label: item.entry.label,
+          kind: item.entry.kind,
+          sub: item.entry.sub,
+        });
+      } else if (item.kind === 'nav') {
+        href = item.leaf.href;
+        rememberRecent(ADMIN_RECENT_KEY, ADMIN_PREFIX, { href, label: item.leaf.label[navLocale], kind: 'page' });
+      } else if (item.kind === 'restaurant') {
+        href = `/admin/restaurants/${item.hit.id}`;
+        rememberRecent(ADMIN_RECENT_KEY, ADMIN_PREFIX, {
+          href,
+          label: item.hit.name,
+          kind: 'business',
+          sub: item.hit.category ?? undefined,
+        });
+      } else {
+        // Customers are not kept in "recently opened" (personal data).
+        // The customers page opens its detail drawer from `?detail=<row key>`.
+        href = `/admin/customers?detail=${encodeURIComponent(item.hit.id)}`;
+      }
       setOpen(false);
-      return;
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIdx((i) => Math.min(hits.length - 1, i + 1));
-      return;
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIdx((i) => Math.max(0, i - 1));
-      return;
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const hit = hits[activeIdx];
-      if (hit) navigate(hit);
-    }
-  };
+      router.push(href);
+    },
+    [navLocale, router],
+  );
 
   if (!open) return null;
 
+  const pending = sections.some((s) => s.pending);
+  const showEmpty = q.length > 0 && flat.length === 0 && !pending;
+  const status = pending ? copy.searching : showEmpty ? copy.noResults(q) : copy.count(flat.length);
+
+  let running = -1;
+  const renderItem = (item: Item) => {
+    running += 1;
+    const index = running;
+    const common = {
+      listId,
+      index,
+      active: index === activeIdx,
+      onHover: setActiveIdx,
+      onSelect: () => navigate(item),
+    };
+
+    if (item.kind === 'action') {
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={<PaletteIcon icon={item.action.icon} />}
+          primary={<Highlight text={item.action.label} query={q} />}
+          secondary={item.action.description}
+        />
+      );
+    }
+    if (item.kind === 'recent') {
+      const { entry } = item;
+      const leaf = entry.kind === 'page' ? leafByPath.get(pathOf(entry.href)) : undefined;
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={entry.kind === 'business' ? <PaletteAvatar name={entry.label} /> : <PaletteIcon icon={leaf?.icon ?? History} />}
+          primary={entry.label}
+          secondary={
+            entry.kind === 'business'
+              ? entry.sub || copy.business
+              : (leaf && PAGE_DESCRIPTIONS[leaf.href]?.[navLocale]) || copy.page
+          }
+          trailing={formatPaletteDate(entry.at, navLocale, now)}
+        />
+      );
+    }
+    if (item.kind === 'nav') {
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={<PaletteIcon icon={item.leaf.icon} />}
+          primary={<Highlight text={item.leaf.label[navLocale]} query={q} />}
+          secondary={PAGE_DESCRIPTIONS[item.leaf.href]?.[navLocale] ?? item.group ?? undefined}
+        />
+      );
+    }
+    if (item.kind === 'restaurant') {
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={<PaletteAvatar name={item.hit.name} />}
+          primary={<Highlight text={item.hit.name} query={q} />}
+          secondary={item.hit.category ? <Highlight text={item.hit.category} query={q} /> : copy.business}
+        />
+      );
+    }
+    const c = item.hit;
+    const name = c.name?.trim() || c.email || copy.customer;
+    const detail = [c.restaurantName, c.name ? c.email : null].filter(Boolean).join(' · ');
+    return (
+      <PaletteOption
+        key={item.key}
+        {...common}
+        leading={<PaletteAvatar name={name} />}
+        primary={<Highlight text={name} query={q} />}
+        secondary={detail ? <Highlight text={detail} query={q} /> : copy.customer}
+      />
+    );
+  };
+
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={copy.title}
-      onKeyDown={onKeyDown}
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-pn-ink/40 backdrop-blur-sm p-4 pt-[12vh] sm:pt-[18vh]"
-      onClick={() => setOpen(false)}
+    <PaletteFrame
+      label={copy.title}
+      listId={listId}
+      query={query}
+      onQueryChange={(value) => {
+        setQuery(value);
+        setActiveIdx(0);
+      }}
+      placeholder={copy.placeholder}
+      loading={loading}
+      count={flat.length}
+      activeIndex={activeIdx}
+      onActiveIndexChange={setActiveIdx}
+      onSubmit={(index) => {
+        const item = flat[index];
+        if (item) navigate(item);
+      }}
+      onClose={() => setOpen(false)}
+      status={status}
+      copy={{
+        clear: copy.clear,
+        close: copy.close,
+        cancel: copy.cancel,
+        results: copy.results,
+        move: copy.move,
+        open: copy.open,
+      }}
     >
-      <div
-        className="w-full max-w-[600px] overflow-hidden rounded-[28px] bg-white shadow-[0_24px_60px_-20px_rgba(17,17,16,0.35)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="m-3 flex h-[52px] items-center gap-3 rounded-full bg-pn-canvas px-5">
-          {loading ? (
-            <Loader2 size={16} className="animate-spin text-[#737373]" aria-hidden />
-          ) : (
-            <SearchIcon size={16} className="text-[#737373]" aria-hidden />
-          )}
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActiveIdx(0);
-            }}
-            placeholder={copy.placeholder}
-            className="flex-1 border-0 bg-transparent text-[16px] text-pn-ink placeholder:text-[#A3A3A3] focus:outline-none sm:text-[15px]"
-            aria-label={copy.title}
-            autoComplete="off"
-          />
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink hover:bg-[#EBEBEB]"
-            aria-label={copy.close}
-          >
-            <X size={14} aria-hidden />
-          </button>
-        </div>
-
-        <div className="max-h-[60vh] overflow-y-auto px-2 pb-2">
-          {hits.length === 0 ? (
-            <p className="px-3 py-6 text-center text-[13px] text-[#737373]" aria-live="polite">
-              {loading ? copy.loading : copy.empty}
-            </p>
-          ) : (
-            <PaletteList
-              hits={hits}
-              activeIdx={activeIdx}
-              onClick={navigate}
-              onHover={setActiveIdx}
-              businessLabel={copy.business}
-              customerLabel={copy.customer}
-            />
-          )}
-        </div>
-
-        <div className="hidden items-center justify-between border-t border-pn-line px-5 py-3 text-[12px] text-[#737373] sm:flex">
-          <span className="inline-flex items-center gap-1">
-            <KeyHint icon={<ArrowUp size={9} aria-hidden />} />
-            <KeyHint icon={<ArrowDown size={9} aria-hidden />} />
-            <span>{copy.move}</span>
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <KeyHint icon={<CornerDownLeft size={9} aria-hidden />} />
-            <span>{copy.open}</span>
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <kbd className="rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] font-medium">
-              Esc
-            </kbd>
-            <span>{copy.close}</span>
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PaletteList({
-  hits,
-  activeIdx,
-  onClick,
-  onHover,
-  businessLabel,
-  customerLabel,
-}: {
-  hits: Hit[];
-  activeIdx: number;
-  onClick: (hit: Hit) => void;
-  onHover: (idx: number) => void;
-  businessLabel: string;
-  customerLabel: string;
-}) {
-  return (
-    <div role="listbox" className="space-y-0.5">
-      {hits.map((hit, i) => {
-        const active = i === activeIdx;
-        const key = hit.kind === 'nav' ? `nav-${hit.href}` : `${hit.kind}-${hit.id}`;
-        return (
-          <button
-            key={key}
-            type="button"
-            role="option"
-            aria-selected={active}
-            onMouseEnter={() => onHover(i)}
-            onClick={() => onClick(hit)}
-            className={`flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left transition-colors ${
-              active ? 'bg-pn-canvas' : 'hover:bg-pn-canvas'
-            }`}
-          >
-            <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                active ? 'bg-pn-ink text-white' : hit.kind === 'restaurant' ? 'bg-pn-accent text-pn-ink' : 'bg-pn-canvas text-[#525252]'
-              }`}
-              aria-hidden
-            >
-              {hit.kind === 'restaurant' ? (
-                <Store size={13} />
-              ) : hit.kind === 'customer' ? (
-                <Users size={13} />
-              ) : (
-                <SearchIcon size={13} />
-              )}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[14px] font-medium text-pn-ink">
-                {hit.kind === 'nav'
-                  ? hit.label
-                  : hit.kind === 'restaurant'
-                    ? hit.name
-                    : hit.name || hit.email || customerLabel}
-              </span>
-              <span className="block truncate text-[12px] text-[#737373]">
-                {hit.kind === 'nav'
-                  ? hit.href
-                  : hit.kind === 'restaurant'
-                    ? hit.category || businessLabel
-                    : hit.restaurantName || hit.email || customerLabel}
-              </span>
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function KeyHint({ icon }: { icon: React.ReactNode }) {
-  return (
-    <kbd className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-pn-canvas">
-      {icon}
-    </kbd>
+      {showEmpty ? (
+        <PaletteEmpty title={copy.noResults(q)} body={copy.noResultsBody} />
+      ) : (
+        sections.map((section) => (
+          <PaletteGroup key={section.id} title={section.title} count={section.count} action={section.action}>
+            {section.items.map(renderItem)}
+            {section.pending && section.items.length === 0 && (
+              <>
+                <PaletteSkeletonRow />
+                <PaletteSkeletonRow />
+              </>
+            )}
+          </PaletteGroup>
+        ))
+      )}
+    </PaletteFrame>
   );
 }

@@ -109,7 +109,7 @@ function VerifyEmailInner({ locale }: { locale: Locale }) {
   if (status === 'success') {
     return (
       <div className="space-y-4">
-        <div className="flex items-start gap-3 rounded-2xl border border-[#EAF9B8] bg-[#EAF9B8]/40 p-4">
+        <div className="flex items-start gap-3 rounded-2xl border border-[#DCD3F6] bg-[#EFEAFB]/40 p-4">
           <CheckCircle2 size={20} className="shrink-0 text-[#0A0A0A] mt-0.5" />
           <div>
             <p className="text-[14px] font-medium text-[#0A0A0A]">
@@ -134,7 +134,7 @@ function VerifyEmailInner({ locale }: { locale: Locale }) {
         </AlertBanner>
         <Link
           href={`/${locale}/auth/login`}
-          className="inline-flex w-full items-center justify-center min-h-[44px] rounded-full bg-[#0A0A0A] px-5 text-[14px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
+          className="inline-flex w-full items-center justify-center min-h-[44px] rounded-full bg-[#5D3EBC] px-5 text-[14px] font-medium text-white hover:bg-[#4C2FA3] transition-colors"
         >
           {isTr ? 'Giriş yap' : 'Sign in'}
         </Link>
@@ -161,7 +161,7 @@ function VerifyEmailInner({ locale }: { locale: Locale }) {
               type="button"
               onClick={onResend}
               disabled={resending || !recipient}
-              className="inline-flex w-full items-center justify-center gap-2 min-h-[44px] rounded-full bg-[#C6F24E] px-5 text-[14px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-50 transition-colors"
+              className="inline-flex w-full items-center justify-center gap-2 min-h-[44px] rounded-full bg-[#5D3EBC] px-5 text-[14px] font-medium text-white hover:bg-[#4C2FA3] disabled:opacity-50 transition-colors"
             >
               {resending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               {isTr ? 'Yeni mail gönder' : 'Send a new email'}

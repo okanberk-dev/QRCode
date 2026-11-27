@@ -36,8 +36,8 @@ interface FeedbackListProps {
 /** Skeleton row — same anatomy as FeedbackListItem (badge · name/time · comment). */
 export function FeedbackListSkeletonRow() {
   return (
-    <div className="flex items-start gap-3 border-b border-pn-line px-4 py-3.5 sm:px-5" aria-hidden="true">
-      <SkBox className="h-10 w-10 shrink-0 rounded-[20px]" />
+    <div className="flex items-start gap-3 rounded-[16px] bg-[#F6F6F6] p-3" aria-hidden="true">
+      <SkBox className="h-10 w-10 shrink-0 rounded-full" />
       <div className="min-w-0 flex-1 space-y-2 pt-0.5">
         <div className="flex items-center justify-between gap-3">
           <SkBox className="h-4 w-32" />
@@ -121,7 +121,7 @@ export function FeedbackList({
       aria-busy={loading || undefined}
     >
       {degraded && (
-        <div className="px-4 pt-3 sm:px-5">
+        <div className="pb-2">
           <AlertBanner kind="warn">
             {isTr
               ? degraded.joinFilters
@@ -135,7 +135,7 @@ export function FeedbackList({
       )}
 
       {loading ? (
-        <div>
+        <div className="space-y-2">
           <span className="sr-only" role="status">
             {isTr ? 'Yorumlar yükleniyor…' : 'Loading reviews…'}
           </span>
@@ -144,7 +144,7 @@ export function FeedbackList({
           ))}
         </div>
       ) : listError ? (
-        <div className="p-4">
+        <div className="p-2">
           <ErrorState
             title={isTr ? 'Yorumlar yüklenemedi' : 'Could not load reviews'}
             body={
@@ -159,7 +159,7 @@ export function FeedbackList({
       ) : (
         <>
           {filteredList.length === 0 ? (
-            <div className="p-4">
+            <div className="p-2">
               <EmptyState
                 icon={<Inbox size={22} strokeWidth={1.5} />}
                 title={isTr ? 'Yorum yok' : 'No reviews'}
@@ -178,8 +178,8 @@ export function FeedbackList({
                 }
                 action={
                   hasActiveFilter ? (
-                    <button type="button" onClick={onResetFilters} className="bz-btn bz-btn-sm max-sm:min-h-[44px]">
-                      <RotateCcw size={12} strokeWidth={2.2} aria-hidden="true" />
+                    <button type="button" onClick={onResetFilters} className="bz-btn bg-[#F6F6F6] hover:bg-[#EDEDED]">
+                      <RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
                       {isTr ? 'Filtreleri temizle' : 'Clear filters'}
                     </button>
                   ) : undefined
@@ -189,6 +189,7 @@ export function FeedbackList({
           ) : (
             <ul
               role="listbox"
+              className="space-y-2"
               aria-label={isTr ? 'Yorumlar' : 'Reviews'}
               aria-activedescendant={activeId ? `feedback-option-${activeId}` : undefined}
               onKeyDown={handleListKeyDown}
@@ -209,12 +210,12 @@ export function FeedbackList({
           {/* "Daha fazla göster" — backend paginate eder; ilk 20 yorum first
               paint için yüklenir, kullanıcı talep ettikçe +20. */}
           {hasMore && (
-            <div className="flex flex-col items-center gap-2 border-t border-pn-line px-3 py-4">
+            <div className="flex flex-col items-center gap-2 px-3 py-4">
               <button
                 type="button"
                 onClick={onLoadMore}
                 disabled={loadingMore}
-                className="bz-btn-ghost bz-btn-sm max-sm:min-h-[44px] disabled:cursor-not-allowed disabled:opacity-60"
+                className="bz-btn bg-[#F6F6F6] hover:bg-[#EDEDED] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loadingMore ? (
                   <>
@@ -226,7 +227,7 @@ export function FeedbackList({
                 )}
               </button>
               {loadMoreError && (
-                <p role="alert" className="text-[12px] text-[#991B1B]">
+                <p role="alert" className="text-[12px] text-[#D92D20]">
                   {isTr
                     ? 'Sonraki sayfa yüklenemedi. Tekrar dene.'
                     : 'Could not load the next page. Try again.'}
@@ -241,12 +242,12 @@ export function FeedbackList({
           after the rows so `sticky bottom` pins it above the bottom nav while
           the list scrolls. */}
       {!loading && aiReadyCount > 0 && activeTab !== 'ai_ready' && (
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 mx-3 mb-3 mt-3 flex items-center gap-3 rounded-[24px] bg-pn-ink px-4 py-3 text-white lg:hidden">
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 mb-1 mt-3 flex items-center gap-3 rounded-[20px] bg-pn-accent-soft p-2 pl-2.5 text-pn-ink lg:hidden">
           <span
             aria-hidden="true"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-pn-accent/30 bg-pn-accent/15"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent"
           >
-            <Sparkles size={13} className="text-pn-accent" strokeWidth={2.2} />
+            <Sparkles size={16} className="text-white" strokeWidth={2} />
           </span>
           <span className="min-w-0 flex-1 text-[13px] leading-[1.45]">
             <strong className="font-medium">{aiReadyCount}</strong>{' '}
@@ -255,7 +256,7 @@ export function FeedbackList({
           <button
             type="button"
             onClick={() => setActiveTab('ai_ready')}
-            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-pn-accent px-4 text-[12px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pn-ink"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-pn-accent px-5 text-[14px] font-medium text-white transition-colors hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 active:scale-[.97]"
           >
             {isTr ? 'Aç' : 'Open'}
           </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, MessageSquareText, Sparkles } from "lucide-react";
 import { AlertBanner, RadioCard, Skeleton, APSwitch } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
 
@@ -180,12 +180,21 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
   }
 
   return (
-    <div className="space-y-5">
-      <AlertBanner kind="info" icon={<Sparkles size={14} />}>
-        {isTr
-          ? "Yeni bir yorum geldiğinde Pulse AI senin için yanıt taslağı hazırlar; sen onaylamadan hiçbir şey gönderilmez. Taslak için yorum metni yapay zekâ hizmet sağlayıcımız OpenAI'a iletilir — müşteri aydınlatma metninin bunu kapsadığından emin ol."
-          : "When a new review arrives, Pulse AI prepares a reply draft for you; nothing is sent without your approval. To write the draft, the review text is sent to our AI provider OpenAI — make sure your customer privacy notice covers this."}
-      </AlertBanner>
+    <div className="space-y-2.5">
+      {/* Fintora calm AI note: lavender panel + purple sparkle circle. */}
+      <div role="note" className="flex items-start gap-3 rounded-[20px] bg-pn-accent-soft p-4">
+        <span
+          aria-hidden="true"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+        >
+          <Sparkles size={18} strokeWidth={2} />
+        </span>
+        <p className="min-w-0 pt-0.5 text-[13px] leading-[1.6] text-[#525252]">
+          {isTr
+            ? "Yeni bir yorum geldiğinde Pulse AI senin için yanıt taslağı hazırlar; sen onaylamadan hiçbir şey gönderilmez. Taslak için yorum metni yapay zekâ sağlayıcımıza (Anthropic, yedek olarak OpenAI) iletilir — müşteri aydınlatma metninin bunu kapsadığından emin ol."
+            : "When a new review arrives, Pulse AI prepares a reply draft for you; nothing is sent without your approval. To write the draft, the review text is sent to our AI provider (Anthropic, with OpenAI as a backup) — make sure your customer privacy notice covers this."}
+        </p>
+      </div>
 
       {restaurants.map((r) => {
       const s = settings[r.id];
@@ -194,20 +203,36 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
       const pulseEnabled = s?.pulseAiEnabled !== false;
       const controlsDisabled = Boolean(s?.saving) || !pulseEnabled || loadError;
         return (
-          <div key={r.id} className="bz-card p-5">
-            <h3 className="bz-h-tight text-[16px] truncate">{r.name}</h3>
+          <div key={r.id} className="bz-card p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+              >
+                <Sparkles size={18} strokeWidth={2} />
+              </span>
+              <div className="min-w-0">
+                <h3 className="truncate text-[18px] font-medium text-pn-ink">{r.name}</h3>
+                <p className="text-[13px] text-[#9A9A9A]">Pulse AI</p>
+              </div>
+            </div>
 
             {/* APSwitch + tone radios — fetch tamamlanana kadar APSwitch yanlış
                 "PASIF" göstermesin diye skeleton placeholder. CLAUDE.md §23.3
                 Skeleton primitive (panel scope). */}
             {!loaded ? (
               <>
-                <div className="mt-4 flex items-start gap-3">
-                  <Skeleton className="h-6 w-11 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-3.5 w-3/5" />
-                    <Skeleton className="h-3 w-4/5" />
-                  </div>
+                <div className="mt-4 space-y-2">
+                  {[0, 1].map((i) => (
+                    <div key={i} className="flex items-start gap-3 rounded-[16px] bg-pn-canvas p-3.5">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1 space-y-2 pt-1">
+                        <Skeleton className="h-3.5 w-3/5" />
+                        <Skeleton className="h-3 w-4/5" />
+                      </div>
+                      <Skeleton className="h-6 w-11 rounded-full" />
+                    </div>
+                  ))}
                 </div>
                 <div className="mt-5">
                   <Skeleton className="h-3 w-24 mb-2" />
@@ -247,54 +272,69 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     </AlertBanner>
                   </div>
                 )}
-                <div className="mt-4 flex items-start gap-3">
-                  <APSwitch
-                    checked={Boolean(s?.enableAiDraft)}
-                    onChange={(next) => update(r.id, { enableAiDraft: next })}
-                    disabled={controlsDisabled}
-                    ariaLabel={
-                      isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"
-                    }
-                  />
-                  <div className="text-[14px] text-pn-ink flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                {/* Fintora setting rows: icon circle · title + one-line note · switch. */}
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-start gap-3 rounded-[16px] bg-pn-canvas p-3.5">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+                    >
+                      <MessageSquareText size={16} strokeWidth={2} />
+                    </span>
+                    <div className="min-w-0 flex-1 pt-0.5 text-[14px] text-pn-ink">
                       <span className="font-medium">
                         {isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"}
                       </span>
+                      <span className="mt-1 block text-[13px] leading-relaxed text-[#737373]">
+                        {isTr
+                          ? "Yeni bir yorum geldiğinde taslak otomatik hazırlanır; Yorumlar sayfasını açtığında seni bekler. Eksik kalan taslaklar günde bir kez tamamlanır. Otomatik gönderim yoktur — her yanıt senin onayınla gider."
+                          : "When a new review arrives, a draft is prepared automatically and waits for you on the Reviews page. Missing drafts are filled in once a day. Nothing is sent automatically — every reply needs your approval."}
+                      </span>
                     </div>
-                    <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
-                      {isTr
-                        ? "Yeni bir yorum geldiğinde taslak otomatik hazırlanır; Yorumlar sayfasını açtığında seni bekler. Eksik kalan taslaklar günde bir kez tamamlanır. Otomatik gönderim yoktur — her yanıt senin onayınla gider."
-                        : "When a new review arrives, a draft is prepared automatically and waits for you on the Reviews page. Missing drafts are filled in once a day. Nothing is sent automatically — every reply needs your approval."}
-                    </span>
+                    <div className="shrink-0 pt-1.5">
+                      <APSwitch
+                        checked={Boolean(s?.enableAiDraft)}
+                        onChange={(next) => update(r.id, { enableAiDraft: next })}
+                        disabled={controlsDisabled}
+                        ariaLabel={
+                          isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"
+                        }
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-4 flex items-start gap-3 border-t border-pn-line pt-4">
-                  <APSwitch
-                    checked={Boolean(s?.googleAiEnabled)}
-                    onChange={(next) => update(r.id, { googleAiEnabled: next })}
-                    disabled={controlsDisabled}
-                    ariaLabel={
-                      isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"
-                    }
-                  />
-                  <div className="text-[14px] text-pn-ink flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-start gap-3 rounded-[16px] bg-pn-canvas p-3.5">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-white"
+                    >
+                      <Sparkles size={16} strokeWidth={2} />
+                    </span>
+                    <div className="min-w-0 flex-1 pt-0.5 text-[14px] text-pn-ink">
                       <span className="font-medium">
                         {isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"}
                       </span>
+                      <span className="mt-1 block text-[13px] leading-relaxed text-[#737373]">
+                        {isTr
+                          ? "Google'da yanıtlanmamış yorumlar için günde bir kez taslak hazırlanır; Google Yorumları sayfasını açtığında seni bekler. Yanıt yalnızca sen onaylayınca Google'a gönderilir."
+                          : "Drafts are prepared once a day for unanswered Google reviews and wait for you on the Google Reviews page. A reply is posted to Google only after you approve it."}
+                      </span>
                     </div>
-                    <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
-                      {isTr
-                        ? "Google'da yanıtlanmamış yorumlar için günde bir kez taslak hazırlanır; Google Yorumları sayfasını açtığında seni bekler. Yanıt yalnızca sen onaylayınca Google'a gönderilir."
-                        : "Drafts are prepared once a day for unanswered Google reviews and wait for you on the Google Reviews page. A reply is posted to Google only after you approve it."}
-                    </span>
+                    <div className="shrink-0 pt-1.5">
+                      <APSwitch
+                        checked={Boolean(s?.googleAiEnabled)}
+                        onChange={(next) => update(r.id, { googleAiEnabled: next })}
+                        disabled={controlsDisabled}
+                        ariaLabel={
+                          isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="mt-5">
-                  <p className="mb-2 text-[13px] font-medium text-pn-ink">
+                  <p className="mb-2 text-[14px] font-medium text-pn-ink">
                     {isTr ? "Varsayılan ton" : "Default tone"}
                   </p>
                   <div role="radiogroup" aria-label={isTr ? "Varsayılan ton" : "Default tone"} className="grid gap-2.5 sm:grid-cols-3">
@@ -317,7 +357,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   </div>
                 )}
                 {s?.saving && (
-                  <p className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-[#737373]">
+                  <p className="mt-3 inline-flex items-center gap-1.5 text-[13px] text-[#9A9A9A]">
                     <Loader2 size={11} className="animate-spin" />
                     {isTr ? "Kaydediliyor…" : "Saving…"}
                   </p>

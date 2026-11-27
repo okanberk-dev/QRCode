@@ -302,14 +302,14 @@ function WizardMock({ mock }: { mock: Mock }) {
         <span className="text-[#737373]">{mock.wizardProgress}</span>
       </div>
       <div className="mt-3 h-1.5 rounded-full bg-[#EDEDED]">
-        <div className="h-1.5 w-4/5 rounded-full bg-[#C6F24E]" />
+        <div className="h-1.5 w-4/5 rounded-full bg-[#5D3EBC]" />
       </div>
       <ul className="mt-4 space-y-2">
         {mock.wizardSteps.map((label, i) => (
           <li key={label} className="flex items-center gap-2.5 text-[13px] text-[#1A1A1A]">
             <span
               className={`flex h-5 w-5 items-center justify-center rounded-full ${
-                i < 3 ? 'bg-[#0A0A0A] text-[#C6F24E]' : i === 3 ? 'border-2 border-[#0A0A0A] bg-white' : 'border border-[#D4D4D4] bg-white'
+                i < 3 ? 'bg-[#5D3EBC] text-white' : i === 3 ? 'border-2 border-[#0A0A0A] bg-white' : 'border border-[#D4D4D4] bg-white'
               }`}
             >
               {i < 3 ? <Check size={11} strokeWidth={3} /> : null}
@@ -329,7 +329,7 @@ function QrMock({ mock }: { mock: Mock }) {
         <QrCode size={52} strokeWidth={1.4} color="#0A0A0A" />
       </div>
       <div className="min-w-0 space-y-2.5">
-        <span className="inline-flex rounded-full bg-[#EAF9B8] px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-[#3F5408]">
+        <span className="inline-flex rounded-full bg-[#EFEAFB] px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-[#4C2FA3]">
           {mock.table}
         </span>
         <div className="flex items-center gap-1.5">
@@ -393,8 +393,8 @@ function ReplyMock({ mock }: { mock: Mock }) {
         </div>
         <p className="mt-1.5 text-[13px] text-[#0A0A0A]">{mock.feedback}</p>
       </div>
-      <div className="rounded-[12px] border border-[#C6F24E] bg-white p-3">
-        <p className="flex items-center gap-1.5 text-[12px] font-medium text-[#3F5408]">
+      <div className="rounded-[12px] border border-[#8C6CF0] bg-white p-3">
+        <p className="flex items-center gap-1.5 text-[12px] font-medium text-[#4C2FA3]">
           <Sparkles size={13} />
           {mock.draft}
         </p>
@@ -503,7 +503,7 @@ export default async function HowItWorksPage({
                         <p className="flex items-center gap-3">
                           <span
                             aria-hidden="true"
-                            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[14px] font-semibold text-white"
                           >
                             {i + 1}
                           </span>
@@ -518,7 +518,7 @@ export default async function HowItWorksPage({
                             <li key={detail} className="flex items-start gap-2.5 text-[15px] leading-[1.5] text-[#1A1A1A]">
                               <span
                                 aria-hidden="true"
-                                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8]"
+                                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EFEAFB]"
                               >
                                 <Check size={12} strokeWidth={2.75} className="text-[#0A0A0A]" />
                               </span>

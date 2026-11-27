@@ -405,7 +405,7 @@ export function PlacesBusinessPicker({
 
   if (readOnly) {
     return (
-      <p className="rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 text-[13px] leading-[1.6] text-[#525252]">
+      <p className="rounded-[18px] bg-pn-canvas px-4 py-3 text-[14px] leading-[1.6] text-[#525252]">
         {copy.readOnly}
       </p>
     );
@@ -494,7 +494,7 @@ export function PlacesBusinessPicker({
       {phase === 'loading' && (
         <ul className="space-y-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
-            <li key={i} className="space-y-2 rounded-[20px] border border-pn-line bg-white p-4">
+            <li key={i} className="space-y-2 rounded-[16px] bg-pn-canvas p-4">
               <SkBox className="h-4 w-56 max-w-full" />
               <SkBox className="h-3 w-80 max-w-full" />
               <SkBox className="h-5 w-24" />
@@ -504,7 +504,7 @@ export function PlacesBusinessPicker({
       )}
 
       {phase === 'done' && results.length === 0 && (
-        <div className="rounded-[20px] border border-dashed border-pn-line-strong bg-pn-canvas px-4 py-4 text-[13px] leading-[1.6] text-[#525252]">
+        <div className="rounded-[18px] bg-pn-canvas px-4 py-4 text-[14px] leading-[1.6] text-[#525252]">
           <p>{copy.zero}</p>
           <a
             href="https://business.google.com/create"
@@ -528,16 +528,16 @@ export function PlacesBusinessPicker({
               return (
                 <li
                   key={row.placeId}
-                  className="flex flex-col gap-3 rounded-[20px] border border-pn-line bg-white p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4"
+                  className="flex flex-col gap-3 rounded-[16px] bg-pn-canvas p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="break-words text-[14.5px] font-medium leading-snug text-pn-ink">{row.displayName}</p>
+                    <p className="break-words text-[14px] font-medium leading-snug text-pn-ink">{row.displayName}</p>
                     {row.formattedAddress && (
-                      <p className="mt-0.5 line-clamp-2 text-[13px] leading-[1.5] text-[#525252]">{row.formattedAddress}</p>
+                      <p className="mt-0.5 line-clamp-2 text-[13px] leading-[1.5] text-[#666666]">{row.formattedAddress}</p>
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {row.category && (
-                        <Badge kind="ghost" dot={false}>
+                        <Badge kind="ghost" dot={false} className="!bg-white max-sm:!bg-[#F6F6F6]">
                           {row.category}
                         </Badge>
                       )}
@@ -565,7 +565,7 @@ export function PlacesBusinessPicker({
               );
             })}
           </ul>
-          <p className="text-[12px] font-normal text-[#525252]">
+          <p className="text-[13px] font-normal text-[#737373]">
             {copy.resultsSource}: Google Maps
           </p>
         </div>

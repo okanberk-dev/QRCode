@@ -1,65 +1,77 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { PanelLeftClose, PanelLeftOpen, type LucideIcon } from 'lucide-react';
 import Link from '@/components/navigation/IntentLink';
-import { MenuLinks, groupIsActive, type PanoNavEntry, type PanoNavGroup, type PanoNavLink } from './PanelTopNav';
+import { MenuLinks, type PanoNavChild } from './PanelTopNav';
 
 /**
- * Pano icon rail (docs/design/DASHBOARD_DESIGN.md §5.1): the left column of
- * round buttons from the Fintora reference — brand on top, tools in the
- * middle, help at the bottom. Links open their page; groups open a menu to
- * the right. Each button shows its name in a tooltip (icons only). Hidden
- * below 1024px, where the mobile drawer lists the same entries.
+ * Pano sidebar (docs/design/DASHBOARD_DESIGN.md §5.1): the left column with
+ * the brand, an optional business switcher and labelled sections. It is
+ * open (icon + name) on wide screens and folds to a 92px icon rail below
+ * 1440px; the person can fold or open it and the choice is remembered.
+ * The section list scrolls on its own, so nothing is cut off on short
+ * screens. Folded, each button shows its name in a tooltip; a `menu`
+ * section folds into one button that opens its pages to the right.
+ * Hidden below 1024px, where the mobile drawer lists the same pages.
  */
 
-function railInitial(label: string): string {
+export interface RailSection {
+  id: string;
+  label?: string;
+  /** Folded look: `flat` keeps one button per page, `menu` shows one button
+   *  that opens the section's pages. */
+  collapse?: 'flat' | 'menu';
+  icon?: LucideIcon;
+  items: PanoNavChild[];
+}
+
+type CollapsedState = 'auto' | 'true' | 'false';
+
+const STORAGE_KEY = 'buaze:panel:sidebar';
+const WIDE_QUERY = '(min-width: 1440px)';
+
+function initial(label: string): string {
   return label.trim().charAt(0).toLocaleUpperCase('tr');
 }
 
-export function RailLink({ entry }: { entry: Pick<PanoNavLink, 'href' | 'label' | 'icon' | 'active' | 'isNew'> }) {
-  const Icon = entry.icon;
+function SideLink({ item, newLabel }: { item: PanoNavChild; newLabel?: string }) {
+  const Icon = item.icon;
   return (
     <Link
-      href={entry.href}
-      aria-label={entry.label}
-      aria-current={entry.active ? 'page' : undefined}
-      data-active={entry.active ? 'true' : undefined}
-      data-label={entry.label}
-      className="pn-rail-btn"
+      href={item.href}
+      aria-current={item.active ? 'page' : undefined}
+      data-active={item.active ? 'true' : undefined}
+      data-label={item.label}
+      className="pn-side-item"
     >
-      {Icon ? <Icon size={20} aria-hidden="true" /> : <span aria-hidden="true">{railInitial(entry.label)}</span>}
-      {entry.isNew && <span className="pn-rail-dot" aria-hidden="true" />}
+      <span className="pn-side-icon" aria-hidden="true">
+        {Icon ? <Icon size={19} /> : initial(item.label)}
+      </span>
+      <span className="pn-side-label">{item.label}</span>
+      {item.isNew && newLabel && <span className="pn-side-new">{newLabel}</span>}
     </Link>
   );
 }
 
-function RailGroup({ group, newLabel }: { group: PanoNavGroup; newLabel?: string }) {
-  const Icon = group.icon;
-  const active = groupIsActive(group);
+function SectionMenu({ section, newLabel }: { section: RailSection; newLabel?: string }) {
+  const Icon = section.icon;
+  const active = section.items.some((item) => item.active);
+  const label = section.label ?? '';
   return (
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>
-        <button
-          type="button"
-          aria-label={group.label}
-          data-active={active ? 'true' : undefined}
-          data-label={group.label}
-          className="pn-rail-btn"
-        >
-          {Icon ? <Icon size={20} aria-hidden="true" /> : <span aria-hidden="true">{railInitial(group.label)}</span>}
+        <button type="button" className="pn-side-item" data-active={active ? 'true' : undefined} data-label={label} aria-label={label}>
+          <span className="pn-side-icon" aria-hidden="true">
+            {Icon ? <Icon size={19} /> : initial(label)}
+          </span>
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          side="right"
-          align="start"
-          sideOffset={14}
-          collisionPadding={12}
-          className="bz-menu z-[70] min-w-[240px] focus:outline-none"
-        >
-          <DropdownMenu.Label className="bz-menu-label">{group.label}</DropdownMenu.Label>
-          <MenuLinks items={group.children} newLabel={newLabel} />
+        <DropdownMenu.Content side="right" align="start" sideOffset={14} collisionPadding={12} className="bz-menu z-[70] min-w-[240px] focus:outline-none">
+          {label && <DropdownMenu.Label className="bz-menu-label">{label}</DropdownMenu.Label>}
+          <MenuLinks items={section.items} newLabel={newLabel} />
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -67,27 +79,88 @@ function RailGroup({ group, newLabel }: { group: PanoNavGroup; newLabel?: string
 }
 
 interface PanelRailProps {
+  /** Logo link; put the wordmark in a `pn-side-label` span so it folds away. */
   brand: ReactNode;
-  entries: PanoNavEntry[];
-  footer?: ReactNode;
+  /** Shown under the brand when open (e.g. the business switcher). */
+  top?: ReactNode;
+  /** Shown under the brand when folded (e.g. the switcher's round button). */
+  topFolded?: ReactNode;
+  sections: RailSection[];
+  footer?: PanoNavChild[];
   ariaLabel: string;
+  labels: { fold: string; unfold: string };
   newLabel?: string;
 }
 
-export function PanelRail({ brand, entries, footer, ariaLabel, newLabel }: PanelRailProps) {
+export function PanelRail({ brand, top, topFolded, sections, footer = [], ariaLabel, labels, newLabel }: PanelRailProps) {
+  // SSR and first paint follow the screen width (CSS, no layout shift);
+  // a remembered choice is applied after mount.
+  const [collapsed, setCollapsed] = useState<CollapsedState>('auto');
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved === 'open') setCollapsed('false');
+      else if (saved === 'folded') setCollapsed('true');
+    } catch {
+      /* storage blocked: keep the width-based default */
+    }
+  }, []);
+
+  const toggle = () => {
+    const isFolded = collapsed === 'true' || (collapsed === 'auto' && !window.matchMedia(WIDE_QUERY).matches);
+    const next = isFolded ? 'false' : 'true';
+    setCollapsed(next);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, next === 'true' ? 'folded' : 'open');
+    } catch {
+      /* ignore */
+    }
+  };
+  const foldLabel = collapsed === 'true' ? labels.unfold : labels.fold;
+
   return (
-    <aside className="pn-rail hidden lg:flex">
-      <div className="pn-rail-brand">{brand}</div>
-      <nav aria-label={ariaLabel} className="pn-rail-nav">
-        {entries.map((entry) =>
-          entry.type === 'link' ? (
-            <RailLink key={entry.href} entry={entry} />
-          ) : (
-            <RailGroup key={entry.id} group={entry} newLabel={newLabel} />
-          ),
-        )}
+    <aside className="pn-side hidden lg:flex" data-collapsed={collapsed}>
+      <div className="pn-side-brand">{brand}</div>
+      {top && <div className="pn-side-top pn-side-open-only">{top}</div>}
+      {topFolded && <div className="pn-side-top pn-side-folded-only">{topFolded}</div>}
+      <nav aria-label={ariaLabel} className="pn-side-scroll">
+        {sections.map((section) => (
+          <div key={section.id} className="pn-side-section">
+            {section.label && <p className="pn-side-heading">{section.label}</p>}
+            {section.collapse === 'menu' ? (
+              <>
+                <div className="pn-side-list pn-side-open-only">
+                  {section.items.map((item) => (
+                    <SideLink key={item.href} item={item} newLabel={newLabel} />
+                  ))}
+                </div>
+                <div className="pn-side-list pn-side-folded-only">
+                  <SectionMenu section={section} newLabel={newLabel} />
+                </div>
+              </>
+            ) : (
+              <div className="pn-side-list">
+                {section.items.map((item) => (
+                  <SideLink key={item.href} item={item} newLabel={newLabel} />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </nav>
-      {footer && <div className="pn-rail-foot">{footer}</div>}
+      <div className="pn-side-foot">
+        {footer.map((item) => (
+          <SideLink key={item.href} item={item} newLabel={newLabel} />
+        ))}
+        <button type="button" onClick={toggle} className="pn-side-item" data-label={foldLabel} aria-label={foldLabel}>
+          <span className="pn-side-icon" aria-hidden="true">
+            <PanelLeftClose size={19} className="pn-side-open-only" />
+            <PanelLeftOpen size={19} className="pn-side-folded-only" />
+          </span>
+          <span className="pn-side-label">{labels.fold}</span>
+        </button>
+      </div>
     </aside>
   );
 }

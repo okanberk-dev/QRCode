@@ -204,7 +204,7 @@ export default function AdminApiPage() {
                 </div>
                 <button
                   onClick={() => setShowKey(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-3 py-1.5 text-[12px] font-medium text-pn-ink hover:bg-pn-accent-hover"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-pn-accent-hover"
                 >
                   <Plus size={12} /> {isTr ? 'Yeni anahtar' : 'New key'}
                 </button>

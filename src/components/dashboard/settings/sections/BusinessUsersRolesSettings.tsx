@@ -368,7 +368,7 @@ export function BusinessUsersRolesSettings({
         {/* Owner row (kendisi) */}
         <div
           className="flex items-center gap-3 p-3 mb-3"
-          style={{ background: "#E6FDEA", border: "1px solid #78FC90", borderRadius: 10 }}
+          style={{ background: "#EFEAFB", border: "1px solid #5D3EBC", borderRadius: 10 }}
         >
           {/* §38.51 — Owner her zaman online (mevcut session sahibi). */}
           <div className="relative">

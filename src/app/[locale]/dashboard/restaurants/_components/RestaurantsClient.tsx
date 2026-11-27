@@ -54,6 +54,7 @@ import {
 } from '@/components/dashboard/settings/restaurant-status';
 import { PlatformStateIcon } from '@/components/dashboard/platforms/PlatformStatusPill';
 import { ACTIVE_BUSINESS_STORAGE_KEY } from '@/lib/active-business';
+import { readableOn } from '@/lib/audits/kind';
 import {
   attentionReasons,
   portfolioTotals,
@@ -462,8 +463,8 @@ export default function RestaurantsClient({
     <div className="flex min-w-0 items-start gap-3">
       <span
         aria-hidden="true"
-        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px] text-[12px] font-medium text-pn-ink"
-        style={{ background: restaurant.primaryColor || '#78FC90' }}
+        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px] text-[12px] font-medium"
+        style={{ background: restaurant.primaryColor || '#5D3EBC', color: readableOn(restaurant.primaryColor || '#5D3EBC') }}
       >
         {restaurant.name.trim().charAt(0).toLocaleUpperCase(collatorLocale)}
       </span>

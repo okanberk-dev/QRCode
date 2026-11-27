@@ -45,9 +45,9 @@ const STEP_LABELS: Record<string, string> = {
 };
 
 function progressColor(pct: number): string {
-  if (pct >= 80) return '#2FB24C'; // lime-deep
+  if (pct >= 80) return '#23863A'; // positive
   if (pct >= 40) return '#D97706'; // warn (Pulse warn token)
-  return '#000000'; // graphite
+  return '#5D3EBC'; // purple (default progress fill)
 }
 
 export default function MemberActivationPanel({ userId }: Props) {

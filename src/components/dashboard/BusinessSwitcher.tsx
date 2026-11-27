@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { readableOn } from '@/lib/audits/kind';
 import Link from 'next/link';
 import { Building2, Check, ChevronDown, ChevronsUpDown, Plus, Search, Store } from 'lucide-react';
 import {
@@ -84,11 +85,14 @@ function BusinessChip({
   size?: number;
   locale: 'tr' | 'en';
 }) {
+  // The business colour is owner data; the initial picks ink or white,
+  // whichever reads better on it (white on the purple fallback).
+  const fill = business?.primaryColor || '#5D3EBC';
   return (
     <span
       aria-hidden="true"
-      className="flex shrink-0 items-center justify-center rounded-full text-[12px] font-medium text-pn-ink"
-      style={{ width: size, height: size, background: business?.primaryColor || '#78FC90' }}
+      className="flex shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
+      style={{ width: size, height: size, background: fill, color: readableOn(fill) }}
     >
       {business ? initialOf(business.name, locale) : <Building2 size={14} strokeWidth={2} />}
     </span>

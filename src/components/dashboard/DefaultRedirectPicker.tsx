@@ -58,8 +58,15 @@ interface DefaultRedirectPickerProps {
 
 const AUTO_KEY = 'auto' as const;
 
+// Fintora choice pills: borderless, grey when idle (white on the grey phone
+// cards — the canvas token flips there), purple with white text when picked.
 const CHIP_CLASS =
-  'inline-flex min-h-[44px] items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 aria-disabled:cursor-wait sm:min-h-[40px]';
+  'inline-flex min-h-[44px] items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 aria-disabled:cursor-wait';
+const CHIP_IDLE = 'bg-pn-canvas text-pn-ink hover:bg-[#EDEDED]';
+const CHIP_ON = 'bg-pn-accent text-white';
+// Round slot on the left of each pill (icon / logo).
+const CHIP_ICON =
+  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full';
 
 export default function DefaultRedirectPicker({
   restaurantId,
@@ -168,19 +175,19 @@ export default function DefaultRedirectPicker({
           onClick={handleAutomatic}
           aria-disabled={isPending || undefined}
           aria-pressed={isAutomatic}
-          className={CHIP_CLASS}
-          style={{
-            border: `1px solid ${isAutomatic ? '#000000' : '#EBEBEB'}`,
-            background: isAutomatic ? '#000000' : '#fff',
-            color: isAutomatic ? '#fff' : '#000000',
-          }}
+          className={`${CHIP_CLASS} ${isAutomatic ? CHIP_ON : CHIP_IDLE}`}
         >
-          <Sparkles size={15} strokeWidth={2} aria-hidden="true" />
+          <span
+            aria-hidden="true"
+            className={`${CHIP_ICON} ${isAutomatic ? 'bg-white/20 text-white' : 'bg-white text-pn-accent max-sm:bg-[#F6F6F6]'}`}
+          >
+            <Sparkles size={15} />
+          </span>
           {isTr ? 'Otomatik' : 'Automatic'}
           {pendingId === AUTO_KEY && isPending ? (
-            <Loader2 size={12} strokeWidth={2.5} color="#78FC90" className="animate-spin" aria-hidden="true" />
+            <Loader2 size={12} strokeWidth={2.5} color="#FFFFFF" className="animate-spin" aria-hidden="true" />
           ) : isAutomatic ? (
-            <Check size={12} strokeWidth={2.5} color="#78FC90" aria-hidden="true" />
+            <Check size={12} strokeWidth={2.5} color="#FFFFFF" aria-hidden="true" />
           ) : null}
         </button>
         {enabledPlatforms.map((uiKey) => {
@@ -194,19 +201,16 @@ export default function DefaultRedirectPicker({
               onClick={() => handleSelect(uiKey)}
               aria-disabled={isPending || undefined}
               aria-pressed={isDefault}
-              className={CHIP_CLASS}
-              style={{
-                border: `1px solid ${isDefault ? '#000000' : '#EBEBEB'}`,
-                background: isDefault ? '#000000' : '#fff',
-                color: isDefault ? '#fff' : '#000000',
-              }}
+              className={`${CHIP_CLASS} ${isDefault ? CHIP_ON : CHIP_IDLE}`}
             >
-              <PlatformChip id={uiKey} size={18} />
+              <span aria-hidden="true" className={`${CHIP_ICON} bg-white`}>
+                <PlatformChip id={uiKey} size={20} />
+              </span>
               {PLATFORMS[uiKey].label}
               {loading ? (
-                <Loader2 size={12} strokeWidth={2.5} color="#78FC90" className="animate-spin" aria-hidden="true" />
+                <Loader2 size={12} strokeWidth={2.5} color="#FFFFFF" className="animate-spin" aria-hidden="true" />
               ) : isDefault ? (
-                <Check size={12} strokeWidth={2.5} color="#78FC90" aria-hidden="true" />
+                <Check size={12} strokeWidth={2.5} color="#FFFFFF" aria-hidden="true" />
               ) : null}
             </button>
           );
@@ -214,7 +218,7 @@ export default function DefaultRedirectPicker({
         <span
           role="status"
           aria-live="polite"
-          className={`inline-flex items-center gap-1 text-[12px] font-medium text-[#166534] transition-opacity ${
+          className={`inline-flex items-center gap-1 text-[13px] font-medium text-[#1F6B32] transition-opacity ${
             saved ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -222,13 +226,13 @@ export default function DefaultRedirectPicker({
           {saved ? (isTr ? 'Kaydedildi' : 'Saved') : ''}
         </span>
       </div>
-      <p className="mt-2.5 text-[12px] leading-[1.5] text-[#525252]">
+      <p className="mt-3 text-[13px] leading-[1.5] text-[#737373]">
         {isTr
           ? 'Otomatik: bağlı platformlar arasından sektörünüze en uygun olan seçilir.'
           : 'Automatic: picks the best-matching connected platform for your sector.'}
       </p>
       {enabledPlatforms.length === 0 && (
-        <p className="mt-1.5 text-[12px] leading-[1.5] text-[#525252]">
+        <p className="mt-1.5 text-[13px] leading-[1.5] text-[#737373]">
           {isTr
             ? 'Henüz aktif bir yorum platformu linki yok. Önce yukarıdan bir platform linki ekleyin.'
             : 'No active review-platform link yet. Add a platform link above first.'}
@@ -240,21 +244,16 @@ export default function DefaultRedirectPicker({
       {isOrphan && (
         <div
           role="alert"
-          className="mt-3 flex items-start gap-2.5 rounded-[12px] px-3 py-2.5"
-          style={{
-            background: '#FFFBEB',
-            border: '1px solid #FDE68A',
-            color: '#92400E',
-          }}
+          className="mt-3 flex items-start gap-3 rounded-[18px] bg-[#FFF6DB] px-4 py-3 text-[#7A4F00]"
         >
-          <AlertTriangle size={14} strokeWidth={2.25} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div className="flex-1">
-            <div className="text-[12px] font-medium leading-tight">
+            <div className="text-[14px] font-medium leading-tight">
               {isTr
                 ? `Varsayılan "${orphanLabel}" şu an kullanılamıyor`
                 : `Default "${orphanLabel}" is currently unusable`}
             </div>
-            <div className="mt-0.5 text-[12px] leading-snug" style={{ color: '#78350F' }}>
+            <div className="mt-1 text-[13px] leading-snug text-[#6B4300]">
               {isTr
                 ? 'Bu platformun linki kaldırılmış ya da kapalı. Yüksek puanlı müşteriler şu an otomatik olarak sıradaki bağlı platforma yönlendiriliyor. Linki yeniden ekleyin ya da başka bir varsayılan seçin.'
                 : "This platform's link was removed or switched off. High-rated customers are currently routed automatically to the next connected platform. Re-add the link or pick another default."}
@@ -263,8 +262,7 @@ export default function DefaultRedirectPicker({
               type="button"
               onClick={() => persistDefault(null, AUTO_KEY)}
               disabled={isPending}
-              className="mt-1.5 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[12px] font-medium underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink disabled:opacity-50 sm:min-h-[32px]"
-              style={{ color: '#92400E' }}
+              className="mt-2.5 inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-medium text-[#7A4F00] transition-colors hover:bg-[#FFFBEF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50"
             >
               {isTr ? 'Otomatik seçime dön' : 'Switch to automatic'}
             </button>
@@ -272,11 +270,7 @@ export default function DefaultRedirectPicker({
         </div>
       )}
       {error && (
-        <p
-          role="alert"
-          className="mt-2 text-[12px] font-medium"
-          style={{ color: '#991B1B' }}
-        >
+        <p role="alert" className="mt-2 text-[13px] font-medium text-[#C4271B]">
           {error}
         </p>
       )}

@@ -131,8 +131,11 @@ export function readLoyaltyPortal(value: unknown): LoyaltyPortal {
 
 // ─── colours ──────────────────────────────────────────────────────────────
 
-const GRAPHITE = '#0A0A0A';
-const LIME = '#C6F24E';
+// Buaze defaults when the business picked no card colour: purple + white.
+// A colour the business chose always wins (it is the business's data).
+const INK = '#111110';
+const PURPLE = '#5D3EBC';
+const DEEP_PURPLE = '#3B1F8F';
 
 function hexToRgb(hex: string): [number, number, number] | null {
   const m = /^#([0-9a-f]{6})$/i.exec(hex);
@@ -163,7 +166,7 @@ function readableOn(hex: string): string {
   if (!rgb) return '#FFFFFF';
   const l = luminance(rgb);
   // contrast(black) = (l + .05) / .05, contrast(white) = 1.05 / (l + .05)
-  return (l + 0.05) / 0.05 >= 1.05 / (l + 0.05) ? GRAPHITE : '#FFFFFF';
+  return (l + 0.05) / 0.05 >= 1.05 / (l + 0.05) ? INK : '#FFFFFF';
 }
 
 export interface PortalPalette {
@@ -186,11 +189,14 @@ export interface PortalPalette {
 /** Readable colours for the three themes from the card colour. */
 export function portalPalette(theme: PortalTheme, accentColor: string | null | undefined): PortalPalette {
   const accent = accentColor && hexToRgb(accentColor) ? accentColor : null;
-  const brand = accent ?? GRAPHITE;
-  const brandLight = readableOn(brand) === GRAPHITE;
-  const button = accent ?? GRAPHITE;
+  const brand = accent ?? PURPLE;
+  const brandLight = readableOn(brand) === INK;
+  const button = accent ?? PURPLE;
   if (theme === 'dark') {
-    const btn = accent && !brandLight ? mix(accent, '#FFFFFF', 0.15) : accent ?? LIME;
+    // Dark brand colours (and the default purple) are lifted a little so the
+    // button stands out from the near-black page; white text stays on it.
+    const btn = brandLight ? brand : mix(brand, '#FFFFFF', 0.15);
+    const band = accent ?? DEEP_PURPLE;
     return {
       bg: '#0B0B0C',
       surface: '#161618',
@@ -199,8 +205,8 @@ export function portalPalette(theme: PortalTheme, accentColor: string | null | u
       muted: '#A3A3A3',
       accent: btn,
       onAccent: readableOn(btn),
-      band: accent ?? '#161618',
-      onBand: readableOn(accent ?? '#161618'),
+      band,
+      onBand: readableOn(band),
     };
   }
   if (theme === 'brand') {
@@ -208,7 +214,7 @@ export function portalPalette(theme: PortalTheme, accentColor: string | null | u
       bg: mix(brand, '#FFFFFF', 0.9),
       surface: '#FFFFFF',
       border: mix(brand, '#FFFFFF', 0.75),
-      text: GRAPHITE,
+      text: INK,
       muted: '#525252',
       accent: button,
       onAccent: readableOn(button),
@@ -217,10 +223,10 @@ export function portalPalette(theme: PortalTheme, accentColor: string | null | u
     };
   }
   return {
-    bg: '#FAFAFA',
+    bg: '#F6F6F6',
     surface: '#FFFFFF',
-    border: '#EDEDED',
-    text: GRAPHITE,
+    border: '#EBEBEB',
+    text: INK,
     muted: '#525252',
     accent: button,
     onAccent: readableOn(button),

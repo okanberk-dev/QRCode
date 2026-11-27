@@ -212,8 +212,8 @@ function StudioLoaded({
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         el.animate(
           reduced
-            ? [{ backgroundColor: '#E6FDEA' }, { backgroundColor: '#E6FDEA' }]
-            : [{ backgroundColor: '#E6FDEA' }, { backgroundColor: 'rgba(230,253,234,0)' }],
+            ? [{ backgroundColor: '#EFEAFB' }, { backgroundColor: '#EFEAFB' }]
+            : [{ backgroundColor: '#EFEAFB' }, { backgroundColor: 'rgba(239,234,251,0)' }],
           { duration: 900, easing: reduced ? 'steps(1, end)' : 'ease-out' },
         );
       }),

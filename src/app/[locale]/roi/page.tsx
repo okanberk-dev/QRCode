@@ -244,7 +244,7 @@ export default async function RoiPage({
                 <li key={step.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[14px] font-semibold text-white"
                   >
                     {i + 1}
                   </span>

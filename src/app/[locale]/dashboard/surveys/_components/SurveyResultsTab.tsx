@@ -54,7 +54,7 @@ const TEXT_PREVIEW = 5;
 
 // Pulse status hexes (CLAUDE.md §23.1) for the recommend-score segments.
 const NPS_COLORS = { detractor: '#DC2626', passive: '#D97706', promoter: '#16A34A' } as const;
-const BAR_COLOR = '#2FB24C';
+const BAR_COLOR = '#5D3EBC';
 
 function typeLabel(type: DetailQuestionType, isTr: boolean): string {
   switch (type) {
@@ -136,7 +136,7 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
                 className={[
                   'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 sm:min-h-8 sm:min-w-0',
                   range === r
-                    ? 'border-pn-ink bg-pn-ink text-white'
+                    ? 'border-pn-accent bg-pn-accent text-white'
                     : 'border-pn-line bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink',
                 ].join(' ')}
               >

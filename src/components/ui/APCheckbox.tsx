@@ -17,13 +17,13 @@
  * APCheckbox primitive bu pattern'ı tek source-of-truth'a taşır:
  *  - `checked: boolean` + `indeterminate: boolean` opsiyonel
  *  - 3-state visual: unchecked / checked / indeterminate (− mark)
- *  - Pulse §11: lime fill when checked, graphite border default
+ *  - purple fill + white tick when checked, grey border default
  *  - A11y: `aria-checked={indeterminate ? 'mixed' : checked}`,
  *    native input sr-only, focus-visible lime ring
  *  - HANDOFF design: lime check icon + indeterminate line + label
  *
  * Pulse §11 + §23.3 disipline:
- *  - inline hex (#C6F24E lime / #0A0A0A graphite / #D4D4D4 border)
+ *  - pn-* tokens (purple fill + white tick when checked, grey border)
  *  - lucide Check + Minus icons
  *  - `bz-motion-spring` transition (Stage 11.34 §38.67 paterni)
  */
@@ -143,17 +143,17 @@ export const APCheckbox = forwardRef<HTMLInputElement, APCheckboxProps>(function
         className="sr-only"
       />
 
-      {/* Visual checkbox — Pulse §11 lime fill + graphite border */}
+      {/* Visual checkbox — purple fill + white tick when checked */}
       <span
         aria-hidden
         data-state={visualState}
         className={[
-          'ap-check-box relative inline-flex shrink-0 items-center justify-center rounded-[5px] border-[1.5px] text-pn-ink',
+          'ap-check-box relative inline-flex shrink-0 items-center justify-center rounded-[5px] border-[1.5px]',
           'bz-motion-spring',
           'group-focus-within:ring-2 group-focus-within:ring-pn-accent group-focus-within:ring-offset-1',
           visualState === 'off'
-            ? 'border-pn-line-strong bg-white group-hover:border-pn-ink'
-            : 'border-pn-accent bg-pn-accent',
+            ? 'border-pn-line-strong bg-white text-pn-ink group-hover:border-pn-ink'
+            : 'border-pn-accent bg-pn-accent text-white',
           s.box,
           'mt-0.5',
         ].join(' ')}

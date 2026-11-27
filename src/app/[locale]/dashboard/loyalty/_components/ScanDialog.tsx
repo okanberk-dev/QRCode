@@ -35,7 +35,8 @@ export function cameraScanSupported(): boolean {
   );
 }
 
-const CORNER = 'absolute h-8 w-8 border-pn-accent';
+// Lavender reads on the dimmed camera picture (purple on near-black does not).
+const CORNER = 'absolute h-8 w-8 border-[#DCD3F6]';
 
 export default function ScanDialog({
   locale,
@@ -130,7 +131,7 @@ export default function ScanDialog({
                     className="bzl-scan-sweep absolute inset-x-0 top-0 h-full"
                     style={{
                       background:
-                        'linear-gradient(180deg, rgba(120, 252, 144,0) 0%, rgba(120, 252, 144,0) 62%, rgba(120, 252, 144,0.28) 94%, #78FC90 100%)',
+                        'linear-gradient(180deg, rgba(166, 143, 235, 0) 0%, rgba(166, 143, 235, 0) 62%, rgba(166, 143, 235, 0.3) 94%, #A68FEB 100%)',
                     }}
                   />
                 </span>
@@ -150,7 +151,7 @@ export default function ScanDialog({
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="bzl-pop flex h-20 w-20 items-center justify-center rounded-full bg-pn-accent shadow-[0_18px_40px_-12px_rgba(0,0,0,0.5)]">
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#000000" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#FFFFFF" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                 </div>
@@ -187,7 +188,7 @@ function ScanHelp({ locale, denied }: { locale: 'tr' | 'en'; denied: boolean }) 
             : 'This browser cannot scan from inside the panel (iPhone Safari, for example).'}
       </p>
       <div className="flex gap-3 rounded-[20px] border border-pn-line bg-pn-canvas p-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-ink text-pn-accent">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent text-white">
           <Camera size={17} aria-hidden="true" />
         </span>
         <p className="text-[13px] leading-relaxed text-[#404040]">

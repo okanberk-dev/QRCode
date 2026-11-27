@@ -96,7 +96,7 @@ export function FeedbackFiltersModal({
         <>
           {hasActiveFilter && (
             <button type="button" onClick={onResetFilters} className="bz-btn-ghost">
-              <RotateCcw size={12} strokeWidth={2.2} aria-hidden="true" />
+              <RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
               {isTr ? 'Temizle' : 'Clear'}
             </button>
           )}
@@ -109,7 +109,7 @@ export function FeedbackFiltersModal({
       <div className="space-y-4">
         {fields.map((f) => (
           <div key={f.id} className="flex flex-col gap-1.5">
-            <span id={f.id} className="text-[12px] font-medium text-[#525252]">
+            <span id={f.id} className="text-[13px] font-medium text-[#737373]">
               {f.label}
             </span>
             <PulseSelect
@@ -124,14 +124,14 @@ export function FeedbackFiltersModal({
 
         {/* State — reply + flag toggles (server-side filters). */}
         <div className="space-y-1.5">
-          <span className="block text-[12px] font-medium text-[#525252]">
+          <span className="block text-[13px] font-medium text-[#737373]">
             {isTr ? 'Durum' : 'State'}
           </span>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')}
-              className={`${hasReplyFilter === 'pending' ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px]`}
+              className={`${hasReplyFilter === 'pending' ? 'bz-btn-lime' : 'bz-btn'} sm:min-h-10 sm:px-4 sm:text-[13px]`}
               aria-pressed={hasReplyFilter === 'pending'}
             >
               {isTr ? 'Yanıtsızlar' : 'Unreplied'}
@@ -139,7 +139,7 @@ export function FeedbackFiltersModal({
             <button
               type="button"
               onClick={() => setFlaggedOnly(!flaggedOnly)}
-              className={`${flaggedOnly ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px]`}
+              className={`${flaggedOnly ? 'bz-btn-lime' : 'bz-btn'} sm:min-h-10 sm:px-4 sm:text-[13px]`}
               aria-pressed={flaggedOnly}
             >
               {isTr ? 'Yalnız işaretliler' : 'Flagged only'}

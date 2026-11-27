@@ -57,11 +57,11 @@ function ForgotPasswordContent() {
   };
 
   return (
-    <main className="relative min-h-[100dvh] overflow-hidden bg-white text-pn-ink selection:bg-pn-accent/40">
+    <main className="relative min-h-[100dvh] overflow-hidden bg-white text-pn-ink">
       {/* Soft top accent */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,#E6FDEA_0%,rgba(230,253,234,0)_65%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,#EFEAFB_0%,rgba(239,234,251,0)_65%)]"
       />
       <div
         aria-hidden
@@ -91,7 +91,7 @@ function ForgotPasswordContent() {
           <div className="bz-fade-in w-full max-w-[440px]">
             {/* Brand block */}
             <div className="mb-7 sm:mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)]">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[24px] bg-pn-accent text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)]">
                 <KeyRound size={22} strokeWidth={2} />
               </div>
               <span className="text-[13px] font-medium text-[#737373]">YÖNETİCİ PANELİ</span>
@@ -110,8 +110,8 @@ function ForgotPasswordContent() {
             <div className="rounded-[28px] border border-pn-line bg-white p-6 sm:p-8 shadow-[0_28px_80px_-48px_rgba(10,10,10,0.45)]">
               {submitted ? (
                 <div className="text-center">
-                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-pn-accent shadow-[0_18px_40px_-18px_rgba(168,214,46,0.6)]">
-                    <Mail size={26} strokeWidth={2} className="text-pn-ink" />
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-pn-accent shadow-[0_18px_40px_-18px_rgba(76,47,163,0.6)]">
+                    <Mail size={26} strokeWidth={2} className="text-white" />
                   </div>
                   {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
                   <h2 className="text-[22px] font-medium tracking-[-0.03em] text-pn-ink">

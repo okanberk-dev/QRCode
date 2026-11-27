@@ -306,7 +306,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         <button
           type="submit"
           disabled={loading || twoFactorCode.length < 6}
-          className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full min-h-[48px]"
+          className="inline-flex items-center justify-center gap-1.5 w-full min-h-[48px] rounded-full bg-[#5D3EBC] px-5 text-[14px] font-medium text-white transition-colors hover:bg-[#4C2FA3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading && <Loader2 size={14} className="animate-spin" />}
           {locale === 'tr' ? 'Doğrula ve giriş yap' : 'Verify and sign in'}
@@ -370,7 +370,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
           enterKeyHint="next"
           value={form.email}
           onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-          className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
+          className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           placeholder="emre@arkbistro.com"
         />
       </div>
@@ -399,7 +399,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
             autoFocus={!!prefilledEmail}
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
-            className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
+            className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
             placeholder="••••••••••"
           />
           <button
@@ -419,7 +419,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
           id="rememberMe"
           checked={form.rememberMe}
           onChange={(e) => setForm(prev => ({ ...prev, rememberMe: e.target.checked }))}
-          className="w-4 h-4 rounded border border-[#D4D4D4] focus:ring-2 focus:ring-[#C6F24E] accent-[#0A0A0A]"
+          className="w-4 h-4 rounded border border-[#D4D4D4] focus:ring-2 focus:ring-[#8C6CF0] accent-[#5D3EBC]"
         />
         <span className="text-[13px] text-[#525252]">
           {locale === 'tr' ? 'Beni hatırla' : 'Remember me'}
@@ -430,7 +430,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         type="submit"
         id="login-submit-btn"
         disabled={loading}
-        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#5D3EBC] text-white font-medium py-3.5 rounded-full hover:bg-[#4C2FA3] transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
       >
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading ? t.auth_login_loading : (locale === 'tr' ? 'Giriş yap' : 'Sign in')}
@@ -441,7 +441,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
 
       <p className="text-center text-[13px] text-[#737373] mt-2">
         {locale === 'tr' ? 'Hesabın yok mu?' : "Don't have an account?"}{' '}
-        <Link href={`/${locale}/auth/register`} className="text-[#0A0A0A] font-semibold hover:text-[#A8D62E] transition-colors">
+        <Link href={`/${locale}/auth/register`} className="text-[#0A0A0A] font-semibold hover:text-[#5D3EBC] transition-colors">
           {locale === 'tr' ? 'Kayıt ol' : 'Sign up'}
         </Link>
       </p>

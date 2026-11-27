@@ -54,8 +54,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   if (!program) return new NextResponse(null, { status: 404 });
   const portal = readLoyaltyPortal(program.portal);
   const pal = portalPalette(portal.theme, program.accentColor);
-  // Dots on the white card: the brand colour when it is dark enough, else graphite.
-  const dotColor = pal.onBand === '#FFFFFF' ? pal.band : '#0A0A0A';
+  // Dots on the white card: the brand colour when it is dark enough, else ink.
+  const dotColor = pal.onBand === '#FFFFFF' ? pal.band : '#111110';
 
   let png: Buffer;
   const logoPath = normalizePortalImage(portal.logoUrl);
@@ -84,7 +84,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       png = await sharp(Buffer.from(glyph(size, pal.band, dotColor))).png().toBuffer();
     }
   } catch {
-    png = await sharp(Buffer.from(glyph(size, '#0A0A0A', '#C6F24E'))).png().toBuffer();
+    // Buaze default: purple tile, purple dots on the white card.
+    png = await sharp(Buffer.from(glyph(size, '#5D3EBC', '#5D3EBC'))).png().toBuffer();
   }
   return new NextResponse(new Uint8Array(png), {
     headers: {

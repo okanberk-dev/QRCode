@@ -114,14 +114,14 @@ export default async function DashboardLayout({
       return (
         <div className="bz-panel min-h-dvh bg-pn-canvas">
           {/* Admin preview of the owner panel: a dark Pano bar instead of the
-              owner navigation (docs/design/DASHBOARD_DESIGN.md §5.1). */}
-          <div className="mx-2 mt-2 flex h-14 items-center justify-between gap-3 rounded-[24px] bg-pn-ink px-5 text-white">
+              owner navigation (docs/design/DASHBOARD_DESIGN.md §5.1), deep purple. */}
+          <div className="mx-2 mt-2 flex h-14 items-center justify-between gap-3 rounded-[24px] bg-[#3B1F8F] px-5 text-white">
             <p className="min-w-0 truncate text-[13px] text-white/70 sm:text-[14px]">
               {locale === 'en' ? 'Admin view' : 'Admin görünümü'} · {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
             </p>
             <Link
               href="/admin/restaurants"
-              className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-pn-accent px-4 text-[14px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover"
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-4 text-[14px] font-medium text-pn-accent transition-colors hover:bg-pn-accent-soft"
             >
               {locale === 'en' ? '← Admin panel' : '← Admin paneli'}
             </Link>
@@ -208,6 +208,7 @@ export default async function DashboardLayout({
       name: restaurant.name,
       slug: restaurant.slug,
       category: restaurant.category,
+      primaryColor: restaurant.primaryColor,
     }));
 
   const totalFeedbacks = restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);

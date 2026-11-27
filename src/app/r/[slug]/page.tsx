@@ -316,7 +316,7 @@ function ReviewContent() {
     });
   }, [restaurant?.slug, restaurant?.isActive, tableParam, explicitPlatform, sourceParam]);
 
-  if (loading) return <DarkLoader locale={locale} tableNumber={tableParam} />;
+  if (loading) return <ReviewLoader locale={locale} tableNumber={tableParam} />;
   if (isNotFound || !restaurant) return notFound();
 
   // Accepts: raw Place ID (ChIJ…), g.page/r/… link, search.google.com
@@ -638,121 +638,35 @@ function ReviewContent() {
   };
 
   const initial = restaurant.name.charAt(0).toUpperCase();
-  // §38.145 Stage 64 — page-level state-aware bg switch. Step 1 (rate)
-  // dark editorial moment; Step 2 + 3 (form + thanks) light productivity
-  // moment. JSX prototip hibrit pattern: ReviewRateInner dark, ReviewLowForm
-  // + ReviewThanks light bg #FAFAFA. TopBar + StepProgress + footer hepsi
-  // state-aware variant (onLight prop paterni).
-  const isLight = step === 2 || step === 3;
+  // Only the QR label the owner chose (it may be a table, a room or a desk),
+  // otherwise the address; no invented context.
+  const headerMeta = tableParam || restaurant.address || 'Buaze';
 
   return (
     <main
-      className={`min-h-[100dvh] ${
-        isLight ? 'bg-[#FAFAFA] text-[#0A0A0A]' : 'bg-[#0A0A0A] text-white'
-      }`}
+      className="flex min-h-[100dvh] flex-col bg-[#F6F6F6] text-[#111110]"
+      // 300 ms tap delay off on iOS Safari; double-tap zoom still works.
+      style={{ touchAction: 'manipulation' }}
     >
       {redirecting && (
         <RedirectingOverlay
           locale={locale}
+          rating={rating}
           platformId={redirecting.platformId}
           restaurantName={restaurant.name}
         />
       )}
 
-      <div
-        className="flex min-h-[100dvh] flex-col px-5 pt-2 sm:mx-auto sm:max-w-[420px] sm:px-6"
-        style={{
-          // Stage 48 §38.129 — iOS notch + home-indicator safe-area inset.
-          // §38.144 Stage 63 — mobile viewport-filling: `max-w-[360px]`
-          // mobile constraint kaldırıldı; sm:+ sınırla. JSX prototip
-          // intent: gerçek mobilde tüm viewport dolar (sahte bezel YOK).
-          paddingBottom: 'max(40px, calc(env(safe-area-inset-bottom, 0px) + 24px))',
-          // 300ms tap delay'ini iOS Safari'da kapatır; double-tap zoom yine çalışır.
-          touchAction: 'manipulation',
-        }}
-      >
-        {/* Brand header — Stage 63 §38.144 + Stage 64 §38.145 — HANDOFF
-            ReviewTopBar light/dark variant. JSX `onLight` prop paterni:
-            Step 1 dark variant (lime icon + white name + white/45 meta);
-            Step 2/3 light variant (graphite icon + lime initial + dark
-            name + gray meta). Border-bottom hue de state-aware. */}
-        <header
-          className={`flex items-center gap-3 border-b ${
-            isLight ? 'border-[#ECECEC]' : 'border-white/[0.08]'
-          }`}
-          style={{ padding: '14px 0 16px' }}
-        >
-          <div
-            className={`flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] ${
-              isLight ? 'bg-[#0A0A0A]' : 'bg-[#C6F24E]'
-            }`}
-            aria-hidden
-          >
-            <span
-              className={`text-[22px] ${
-                isLight ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
-              }`}
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontStyle: 'italic',
-                fontWeight: 400,
-                letterSpacing: '-0.02em',
-                lineHeight: 1,
-              }}
-            >
-              {initial.toLowerCase()}
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1
-              className={`truncate text-[16px] ${
-                isLight ? 'text-[#0A0A0A]' : 'text-white'
-              }`}
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontStyle: 'italic',
-                fontWeight: 400,
-                letterSpacing: '-0.01em',
-                lineHeight: 1,
-              }}
-            >
-              {restaurant.name}
-            </h1>
-            <div
-              className={`pulse-eyebrow ${
-                isLight ? 'text-[#737373]' : 'text-white/45'
-              }`}
-              style={{ fontSize: 9.5, marginTop: 4 }}
-            >
-              {/* Only the QR label the owner chose (it may be a table, a room
-                  or a desk), no invented context. */}
-              {tableParam
-                ? tableParam
-                : restaurant.address
-                  ? restaurant.address.toUpperCase()
-                  : 'BUAZE'}
-            </div>
-          </div>
-          <div
-            className={`pulse-eyebrow shrink-0 ${
-              isLight ? 'text-[#737373]' : 'text-white/50'
-            }`}
-            style={{ fontSize: 9.5 }}
-            aria-hidden
-          >
-            TR · EN
-          </div>
-        </header>
+      <ReviewHeader initial={initial} name={restaurant.name} meta={headerMeta} />
 
+      <ReviewSheet>
         {/* Owner's "temporarily closed" switch (business settings → Çalışma
             saatleri). Feedback stays open: a closed business can still hear
             from a customer who visited earlier. */}
         {restaurant.temporarilyClosed && (
           <div
             role="status"
-            className={`mt-3 rounded-xl px-3.5 py-2.5 text-[12.5px] leading-snug ${
-              isLight ? 'border border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]' : 'border border-white/15 bg-white/10 text-white'
-            }`}
+            className="mb-5 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3 text-[13px] leading-snug text-[#92400E]"
           >
             <strong className="font-semibold">
               {locale === 'tr' ? 'Geçici olarak kapalıyız.' : 'We are temporarily closed.'}
@@ -761,92 +675,33 @@ function ReviewContent() {
           </div>
         )}
 
-        {/* §38.145 Stage 64 — state-aware section bg + content layout.
-            Step 1 (rate): dark page bg üstünde transparent + glass star
-            card. Step 2 + 3: light page bg üstünde transparent (white
-            card kaldırıldı, JSX prototip light bg full-page switch).
-            Outer main bg state-aware otomatik handle ediyor (dark/light). */}
-        <section
-          key={step}
-          className="bz-fade-in flex-1"
-          style={{ padding: '20px 0 24px' }}
-        >
+        <section key={step} className="bz-fade-in flex-1">
           {step === 1 && (
             <div>
-              {/* §38.144 Stage 63 — HANDOFF StepProgress dark variant.
-                  ADIM 1/3 + linear progress bar (lime fill ~33%, dark
-                  rail). Buaze 3-segment dot pattern dark mode'da uyumsuz
-                  → JSX prototip linear bar pattern'a geçildi. */}
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="pulse-eyebrow text-white/60"
-                  style={{ fontSize: 9.5 }}
-                >
-                  1 / 3
-                </span>
-                <div
-                  className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/10"
-                  aria-hidden
-                >
-                  <div
-                    className="h-full rounded-full bg-[#C6F24E]"
-                    style={{
-                      width: '33.33%',
-                      boxShadow: '0 0 12px #C6F24E',
-                    }}
-                  />
-                </div>
-              </div>
-              {/* §38.144 Stage 63 — HANDOFF feedback-flow.jsx greeting +
-                  ask + sub. White card → dark page bg geçişi sonrası
-                  text renkleri white/55 muted scheme'e güncellendi. */}
-              <div
-                className="mt-6 inline-flex items-center gap-1.5 pulse-eyebrow text-[#C6F24E]"
-                style={{ fontSize: 10 }}
-                aria-hidden
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
-                  style={{ boxShadow: '0 0 10px #C6F24E' }}
-                />
-                {locale === 'tr' ? 'MERHABA!' : 'HELLO!'}
-              </div>
+              <StepProgress current={1} locale={locale} />
+
+              <p className="mt-6 text-[14px] font-semibold text-[#5D3EBC]">
+                {locale === 'tr' ? 'Merhaba!' : 'Hello!'}
+              </p>
               <h2
-                className="mt-2.5 text-white"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontStyle: 'italic',
-                  fontWeight: 400,
-                  fontSize: 28,
-                  lineHeight: 1.1,
-                  letterSpacing: '-0.02em',
-                  textWrap: 'balance',
-                }}
+                className="mt-1.5 text-[26px] font-bold leading-[1.15] text-[#111110]"
+                style={{ ...HEADING_STYLE, textWrap: 'balance' }}
               >
                 {locale === 'tr'
                   ? 'Bugünkü deneyimini nasıl puanlardın?'
                   : 'How was your experience today?'}
               </h2>
-              <p className="mt-3 text-[13px] leading-[1.55] text-white/55">
+              <p className="mt-2.5 text-[14px] leading-[1.55] text-[#737373]">
                 {locale === 'tr'
                   ? 'Yıldızlara dokun · görüşün anında işletmeye iletilir.'
                   : 'Tap a star · sent directly to the venue.'}
               </p>
 
-              {/* §38.144 Stage 63 — HANDOFF dark glass star row card.
-                  bg-white/[0.04] + backdrop-blur(20px) + border-white/[0.08].
-                  Active star lime fill, inactive rgba(255,255,255,0.1).
-                  Hover state lime tint dark glass üstünde. Mobile 56×56
-                  tap area (Apple HIG ≥44px), desktop UX preview hover. */}
-              <div
-                className="mt-6 rounded-[24px] border border-white/[0.08] bg-white/[0.04]"
-                style={{
-                  padding: '28px 14px 22px',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                }}
-              >
-                <div className="flex items-center justify-between gap-1" style={{ paddingBottom: 16 }}>
+              {/* Star card. Every star is a >= 52 px tap target (flex-1 of
+                  the card width, h-14); rating >= threshold auto-redirects,
+                  lower ratings auto-advance to the form (handleStarClick). */}
+              <div className="mt-6 rounded-[24px] bg-[#F6F6F6] px-2 pb-4 pt-5 sm:px-3">
+                <div className="flex items-center justify-between gap-1">
                   {[1, 2, 3, 4, 5].map((s) => {
                     const active = s <= visibleRating;
                     const isHover = s === hover && !rating;
@@ -859,163 +714,93 @@ function ReviewContent() {
                         onMouseLeave={() => setHover(0)}
                         aria-label={`${s} ${locale === 'tr' ? 'yıldız' : 'star'}`}
                         aria-pressed={rating === s}
-                        className="bz-motion-spring relative flex items-center justify-center rounded-2xl p-1.5 active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-                        style={{
-                          background: isHover ? 'rgba(198,242,78,0.08)' : 'transparent',
-                          transform: active ? 'scale(1.04)' : 'scale(1)',
-                        }}
+                        className={`flex h-14 min-w-[44px] flex-1 items-center justify-center rounded-full transition-[scale,background-color] duration-200 ease-out active:scale-90 motion-reduce:transition-none ${
+                          active ? 'scale-[1.06]' : ''
+                        } ${isHover ? 'bg-white' : ''} ${FOCUS_RING_ON_CANVAS}`}
                       >
                         <Star
-                          size={42}
-                          strokeWidth={active ? 0 : 1.4}
-                          fill={active ? '#C6F24E' : 'rgba(255,255,255,0.1)'}
-                          stroke={active ? 'transparent' : 'rgba(255,255,255,0.2)'}
+                          size={40}
+                          strokeWidth={1.5}
+                          strokeLinejoin="round"
+                          fill={active ? '#5D3EBC' : '#D6D6D6'}
+                          stroke={active ? '#5D3EBC' : '#D6D6D6'}
+                          aria-hidden
                         />
-                        {active && (
-                          <span
-                            className="pointer-events-none absolute rounded-2xl"
-                            style={{
-                              inset: -2,
-                              boxShadow: 'inset 0 0 16px rgba(198,242,78,0.25)',
-                            }}
-                            aria-hidden
-                          />
-                        )}
                       </button>
                     );
                   })}
                 </div>
 
-                {/* §38.144 Stage 63 — HANDOFF dark mode tone-coded label.
-                    ≥4 lime + ink, =3 white + warn glow, ≤2 white + danger
-                    glow. Empty state italic Space Grotesk "← seç →" muted
-                    white. Pill backgrounds dark glass üstünde uyumlu. */}
                 <div
-                  className="flex flex-col items-center justify-center gap-1.5 text-center"
-                  style={{ minHeight: 50 }}
+                  className="mt-3 flex min-h-[48px] flex-col items-center justify-center gap-0.5 text-center"
                   aria-live="polite"
                 >
                   {visibleRating > 0 ? (
                     <>
-                      <span
-                        className="bz-fade-in text-white"
-                        style={{
-                          fontFamily: 'var(--font-heading)',
-                          fontStyle: 'italic',
-                          fontWeight: 400,
-                          fontSize: 18,
-                          letterSpacing: '-0.01em',
-                        }}
-                      >
+                      <span className="bz-fade-in text-[17px] font-semibold text-[#111110]">
                         {labels[visibleRating - 1]}
                       </span>
-                      <span className="text-[11.5px] text-white/50">
+                      <span className="text-[13px] text-[#666666]">
                         {hints[visibleRating - 1]}
                       </span>
                     </>
                   ) : (
-                    <span
-                      className="text-[12px] text-white/40"
-                      style={{ fontFamily: 'var(--font-heading)', fontStyle: 'italic' }}
-                      aria-hidden
-                    >
+                    <span className="text-[13px] text-[#666666]" aria-hidden>
                       ← {locale === 'tr' ? 'seç' : 'pick'} →
                     </span>
                   )}
                 </div>
               </div>
-
-              {/* §38.133 Stage 52 — "Devam et" butonu silindi. Auto-advance
-                  handleStarClick içinde deterministik (rating ≥4 → 200ms
-                  redirect, rating ≤3 → 300ms setStep(2)). Manuel button
-                  confusing UX yaratıyordu; rating verir vermez akış sürer. */}
+              {/* No "continue" button on purpose: handleStarClick advances
+                  as soon as a star is chosen. */}
             </div>
           )}
 
-          {/* 4-5 yıldız "Çok teşekkürler" ara ekranı KASTEN kaldırıldı —
-              tasarım UX'ine göre yıldız tap'inde doğrudan platforma yönlendir.
-              triggerHighRedirect() bunu yapar; redirecting overlay görünür. */}
+          {/* 4-5 star "thank you" step intentionally removed: a high rating
+              goes straight to the chosen platform (triggerHighRedirect shows
+              the redirecting overlay). */}
 
           {step === 2 && isLow && (
             <div>
-              {/* §38.144 Stage 63 — HANDOFF StepProgress light variant
-                  (white card içinde): 2/3 + linear bar lime fill ~66%.
-                  Step 1 dark variant ile birebir parallel pattern. */}
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="pulse-eyebrow text-[#737373]"
-                  style={{ fontSize: 9.5 }}
+              <StepProgress current={2} locale={locale} />
+
+              {/* Acknowledgement card. Generic "management" signature, no
+                  owner name exposed. */}
+              <div className="mt-5 rounded-[24px] bg-[#EFEAFB] px-5 py-4">
+                <p className="text-[13px] font-semibold text-[#5D3EBC]">
+                  {locale === 'tr' ? 'Üzgünüz · İşletme yönetimi' : "We're sorry · Management"}
+                </p>
+                <p
+                  className="mt-1.5 text-[18px] font-semibold leading-[1.3] text-[#111110]"
+                  style={HEADING_STYLE}
                 >
-                  2 / 3
-                </span>
-                <div
-                  className="h-[3px] flex-1 overflow-hidden rounded-full bg-[#ECECEC]"
-                  aria-hidden
-                >
-                  <div
-                    className="h-full rounded-full bg-[#C6F24E]"
-                    style={{
-                      width: '66.66%',
-                      boxShadow: '0 0 12px rgba(198,242,78,0.6)',
-                    }}
-                  />
-                </div>
+                  {locale === 'tr'
+                    ? '"Söyle, neyi yanlış yaptık?"'
+                    : '"Tell us, what did we get wrong?"'}
+                </p>
+                <p className="mt-1.5 text-[13px] leading-[1.5] text-[#525252]">
+                  {locale === 'tr'
+                    ? 'Geri bildirimin doğrudan işletme yönetimine ulaşacak.'
+                    : 'Your feedback goes directly to the team.'}
+                </p>
               </div>
 
-              {/* §38.130 Stage 49 — HANDOFF feedback-flow.jsx owner
-                  acknowledgment card. Compliance variation: jenerik
-                  "İşletme yönetimi" (kullanıcı kararı, "Kardeş Ahmet"
-                  hardcoded değil — owner PII expose etmez). Italic
-                  Space Grotesk quote (synthetic italic §38.112 paterni). */}
-              <div
-                className="relative mt-4 overflow-hidden rounded-[18px] bg-[#0A0A0A] px-4 py-4 text-white"
-                style={{ marginBottom: 18 }}
-              >
-                <span
-                  className="pointer-events-none absolute -top-8 -right-6 h-28 w-28 rounded-full"
-                  style={{ background: 'rgba(198,242,78,0.18)', filter: 'blur(40px)' }}
-                  aria-hidden
-                />
-                <div className="relative">
-                  <div className="pulse-eyebrow text-[#C6F24E]" style={{ marginBottom: 6 }}>
-                    {locale === 'tr' ? 'ÜZGÜNÜZ · İŞLETME YÖNETİMİ' : 'WE\'RE SORRY · MANAGEMENT'}
-                  </div>
-                  <div
-                    className="text-[16px] font-medium leading-[1.3]"
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontStyle: 'italic',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {locale === 'tr'
-                      ? '"Söyle, neyi yanlış yaptık?"'
-                      : '"Tell us, what did we get wrong?"'}
-                  </div>
-                  <div className="text-[11.5px] text-white/55" style={{ marginTop: 6 }}>
-                    {locale === 'tr'
-                      ? 'Geri bildirimin doğrudan işletme yönetimine ulaşacak.'
-                      : 'Your feedback goes directly to the team.'}
-                  </div>
-                </div>
-              </div>
-
-              {/* §38.130 Stage 49 — 10 tag chip picker. ENUM key'leri
-                  whitelist; locale-aware label render. */}
-              <div style={{ marginBottom: 16 }}>
-                <div className="flex items-baseline justify-between" style={{ marginBottom: 10 }}>
+              {/* Improvement tags — ENUM keys whitelisted by the backend,
+                  locale-aware labels. */}
+              <div className="mt-7">
+                <div className="mb-3 flex items-baseline justify-between gap-3">
                   <h3
-                    className="text-[15px] font-medium"
-                    style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.01em' }}
+                    className="text-[16px] font-semibold leading-snug text-[#111110]"
+                    style={HEADING_STYLE}
                   >
                     {locale === 'tr' ? 'Hangi konularda iyileşmemizi istersin?' : 'What should we work on?'}
                   </h3>
-                  <span className="pulse-eyebrow text-[#737373] text-[9px]">
-                    {locale === 'tr' ? 'BİRDEN FAZLA' : 'PICK ANY'}
+                  <span className="shrink-0 text-[12px] text-[#737373]">
+                    {locale === 'tr' ? 'Birden fazla' : 'Pick any'}
                   </span>
                 </div>
                 <div
-                  className="flex flex-wrap gap-1.5"
+                  className="flex flex-wrap gap-2"
                   role="group"
                   aria-label={
                     locale === 'tr' ? 'İyileştirilecek konular' : 'Improvement areas'
@@ -1029,17 +814,13 @@ function ReviewContent() {
                         type="button"
                         onClick={() => toggleAspectTag(key)}
                         aria-pressed={selected}
-                        className={`bz-motion-spring inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[12.5px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+                        className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium transition-colors duration-200 active:scale-95 ${FOCUS_RING} ${
                           selected
-                            ? 'bg-[#0A0A0A] text-white shadow-[0_4px_12px_-6px_rgba(10,10,10,0.4)]'
-                            : 'border border-[#E5E5E5] bg-white text-[#0A0A0A] hover:border-[#A3A3A3]'
+                            ? 'bg-[#5D3EBC] text-white hover:bg-[#4C2FA3]'
+                            : 'bg-[#F6F6F6] text-[#111110] hover:bg-[#EFEAFB]'
                         }`}
                       >
-                        {selected && (
-                          <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#C6F24E]">
-                            <Check size={9} strokeWidth={3} className="text-[#0A0A0A]" />
-                          </span>
-                        )}
+                        {selected && <Check size={15} strokeWidth={2.6} aria-hidden />}
                         {aspectLabels[key]}
                       </button>
                     );
@@ -1047,26 +828,24 @@ function ReviewContent() {
                 </div>
               </div>
 
-              {/* §38.130 Stage 49 — comment textarea + AI badge cosmetic +
-                  preset chips. AI badge KULLANICI KARARI: visual decoration
-                  (gerçek AI feature ile bağlı değil). */}
-              <div style={{ marginBottom: 16 }}>
-                <div className="flex items-baseline justify-between" style={{ marginBottom: 8 }}>
+              {/* Comment + quick-pick chips. */}
+              <div className="mt-7">
+                <div className="mb-2.5 flex items-baseline justify-between gap-3">
                   <label
                     htmlFor="review-comment"
-                    className="text-[15px] font-medium"
-                    style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.01em' }}
+                    className="text-[16px] font-semibold leading-snug text-[#111110]"
+                    style={HEADING_STYLE}
                   >
                     {locale === 'tr' ? 'Detayları paylaşır mısın?' : 'Tell us a bit more'}
                   </label>
-                  <span className="pulse-eyebrow text-[#737373] text-[9px]">
+                  <span className="shrink-0 text-[12px] tabular-nums text-[#737373]">
                     {comment.length} / 500
                   </span>
                 </div>
                 <div className="relative">
                   <textarea
                     id="review-comment"
-                    className="bz-input w-full"
+                    className="block w-full resize-none rounded-[20px] border border-[#EBEBEB] bg-[#F6F6F6] px-4 pb-9 pt-3.5 text-[16px] leading-[1.5] text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-[#737373] focus:border-[#5D3EBC] focus:bg-white focus:shadow-[0_0_0_4px_rgba(93,62,188,0.14)]"
                     placeholder={
                       locale === 'tr'
                         ? 'Yaşadığın durumu birkaç cümleyle anlat — yönetim seninle ilgilenecek.'
@@ -1077,12 +856,9 @@ function ReviewContent() {
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     onFocus={(event) => {
-                      // §38.133 Stage 52 — mobile keyboard avoidance.
-                      // iOS Safari + Android Chrome focus event'inde
-                      // textarea'yı viewport center'a scroll'la → keyboard
-                      // açıldığında submit button + KVKK checkbox altında
-                      // kaybolmasın. CLAUDE.md §38.61 reduced-motion: smooth
-                      // → auto fallback (instant scroll).
+                      // Mobile keyboard avoidance: centre the textarea so the
+                      // submit button + consent rows stay reachable once the
+                      // keyboard opens. Reduced motion → instant scroll.
                       const target = event.currentTarget;
                       const reduceMotion =
                         typeof window !== 'undefined' &&
@@ -1094,28 +870,15 @@ function ReviewContent() {
                         });
                       });
                     }}
-                    style={{ resize: 'none', fontFamily: 'inherit', paddingBottom: 28 }}
+                    style={{ fontFamily: 'inherit' }}
                     enterKeyHint="enter"
                   />
-                  {/* AI badge — cosmetic decoration. `bz-rr-pulse` keyframe
-                      lime dot animation. Kullanıcı kabul etti: visual only. */}
-                  <div
-                    className="pointer-events-none absolute bottom-2 right-3 inline-flex items-center gap-1.5"
-                    aria-hidden
-                  >
-                    <span
-                      className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
-                      style={{ animation: 'bz-rr-pulse 1.5s ease-in-out infinite' }}
-                    />
-                    <span className="pulse-eyebrow text-[#A8D62E] text-[9px]">
-                      {locale === 'tr' ? 'AI YARDIMCI HAZIR' : 'AI ASSIST READY'}
-                    </span>
-                  </div>
                 </div>
-                {/* Preset chips horizontal scroll */}
+                {/* Quick picks — horizontal scroll that bleeds to the sheet
+                    edges (the scroller clips, the page never overflows). */}
                 <div
-                  className="no-scrollbar -mx-1 mt-2.5 flex gap-1.5 overflow-x-auto pb-1"
-                  style={{ scrollSnapType: 'x mandatory' }}
+                  className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5 py-1 sm:-mx-7 sm:px-7"
+                  style={{ scrollSnapType: 'x mandatory', scrollPaddingInline: 20 }}
                   role="group"
                   aria-label={locale === 'tr' ? 'Hızlı seçimler' : 'Quick picks'}
                 >
@@ -1124,7 +887,7 @@ function ReviewContent() {
                       key={preset}
                       type="button"
                       onClick={() => appendPresetToComment(preset)}
-                      className="bz-motion-spring inline-flex shrink-0 items-center gap-1 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-2.5 py-2 text-[11.5px] font-medium text-[#0A0A0A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E]"
+                      className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-full border border-[#DCD3F6] bg-white px-3.5 text-[13px] font-medium text-[#5D3EBC] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5D3EBC]"
                       style={{ scrollSnapAlign: 'start' }}
                     >
                       <span aria-hidden>+</span>
@@ -1134,55 +897,37 @@ function ReviewContent() {
                 </div>
               </div>
 
-              {/* §38.141 Stage 60 — HANDOFF feedback-flow.jsx contact card
-                  layout (left-label "AD"/"E-POSTA" pattern). Email field
-                  highlight: graphite border + lime sol-stripe (mandatory
-                  visual hint, ulaşılabilirlik için kritik). Backend kontrat
-                  intact: name + email POST body field'ları aynı. */}
-              <div className="flex flex-col gap-2" style={{ marginBottom: 14 }}>
-                <div
-                  className="flex items-center gap-2.5 rounded-[12px] border border-[#ECECEC] bg-white"
-                  style={{ padding: '12px 14px' }}
-                >
-                  <span
-                    className="pulse-eyebrow shrink-0 text-[#A3A3A3]"
-                    style={{ width: 56, fontSize: 9.5 }}
-                  >
-                    {locale === 'tr' ? 'AD' : 'NAME'}
-                  </span>
+              {/* Contact — both fields optional; POST body unchanged. */}
+              <div className="mt-6 flex flex-col gap-4">
+                <div>
+                  <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
+                    <label htmlFor="review-name" className="text-[14px] font-semibold text-[#111110]">
+                      {locale === 'tr' ? 'Ad' : 'Name'}
+                    </label>
+                    <span className="text-[12px] text-[#737373]">
+                      {locale === 'tr' ? 'İsteğe bağlı' : 'Optional'}
+                    </span>
+                  </div>
                   <input
-                    className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+                    id="review-name"
+                    className={FIELD_CLASS}
                     placeholder={locale === 'tr' ? 'Adın' : 'Your name'}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     autoComplete="name"
                     autoCapitalize="words"
                     enterKeyHint="next"
-                    style={{ fontSize: 16 }}
                   />
-                  <span
-                    className="pulse-eyebrow shrink-0 text-[#A3A3A3]"
-                    style={{ fontSize: 9 }}
-                  >
-                    {locale === 'tr' ? 'OPSİYONEL' : 'OPTIONAL'}
-                  </span>
                 </div>
-                <div
-                  className="relative flex items-center gap-2.5 rounded-[12px] border-[1.5px] border-[#0A0A0A] bg-white"
-                  style={{ padding: '12px 14px' }}
-                >
-                  <span
-                    className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-[#C6F24E]"
-                    aria-hidden
-                  />
-                  <span
-                    className="pulse-eyebrow shrink-0 text-[#A3A3A3]"
-                    style={{ width: 56, fontSize: 9.5 }}
-                  >
-                    {locale === 'tr' ? 'E-POSTA' : 'EMAIL'}
-                  </span>
+                <div>
+                  <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
+                    <label htmlFor="review-email" className="text-[14px] font-semibold text-[#111110]">
+                      {locale === 'tr' ? 'E-posta' : 'Email'}
+                    </label>
+                  </div>
                   <input
-                    className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+                    id="review-email"
+                    className={FIELD_CLASS}
                     type="email"
                     placeholder={locale === 'tr' ? 'yanıt için, isteğe bağlı' : 'for a reply, optional'}
                     value={email}
@@ -1193,31 +938,26 @@ function ReviewContent() {
                     autoCorrect="off"
                     spellCheck={false}
                     enterKeyHint="next"
-                    style={{ fontSize: 16 }}
                     aria-describedby="feedback-email-hint"
                   />
+                  {/* Why leave an email (CLAUDE.md §57): only ~39% of private
+                      feedback carried contact info, so the owner could not reply. */}
+                  <p id="feedback-email-hint" className="mt-2 px-1 text-[12.5px] leading-[1.5] text-[#737373]">
+                    {locale === 'tr'
+                      ? 'E-posta bırakırsan işletme sana doğrudan yanıt verebilir. İzin vermedikçe kampanya e-postası gönderilmez.'
+                      : 'Leave your email and the business can reply to you directly. No marketing emails unless you allow them.'}
+                  </p>
                 </div>
-                {/* Why leave an email (CLAUDE.md §57): only ~39% of private
-                    feedback carried contact info, so the owner could not reply. */}
-                <p id="feedback-email-hint" className="px-1 text-[11.5px] leading-[1.5] text-[#525252]">
-                  {locale === 'tr'
-                    ? 'E-posta bırakırsan işletme sana doğrudan yanıt verebilir. İzin vermedikçe kampanya e-postası gönderilmez.'
-                    : 'Leave your email and the business can reply to you directly. No marketing emails unless you allow them.'}
-                </p>
               </div>
 
-              <div className="flex flex-col gap-2.5">
-
-                {/* KVKK aydınlatma — submit gate; metin admin paneli yönetiminde */}
-                <label
-                  className="flex cursor-pointer gap-2"
-                  style={{ fontSize: 11.5, color: '#525252', lineHeight: 1.5, alignItems: 'flex-start' }}
-                >
+              <div className="mt-6 flex flex-col gap-1">
+                {/* KVKK notice — submit gate; text managed in the admin panel */}
+                <label className="flex cursor-pointer items-start gap-3 py-1.5 text-[13px] leading-[1.5] text-[#525252]">
                   <input
                     type="checkbox"
                     checked={kvkk}
                     onChange={(e) => setKvkk(e.target.checked)}
-                    style={{ marginTop: 2 }}
+                    className={CHECKBOX_CLASS}
                     aria-required="true"
                   />
                   <span>
@@ -1226,7 +966,7 @@ function ReviewContent() {
                       href={`/${locale}/kvkk`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                      className={LEGAL_LINK_CLASS}
                     >
                       {locale === 'tr' ? 'KVKK Aydınlatma Metni' : 'KVKK Privacy Notice'}
                     </a>
@@ -1235,7 +975,7 @@ function ReviewContent() {
                       href={`/${locale}/acik-riza`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                      className={LEGAL_LINK_CLASS}
                     >
                       {locale === 'tr' ? 'Açık Rıza Metni' : 'Explicit Consent'}
                     </a>
@@ -1244,16 +984,13 @@ function ReviewContent() {
                       : ' and grant explicit consent for processing.'}
                   </span>
                 </label>
-                {/* Pazarlama izni — opt-in zorunlu (KVKK Açık Rıza + ETK m.6) */}
-                <label
-                  className="flex cursor-pointer gap-2"
-                  style={{ fontSize: 11.5, color: '#525252', lineHeight: 1.5, alignItems: 'flex-start' }}
-                >
+                {/* Marketing consent — opt-in, unchecked by default (KVKK Açık Rıza + ETK m.6) */}
+                <label className="flex cursor-pointer items-start gap-3 py-1.5 text-[13px] leading-[1.5] text-[#525252]">
                   <input
                     type="checkbox"
                     checked={marketing}
                     onChange={(e) => setMarketing(e.target.checked)}
-                    style={{ marginTop: 2 }}
+                    className={CHECKBOX_CLASS}
                   />
                   <span>
                     {locale === 'tr' ? 'Kampanya ve duyurular için ' : 'For campaigns and announcements I accept the '}
@@ -1261,7 +998,7 @@ function ReviewContent() {
                       href={`/${locale}/ticari-ileti`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                      className={LEGAL_LINK_CLASS}
                     >
                       {locale === 'tr' ? 'Ticari Elektronik İleti İzni' : 'Commercial Electronic Message Consent'}
                     </a>
@@ -1280,8 +1017,11 @@ function ReviewContent() {
                 />
 
                 {error && (
-                  <div className="flex items-center gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
-                    <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#991B1B]" />
+                  <div
+                    role="alert"
+                    className="mt-2 flex items-start gap-2.5 rounded-2xl bg-[#FEF3F2] px-4 py-3 text-[13px] leading-[1.45] text-[#B42318]"
+                  >
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#D92D20]" aria-hidden />
                     {error}
                   </div>
                 )}
@@ -1290,34 +1030,37 @@ function ReviewContent() {
                   type="button"
                   onClick={handleLowSubmit}
                   disabled={submitting || !kvkk}
-                  className="bz-btn-primary mt-1 w-full justify-center py-3.5 text-[14px]"
+                  aria-busy={submitting || undefined}
+                  className={`mt-4 inline-flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#5D3EBC] px-6 text-[16px] font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-[#4C2FA3] active:scale-[0.98] disabled:cursor-not-allowed ${
+                    kvkk ? 'disabled:hover:bg-[#5D3EBC]' : 'disabled:bg-[#EBEBEB] disabled:text-[#737373]'
+                  } ${FOCUS_RING}`}
                 >
                   {submitting ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
                     <>
-                      <span
-                        className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
-                        style={{ boxShadow: '0 0 8px #C6F24E' }}
-                        aria-hidden
-                      />
-                      {locale === 'tr' ? 'Geri bildirimi gönder' : 'Submit feedback'}
+                      <Loader2 size={18} className="animate-spin" aria-hidden />
+                      <span className="sr-only">
+                        {locale === 'tr' ? 'Gönderiliyor…' : 'Sending…'}
+                      </span>
                     </>
+                  ) : locale === 'tr' ? (
+                    'Geri bildirimi gönder'
+                  ) : (
+                    'Submit feedback'
                   )}
                 </button>
 
-                <RecaptchaNotice locale={locale} className="mt-2 text-center text-[10px]" />
+                <RecaptchaNotice locale={locale} className="mt-3 text-center" />
 
-                {/* Herkese açık platform bağlantısı — düşük puan akışında DA sunulur.
-                    Buaze'nin uyum duruşu (/google-compliance) "akışta her müşteriye
-                    herkese açık platform bağlantıları sunulur" diyor; bu blok o beyanı
-                    ürün tarafında doğru kılar ve Google review-gating riskini kapatır
-                    (CLAUDE.md §19.1.1). Bilinçli olarak ikincil ağırlıkta: birincil
-                    aksiyon işletmeye özel geri bildirim; herkese açık yorum müşterinin
-                    kendi tercihidir, teşvik veya yönlendirme yok. */}
+                {/* Public platform link — offered in the low-rating flow TOO.
+                    Buaze's compliance stance (/google-compliance) says every
+                    customer is offered the public platform links; this block
+                    keeps that true and closes the Google review-gating risk
+                    (CLAUDE.md §19.1.1). Deliberately secondary: the primary
+                    action is private feedback; a public review is the
+                    customer's own choice, no nudging. */}
                 {targetPlatformUrl && (
-                  <div className="mt-3 border-t border-[#F5F5F5] pt-3 text-center">
-                    <p className="text-[11.5px] leading-[1.5] text-[#737373]">
+                  <div className="mt-5 border-t border-[#EBEBEB] pt-5 text-center">
+                    <p className="text-[13px] leading-[1.5] text-[#737373]">
                       {locale === 'tr'
                         ? 'Görüşünü herkese açık olarak da paylaşmak istersen:'
                         : 'If you would also like to share your feedback publicly:'}
@@ -1326,7 +1069,7 @@ function ReviewContent() {
                       href={targetPlatformUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+                      className={`mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-3 text-[14px] font-semibold text-[#5D3EBC] underline decoration-[#DCD3F6] decoration-2 underline-offset-4 transition-colors duration-200 hover:decoration-[#5D3EBC] ${FOCUS_RING}`}
                     >
                       {locale === 'tr'
                         ? `${PLATFORMS[fallbackPlatformId]?.label ?? 'Google'} üzerinde yorum yaz`
@@ -1340,155 +1083,78 @@ function ReviewContent() {
           )}
 
           {step === 3 && (
-            <div className="bz-fade-in text-center" style={{ padding: '20px 0' }}>
-              {/* §38.144 Stage 63 — HANDOFF StepProgress light variant
-                  (Step 3 white card): 3/3 + linear bar tamamen dolu (100%).
-                  Step 1 + 2 ile birebir parallel pattern. */}
-              <div
-                className="flex items-center gap-2.5 text-left"
-                style={{ marginBottom: 22 }}
-              >
-                <span
-                  className="pulse-eyebrow text-[#737373]"
-                  style={{ fontSize: 9.5 }}
-                >
-                  3 / 3
-                </span>
-                <div
-                  className="h-[3px] flex-1 overflow-hidden rounded-full bg-[#ECECEC]"
-                  aria-hidden
-                >
-                  <div
-                    className="h-full rounded-full bg-[#C6F24E]"
-                    style={{
-                      width: '100%',
-                      boxShadow: '0 0 12px rgba(198,242,78,0.6)',
-                    }}
-                  />
-                </div>
+            <div className="bz-fade-in text-center">
+              <div className="text-left">
+                <StepProgress current={3} locale={locale} />
               </div>
 
-              {/* §38.141 Stage 60 — HANDOFF feedback-flow.jsx `DoneHigh/DoneLow`
-                  visual scale: 96×96 lime circle + halo lime gradient blur +
-                  2 concentric pulse rings + 6 deterministik confetti dot
-                  (Math.random YOK — SSR + reduced-motion friendly). Stage 48
-                  §38.129'daki 80×80'den HANDOFF spec birebir 96×96'ya scale.
-                  Reduced-motion blanket [style*='bz-done-ring-pulse'] selector
-                  ile yakalanır (CLAUDE.md §38.61 paterni). */}
-              <div className="relative mx-auto" style={{ width: 96, height: 96 }}>
-                {/* Halo lime gradient blur — subtle radial glow background */}
+              {/* Success mark — purple disc + two soft rings (the rings stop
+                  under prefers-reduced-motion via the global
+                  [style*='bz-done-ring-pulse'] blanket). Deterministic
+                  confetti dots: SSR-safe, no Math.random. */}
+              <div className="relative mx-auto mt-10" style={{ width: 88, height: 88 }}>
                 <span
                   className="pointer-events-none absolute rounded-full"
                   style={{
-                    inset: -18,
-                    background:
-                      'radial-gradient(circle, rgba(198,242,78,0.55) 0%, transparent 70%)',
-                    filter: 'blur(12px)',
-                  }}
-                  aria-hidden
-                />
-                {/* Concentric pulse rings */}
-                <span
-                  className="absolute inset-0 rounded-full bg-[#C6F24E]"
-                  style={{
-                    animation: 'bz-done-ring-pulse 1.6s ease-out infinite',
-                    transformOrigin: 'center',
+                    inset: -22,
+                    background: 'radial-gradient(circle, rgba(93,62,188,0.18) 0%, transparent 70%)',
                   }}
                   aria-hidden
                 />
                 <span
-                  className="absolute inset-2 rounded-full bg-[#C6F24E]"
-                  style={{
-                    animation: 'bz-done-ring-pulse 1.6s ease-out 0.4s infinite',
-                    transformOrigin: 'center',
-                  }}
+                  className="absolute inset-0 rounded-full bg-[#DCD3F6]"
+                  style={{ animation: 'bz-done-ring-pulse 1.6s ease-out infinite', transformOrigin: 'center' }}
                   aria-hidden
                 />
-                {/* Center check badge — 96×96 lime circle + drop shadow */}
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_12px_30px_-8px_rgba(198,242,78,0.6)]">
+                <span
+                  className="absolute inset-2 rounded-full bg-[#DCD3F6]"
+                  style={{ animation: 'bz-done-ring-pulse 1.6s ease-out 0.4s infinite', transformOrigin: 'center' }}
+                  aria-hidden
+                />
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[#5D3EBC]">
                   <Check
-                    size={44}
-                    strokeWidth={3.5}
+                    size={40}
+                    strokeWidth={3}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-[#0A0A0A]"
+                    className="text-white"
+                    aria-hidden
                   />
                 </div>
-                {/* 6 deterministik confetti dot — radial scatter, SSR-safe.
-                    HANDOFF spec birebir position + size + color. */}
-                <span
-                  className="pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
-                  style={{ top: -8, left: -4 }}
-                  aria-hidden
-                />
-                <span
-                  className="pointer-events-none absolute h-1 w-1 rounded-full bg-[#0A0A0A]"
-                  style={{ top: 5, left: 96 }}
-                  aria-hidden
-                />
-                <span
-                  className="pointer-events-none absolute h-2 w-2 rounded-full bg-[#C6F24E]"
-                  style={{ top: 80, left: -8 }}
-                  aria-hidden
-                />
-                <span
-                  className="pointer-events-none absolute rounded-full bg-[#C6F24E]"
-                  style={{ top: 88, left: 100, width: 5, height: 5 }}
-                  aria-hidden
-                />
-                <span
-                  className="pointer-events-none absolute h-1 w-1 rounded-full bg-[#0A0A0A]"
-                  style={{ top: 50, left: 110 }}
-                  aria-hidden
-                />
-                <span
-                  className="pointer-events-none absolute rounded-full bg-[#C6F24E]"
-                  style={{ top: 30, left: -14, width: 5, height: 5 }}
-                  aria-hidden
-                />
+                {CONFETTI_DOTS.map((dot, i) => (
+                  <span
+                    key={i}
+                    className="pointer-events-none absolute rounded-full"
+                    style={{ top: dot.top, left: dot.left, width: dot.size, height: dot.size, background: dot.color }}
+                    aria-hidden
+                  />
+                ))}
               </div>
-              <h2 className="bz-h-tight-2 text-[22px]" style={{ marginTop: 22 }}>
+              <h2 className="mt-7 text-[24px] font-bold leading-tight text-[#111110]" style={HEADING_STYLE}>
                 {locale === 'tr' ? 'Sesin bize ulaştı' : 'We hear you'}
               </h2>
-              <p className="text-[13px] leading-[1.6] text-[#525252]" style={{ margin: '10px 0 0' }}>
+              <p className="mx-auto mt-2.5 max-w-[320px] text-[14px] leading-[1.6] text-[#737373]">
                 {locale === 'tr'
                   ? 'Geri bildirimin doğrudan işletme yönetiminin paneline ulaştırıldı.'
                   : 'Your feedback was delivered directly to the management dashboard.'}
               </p>
 
-              {/* §38.130 Stage 49 — Reference number card. Feedback ID'den
-                  derive (BZ-XXX-YYY format). Müşteri ileride yönetim ile
-                  iletişimde bu numarayı paylaşabilir.
-                  Stage 57 §38.138 — "Kopyala" button (clipboard API) +
-                  low-rating durumunda 24h follow-up footer. */}
+              {/* Reference number (derived from the feedback id) + copy. */}
               {feedbackId && (
-                <div
-                  className="relative mx-auto mt-5 overflow-hidden rounded-[14px] border border-[#ECECEC] bg-white text-left"
-                  style={{ padding: '14px 16px', maxWidth: 320 }}
-                >
-                  <span
-                    className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-[#C6F24E]"
-                    aria-hidden
-                  />
+                <div className="mx-auto mt-6 w-full max-w-[360px] rounded-[24px] bg-[#F6F6F6] p-4 text-left">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div
-                        className="pulse-eyebrow text-[#737373] text-[9px]"
-                        style={{ marginBottom: 4 }}
-                      >
-                        {locale === 'tr' ? 'TALEP NO' : 'REFERENCE'}
+                      <div className="text-[12px] text-[#666666]">
+                        {locale === 'tr' ? 'Talep no' : 'Reference'}
                       </div>
-                      <div
-                        className="text-[15px] font-bold tracking-[0.04em] text-[#0A0A0A]"
-                        style={{ fontFamily: 'var(--font-mono)' }}
-                      >
+                      <div className="mt-0.5 truncate text-[17px] font-semibold tabular-nums tracking-[0.02em] text-[#111110]">
                         {formatReferenceNumber(feedbackId)}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={copyReferenceNumber}
-                      className="bz-motion-spring inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-[#0A0A0A] px-3 py-2 text-[11px] font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      className={`inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-95 ${FOCUS_RING_ON_CANVAS}`}
                       aria-live="polite"
                       aria-label={
                         refCopied
@@ -1502,56 +1168,43 @@ function ReviewContent() {
                     >
                       {refCopied ? (
                         <>
-                          <Check size={11} strokeWidth={2.6} className="text-[#C6F24E]" />
+                          <Check size={14} strokeWidth={2.6} className="text-[#23863A]" aria-hidden />
                           {locale === 'tr' ? 'Kopyalandı' : 'Copied'}
                         </>
                       ) : (
                         <>
-                          <Copy size={11} strokeWidth={2} />
+                          <Copy size={14} strokeWidth={2} aria-hidden />
                           {locale === 'tr' ? 'Kopyala' : 'Copy'}
                         </>
                       )}
                     </button>
                   </div>
-                  {/* Low rating 24h follow-up footer — yalnızca düşük puan'da
-                      görünür (rating ≤ 3). Müşteriye doğrudan beklenti yönetimi:
-                      "yönetim 24 saat içinde dönüş yapacak". Yüksek puan
-                      durumda redirect overlay sırasında external platforma
-                      gidiyor, thanks ekranı görmüyor (no-platform-URL hariç). */}
-                  {rating > 0 && rating < redirectMinRating && (
-                    <div
-                      className="mt-3 flex items-center gap-2.5 border-t border-[#F5F5F5] pt-3 text-[11.5px] text-[#525252]"
-                    >
+                  {/* Low-rating follow-up line — only below the redirect
+                      threshold (high ratings leave for the platform). */}
+                  {isLow && (
+                    <div className="mt-3 flex items-center gap-2.5 border-t border-[#EBEBEB] pt-3 text-[13px] leading-[1.45] text-[#525252]">
                       <span
-                        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F5F5F5]"
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white"
                         aria-hidden
                       >
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#0A0A0A" strokeWidth="1.5">
+                        <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#5D3EBC" strokeWidth="1.5">
                           <circle cx="6" cy="6" r="4.5" />
                           <path d="M6 4v2.5l1.5 1" />
                         </svg>
                       </span>
                       <span>
-                        <strong className="text-[#0A0A0A]">
-                          {locale === 'tr' ? '24 saat' : '24 hours'}
-                        </strong>
                         {locale === 'tr'
-                          ? ' içinde işletme yönetimi seninle iletişime geçecek.'
-                          : ' — management will get back to you.'}
+                          ? 'Mesajın doğrudan işletme yönetimine iletildi.'
+                          : 'Your message went straight to the business.'}
                       </span>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Stage 57 §38.138 — Cross-platform share thanks ekranı.
-                  Restaurant.tripAdvisorUrl + yandexUrl + per-platform enable
-                  flag (Stage 10 §38.80 + earlier) — owner panelden URL
-                  girilmiş + enable edilmiş + externalPlatformsEnabled true
-                  ise CTA'lar render. Müşteri yorumunu external community
-                  platformlarda da paylaşabilir. Yüksek puan veya thanks
-                  ekranında her durumda görünür (low rating'de bile owner
-                  isteyebilir → kullanıcı agency'sine saygı). */}
+              {/* Other community platforms the owner enabled (per-platform
+                  URL + enabled flag + externalPlatformsEnabled master gate).
+                  Shown in every thanks state — the customer's own choice. */}
               {(() => {
                 const externalEnabled = restaurant.externalPlatformsEnabled !== false;
                 const showTripadvisor =
@@ -1564,41 +1217,30 @@ function ReviewContent() {
                   restaurant.yandexEnabled !== false;
                 if (!showTripadvisor && !showYandex) return null;
                 return (
-                  <div
-                    className="mx-auto mt-3 overflow-hidden rounded-[14px] border border-[#ECECEC] bg-white text-left"
-                    style={{ padding: '14px 16px', maxWidth: 320 }}
-                  >
-                    <div
-                      className="pulse-eyebrow text-[#737373] text-[9px]"
-                      style={{ marginBottom: 10 }}
-                    >
-                      {locale === 'tr' ? 'DAHA FAZLASI' : 'MORE WAYS'}
+                  <div className="mx-auto mt-3 w-full max-w-[360px] rounded-[24px] bg-[#F6F6F6] p-2 text-left">
+                    <div className="px-3 pb-1 pt-2 text-[12px] text-[#666666]">
+                      {locale === 'tr' ? 'Daha fazlası' : 'More ways'}
                     </div>
                     {showTripadvisor && (
                       <a
                         href={restaurant.tripAdvisorUrl ?? '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bz-motion-spring flex items-center gap-3 border-b border-[#F5F5F5] py-2.5 last:border-b-0 hover:bg-[#FAFAFA]"
+                        className={`flex min-h-[52px] items-center gap-3 rounded-2xl px-3 py-2 transition-colors duration-200 hover:bg-white ${FOCUS_RING_ON_CANVAS}`}
                       >
                         <span
-                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] text-white"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white"
                           style={{ background: '#34E0A1' }}
                           aria-hidden
                         >
-                          <span
-                            className="text-[15px] font-bold leading-none"
-                            style={{ fontFamily: 'var(--font-heading)' }}
-                          >
-                            t
-                          </span>
+                          <span className="text-[15px] font-bold leading-none">t</span>
                         </span>
-                        <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                        <span className="flex-1 text-[14px] font-medium text-[#111110]">
                           {locale === 'tr'
                             ? "Tripadvisor'da da paylaş"
                             : 'Share on Tripadvisor'}
                         </span>
-                        <ExternalLink size={14} className="text-[#A3A3A3]" />
+                        <ExternalLink size={15} className="text-[#737373]" aria-hidden />
                       </a>
                     )}
                     {showYandex && (
@@ -1606,42 +1248,33 @@ function ReviewContent() {
                         href={restaurant.yandexUrl ?? '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bz-motion-spring flex items-center gap-3 border-b border-[#F5F5F5] py-2.5 last:border-b-0 hover:bg-[#FAFAFA]"
+                        className={`flex min-h-[52px] items-center gap-3 rounded-2xl px-3 py-2 transition-colors duration-200 hover:bg-white ${FOCUS_RING_ON_CANVAS}`}
                       >
                         <span
-                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] text-[#0A0A0A]"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#111110]"
                           style={{ background: '#FFCC00' }}
                           aria-hidden
                         >
-                          <span
-                            className="text-[15px] font-bold leading-none"
-                            style={{ fontFamily: 'var(--font-heading)' }}
-                          >
-                            y
-                          </span>
+                          <span className="text-[15px] font-bold leading-none">y</span>
                         </span>
-                        <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                        <span className="flex-1 text-[14px] font-medium text-[#111110]">
                           {locale === 'tr'
                             ? 'Yandex Haritalarda paylaş'
                             : 'Share on Yandex Maps'}
                         </span>
-                        <ExternalLink size={14} className="text-[#A3A3A3]" />
+                        <ExternalLink size={15} className="text-[#737373]" aria-hidden />
                       </a>
                     )}
                   </div>
                 );
               })()}
 
-              {/* Stage 97 — WhatsApp opt-in for low-rating customers
-                  (CLAUDE.md §19.1). Owner enables this in
-                  WhatsAppReviewWizard; we re-validate the URL here so a
-                  bad/cleared URL silently hides the button even when the
-                  toggle is on (defensive). Click opens the canonical
-                  wa.me URL with a pre-filled message in a new tab; no
-                  auto-redirect. KVKK-clean — customer must tap. */}
+              {/* WhatsApp opt-in for low-rating customers (CLAUDE.md §19.1).
+                  The URL is re-validated here, so a bad/cleared URL hides the
+                  button even with the toggle on. Opens wa.me in a new tab with
+                  a pre-filled message; never auto-redirects. */}
               {(() => {
-                const lowRating = rating > 0 && rating < redirectMinRating;
-                if (!lowRating) return null;
+                if (!isLow) return null;
                 if (!restaurant.whatsappReviewEnabled) return null;
                 const normalized = normalizeWhatsAppUrl(restaurant.whatsappUrl ?? '');
                 if (!normalized.ok) return null;
@@ -1657,10 +1290,7 @@ function ReviewContent() {
                 });
                 const href = appendWhatsAppText(normalized.url, message);
                 return (
-                  <div
-                    className="mx-auto mt-4 flex justify-center"
-                    style={{ maxWidth: 320 }}
-                  >
+                  <div className="mx-auto mt-4 flex w-full max-w-[360px] justify-center">
                     <a
                       href={href}
                       target="_blank"
@@ -1670,12 +1300,13 @@ function ReviewContent() {
                           ? 'WhatsApp ile iletişime geç'
                           : 'Message us on WhatsApp'
                       }
-                      className="bz-motion-spring inline-flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#0A0A0A] py-3 text-[13px] font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      className={`inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-[#F6F6F6] px-5 text-[14px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-[0.98] ${FOCUS_RING}`}
                     >
                       <MessageCircle
-                        size={14}
+                        size={16}
                         strokeWidth={2.2}
                         style={{ color: WHATSAPP_BRAND_GREEN }}
+                        aria-hidden
                       />
                       {locale === 'tr'
                         ? 'WhatsApp ile iletişime geç'
@@ -1685,21 +1316,16 @@ function ReviewContent() {
                 );
               })()}
 
-              {/* Stage 57 §38.138 — Bottom action grid (Menüye geri dön +
-                  Yorumu paylaş Web Share API). "Menüye geri dön" yalnızca
-                  Restaurant.menuEnabled && menuPublished iken render edilir
-                  (404 önleme). Web Share API mobile native sheet, fallback
-                  URL clipboard kopyala (CLAUDE.md §25 mobile patterns). */}
-              <div
-                className="mx-auto mt-4 grid grid-cols-2 gap-2"
-                style={{ maxWidth: 320 }}
-              >
+              {/* Bottom actions: "Back to menu" only when the public menu is
+                  live (avoids a 404); "Share" uses the Web Share API with a
+                  clipboard fallback. */}
+              <div className="mx-auto mt-4 grid w-full max-w-[360px] grid-cols-2 gap-2">
                 {restaurant.menuEnabled && restaurant.menuPublished ? (
                   <a
                     href={`/menu/${slug}`}
-                    className="bz-motion-spring inline-flex items-center justify-center gap-1.5 rounded-[14px] border border-[#ECECEC] bg-white py-3 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                    className={`inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#F6F6F6] px-3 py-2 text-center text-[14px] font-semibold leading-tight text-[#111110] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-[0.98] ${FOCUS_RING}`}
                   >
-                    <Utensils size={14} strokeWidth={1.8} />
+                    <Utensils size={15} strokeWidth={1.8} className="shrink-0" aria-hidden />
                     {locale === 'tr' ? 'Menüye geri dön' : 'Back to menu'}
                   </a>
                 ) : (
@@ -1708,14 +1334,14 @@ function ReviewContent() {
                 <button
                   type="button"
                   onClick={shareReview}
-                  className="bz-motion-spring inline-flex items-center justify-center gap-1.5 rounded-[14px] bg-[#0A0A0A] py-3 text-[13px] font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  className={`inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#5D3EBC] px-3 py-2 text-center text-[14px] font-semibold leading-tight text-white transition-colors duration-200 hover:bg-[#4C2FA3] active:scale-[0.98] ${FOCUS_RING}`}
                   style={
                     !restaurant.menuEnabled || !restaurant.menuPublished
                       ? { gridColumn: '1 / -1' }
                       : undefined
                   }
                 >
-                  <Share2 size={14} strokeWidth={1.8} className="text-[#C6F24E]" />
+                  <Share2 size={15} strokeWidth={1.8} className="shrink-0" aria-hidden />
                   {locale === 'tr' ? 'Yorumu paylaş' : 'Share review'}
                 </button>
               </div>
@@ -1723,35 +1349,127 @@ function ReviewContent() {
           )}
         </section>
 
-        {/* Buaze badge — Stage 64 §38.145 state-aware text color
-            (dark: white/40, light: graphite/40). HANDOFF spec birebir
-            POWERED BY BUAZE her step'te footer'da görünür. */}
-        <footer
-          className={`text-center ${isLight ? 'text-[#A3A3A3]' : 'text-white/40'}`}
-          style={{
-            marginTop: 22,
-            fontSize: 10,
-            fontFamily: 'var(--font-mono)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
-          POWERED BY BUAZE
+        <footer className="mt-8 text-center text-[12px] text-[#737373]">
+          Powered by <span className="font-semibold text-[#111110]">Buaze</span>
         </footer>
-      </div>
-
+      </ReviewSheet>
     </main>
   );
 }
 
-// §38.130 Stage 49 — HANDOFF ReviewLoading birebir parity. 80×80 ring +
-// lime spinner border + center BUAZE wordmark dot. Restaurant data fetch
-// öncesi render edildiği için restaurant.name yok — generic Buaze brand.
-// §38.145 Stage 64 — opsiyonel `tableNumber` prop ile context-aware meta:
-// "MASA X · BUAZE" formatında (HANDOFF "CAFÉ MAVERA · MASA 12" paralel,
-// restaurant adı yok ama tableParam URL'den gelir). Suspense fallback'te
-// default 'BUAZE' eyebrow.
-function DarkLoader({
+// ─────────────────────────────────────────────────────────────
+// Visual building blocks (purple + white public review design)
+// ─────────────────────────────────────────────────────────────
+
+// Headings use the body font (Inter): the business name is the owner's own
+// content, and the site heading face is licensed for Buaze's own pages only
+// (CLAUDE.md §11). `:where(h1..h6)` sits in @layer base, so this wins.
+const HEADING_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--font-body)',
+  letterSpacing: '-0.02em',
+};
+
+// Keyboard focus — purple ring offset from white (sheet) or #F6F6F6 (cards).
+const FOCUS_RING =
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
+const FOCUS_RING_ON_CANVAS =
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F6F6F6]';
+
+// 16 px text so iOS Safari never zooms on focus.
+const FIELD_CLASS =
+  'block h-[52px] w-full rounded-2xl border border-[#EBEBEB] bg-[#F6F6F6] px-4 text-[16px] font-medium text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:font-normal placeholder:text-[#737373] focus:border-[#5D3EBC] focus:bg-white focus:shadow-[0_0_0_4px_rgba(93,62,188,0.14)]';
+
+const CHECKBOX_CLASS =
+  'mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#5D3EBC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5D3EBC]';
+
+const LEGAL_LINK_CLASS =
+  'font-medium text-[#5D3EBC] underline underline-offset-2 hover:text-[#4C2FA3]';
+
+const CONFETTI_DOTS: { top: number; left: number; size: number; color: string }[] = [
+  { top: -8, left: -4, size: 6, color: '#5D3EBC' },
+  { top: 4, left: 92, size: 4, color: '#3B1F8F' },
+  { top: 78, left: -10, size: 8, color: '#DCD3F6' },
+  { top: 86, left: 96, size: 5, color: '#5D3EBC' },
+  { top: 48, left: 106, size: 4, color: '#DCD3F6' },
+  { top: 28, left: -16, size: 5, color: '#3B1F8F' },
+];
+
+function StepProgress({ current, locale }: { current: 1 | 2 | 3; locale: Locale }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="shrink-0 text-[13px] font-medium tabular-nums text-[#737373]">
+        {locale === 'tr' ? 'Adım' : 'Step'} {current} / 3
+      </span>
+      <div className="flex flex-1 gap-1.5" aria-hidden>
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+              i <= current ? 'bg-[#5D3EBC]' : 'bg-[#EBEBEB]'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Purple band carrying the business identity. The white sheet below overlaps
+// its bottom edge (ReviewSheet -mt-6).
+function ReviewHeader({
+  initial,
+  name,
+  meta,
+}: {
+  initial: string;
+  name: string;
+  meta: string;
+}) {
+  return (
+    <header
+      className="shrink-0 bg-[#5D3EBC] text-white"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
+      <div className="mx-auto flex w-full max-w-[440px] items-center gap-3 px-5 pb-12 pt-5 sm:px-7 sm:pt-8">
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[20px] font-bold text-[#5D3EBC]"
+          aria-hidden
+        >
+          {initial}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-[18px] font-semibold leading-tight text-white" style={HEADING_STYLE}>
+            {name}
+          </h1>
+          <p className="mt-1 truncate text-[13px] leading-tight text-white/80">{meta}</p>
+        </div>
+        <span
+          className="shrink-0 rounded-full bg-white/15 px-2.5 py-1 text-[12px] font-medium text-white"
+          aria-hidden
+        >
+          TR · EN
+        </span>
+      </div>
+    </header>
+  );
+}
+
+// White sheet: full-bleed with rounded top on phones, a floating 440 px card
+// on wider screens.
+function ReviewSheet({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={`relative z-[1] -mt-6 flex w-full min-w-0 flex-1 flex-col rounded-t-[28px] bg-white px-5 pt-6 sm:mx-auto sm:mb-10 sm:max-w-[440px] sm:flex-none sm:rounded-[28px] sm:px-7 sm:pt-7 ${className}`}
+      style={{ paddingBottom: 'max(28px, calc(env(safe-area-inset-bottom, 0px) + 20px))' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Loading state (data fetch + Suspense fallback): same purple band + white
+// sheet as the page, so nothing jumps when the content arrives.
+function ReviewLoader({
   locale = 'tr' as Locale,
   tableNumber = '',
 }: {
@@ -1759,223 +1477,139 @@ function DarkLoader({
   tableNumber?: string;
 }) {
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-[#0A0A0A] px-10 text-white">
-      <div className="flex flex-col items-center gap-5">
-        {/* 80×80 ring container + spinning lime border arc */}
-        <div className="relative h-20 w-20">
-          <div
-            className="absolute inset-0 rounded-3xl"
-            style={{ border: '2px solid rgba(255,255,255,0.1)' }}
-            aria-hidden
-          />
-          <div
-            className="absolute inset-0 rounded-3xl"
-            style={{
-              border: '2px solid transparent',
-              borderTopColor: '#C6F24E',
-              animation: 'bz-rr-spin 1.1s linear infinite',
-            }}
-            aria-hidden
-          />
-          <div
-            className="absolute inset-[22px] flex items-center justify-center text-[28px] font-medium text-white"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-              letterSpacing: '-0.02em',
-            }}
-            aria-hidden
-          >
-            b
+    <main className="flex min-h-[100dvh] flex-col bg-[#F6F6F6]" aria-busy="true">
+      <header
+        className="shrink-0 bg-[#5D3EBC]"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div
+          className="mx-auto flex w-full max-w-[440px] items-center gap-3 px-5 pb-12 pt-5 sm:px-7 sm:pt-8"
+          aria-hidden
+        >
+          <div className="h-12 w-12 shrink-0 rounded-full bg-white/20" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3.5 w-36 max-w-full rounded-full bg-white/25" />
+            <div className="h-3 w-20 max-w-full rounded-full bg-white/15" />
           </div>
         </div>
-        <div className="text-center">
+      </header>
+      <ReviewSheet className="items-center justify-center py-16 text-center">
+        <div className="relative h-14 w-14" aria-hidden>
+          <div className="absolute inset-0 rounded-full border-[3px] border-[#EFEAFB]" />
           <div
-            className="text-[24px] font-medium text-white"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-              letterSpacing: '-0.02em',
-              marginBottom: 6,
-            }}
-          >
-            {locale === 'tr' ? 'Hazırlanıyor…' : 'Loading…'}
-          </div>
-          <div className="pulse-eyebrow text-white/45 text-[10px]">
-            {tableNumber
-              ? `${locale === 'tr' ? 'MASA' : 'TABLE'} ${tableNumber} · BUAZE`
-              : 'BUAZE'}
-          </div>
+            className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#5D3EBC]"
+            style={{ animation: 'bz-rr-spin 0.9s linear infinite' }}
+          />
         </div>
-      </div>
+        <p className="mt-5 text-[16px] font-semibold text-[#111110]" role="status">
+          {locale === 'tr' ? 'Hazırlanıyor…' : 'Loading…'}
+        </p>
+        <p className="mt-1 text-[13px] text-[#737373]">{tableNumber || 'Buaze'}</p>
+      </ReviewSheet>
     </main>
   );
 }
 
 function RedirectingOverlay({
   locale,
+  rating,
   platformId,
   restaurantName,
 }: {
   locale: Locale;
+  rating: number;
   platformId: string;
   restaurantName: string;
 }) {
-  // Stage 57 §38.138 — HANDOFF redirecting overlay polish. Halo (lime
-  // gradient blur) + restaurant initial card + 3-dot stagger arrow +
-  // platform chip card stack + 5-star eyebrow + status row + bottom
-  // jenerik thanks card. Compliance: owner ismi YOK (jenerik "İşletme
-  // yönetimi"); müşteri formu doldurmadığı için (high rating direct
-  // redirect) name field yok — generic "Şimdiden teşekkürler".
-  const initial = restaurantName.charAt(0).toLowerCase();
+  // High rating → platform hand-off. Business initial → animated dots →
+  // official platform chip, then a short progress bar. Generic "management"
+  // thanks card (no owner name; the customer filled no form, so no name).
+  const initial = restaurantName.charAt(0).toUpperCase();
   return (
-    <div className="bz-fade-in fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0A] px-6 text-center">
-      {/* Halo lime gradient — pointer-events-none decorative */}
+    <div className="bz-fade-in fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden bg-[#5D3EBC] px-6 text-center text-white">
+      {/* Soft light behind the hand-off cards — decorative */}
       <span
-        className="pointer-events-none absolute h-[280px] w-[280px] rounded-full"
+        className="pointer-events-none absolute h-[320px] w-[320px] rounded-full"
         style={{
-          background:
-            'radial-gradient(circle, rgba(198,242,78,0.33) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          top: '30%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 70%)',
+          top: '32%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
         }}
         aria-hidden
       />
 
-      {/* Restaurant initial → 3-dot stagger arrow → platform chip stack */}
-      <div className="relative mb-10 flex items-center gap-3">
-        <div
-          className="flex h-[72px] w-[72px] items-center justify-center rounded-[18px] bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.5)]"
-          aria-hidden
-        >
-          <span
-            className="text-[36px] font-medium text-[#0A0A0A]"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {initial}
-          </span>
+      <div className="relative mb-10 flex items-center gap-4" aria-hidden>
+        <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white">
+          <span className="text-[32px] font-bold text-[#5D3EBC]">{initial}</span>
         </div>
-        <div className="flex flex-col items-center gap-0.5" aria-hidden>
+        <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
-              style={{
-                opacity: 0.4 - i * 0.1,
-                animation: `bz-rr-dot 1.2s ease-in-out infinite ${i * 0.15}s`,
-              }}
+              className="h-1.5 w-1.5 rounded-full bg-white"
+              style={{ animation: `bz-rr-dot 1.2s ease-in-out infinite ${i * 0.15}s` }}
             />
           ))}
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="#C6F24E"
-            strokeWidth="2"
-            className="mt-1"
-            aria-hidden
-          >
-            <path d="M5 10h10m-3-4l4 4-4 4" />
-          </svg>
         </div>
-        <div
-          className="flex h-[72px] w-[72px] items-center justify-center rounded-[18px] bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.5)]"
-          aria-hidden
-        >
+        <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white">
           <PlatformChip id={platformId} size={42} />
         </div>
       </div>
 
-      {/* "★★★★★ MÜKEMMEL" eyebrow — visual decoration, lime accent */}
-      <div className="pulse-eyebrow mb-3 inline-flex items-center gap-2 text-[10px] text-[#A8D62E]">
-        <span
-          className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
-          style={{ boxShadow: '0 0 10px #C6F24E' }}
-          aria-hidden
-        />
-        <span aria-hidden>★ ★ ★ ★ ★</span>{' '}
-        {locale === 'tr' ? 'MÜKEMMEL' : 'EXCELLENT'}
+      <div className="mb-3 inline-flex items-center gap-2 text-[13px] font-medium text-white/90">
+        <span className="tracking-[0.12em]" aria-hidden>{'★'.repeat(Math.max(1, Math.min(5, rating)))}</span>
+        {RATING_LABELS[locale][Math.max(1, Math.min(5, rating)) - 1]}
       </div>
 
-      <h2
-        className="bz-h-tight-2 mb-2 text-[24px] text-white"
-        style={{ letterSpacing: '-0.02em' }}
-      >
+      <h2 className="mb-2 text-[26px] font-bold leading-tight text-white" style={HEADING_STYLE}>
         {locale === 'tr' ? 'Yönlendiriliyorsun' : 'Redirecting'}
       </h2>
-      <p className="mb-6 max-w-[280px] text-[13px] leading-[1.55] text-white/55">
+      <p className="mb-7 max-w-[300px] text-[14px] leading-[1.55] text-white/80">
         {locale === 'tr'
           ? 'Yorumun başkalarına yardımcı olacak. Sayfayı kapatma!'
           : "Your review helps others. Don't close this page!"}
       </p>
 
-      {/* Progress ring + status row — Stage 52 §38.133 1.5s timeout ile
-          aligned (eski 2.2s'den keskin transition). bzProgress keyframe
-          duration arbitrary class'tan gelir; globals.css tanımı sabit. */}
-      <div className="w-[200px]">
-        <div className="h-1 overflow-hidden rounded-full bg-white/10">
+      {/* 1.5 s progress, aligned with the redirect timeout. The animate-[…]
+          class is in the global reduced-motion blanket. */}
+      <div className="w-[220px] max-w-full">
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/20">
           <div
-            className="h-full bg-[#C6F24E] animate-[bzProgress_1.5s_linear_forwards]"
-            style={{ width: 0, boxShadow: '0 0 12px #C6F24E' }}
+            className="h-full rounded-full bg-white animate-[bzProgress_1.5s_linear_forwards]"
+            style={{ width: 0 }}
             aria-hidden
           />
         </div>
-        <div className="mt-2.5 flex items-center justify-between">
-          <span className="pulse-eyebrow text-[9.5px] text-white/40">
-            {locale === 'tr' ? 'HAZIRLANIYOR' : 'PREPARING'}
-          </span>
-          <span className="pulse-eyebrow text-[9.5px] text-[#A8D62E]">
-            1.5sn
-          </span>
+        <div className="mt-2.5 flex items-center justify-between text-[12px] text-white/80">
+          <span>{locale === 'tr' ? 'Hazırlanıyor' : 'Preparing'}</span>
+          <span className="tabular-nums">1.5sn</span>
         </div>
       </div>
 
-      {/* Bottom jenerik thanks card. Compliance: owner ismi YOK ("Ahmet"
-          hardcoded değil — §38.130 paterni intact). Müşteri form'u
-          doldurmadığı için ad da yok — generic "Şimdiden teşekkürler".
-          Restaurant initial avatar + label + jenerik İşletme yönetimi. */}
       <div
-        className="absolute left-6 right-6 inline-flex items-center gap-2.5 rounded-[16px] border border-white/10 bg-white/5 px-3.5 py-3 backdrop-blur-md"
-        style={{ bottom: 'max(36px, calc(env(safe-area-inset-bottom, 0px) + 20px))' }}
+        className="absolute left-5 right-5 mx-auto flex max-w-[400px] items-center gap-3 rounded-[20px] bg-white/10 px-4 py-3"
+        style={{ bottom: 'max(32px, calc(env(safe-area-inset-bottom, 0px) + 20px))' }}
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]">
-          <span
-            className="text-[15px] font-medium text-[#0A0A0A]"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-            }}
-            aria-hidden
-          >
-            {initial}
-          </span>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white" aria-hidden>
+          <span className="text-[15px] font-bold text-[#5D3EBC]">{initial}</span>
         </div>
         <div className="min-w-0 flex-1 text-left">
-          <div className="text-[11.5px] font-semibold text-white">
+          <div className="text-[13px] font-semibold text-white">
             {locale === 'tr' ? 'Şimdiden teşekkürler' : 'Thanks in advance'}
           </div>
-          <div className="text-[10px] text-white/50">
+          <div className="text-[12px] text-white/80">
             {locale === 'tr' ? '— İşletme yönetimi' : '— Management'}
           </div>
         </div>
       </div>
-      {/* CSS Performance §38.61 — `@keyframes bzProgress` + `bz-rr-dot`
-          globals.css'te tanımlı; reduced-motion blanket selector'leri
-          [style*='bz-rr-dot'] + [class*='animate-[bzProgress_'] yakalar. */}
     </div>
   );
 }
 
 export default function SlugPage() {
   return (
-    <Suspense fallback={<DarkLoader />}>
+    <Suspense fallback={<ReviewLoader />}>
       <ReviewContent />
     </Suspense>
   );

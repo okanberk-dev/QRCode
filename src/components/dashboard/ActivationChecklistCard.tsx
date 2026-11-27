@@ -188,11 +188,11 @@ export default function ActivationChecklistCard({
   if (result.isComplete) {
     return (
       <div
-        className="bz-card border-pn-accent-hover bg-[#F6FCE6] p-5 sm:p-6"
+        className="bz-card border-pn-accent-hover bg-[#F6F3FD] p-5 sm:p-6"
         role="status"
       >
         <div className="flex items-start gap-3">
-          <div aria-hidden="true" className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-pn-accent text-pn-ink">
+          <div aria-hidden="true" className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-pn-accent text-white">
             <PartyPopper size={20} />
           </div>
           <div className="flex-1 min-w-0">
@@ -305,7 +305,7 @@ export default function ActivationChecklistCard({
                   aria-hidden="true"
                   className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-full ${
                     s.done
-                      ? "bg-pn-accent text-pn-ink"
+                      ? "bg-pn-accent text-white"
                       : "bg-pn-canvas text-[#737373]"
                   }`}
                 >

@@ -1,24 +1,23 @@
-import { Sparkles, TrendingUp, Award, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Award, Sparkles, TrendingUp } from 'lucide-react';
+import { toSentenceCase } from '@/components/panel/pano/sentence-case';
 
-// §38.56 — AI İÇGÖRÜLER · BU HAFTA DARK card (tasarım a/page-analytics.jsx
-// line 244-275 birebir). Owner kararı: §38.50'de light card'a dönmüştü
-// (eski tasarım kaynağı), yeni handoff a/ bundle birebir DARK card istiyor:
-//   - Container: graphite (#0A0A0A) bg + lime accent corner
-//   - 3-row strüktür: TREND (lime) / KAZANIM (lime) / RİSK (red)
-//   - Icon badge dark (#1A1A1A) + tone color border
-//   - Body white text on graphite
+// AI insights card (owner + admin analytics). Fintora list card: white card,
+// a 40px purple sparkle circle in the header, one grey row per insight (icon
+// circle + short title + explanation) and an optional quiet source footer.
+// No dark fill, gradient or glow.
 //
-// Server-friendly (data prop). 3 alan boş ise kart gizli
-// (extractStructuredInsight fail → fallback empty → UI render etmez).
-// Min 1 alan dolu olmalı.
+// Server-friendly (data prop). When all three fields are empty the card is
+// hidden (extractStructuredInsight fail → fallback empty → nothing renders).
 
 export interface AiInsightsCardProps {
   trend: string;
   win: string;
   risk: string;
   isTr?: boolean;
-  /** Header eyebrow override; default "AI İÇGÖRÜLER · BU HAFTA". */
+  /** Header title override; default "AI içgörüleri" + "Bu hafta" subtitle. */
   eyebrowLabel?: string;
+  /** Number of reviews the insight was built from — shown as a grey footer. */
+  sourceCount?: number;
 }
 
 export function AiInsightsCard({
@@ -27,54 +26,79 @@ export function AiInsightsCard({
   risk,
   isTr = true,
   eyebrowLabel,
+  sourceCount,
 }: AiInsightsCardProps) {
-  // Calm light card (CLAUDE.md §58): one-line summary visible, the rest
-  // behind a native "Detay" disclosure (no JS).
   const rows = [
-    { key: 'trend', label: isTr ? 'Eğilim' : 'Trend', icon: TrendingUp, color: '#525252', body: trend },
-    { key: 'win', label: isTr ? 'Güçlü yön' : 'Strength', icon: Award, color: '#15803D', body: win },
-    { key: 'risk', label: isTr ? 'Dikkat' : 'Watch', icon: AlertTriangle, color: '#B91C1C', body: risk },
+    {
+      key: 'trend',
+      label: isTr ? 'Eğilim' : 'Trend',
+      icon: TrendingUp,
+      circle: 'bg-pn-ink text-white',
+      body: trend,
+    },
+    {
+      key: 'win',
+      label: isTr ? 'Güçlü yön' : 'Strength',
+      icon: Award,
+      circle: 'bg-pn-accent text-white',
+      body: win,
+    },
+    {
+      key: 'risk',
+      label: isTr ? 'Dikkat' : 'Watch',
+      icon: AlertTriangle,
+      circle: 'bg-[#FDECEC] text-[#D92D20]',
+      body: risk,
+    },
   ].filter((r) => r.body.trim().length > 0);
   if (rows.length === 0) return null;
 
-  const title = eyebrowLabel ?? (isTr ? 'AI içgörüleri · bu hafta' : 'AI insights · this week');
-  const [first, ...rest] = rows;
-  const FirstIcon = first.icon;
+  const title = eyebrowLabel
+    ? toSentenceCase(eyebrowLabel, isTr ? 'tr' : 'en')
+    : isTr
+      ? 'AI içgörüleri'
+      : 'AI insights';
+  const subtitle = eyebrowLabel ? null : isTr ? 'Bu hafta' : 'This week';
 
   return (
-    <section className="bz-card p-5 sm:p-6" aria-label={title}>
-      <h2 className="inline-flex items-center gap-2 text-[15px] font-medium text-pn-ink">
-        <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="text-[#65A30D]" />
-        {title}
-      </h2>
-      <p className="mt-3 flex items-start gap-2 text-[14px] leading-[1.6] text-[#262626]">
-        <FirstIcon size={14} strokeWidth={2} aria-hidden="true" className="mt-1 shrink-0" style={{ color: first.color }} />
-        <span>
-          <span className="font-medium" style={{ color: first.color }}>{first.label}: </span>
-          {first.body}
+    <section className="bz-card p-5 sm:p-6" aria-label={eyebrowLabel ? title : `${title} · ${subtitle}`}>
+      <header className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+        >
+          <Sparkles size={18} strokeWidth={2} />
         </span>
-      </p>
-      {rest.length > 0 && (
-        <details className="group mt-2">
-          <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center text-[13px] font-medium text-pn-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover rounded sm:min-h-[32px]">
-            <span className="group-open:hidden">{isTr ? 'Detay' : 'Details'}</span>
-            <span className="hidden group-open:inline">{isTr ? 'Gizle' : 'Hide'}</span>
-          </summary>
-          <ul className="mt-1 space-y-2">
-            {rest.map((r) => {
-              const Icon = r.icon;
-              return (
-                <li key={r.key} className="flex items-start gap-2 text-[14px] leading-[1.6] text-[#262626]">
-                  <Icon size={14} strokeWidth={2} aria-hidden="true" className="mt-1 shrink-0" style={{ color: r.color }} />
-                  <span>
-                    <span className="font-medium" style={{ color: r.color }}>{r.label}: </span>
-                    {r.body}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </details>
+        <div className="min-w-0">
+          <h2 className="pn-card-title text-pn-ink">{title}</h2>
+          {subtitle && <p className="text-[13px] text-[#9A9A9A]">{subtitle}</p>}
+        </div>
+      </header>
+
+      <ul className="mt-4 space-y-2">
+        {rows.map((r) => {
+          const Icon = r.icon;
+          return (
+            <li key={r.key} className="flex items-start gap-3 rounded-[16px] bg-pn-canvas p-3">
+              <span
+                aria-hidden="true"
+                className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${r.circle}`}
+              >
+                <Icon size={16} strokeWidth={2} />
+              </span>
+              <div className="min-w-0 pt-0.5">
+                <p className="text-[14px] font-medium text-pn-ink">{r.label}</p>
+                <p className="mt-0.5 text-[13px] leading-[1.55] text-[#737373]">{r.body}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {typeof sourceCount === 'number' && sourceCount > 0 && (
+        <p className="mt-4 text-[12px] text-[#9A9A9A]">
+          {isTr ? `Kaynak: son ${sourceCount} yorum` : `Source: last ${sourceCount} reviews`}
+        </p>
       )}
     </section>
   );

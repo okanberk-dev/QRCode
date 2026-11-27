@@ -253,7 +253,7 @@ export default function AdminNewslettersPage() {
       {data && (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
           <StatCard label="Toplam abone" value={data.summary.total.toLocaleString('tr-TR')} icon={<Users size={14} />} />
-          <StatCard label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} icon={<Mail size={14} />} accent="#78FC90" />
+          <StatCard label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} icon={<Mail size={14} />} accent="#5D3EBC" />
           <StatCard label="İptal" value={data.summary.cancelled.toLocaleString('tr-TR')} icon={<X size={14} />} />
           <StatCard label="İptal oranı" value={`%${data.summary.cancelRate.toFixed(1)}`} icon={<TrendingDown size={14} />} />
         </div>
@@ -276,7 +276,7 @@ export default function AdminNewslettersPage() {
                 aria-pressed={range === opt}
                 onClick={() => setRange(opt)}
                 className={`min-w-0 rounded-[14px] px-1.5 py-1.5 transition-all sm:shrink-0 sm:px-3 ${
-                  range === opt ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
+                  range === opt ? 'bg-pn-accent text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 <span className="sm:hidden">{RANGE_LABEL[opt].short}</span>
@@ -486,7 +486,7 @@ function StatusPill({ cancelled }: { cancelled: boolean }) {
   return cancelled ? (
     <span className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-2 py-0.5 text-[12px] font-medium text-[#737373]">İptal</span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-pn-accent/30 px-2 py-0.5 text-[12px] font-medium text-pn-ink">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#DCD3F6] px-2 py-0.5 text-[12px] font-medium text-pn-ink">
       <span className="h-1.5 w-1.5 rounded-full bg-pn-ink" />Aktif
     </span>
   );

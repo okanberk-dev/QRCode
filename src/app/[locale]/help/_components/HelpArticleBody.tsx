@@ -17,7 +17,7 @@ export interface HelpTocEntry {
 }
 
 const LINK_CLASS =
-  'font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+  'font-medium text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
 
 function slugifyHeading(value: string) {
   return value
@@ -111,7 +111,7 @@ export default function HelpArticleBody({ body, locale }: { body: BodyInput; loc
   return (
     <div className="min-w-0">
       {body.keyInsight && (
-        <div className="rounded-r-[16px] border-l-[3px] border-[#C6F24E] bg-[#EAF9B8]/40 px-5 py-4 sm:px-6 sm:py-5">
+        <div className="rounded-r-[16px] border-l-[3px] border-[#8C6CF0] bg-[#EFEAFB]/40 px-5 py-4 sm:px-6 sm:py-5">
           <p lang={locale} className="pulse-eyebrow text-[#525252]">
             {labels.summary}
           </p>
@@ -187,7 +187,7 @@ export default function HelpArticleBody({ body, locale }: { body: BodyInput; loc
               <li key={index} className="flex gap-3">
                 <span
                   aria-hidden="true"
-                  className="mt-[3px] inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]"
+                  className="mt-[3px] inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5D3EBC] text-white"
                 >
                   <Check size={12} strokeWidth={3} />
                 </span>

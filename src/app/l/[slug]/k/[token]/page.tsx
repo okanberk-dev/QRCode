@@ -77,7 +77,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 
 export async function generateViewport({ params, searchParams }: PageProps): Promise<Viewport> {
   const { token } = await params;
-  if (await staffFor(params, searchParams)) return { ...ROOT_VIEWPORT, themeColor: '#0A0A0A' };
+  if (await staffFor(params, searchParams)) return { ...ROOT_VIEWPORT, themeColor: '#5D3EBC' };
   const card = await getCard(token);
   if (!card) return ROOT_VIEWPORT;
   const pal = portalPalette(readLoyaltyPortal(card.program.portal).theme, card.program.accentColor);

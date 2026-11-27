@@ -310,7 +310,7 @@ const COPY: Record<Locale, Copy> = {
 const TIP_ICONS = [Maximize2, Contrast, Scissors, ScanLine] as const;
 
 const FOCUS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
 const BTN = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors ${FOCUS}`;
 
 function resolveLocale(raw: string): Locale {
@@ -435,7 +435,7 @@ export default async function QRGeneratorPage({ params }: { params: Promise<{ lo
               <li key={step.title} id={`step-${i + 1}`} className={`${FEATURE_CARD} scroll-mt-28`}>
                 <span
                   aria-hidden="true"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[14px] font-semibold text-white"
                 >
                   {i + 1}
                 </span>
@@ -458,7 +458,7 @@ export default async function QRGeneratorPage({ params }: { params: Promise<{ lo
                 <li key={tip.title} className={FEATURE_CARD}>
                   <span
                     aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EFEAFB] text-[#0A0A0A]"
                   >
                     <Icon size={20} strokeWidth={2} />
                   </span>
@@ -538,7 +538,7 @@ export default async function QRGeneratorPage({ params }: { params: Promise<{ lo
               return (
                 <li
                   key={entry.slug}
-                  className="group relative flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2"
+                  className="group relative flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2"
                 >
                   <div className="flex items-center gap-3">
                     <span

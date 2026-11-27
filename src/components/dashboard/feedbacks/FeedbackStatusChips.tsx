@@ -88,7 +88,14 @@ export function FeedbackStatusChips({
   return (
     <span className={`inline-flex flex-wrap items-center gap-1.5 ${className}`}>
       {chips.map((c) => (
-        <Badge key={c.key} kind={c.kind} dot={false} className="gap-1">
+        <Badge
+          key={c.key}
+          kind={c.kind}
+          dot={false}
+          // Fintora soft pills: the AI chip is lavender with purple text, not a
+          // filled purple pill (the filled one is reserved for actions).
+          className={`gap-1 ${c.key === 'ai' ? 'bg-pn-accent-soft text-pn-accent' : ''}`}
+        >
           {c.icon}
           {c.label}
         </Badge>

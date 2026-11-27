@@ -5,24 +5,23 @@
 // (bundle a/nFAGytnqZwW98Ldy0d5Lig). Customer-facing mobile-first page
 // reached via QR scan at /s/[slug].
 //
-// Three stages:
-//   1. intro  — dark hero with lime ambient glow, brand pill + table eyebrow
-//               (only when ?table= is present), eyebrow + minutes badge,
-//               italic Space Grotesk h1, sub copy,
-//               "NELER SORACAĞIZ" numbered list (first 4 + overflow),
-//               lime CTA with deep shadow, KVKK disclaimer.
-//   2. question — light card surface with TopBar (back + brand + masa) +
-//                 progress bar (mono "n/N" + lime fill with glow), eyebrow pill,
-//                 italic title, subtitle, the question itself, sticky FooterBar
-//                 (lime CTA + optional "Bu soruyu atla").
-//   3. (optional) contact — same TopBar + light card. AD + E-POSTA inline
-//                  labelled fields, KVKK consent (required), marketing
-//                  consent (optional, opt-in).
-//   4. thanks — dark hero with confetti burst, lime success circle with
-//               pulsing glow, italic h2, response no (mono, the last 6
-//               characters of the REAL response id — never made up),
-//               optional coupon card (dashed border + scalloped cutouts +
-//               lime copy → "✓ KOPYALANDI"), "Menüye dön" button.
+// Three stages (purple + white design, CLAUDE.md §63 palette):
+//   1. intro  — purple hero (#5D3EBC, white text), brand pill + table label
+//               (only when ?table= is present), "type · minutes" line,
+//               bold h1, sub copy, "Neler soracağız" numbered list (first 4
+//               + overflow), pill CTA in the owner's accent (heroAccentPair),
+//               privacy line.
+//   2. question — white surface with TopBar (back + brand + masa) + progress
+//                 bar ("n / N" + accent fill), optional chip, title, the
+//                 question itself, sticky FooterBar (accent pill CTA +
+//                 optional "Bu soruyu atla").
+//   3. (optional) contact — same TopBar + white surface. Ad / E-posta /
+//                  Telefon fields with labels above, KVKK consent (required),
+//                  marketing consent (optional, opt-in, unchecked).
+//   4. thanks — purple hero with confetti burst, accent success circle,
+//               h2, response no (the last 6 characters of the REAL response
+//               id — never made up), optional coupon card (dashed border +
+//               scalloped cutouts + copy button).
 //      `already` variant (server answered 409: this device already
 //      submitted) — calm copy, no confetti, no response no; the coupon still
 //      shows.
@@ -65,6 +64,39 @@ import {
   type AccentPair,
   type ResolvedSurveyAccent,
 } from '@/lib/survey-accent';
+import { contrastRatio } from '@/lib/qr-colors';
+
+// Buaze chrome for the public survey: purple hero (intro / thanks) + white
+// question screens. The owner's accent (resolveSurveyAccent) still paints the
+// CTAs, stars, progress and selected states — only Buaze's own surfaces,
+// labels and neutrals use these.
+const SURVEY_HERO = '#5D3EBC';
+const SURVEY_HERO_DEEP = '#3B1F8F';
+const SURVEY_TEXT = '#111110';
+const SURVEY_TEXT_2 = '#737373';
+const SURVEY_LINE = '#EBEBEB';
+const SURVEY_CANVAS = '#F6F6F6';
+const SURVEY_LAVENDER = '#EFEAFB';
+const SURVEY_LAVENDER_LINE = '#DCD3F6';
+const SURVEY_ERROR_TEXT = '#B42318';
+const SURVEY_ERROR = '#D92D20';
+
+/**
+ * Fill + text for an accent painted on the purple hero. The accent stays
+ * while it keeps >= 3:1 against the hero (non-text contrast); otherwise the
+ * fill turns white with purple text (7.6:1). A kept accent is always much
+ * lighter than the hero, so its text is whichever of ink/white reads better.
+ */
+function heroAccentPair(accent: string): AccentPair {
+  if (contrastRatio(accent, SURVEY_HERO) < 3) {
+    return { fill: '#FFFFFF', text: SURVEY_HERO };
+  }
+  const text =
+    contrastRatio(SURVEY_TEXT, accent) >= contrastRatio('#FFFFFF', accent)
+      ? SURVEY_TEXT
+      : '#FFFFFF';
+  return { fill: accent, text };
+}
 
 type QuestionType = 'rating' | 'nps' | 'short_text' | 'long_text' | 'multiple_choice';
 
@@ -174,14 +206,14 @@ const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
   multiple_choice: 'Tek seçim',
 };
 
-// KVKK / Açık Rıza / Ticari İleti links sit INSIDE a ConsentRow whose
-// background AND text colour flip with the checkbox (white/ink ↔ ink/white).
-// A hard-coded #0A0A0A link was ink-on-ink (1:1, unreadable) on the checked
-// row — i.e. by default, since KVKK ships pre-checked. `inherit` follows the
-// row: white on #0A0A0A when checked, ink on white otherwise (19.8:1 both).
+// KVKK / Açık Rıza / Ticari İleti links sit INSIDE a ConsentRow, which is
+// white (unchecked) or lavender #EFEAFB (checked). Purple reads on both
+// (7.6:1 on white, 6.2:1 on lavender).
 const LEGAL_LINK_STYLE: React.CSSProperties = {
-  color: 'inherit',
+  color: SURVEY_HERO,
+  fontWeight: 500,
   textDecoration: 'underline',
+  textUnderlineOffset: 2,
 };
 
 // Pull `?table=` once on mount so the brand eyebrow can show "MASA X".
@@ -237,11 +269,14 @@ export default function PublicSurveyView({
 }) {
   const isPreview = preview !== undefined;
   // Contrast-protected fill + text pairs for the dark (intro/thanks) and
-  // light (question/contact) surfaces; lime stays lime (lib/survey-accent.ts).
+  // light (question/contact) surfaces (lib/survey-accent.ts); the purple
+  // hero gets its own pair below.
   const palette = useMemo(
     () => resolveSurveyAccent(survey.accentColor || survey.restaurant.primaryColor),
     [survey.accentColor, survey.restaurant.primaryColor],
   );
+  // Accent pair for the purple intro / thank-you hero.
+  const heroAccent = useMemo(() => heroAccentPair(palette.accent), [palette.accent]);
   const brand = survey.restaurant.name;
   const table = useTableNumber(!isPreview);
 
@@ -535,7 +570,7 @@ export default function PublicSurveyView({
     return (
       <SurveyFrame mode="dark" preview={isPreview}>
         <IntroScreen
-          accent={palette.onDark}
+          accent={heroAccent}
           brand={brand}
           table={table}
           survey={survey}
@@ -550,7 +585,7 @@ export default function PublicSurveyView({
     return (
       <SurveyFrame mode="dark" preview={isPreview}>
         <ThanksScreen
-          accent={palette.onDark}
+          accent={heroAccent}
           brand={brand}
           survey={survey}
           variant={alreadySubmitted ? 'already' : 'done'}
@@ -665,27 +700,27 @@ function SurveyFrame({
     return (
       <div
         className="bz-survey-preview"
-        style={{ background: mode === 'dark' ? '#0A0A0A' : '#fff' }}
+        style={{ background: mode === 'dark' ? SURVEY_HERO : '#fff' }}
       >
         {children}
       </div>
     );
   }
-  // Mobile (≤520px) — page bg = ink (#0A0A0A) so the frame is seamless
-  // with the dark intro/thanks screens (no visible border).
-  // Desktop (>520px) — page bg = #1a1a1a so the rounded 440px-wide card
-  // floats over a slightly lighter charcoal stage.
+  // Mobile (≤520px) — the stage takes the screen's own colour (purple hero
+  // or white) so overscroll never shows a seam. Desktop (>520px) — the
+  // rounded 440px card sits on the #F6F6F6 canvas (survey.css).
+  const surface = mode === 'dark' ? SURVEY_HERO : '#FFFFFF';
   return (
     <main
       className="bz-survey-stage flex min-h-dvh items-center justify-center"
-      style={{ fontFamily: 'var(--font-body)' }}
+      style={
+        {
+          fontFamily: 'var(--font-body)',
+          '--bz-survey-stage-mobile': surface,
+        } as React.CSSProperties
+      }
     >
-      <div
-        className="bz-survey-frame"
-        style={{
-          background: mode === 'dark' ? '#0A0A0A' : '#fff',
-        }}
-      >
+      <div className="bz-survey-frame" style={{ background: surface }}>
         {children}
       </div>
     </main>
@@ -693,7 +728,7 @@ function SurveyFrame({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Intro screen — dark hero with lime ambient glow
+// Intro screen — purple hero
 // ─────────────────────────────────────────────────────────────
 
 function IntroScreen({
@@ -704,7 +739,7 @@ function IntroScreen({
   onStart,
   compact,
 }: {
-  /** Contrast-protected fill + text for the dark (#0A0A0A) surface. */
+  /** Contrast-protected fill + text for the purple hero (heroAccentPair). */
   accent: AccentPair;
   brand: string;
   table: string | null;
@@ -722,29 +757,27 @@ function IntroScreen({
   const overflow = Math.max(0, survey.questions.length - 4);
   const eyebrow =
     survey.questions.length === 1
-      ? 'TEK SORU'
+      ? 'Tek soru'
       : survey.questions.length <= 3
-      ? 'KISA ANKET'
-      : 'ANKET';
+      ? 'Kısa anket'
+      : 'Anket';
 
   return (
     <div
-      className="bz-survey-scroll anim-fade relative flex flex-1 flex-col overflow-hidden"
-      style={{ background: '#0A0A0A', color: '#fff' }}
+      className="bz-survey-scroll bz-survey-on-hero anim-fade relative flex flex-1 flex-col overflow-hidden"
+      style={{ background: SURVEY_HERO, color: '#fff' }}
     >
-      {/* Ambient lime glow */}
+      {/* Soft light + depth — decorative */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
-          top: -120,
-          right: -100,
-          width: 320,
-          height: 320,
+          top: -140,
+          right: -120,
+          width: 340,
+          height: 340,
           borderRadius: 999,
-          background: accent.fill,
-          opacity: 0.18,
-          filter: 'blur(80px)',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -752,14 +785,12 @@ function IntroScreen({
         aria-hidden
         style={{
           position: 'absolute',
-          bottom: -100,
-          left: -80,
-          width: 240,
-          height: 240,
+          bottom: -120,
+          left: -100,
+          width: 300,
+          height: 300,
           borderRadius: 999,
-          background: accent.fill,
-          opacity: 0.1,
-          filter: 'blur(70px)',
+          background: `radial-gradient(circle, ${SURVEY_HERO_DEEP} 0%, rgba(59,31,143,0) 70%)`,
           pointerEvents: 'none',
         }}
       />
@@ -771,40 +802,42 @@ function IntroScreen({
           padding: compact ? '36px 22px 0' : 'calc(60px + env(safe-area-inset-top, 0px)) 22px 0',
         }}
       >
-        <div className="mb-7 flex items-center justify-between">
+        <div className="mb-7 flex items-center justify-between gap-3">
           <div
-            className="inline-flex items-center gap-2 rounded-full border"
+            className="inline-flex min-w-0 items-center gap-2 rounded-full"
             style={{
-              padding: '5px 10px 5px 8px',
-              borderColor: 'rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.06)',
+              padding: '7px 14px 7px 8px',
+              background: 'rgba(255,255,255,0.14)',
             }}
           >
             <span
               aria-hidden
+              className="flex shrink-0 items-center justify-center"
               style={{
-                width: 8,
-                height: 8,
+                width: 24,
+                height: 24,
                 borderRadius: 999,
-                background: accent.fill,
-                boxShadow: `0 0 10px ${accent.fill}`,
+                background: '#fff',
+                color: SURVEY_HERO,
+                fontSize: 12,
+                fontWeight: 700,
+                lineHeight: 1,
               }}
-            />
-            <span
-              className="bz-survey-eyebrow"
-              style={{ color: 'rgba(255,255,255,0.7)' }}
             >
+              {brand.trim().charAt(0).toUpperCase()}
+            </span>
+            <span className="bz-survey-eyebrow min-w-0 truncate" style={{ color: '#fff' }}>
               {brand}
             </span>
           </div>
           {/* Only when the QR link carries ?table= — hotels, clinics … have
-              no tables, and "MASA —" was meaningless noise. */}
+              no tables, and "Masa —" was meaningless noise. */}
           {table && (
             <span
-              className="bz-survey-eyebrow"
-              style={{ color: 'rgba(255,255,255,0.45)' }}
+              className="bz-survey-eyebrow shrink-0"
+              style={{ color: 'rgba(255,255,255,0.85)' }}
             >
-              MASA {table}
+              Masa {table}
             </span>
           )}
         </div>
@@ -812,7 +845,7 @@ function IntroScreen({
         <div style={{ padding: '8px 0 12px' }}>
           <div
             className="bz-survey-eyebrow mb-3"
-            style={{ color: accent.fill }}
+            style={{ color: 'rgba(255,255,255,0.85)' }}
           >
             {eyebrow} · {minutes}
           </div>
@@ -820,8 +853,8 @@ function IntroScreen({
             className="bz-survey-head"
             style={{
               margin: 0,
-              fontSize: 38,
-              color: dark ? '#fff' : '#0A0A0A',
+              fontSize: 34,
+              color: dark ? '#fff' : SURVEY_TEXT,
             }}
           >
             {survey.title.trim() || (compact ? 'Anket başlığı' : survey.title)}
@@ -832,8 +865,8 @@ function IntroScreen({
                 marginTop: 14,
                 marginBottom: 0,
                 fontSize: 15,
-                lineHeight: 1.5,
-                color: 'rgba(255,255,255,0.6)',
+                lineHeight: 1.55,
+                color: 'rgba(255,255,255,0.85)',
                 maxWidth: 340,
               }}
             >
@@ -848,43 +881,42 @@ function IntroScreen({
         <div className="relative" style={{ padding: '24px 22px 0' }}>
           <div
             className="bz-survey-eyebrow mb-3"
-            style={{ color: 'rgba(255,255,255,0.45)' }}
+            style={{ color: 'rgba(255,255,255,0.85)' }}
           >
-            NELER SORACAĞIZ
+            Neler soracağız
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {previewSteps.map((q, i) => (
               <li
                 key={q.id}
-                className="mb-2.5 flex items-center gap-3 rounded-2xl border"
+                className="mb-2 flex items-center gap-3 rounded-2xl"
                 style={{
                   padding: '12px 14px',
-                  background: 'rgba(255,255,255,0.04)',
-                  borderColor: 'rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.1)',
                 }}
               >
                 <span
                   className="flex shrink-0 items-center justify-center"
                   style={{
-                    width: 22,
-                    height: 22,
+                    width: 24,
+                    height: 24,
                     borderRadius: 999,
                     background: accent.fill,
                     color: accent.text,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: 700,
                     lineHeight: 1,
-                    letterSpacing: 0,
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   {i + 1}
                 </span>
                 <span
                   style={{
-                    fontSize: 13.5,
+                    fontSize: 14,
                     fontWeight: 500,
-                    color: 'rgba(255,255,255,0.85)',
+                    lineHeight: 1.4,
+                    color: '#fff',
                   }}
                 >
                   {q.text.trim() || SHORT_TYPE_LABEL[q.type]}
@@ -895,9 +927,9 @@ function IntroScreen({
               <li
                 className="bz-survey-mono"
                 style={{
-                  padding: '8px 14px',
-                  fontSize: 12,
-                  color: 'rgba(255,255,255,0.5)',
+                  padding: '6px 14px',
+                  fontSize: 13,
+                  color: 'rgba(255,255,255,0.85)',
                 }}
               >
                 +{overflow} kısa soru daha
@@ -922,15 +954,15 @@ function IntroScreen({
           onClick={onStart}
           className="bz-survey-tap flex w-full items-center justify-center gap-2.5"
           style={{
-            padding: '18px 20px',
+            minHeight: 56,
+            padding: '16px 20px',
             border: 'none',
-            borderRadius: 16,
+            borderRadius: 999,
             background: accent.fill,
             color: accent.text,
             fontSize: 16,
             fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: `0 12px 36px -10px ${accent.fill}, 0 4px 12px -4px rgba(0,0,0,0.18)`,
           }}
         >
           Başlayalım
@@ -945,13 +977,11 @@ function IntroScreen({
           </svg>
         </button>
         <p
-          className="bz-survey-mono"
           style={{
             margin: '12px 0 0',
             textAlign: 'center',
-            fontSize: 11,
-            color: 'rgba(255,255,255,0.4)',
-            letterSpacing: '0.04em',
+            fontSize: 12.5,
+            color: 'rgba(255,255,255,0.85)',
           }}
         >
           Yanıtların yalnızca işletmeye iletilir
@@ -995,9 +1025,9 @@ function TopBar({
           width: 44,
           height: 44,
           borderRadius: 999,
-          border: '1px solid rgba(10,10,10,0.08)',
-          background: '#fff',
-          color: '#0A0A0A',
+          border: 'none',
+          background: SURVEY_CANVAS,
+          color: SURVEY_TEXT,
           cursor: canBack ? 'pointer' : 'default',
           opacity: canBack ? 1 : 0,
         }}
@@ -1013,25 +1043,23 @@ function TopBar({
         </svg>
       </button>
       <div
-        className="flex-1 text-center"
-        style={{ lineHeight: 1.1 }}
+        className="min-w-0 flex-1 text-center"
+        style={{ lineHeight: 1.2 }}
       >
         {/* .bz-survey-eyebrow is inline-block — without display:block the
-            brand and the table text ran together on one line
-            ("KADIKÖYMASA —"). Two stacked lines; the second exists only
-            when the link carries ?table=. */}
+            brand and the table text ran together on one line. Two stacked
+            lines; the second exists only when the link carries ?table=. */}
         <div
-          className="bz-survey-eyebrow"
-          style={{ display: 'block', color: '#6B6B66' }}
+          className="bz-survey-eyebrow truncate"
+          style={{ display: 'block', fontSize: 14, color: SURVEY_TEXT }}
         >
           {brand}
         </div>
         {table && (
           <div
-            className="bz-survey-eyebrow"
-            style={{ display: 'block', fontSize: 9, color: '#6B6B66', marginTop: 2 }}
+            style={{ fontSize: 12, color: SURVEY_TEXT_2, marginTop: 3 }}
           >
-            MASA {table}
+            Masa {table}
           </div>
         )}
       </div>
@@ -1055,30 +1083,34 @@ function ProgressBar({
 }) {
   const pct = Math.max(0, Math.min(1, current / total)) * 100;
   return (
-    <div style={{ padding: '8px 18px 18px' }}>
-      <div className="flex items-center gap-2.5">
+    <div style={{ padding: '10px 22px 18px' }}>
+      <div className="flex items-center gap-3">
         <span
-          className="bz-survey-eyebrow"
-          style={{ color: '#6B6B66', fontSize: 9.5, minWidth: 30 }}
+          style={{
+            color: SURVEY_TEXT_2,
+            fontSize: 13,
+            fontWeight: 500,
+            minWidth: 36,
+            fontVariantNumeric: 'tabular-nums',
+          }}
         >
           {current} / {total}
         </span>
         <div
           className="flex-1 overflow-hidden"
           style={{
-            height: 3,
+            height: 6,
             borderRadius: 999,
-            background: '#E5E3DC',
+            background: SURVEY_LINE,
           }}
         >
           <div
+            className="bz-survey-bar"
             style={{
               height: '100%',
               width: `${pct}%`,
               background: accent,
               borderRadius: 999,
-              boxShadow: `0 0 12px ${accent}80`,
-              transition: 'width 380ms cubic-bezier(.22,.65,.32,1.1)',
             }}
           />
         </div>
@@ -1129,7 +1161,7 @@ function QuestionScreen({
             margin: '0 0 10px',
             fontSize: 13,
             lineHeight: 1.35,
-            color: '#6B6B66',
+            color: SURVEY_TEXT_2,
             fontWeight: 500,
           }}
         >
@@ -1139,29 +1171,18 @@ function QuestionScreen({
       {/* The old "SORU" tag carried no information. Only an optional question
           is marked, so the customer knows they may skip it. */}
       {!q.required && (
-        <div className="bz-survey-eyebrow mb-3" style={{ color: '#0A0A0A' }}>
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '4px 10px',
-              background: palette.onLight.fill + '24',
-              borderRadius: 999,
-              color: '#0A0A0A',
-              letterSpacing: '0.12em',
-            }}
-          >
-            İSTEĞE BAĞLI
-          </span>
+        <div className="mb-3">
+          <span style={CHIP_STYLE}>İsteğe bağlı</span>
         </div>
       )}
       <h2
         className="bz-survey-head"
-        style={{ margin: 0, fontSize: 26, color: '#0A0A0A' }}
+        style={{ margin: 0, fontSize: 26, color: SURVEY_TEXT }}
       >
         {text ? (
           q.text
         ) : preview ? (
-          <span style={{ color: '#6B6B66' }}>Sorunu buraya yaz…</span>
+          <span style={{ color: SURVEY_TEXT_2 }}>Sorunu buraya yaz…</span>
         ) : (
           q.text
         )}
@@ -1208,8 +1229,8 @@ function FooterBar({
       style={{
         padding: compact
           ? '14px 22px 22px'
-          : '14px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
-        borderTop: '1px solid #ECEAE3',
+          : '14px 22px calc(28px + env(safe-area-inset-bottom, 0px))',
+        borderTop: `1px solid ${SURVEY_LINE}`,
         background: '#fff',
       }}
     >
@@ -1219,18 +1240,15 @@ function FooterBar({
         disabled={!canContinue}
         className="bz-survey-tap flex w-full items-center justify-center gap-2"
         style={{
-          padding: '16px 20px',
+          minHeight: 54,
+          padding: '15px 20px',
           border: 'none',
-          borderRadius: 14,
-          background: canContinue ? accent.fill : '#E5E3DC',
-          color: canContinue ? accent.text : '#A3A29C',
-          fontSize: 15.5,
+          borderRadius: 999,
+          background: canContinue ? accent.fill : SURVEY_LINE,
+          color: canContinue ? accent.text : SURVEY_TEXT_2,
+          fontSize: 16,
           fontWeight: 600,
           cursor: canContinue ? 'pointer' : 'default',
-          boxShadow: canContinue
-            ? `0 10px 26px -10px ${accent.fill}, 0 4px 10px -4px rgba(0,0,0,0.14)`
-            : 'none',
-          transition: 'background 220ms, color 220ms, box-shadow 220ms',
         }}
       >
         Devam et
@@ -1248,7 +1266,7 @@ function FooterBar({
         <p
           role="status"
           aria-live="polite"
-          style={{ margin: 0, textAlign: 'center', fontSize: 13, lineHeight: 1.45, color: '#6B6B66' }}
+          style={{ margin: 0, textAlign: 'center', fontSize: 13, lineHeight: 1.45, color: SURVEY_TEXT_2 }}
         >
           {hint}
         </p>
@@ -1257,11 +1275,13 @@ function FooterBar({
         <button
           type="button"
           onClick={onSkip}
+          className="bz-survey-tap"
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#6B6B66',
-            fontSize: 13,
+            borderRadius: 999,
+            color: SURVEY_TEXT_2,
+            fontSize: 14,
             fontWeight: 500,
             cursor: 'pointer',
             padding: 6,
@@ -1336,34 +1356,25 @@ function ContactScreen({
       style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
     >
       <div style={{ padding: '6px 22px 0' }}>
-        <div className="bz-survey-eyebrow mb-3">
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '4px 10px',
-              background: palette.onLight.fill + '24',
-              borderRadius: 999,
-              color: '#0A0A0A',
-              letterSpacing: '0.12em',
-            }}
-          >
-            {collectContact ? 'İLETİŞİM · İSTEĞE BAĞLI' : 'ONAY'}
+        <div className="mb-3">
+          <span style={CHIP_STYLE}>
+            {collectContact ? 'İletişim · İsteğe bağlı' : 'Onay'}
           </span>
         </div>
         {/* The coupon is not tied to leaving contact details, so the heading
             must not promise it. */}
         <h2
           className="bz-survey-head"
-          style={{ margin: 0, fontSize: 26, color: '#0A0A0A' }}
+          style={{ margin: 0, fontSize: 26, color: SURVEY_TEXT }}
         >
           {collectContact ? 'Son adım' : 'Yanıtını gönderelim'}
         </h2>
         <p
           style={{
             margin: '10px 0 0',
-            fontSize: 13.5,
-            color: '#6B6B66',
-            lineHeight: 1.45,
+            fontSize: 14,
+            color: SURVEY_TEXT_2,
+            lineHeight: 1.5,
           }}
         >
           {collectContact
@@ -1376,16 +1387,15 @@ function ContactScreen({
             marginTop: 24,
             display: 'flex',
             flexDirection: 'column',
-            gap: 10,
+            gap: 14,
           }}
         >
           {collectContact && (
             <>
-              <LabelledField label="AD" htmlFor={`${fieldId}-name`}>
+              <LabelledField label="Ad" htmlFor={`${fieldId}-name`}>
                 <input
                   id={`${fieldId}-name`}
                   className="bz-survey-field"
-                  style={{ paddingLeft: 64 }}
                   placeholder="Adın"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -1394,18 +1404,14 @@ function ContactScreen({
                   enterKeyHint="next"
                 />
               </LabelledField>
-              <div className="relative">
-                <LabelledField label="E-POSTA" labelWidth={80} htmlFor={`${fieldId}-email`}>
+              <div>
+                <LabelledField label="E-posta" htmlFor={`${fieldId}-email`}>
                   <input
                     id={`${fieldId}-email`}
                     ref={emailRef}
                     className="bz-survey-field"
                     type="email"
-                    style={{
-                      paddingLeft: 92,
-                      borderColor: emailError ? '#C62A30' : '#0A0A0A',
-                      borderWidth: 1.5,
-                    }}
+                    style={emailError ? { borderColor: SURVEY_ERROR } : undefined}
                     placeholder="ornek@mail.com"
                     value={email}
                     maxLength={CONTACT_EMAIL_MAX}
@@ -1420,35 +1426,22 @@ function ContactScreen({
                     enterKeyHint="next"
                   />
                 </LabelledField>
-                <span
-                  aria-hidden
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 14,
-                    bottom: 14,
-                    width: 3,
-                    borderRadius: 999,
-                    background: palette.onLight.fill,
-                  }}
-                />
               </div>
               {emailError && (
                 <p
                   id={emailErrorId}
                   role="alert"
                   className="anim-fade"
-                  style={{ margin: '-2px 2px 0', fontSize: 12.5, lineHeight: 1.4, color: '#B4232A' }}
+                  style={{ margin: '-4px 4px 0', fontSize: 13, lineHeight: 1.4, color: SURVEY_ERROR_TEXT }}
                 >
                   {emailError}
                 </p>
               )}
-              <LabelledField label="TEL" labelWidth={48} htmlFor={`${fieldId}-phone`}>
+              <LabelledField label="Telefon" htmlFor={`${fieldId}-phone`}>
                 <input
                   id={`${fieldId}-phone`}
                   className="bz-survey-field"
                   type="tel"
-                  style={{ paddingLeft: 64 }}
                   placeholder="+90 5xx xxx xx xx"
                   value={phone}
                   maxLength={CONTACT_PHONE_MAX}
@@ -1468,7 +1461,6 @@ function ContactScreen({
           <ConsentRow
             checked={kvkk}
             onChange={setKvkk}
-            accent={palette.onDark}
             label={
               <span>
                 Okudum, anladım —{' '}
@@ -1497,7 +1489,6 @@ function ContactScreen({
           <ConsentRow
             checked={marketing}
             onChange={setMarketing}
-            accent={palette.onDark}
             label={
               <span>
                 Kampanya ve duyurular için{' '}
@@ -1510,9 +1501,8 @@ function ContactScreen({
                   Ticari Elektronik İleti İzni
                 </a>{' '}
                 kapsamında iletişim onayı veriyorum{' '}
-                {/* inherits the row colour (ink unchecked / white checked);
-                    opacity keeps ≥ 4.5:1 in both states — a fixed grey
-                    cannot (3.7:1 on the checked #0A0A0A row). */}
+                {/* inherits the row's ink; opacity keeps ≥ 4.5:1 on both
+                    the white and the lavender (checked) row. */}
                 <span style={{ opacity: 0.7 }}>(opsiyonel)</span>.
               </span>
             }
@@ -1525,12 +1515,12 @@ function ContactScreen({
             className="anim-fade"
             style={{
               marginTop: 14,
-              padding: '10px 12px',
-              borderRadius: 12,
-              border: '1px solid #F4B4B6',
-              background: '#FDECEC',
-              color: '#9C2227',
-              fontSize: 12.5,
+              padding: '12px 14px',
+              borderRadius: 16,
+              background: '#FEF3F2',
+              color: SURVEY_ERROR_TEXT,
+              fontSize: 13,
+              lineHeight: 1.45,
             }}
           >
             {error}
@@ -1546,7 +1536,7 @@ function ContactScreen({
           padding: compact
             ? '14px 22px 22px'
             : '14px 22px calc(22px + env(safe-area-inset-bottom, 0px))',
-          borderTop: '1px solid #ECEAE3',
+          borderTop: `1px solid ${SURVEY_LINE}`,
           background: '#fff',
         }}
       >
@@ -1556,15 +1546,15 @@ function ContactScreen({
           disabled={!valid}
           className="bz-survey-tap flex w-full items-center justify-center gap-2"
           style={{
-            padding: '16px 20px',
+            minHeight: 54,
+            padding: '15px 20px',
             border: 'none',
-            borderRadius: 14,
-            background: valid ? palette.onLight.fill : '#E5E3DC',
-            color: valid ? palette.onLight.text : '#A3A29C',
-            fontSize: 15.5,
+            borderRadius: 999,
+            background: valid ? palette.onLight.fill : SURVEY_LINE,
+            color: valid ? palette.onLight.text : SURVEY_TEXT_2,
+            fontSize: 16,
             fontWeight: 600,
             cursor: valid ? 'pointer' : 'default',
-            boxShadow: valid ? `0 10px 26px -10px ${palette.onLight.fill}` : 'none',
           }}
         >
           {submitting ? 'Gönderiliyor…' : 'Anketi gönder'}
@@ -1583,30 +1573,22 @@ function ContactScreen({
   );
 }
 
-// The caption is a real <label htmlFor> (visually unchanged: it sits inside
-// the input at the left). #6B6B66 on white = 5.36:1 (was #A3A29C, 2.56:1).
+// A real <label htmlFor> above its input (sentence case, ink on white).
 function LabelledField({
   label,
-  labelWidth,
   htmlFor,
   children,
 }: {
   label: string;
-  labelWidth?: number;
   htmlFor: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative">
+    <div>
       <label
         htmlFor={htmlFor}
-        className="bz-survey-eyebrow absolute"
-        style={{
-          left: 16,
-          top: 16,
-          color: '#6B6B66',
-          width: labelWidth,
-        }}
+        className="bz-survey-eyebrow"
+        style={{ display: 'block', marginBottom: 8, paddingInline: 4, color: SURVEY_TEXT }}
       >
         {label}
       </label>
@@ -1615,17 +1597,28 @@ function LabelledField({
   );
 }
 
+// Small Buaze label chip ("İsteğe bağlı", "Onay") — purple on lavender, 6.2:1.
+const CHIP_STYLE: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '5px 12px',
+  borderRadius: 999,
+  background: SURVEY_LAVENDER,
+  color: SURVEY_HERO,
+  fontSize: 12.5,
+  fontWeight: 600,
+  lineHeight: 1.3,
+};
+
+// Consent rows are Buaze's legal chrome, so they use Buaze purple, not the
+// owner's accent: white row → lavender row when checked, purple tick box.
 function ConsentRow({
   checked,
   onChange,
-  accent,
   label,
   required,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-  /** Fill + text for the CHECKED row, which is dark (#0A0A0A) — dark-surface pair. */
-  accent: AccentPair;
   label: React.ReactNode;
   required?: boolean;
 }) {
@@ -1633,10 +1626,10 @@ function ConsentRow({
     <label
       className="bz-survey-tap bz-survey-consent flex cursor-pointer items-start gap-3 rounded-2xl border"
       style={{
-        padding: '12px 14px',
-        borderColor: checked ? '#0A0A0A' : '#E5E3DC',
-        background: checked ? '#0A0A0A' : '#fff',
-        color: checked ? '#fff' : '#0A0A0A',
+        padding: '14px 16px',
+        borderColor: checked ? SURVEY_LAVENDER_LINE : SURVEY_LINE,
+        background: checked ? SURVEY_LAVENDER : '#fff',
+        color: SURVEY_TEXT,
         position: 'relative',
       }}
     >
@@ -1657,17 +1650,18 @@ function ConsentRow({
         style={{
           width: 22,
           height: 22,
-          borderRadius: 6,
-          border: '1.5px solid ' + (checked ? accent.fill : '#D4D2CC'),
-          background: checked ? accent.fill : '#fff',
+          borderRadius: 7,
+          border: '1.5px solid ' + (checked ? SURVEY_HERO : '#C4C4C4'),
+          background: checked ? SURVEY_HERO : '#fff',
           marginTop: 1,
+          transition: 'background-color 200ms, border-color 200ms',
         }}
       >
         {checked && (
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path
               d="M5 12l5 5L20 7"
-              stroke={accent.text}
+              stroke="#fff"
               strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1675,11 +1669,11 @@ function ConsentRow({
           </svg>
         )}
       </span>
-      <span style={{ fontSize: 12.5, lineHeight: 1.45, paddingTop: 1 }}>
+      <span style={{ fontSize: 13, lineHeight: 1.5, paddingTop: 1 }}>
         {label}
         {required && (
           <span
-            style={{ color: checked ? accent.fill : '#E5484D', marginLeft: 4 }}
+            style={{ color: checked ? SURVEY_HERO : SURVEY_ERROR, marginLeft: 4 }}
             aria-hidden
           >
             *
@@ -1691,7 +1685,7 @@ function ConsentRow({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Thanks screen — dark with confetti + coupon
+// Thanks screen — purple hero with confetti + coupon
 // ─────────────────────────────────────────────────────────────
 
 function ThanksScreen({
@@ -1702,7 +1696,7 @@ function ThanksScreen({
   responseId,
   compact,
 }: {
-  /** Contrast-protected fill + text for the dark (#0A0A0A) surface. */
+  /** Contrast-protected fill + text for the purple hero (heroAccentPair). */
   accent: AccentPair;
   brand: string;
   survey: Survey;
@@ -1736,23 +1730,21 @@ function ThanksScreen({
 
   return (
     <div
-      className="bz-survey-scroll anim-fade relative flex flex-1 flex-col overflow-hidden"
-      style={{ background: '#0A0A0A', color: '#fff' }}
+      className="bz-survey-scroll bz-survey-on-hero anim-fade relative flex flex-1 flex-col overflow-hidden"
+      style={{ background: SURVEY_HERO, color: '#fff' }}
     >
-      {/* Ambient glow */}
+      {/* Soft light behind the success mark — decorative */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
-          top: '15%',
+          top: '6%',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 360,
-          height: 360,
+          width: 380,
+          height: 380,
           borderRadius: 999,
-          background: accent.fill,
-          opacity: 0.18,
-          filter: 'blur(90px)',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -1775,7 +1767,7 @@ function ThanksScreen({
                 width: 8,
                 height: 8,
                 borderRadius: i % 2 ? 999 : 2,
-                background: i % 3 === 0 ? '#FFF' : accent.fill,
+                background: i % 3 === 0 ? '#FFF' : i % 3 === 1 ? accent.fill : SURVEY_LAVENDER_LINE,
                 ['--tx' as string]: `${Math.cos(angle) * r}px`,
                 ['--ty' as string]: `${Math.sin(angle) * r}px`,
                 animation: `bzConfettiPop 1100ms cubic-bezier(.2,.6,.3,1) ${i * 35}ms both`,
@@ -1803,7 +1795,6 @@ function ThanksScreen({
             color: accent.text,
             animation:
               'bzSurveyPop 460ms cubic-bezier(.2,.65,.3,1.2) both, bzSurveyGlow 2.2s ease-out 460ms infinite',
-            boxShadow: `0 16px 40px -12px ${accent.fill}`,
           }}
         >
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -1818,15 +1809,15 @@ function ThanksScreen({
         </div>
         <div
           className="bz-survey-eyebrow mb-2.5"
-          style={{ color: accent.fill }}
+          style={{ color: 'rgba(255,255,255,0.85)' }}
         >
-          TEŞEKKÜRLER
+          Teşekkürler
         </div>
         <h2
           className="bz-survey-head"
           style={{
             margin: 0,
-            fontSize: 30,
+            fontSize: 28,
             color: '#fff',
           }}
         >
@@ -1838,9 +1829,9 @@ function ThanksScreen({
           style={{
             margin: '14px auto 0',
             maxWidth: 320,
-            fontSize: 14,
-            lineHeight: 1.5,
-            color: 'rgba(255,255,255,0.6)',
+            fontSize: 14.5,
+            lineHeight: 1.55,
+            color: 'rgba(255,255,255,0.85)',
           }}
         >
           {isAlready ? (
@@ -1853,7 +1844,7 @@ function ThanksScreen({
                   {' '}
                   <span>
                     Yanıt no:{' '}
-                    <span className="bz-survey-mono" style={{ color: '#fff' }}>
+                    <span className="bz-survey-mono" style={{ color: '#fff', fontWeight: 600 }}>
                       {responseNo}
                     </span>
                   </span>
@@ -1867,11 +1858,11 @@ function ThanksScreen({
       {couponCode && (
         <div className="relative" style={{ padding: '32px 22px 0' }}>
           <div
-            className="relative overflow-hidden rounded-2xl border-dashed"
+            className="relative overflow-hidden rounded-[24px] border-dashed"
             style={{
-              padding: '20px 18px 18px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px dashed rgba(255,255,255,0.18)',
+              padding: '20px 20px 18px',
+              background: 'rgba(255,255,255,0.1)',
+              border: '1.5px dashed rgba(255,255,255,0.35)',
             }}
           >
             <span
@@ -1884,7 +1875,7 @@ function ThanksScreen({
                 height: 20,
                 borderRadius: 999,
                 transform: 'translateY(-50%)',
-                background: '#0A0A0A',
+                background: SURVEY_HERO,
               }}
             />
             <span
@@ -1897,14 +1888,14 @@ function ThanksScreen({
                 height: 20,
                 borderRadius: 999,
                 transform: 'translateY(-50%)',
-                background: '#0A0A0A',
+                background: SURVEY_HERO,
               }}
             />
             <div
               className="bz-survey-eyebrow mb-2"
-              style={{ color: 'rgba(255,255,255,0.55)' }}
+              style={{ color: 'rgba(255,255,255,0.85)' }}
             >
-              {couponLabel ? 'SANA ÖZEL KUPON' : 'KUPONUN'}
+              {couponLabel ? 'Sana özel kupon' : 'Kuponun'}
             </div>
             <div className="flex items-center justify-between gap-3">
               {/* Owner's own wording only — no label, no invented offer text. */}
@@ -1912,7 +1903,7 @@ function ThanksScreen({
                 <div
                   className="bz-survey-head"
                   style={{
-                    fontSize: 24,
+                    fontSize: 22,
                     color: '#fff',
                   }}
                 >
@@ -1928,19 +1919,20 @@ function ThanksScreen({
                   minHeight: 44,
                   // Bare code: the button IS the card content — full width.
                   ...(couponLabel ? null : { width: '100%' }),
-                  borderRadius: 12,
+                  borderRadius: 999,
                   border: 'none',
                   cursor: 'pointer',
-                  background: copied ? '#30A46C' : accent.fill,
+                  background: copied ? '#23863A' : accent.fill,
                   color: copied ? '#fff' : accent.text,
-                  fontFamily: 'var(--font-mono)',
-                  fontWeight: 600,
-                  fontSize: 13,
+                  fontWeight: 700,
+                  fontSize: 14,
                   letterSpacing: '0.06em',
+                  fontVariantNumeric: 'tabular-nums',
+                  flexShrink: 0,
                 }}
                 aria-label="Kupon kodunu kopyala"
               >
-                {copied ? '✓ KOPYALANDI' : couponCode}
+                {copied ? '✓ Kopyalandı' : couponCode}
               </button>
             </div>
           </div>
@@ -1958,16 +1950,14 @@ function ThanksScreen({
         }}
       >
         <p
-          className="bz-survey-mono"
           style={{
             margin: '6px 0 0',
             textAlign: 'center',
-            fontSize: 11,
-            color: 'rgba(255,255,255,0.35)',
-            letterSpacing: '0.04em',
+            fontSize: 12.5,
+            color: 'rgba(255,255,255,0.85)',
           }}
         >
-          BUAZE · QR FEEDBACK
+          Buaze · QR feedback
         </p>
       </div>
     </div>
@@ -2039,8 +2029,14 @@ function QuestionInput({
           autoCapitalize="sentences"
         />
         <div
-          className="bz-survey-eyebrow text-right"
-          style={{ marginTop: 6, color: '#6B6B66' }}
+          className="text-right"
+          style={{
+            marginTop: 6,
+            paddingInline: 4,
+            fontSize: 12,
+            color: SURVEY_TEXT_2,
+            fontVariantNumeric: 'tabular-nums',
+          }}
         >
           {(value?.textValue || '').length} / {max}
         </div>
@@ -2054,7 +2050,7 @@ function QuestionInput({
         label={q.text.trim() || SHORT_TYPE_LABEL.multiple_choice}
         value={value?.optionValue ?? null}
         onChange={(v, viaPointer) => onPick({ optionValue: v }, viaPointer)}
-        accent={palette.onDark}
+        accent={palette.onLight}
       />
     );
   }
@@ -2102,8 +2098,8 @@ function QStar({
         role="radiogroup"
         aria-label="Yıldız puanı"
         onKeyDown={radioArrowKeys}
-        className="flex justify-between"
-        style={{ gap: 4, padding: '20px 0 14px' }}
+        className="flex justify-between rounded-[24px]"
+        style={{ gap: 4, padding: '18px 8px 12px', background: SURVEY_CANVAS }}
       >
         {[1, 2, 3, 4, 5].map((s) => {
           const active = s <= v;
@@ -2121,20 +2117,22 @@ function QStar({
               aria-label={`${s} yıldız`}
               className="bz-survey-tap flex items-center justify-center"
               style={{
-                width: 56,
+                flex: '1 1 0',
+                minWidth: 44,
                 height: 56,
                 border: 'none',
+                borderRadius: 999,
                 background: 'transparent',
                 cursor: 'pointer',
                 padding: 0,
                 transform: active ? 'scale(1.06)' : 'scale(1)',
               }}
             >
-              <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden>
+              <svg width="44" height="44" viewBox="0 0 24 24" aria-hidden>
                 <path
                   d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"
-                  fill={active ? accent : 'rgba(10,10,10,0.06)'}
-                  stroke={active ? accent : 'rgba(10,10,10,0.12)'}
+                  fill={active ? accent : '#D6D6D6'}
+                  stroke={active ? accent : '#D6D6D6'}
                   strokeWidth="1.4"
                   strokeLinejoin="round"
                 />
@@ -2145,22 +2143,19 @@ function QStar({
       </div>
       <div
         className="text-center"
-        style={{ minHeight: 30 }}
+        style={{ minHeight: 30, marginTop: 12 }}
         aria-live="polite"
       >
         {v > 0 ? (
           <span
             key={v}
             className="bz-survey-head anim-fade"
-            style={{ fontSize: 18, color: '#0A0A0A' }}
+            style={{ fontSize: 17, color: SURVEY_TEXT }}
           >
             {labels[v - 1]}
           </span>
         ) : (
-          <span
-            className="bz-survey-head"
-            style={{ fontSize: 14, color: '#6B6B66' }}
-          >
+          <span style={{ fontSize: 14, color: SURVEY_TEXT_2 }}>
             ← seçim yap →
           </span>
         )}
@@ -2199,10 +2194,9 @@ function QNps({
               onClick={(e) => onChange(n, e.detail > 0)}
               className="bz-survey-tap bz-survey-nps-cell flex items-center justify-center"
               style={{
-                border: '1.5px solid ' + (active ? '#0A0A0A' : '#E5E3DC'),
-                background: active ? '#0A0A0A' : '#fff',
-                color: active ? '#fff' : '#0A0A0A',
-                boxShadow: active ? '0 6px 20px -8px rgba(0,0,0,0.4)' : 'none',
+                border: 'none',
+                background: active ? SURVEY_HERO : SURVEY_CANVAS,
+                color: active ? '#fff' : SURVEY_TEXT,
               }}
             >
               {n}
@@ -2214,11 +2208,9 @@ function QNps({
         className="flex items-center justify-between gap-3"
         style={{
           marginTop: 12,
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10.5,
-          letterSpacing: '0.06em',
-          color: '#6B6B66',
-          textTransform: 'uppercase',
+          paddingInline: 2,
+          fontSize: 12.5,
+          color: SURVEY_TEXT_2,
         }}
       >
         <span>0 = Hiç önermem</span>
@@ -2230,11 +2222,10 @@ function QNps({
         style={{
           marginTop: 14,
           minHeight: 22,
-          fontFamily: 'var(--font-mono)',
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: 600,
-          color: '#0A0A0A',
-          letterSpacing: '0.06em',
+          color: SURVEY_TEXT,
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         {value !== null ? `${value} / 10` : ''}
@@ -2254,7 +2245,7 @@ function QRadio({
   label: string;
   value: string | null;
   onChange: (v: string, viaPointer: boolean) => void;
-  /** The selected option is painted dark (#0A0A0A), so its indicator uses the dark-surface pair. */
+  /** Light-surface pair: the selected option gets an accent border + tint and an accent tick. */
   accent: AccentPair;
 }) {
   return (
@@ -2278,16 +2269,15 @@ function QRadio({
             style={{
               gap: 14,
               padding: '14px 16px',
-              minHeight: 52,
-              border: '1.5px solid ' + (active ? '#0A0A0A' : '#E5E3DC'),
-              background: active ? '#0A0A0A' : '#fff',
-              color: active ? '#fff' : '#0A0A0A',
-              borderRadius: 16,
+              minHeight: 56,
+              border: '1.5px solid ' + (active ? accent.fill : 'transparent'),
+              background: active ? accent.fill + '14' : SURVEY_CANVAS,
+              color: SURVEY_TEXT,
+              borderRadius: 18,
               fontSize: 15,
-              fontWeight: 500,
+              fontWeight: active ? 600 : 500,
               cursor: 'pointer',
               textAlign: 'left',
-              boxShadow: active ? '0 8px 22px -10px rgba(0,0,0,0.35)' : 'none',
             }}
           >
             <span style={{ flex: 1 }}>{opt}</span>
@@ -2297,8 +2287,8 @@ function QRadio({
                 width: 22,
                 height: 22,
                 borderRadius: 999,
-                border: '1.5px solid ' + (active ? accent.fill : '#D4D2CC'),
-                background: active ? accent.fill : 'transparent',
+                border: '1.5px solid ' + (active ? accent.fill : '#C4C4C4'),
+                background: active ? accent.fill : '#fff',
               }}
               aria-hidden
             >

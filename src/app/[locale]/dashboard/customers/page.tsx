@@ -672,7 +672,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   // §38.36 — Sentiment-based avatar bg (tasarım line 131-134).
                   const avatarBg =
                     r.sentiment === 'neg' ? '#FEF2F2'
-                    : r.sentiment === 'pos' ? '#E6FDEA'
+                    : r.sentiment === 'pos' ? '#EFEAFB'
                     : '#F5F5F5';
                   const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#000000';
                   // Score 0-100 (avgRating × 20, clamped).
@@ -777,7 +777,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
               const detailHref = buildHref({ detail: detailKey });
               const avatarBg =
                 r.sentiment === 'neg' ? '#FEF2F2'
-                : r.sentiment === 'pos' ? '#E6FDEA'
+                : r.sentiment === 'pos' ? '#EFEAFB'
                 : '#F5F5F5';
               const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#000000';
               const displayName = r.name || (isTr ? 'Anonim' : 'Anonymous');
@@ -905,7 +905,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                           // Mobile h-11 w-11 (44px); sm:+ h-8 (32px) compact.
                           className={`min-w-[44px] h-11 sm:min-w-[32px] sm:h-8 inline-flex items-center justify-center rounded-full px-2 text-[12px] font-medium tabular-nums transition-colors ${
                             p === page
-                              ? 'bg-pn-ink text-white'
+                              ? 'bg-pn-accent text-white'
                               : 'text-[#525252] hover:bg-pn-canvas'
                           }`}
                         >

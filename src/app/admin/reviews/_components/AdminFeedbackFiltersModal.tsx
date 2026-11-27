@@ -88,7 +88,7 @@ export function AdminFeedbackFiltersModal({
             {/* Date + rating */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <span id="admin-feedback-filter-date-label" className="text-[12px] font-medium text-[#525252]">
+                <span id="admin-feedback-filter-date-label" className="text-[13px] font-medium text-[#737373]">
                   {isTr ? 'Tarih' : 'Date'}
                 </span>
                 <PulseSelect
@@ -100,7 +100,7 @@ export function AdminFeedbackFiltersModal({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <span id="admin-feedback-filter-rating-label" className="text-[12px] font-medium text-[#525252]">
+                <span id="admin-feedback-filter-rating-label" className="text-[13px] font-medium text-[#737373]">
                   {isTr ? 'Puan' : 'Rating'}
                 </span>
                 <PulseSelect
@@ -115,12 +115,12 @@ export function AdminFeedbackFiltersModal({
 
             {/* Platform — chip grid with storage ids (incl. Buaze QR, trendyol_go). */}
             <div className="space-y-1.5">
-              <span className="block text-[12px] font-medium text-[#525252]">Platform</span>
+              <span className="block text-[13px] font-medium text-[#737373]">Platform</span>
               <div className="flex flex-wrap gap-1.5">
                 <button
                   type="button"
                   onClick={() => setPlatformFilter('all')}
-                  className={`${platformFilter === 'all' ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
+                  className={`${platformFilter === 'all' ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
                   aria-pressed={platformFilter === 'all'}
                 >
                   {isTr ? 'Tümü' : 'All'}
@@ -133,7 +133,7 @@ export function AdminFeedbackFiltersModal({
                       key={pid}
                       type="button"
                       onClick={() => setPlatformFilter(isActive ? 'all' : (pid as PlatformFilter))}
-                      className={`${isActive ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm`}
+                      className={`${isActive ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
                       aria-pressed={isActive}
                     >
                       {iconId ? (
@@ -154,12 +154,12 @@ export function AdminFeedbackFiltersModal({
 
         {/* State — reply / flag / assigned to me */}
         <div className="space-y-1.5">
-          <span className="block text-[12px] font-medium text-[#525252]">{isTr ? 'Durum' : 'State'}</span>
+          <span className="block text-[13px] font-medium text-[#737373]">{isTr ? 'Durum' : 'State'}</span>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')}
-              className={`${hasReplyFilter === 'pending' ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm`}
+              className={`${hasReplyFilter === 'pending' ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
               aria-pressed={hasReplyFilter === 'pending'}
             >
               <Mail size={12} strokeWidth={2.2} aria-hidden="true" />
@@ -168,7 +168,7 @@ export function AdminFeedbackFiltersModal({
             <button
               type="button"
               onClick={() => setFlaggedOnly(!flaggedOnly)}
-              className={`${flaggedOnly ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm`}
+              className={`${flaggedOnly ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
               aria-pressed={flaggedOnly}
             >
               <Flag size={12} strokeWidth={2.2} aria-hidden="true" />
@@ -177,7 +177,7 @@ export function AdminFeedbackFiltersModal({
             <button
               type="button"
               onClick={() => setAssignedToMe(!assignedToMe)}
-              className={`${assignedToMe ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
+              className={`${assignedToMe ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
               aria-pressed={assignedToMe}
             >
               <UserPlus size={12} strokeWidth={2.2} aria-hidden="true" />

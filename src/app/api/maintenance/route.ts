@@ -11,7 +11,7 @@ const RETRY_AFTER_SECONDS = '300';
 const HTML = `<!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>Buaze · Bakım</title>
-<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fff;color:#0a0a0a;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:440px;padding:32px 20px;text-align:center}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#c6f24e;margin-bottom:16px}h1{font-size:22px;margin:0 0 8px}p{margin:0 0 16px;color:#525252}</style>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fff;color:#0a0a0a;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:440px;padding:32px 20px;text-align:center}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#5d3ebc;margin-bottom:16px}h1{font-size:22px;margin:0 0 8px}p{margin:0 0 16px;color:#525252}</style>
 </head><body><main><span class="dot"></span>
 <h1>Kısa bir bakım yapıyoruz</h1><p>Buaze birkaç dakika içinde yeniden açılacak. Lütfen biraz sonra tekrar deneyin.</p>
 <h1 lang="en">We're doing a short maintenance</h1><p lang="en">Buaze will be back in a few minutes. Please try again shortly.</p>

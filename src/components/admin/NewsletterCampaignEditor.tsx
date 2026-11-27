@@ -306,7 +306,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
                 disabled={isImmutable}
                 onClick={() => setValue((v) => ({ ...v, locale: opt, postIds: opt === 'both' ? v.postIds : v.postIds.filter((id) => posts.find((p) => p.id === id)?.locale === opt) }))}
                 className={`rounded-[14px] px-3 py-1.5 text-[13px] font-medium transition-all disabled:opacity-60 ${
-                  value.locale === opt ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
+                  value.locale === opt ? 'bg-pn-accent text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {opt === 'tr' ? 'Türkçe' : opt === 'en' ? 'English' : 'İkisi'}
@@ -371,7 +371,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
                 onClick={() => setMode(opt.v)}
                 className={`rounded-[20px] border p-3 text-left transition-all disabled:opacity-60 ${
                   mode === opt.v
-                    ? 'border-pn-ink bg-pn-ink text-white'
+                    ? 'border-pn-accent bg-pn-accent text-white'
                     : 'border-pn-line bg-white text-pn-ink hover:bg-pn-canvas'
                 }`}
               >

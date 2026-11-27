@@ -44,9 +44,9 @@ export function CustomerPreviewScreen({ restaurantId, locale }: { restaurantId: 
   // window, and the scroll has to chain to the page to bring the menu's bottom into view.
   return (
     <div className="flex h-[calc(100dvh-72px-env(safe-area-inset-bottom,0px))] min-h-[420px] flex-col lg:h-[calc(100dvh-94px)]">
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-pn-ink-2 bg-pn-ink px-5 py-3 text-white">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#3B1F8F] px-5 py-3 text-white">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-2.5 py-1 text-[12px] font-medium text-pn-ink">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-2.5 py-1 text-[12px] font-medium text-white">
             <Eye size={13} strokeWidth={2.25} aria-hidden="true" />
             {copy.preview.badge}
           </span>

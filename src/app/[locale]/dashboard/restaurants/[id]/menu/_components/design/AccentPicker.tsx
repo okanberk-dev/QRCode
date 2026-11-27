@@ -73,7 +73,7 @@ export function AccentPicker({
                 key={choice.key}
                 {...common}
                 className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-60 pointer-fine:h-9 ${
-                  on ? 'border-pn-ink bg-pn-ink text-white' : 'border-pn-line-strong bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink'
+                  on ? 'border-pn-accent bg-pn-accent text-white' : 'border-pn-line-strong bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink'
                 }`}
               >
                 <span className="h-3.5 w-3.5 rounded-full ring-1 ring-black/10" style={{ backgroundColor: fallback }} aria-hidden="true" />

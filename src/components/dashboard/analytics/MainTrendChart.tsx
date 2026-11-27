@@ -126,7 +126,7 @@ export function MainTrendChart({ points, isTr = true }: MainTrendChartProps) {
                 <span
                   aria-hidden="true"
                   className="h-2 w-2 rounded-[8px]"
-                  style={{ background: s.swatch, boxShadow: s.key === 'buazeQr' ? '0 0 6px rgba(120, 252, 144,0.6)' : 'none' }}
+                  style={{ background: s.swatch, boxShadow: s.key === 'buazeQr' ? '0 0 6px rgba(93, 62, 188, 0.6)' : 'none' }}
                 />
                 <span className="text-[12px] text-[#525252] font-medium">
                   {isTr ? s.labelTr : s.labelEn}

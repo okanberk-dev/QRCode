@@ -37,6 +37,14 @@ interface Props {
 
 const DAY_MS = 24 * 3600_000;
 
+/**
+ * Plain Fintora pill for actions inside a review row. Not `bz-btn`: on phones
+ * the panel forces every bz-btn inside a card to white, which would vanish on
+ * the white rows / composer used there.
+ */
+const PILL =
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-pn-ink transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent active:scale-[.97] disabled:opacity-60 sm:min-h-10';
+
 function relative(iso: string | null, locale: 'tr' | 'en'): string {
   if (!iso) return '';
   const ms = Date.parse(iso);
@@ -198,16 +206,27 @@ export function InboxReviewCard({
       data-review-id={review.reviewId}
       onFocus={onFocus}
       aria-label={`${name}, ${rating}/5`}
-      className={`group relative border-b border-pn-line px-4 py-4 outline-none transition-[opacity,transform,max-height] duration-300 last:border-b-0 sm:px-5 ${
+      // Fintora list row: unanswered reviews keep the grey fill (white on
+      // phones, where the card itself is grey), answered ones are white, the
+      // focused one is lavender.
+      className={`group relative rounded-[20px] p-3.5 outline-none transition-[opacity,transform,max-height,background-color] duration-300 sm:p-4 ${
         leaving ? 'pointer-events-none -translate-x-2 opacity-0' : ''
-      } ${focused ? 'bg-pn-canvas shadow-[inset_3px_0_0_#78FC90]' : ''} ${flagged ? 'bg-[#FFFBEB]/50' : ''}`}
+      } ${
+        focused
+          ? 'bg-pn-accent-soft'
+          : flagged
+            ? 'bg-[#FFF8E6]'
+            : review.hasReply
+              ? 'bg-white'
+              : 'bg-white sm:bg-pn-canvas'
+      }`}
     >
       <div className="flex gap-3">
         {selectMode && (
           <label className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-start justify-center pt-1 sm:min-h-0 sm:min-w-0">
             <input
               type="checkbox"
-              className="h-4 w-4 accent-pn-ink"
+              className="h-4 w-4 accent-pn-accent"
               checked={selected}
               disabled={!eligible}
               onChange={onToggleSelect}
@@ -238,7 +257,7 @@ export function InboxReviewCard({
           <span
             aria-hidden="true"
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[13px] font-medium ${
-              low ? 'bg-[#FEF2F2] text-[#991B1B]' : 'bg-pn-accent-soft text-pn-ink'
+              low ? 'bg-[#FDECEC] text-[#D92D20]' : 'bg-pn-accent text-white'
             }`}
           >
             {avatarInitials || 'G'}
@@ -249,22 +268,22 @@ export function InboxReviewCard({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="min-w-0 break-words text-[14px] font-medium text-pn-ink">{name}</span>
             {rating > 0 && <Stars value={rating} label={isTr ? `5 üzerinden ${rating} yıldız` : `${rating} out of 5 stars`} />}
-            <span className="text-[12px] text-[#737373]" title={created}>
+            <span className="text-[12px] text-[#9A9A9A]" title={created}>
               {relative(review.createTime, locale)}
             </span>
             {lang && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] text-[#525252]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/[0.05] px-2 py-0.5 text-[12px] text-[#525252]">
                 <Languages size={11} aria-hidden="true" />
                 {lang}
               </span>
             )}
             {review.hasReply ? (
-              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#F0FDF4] px-2 py-0.5 text-[12px] text-[#166534]">
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#E6F7EA] px-2.5 py-0.5 text-[12px] font-medium text-[#23863A]">
                 <CheckCircle2 size={11} aria-hidden="true" />
                 {isTr ? 'Yanıtlandı' : 'Replied'}
               </span>
             ) : low ? (
-              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[12px] text-[#991B1B]">
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#FDECEC] px-2.5 py-0.5 text-[12px] font-medium text-[#D92D20]">
                 {isTr ? 'Düşük puan' : 'Low rating'}
               </span>
             ) : null}
@@ -282,7 +301,7 @@ export function InboxReviewCard({
                 type="button"
                 onClick={() => setShowTranslation((v) => !v)}
                 aria-expanded={showTranslation}
-                className="min-h-11 text-[12px] font-medium text-[#525252] underline-offset-2 hover:underline sm:min-h-0"
+                className="min-h-11 text-[13px] font-medium text-[#737373] underline-offset-2 hover:text-pn-ink hover:underline sm:min-h-0"
               >
                 {showTranslation
                   ? isTr ? 'Çeviriyi gizle' : 'Hide translation'
@@ -297,18 +316,18 @@ export function InboxReviewCard({
           )}
 
           {review.hasReply && !open && (
-            <div className="mt-3 rounded-r-[10px] border-l-[3px] border-pn-accent bg-pn-canvas px-3.5 py-2.5">
+            <div className="mt-3 rounded-[16px] bg-[#F6F6F6] p-3">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'İşletme yanıtı' : 'Business reply'}</span>
+                <span className="text-[13px] font-medium text-pn-ink">{isTr ? 'İşletme yanıtı' : 'Business reply'}</span>
                 {review.replyUpdateTime && (
-                  <span className="text-[12px] text-[#737373]">{formatStampInTimeZone(review.replyUpdateTime, locale, tz)}</span>
+                  <span className="text-[12px] text-[#9A9A9A]">{formatStampInTimeZone(review.replyUpdateTime, locale, tz)}</span>
                 )}
                 {canWrite && (
                   <span className="ml-auto flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => openComposer(review.replyComment ?? '')}
-                      className="bz-btn bz-btn-sm min-h-11 sm:min-h-0"
+                      className={`${PILL} bg-white hover:bg-[#EDEDED]`}
                     >
                       <Edit3 size={12} aria-hidden="true" />
                       {isTr ? 'Düzenle' : 'Edit'}
@@ -319,17 +338,17 @@ export function InboxReviewCard({
                           type="button"
                           onClick={() => void remove()}
                           disabled={deleting}
-                          className="bz-btn-danger bz-btn-sm min-h-11 sm:min-h-0"
+                          className={`${PILL} bg-[#FDECEC] text-[#D92D20] hover:bg-[#FBDADA]`}
                         >
                           {deleting ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Trash2 size={12} aria-hidden="true" />}
                           {isTr ? 'Evet, sil' : 'Yes, delete'}
                         </button>
-                        <button type="button" onClick={() => setConfirmDelete(false)} className="bz-btn bz-btn-sm min-h-11 sm:min-h-0">
+                        <button type="button" onClick={() => setConfirmDelete(false)} className={`${PILL} bg-white hover:bg-[#EDEDED]`}>
                           {isTr ? 'Vazgeç' : 'Cancel'}
                         </button>
                       </>
                     ) : (
-                      <button type="button" onClick={() => setConfirmDelete(true)} className="bz-btn bz-btn-sm min-h-11 sm:min-h-0">
+                      <button type="button" onClick={() => setConfirmDelete(true)} className={`${PILL} bg-white hover:bg-[#EDEDED]`}>
                         <Trash2 size={12} aria-hidden="true" />
                         {isTr ? 'Sil' : 'Delete'}
                       </button>
@@ -337,7 +356,7 @@ export function InboxReviewCard({
                   </span>
                 )}
               </div>
-              <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-[1.55] text-[#262626]">
+              <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-[1.6] text-[#525252]">
                 {review.replyComment}
               </p>
             </div>
@@ -350,7 +369,7 @@ export function InboxReviewCard({
                   type="button"
                   onClick={() => (review.draft?.body ? openComposer(review.draft.body) : void draft())}
                   disabled={drafting}
-                  className="bz-btn-lime bz-btn-sm min-h-11 disabled:opacity-60 sm:min-h-0"
+                  className="bz-btn-primary min-h-11 px-4 text-[13px] disabled:opacity-60 sm:min-h-10"
                 >
                   {drafting ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
                   {review.draft?.body ? (isTr ? 'AI taslağını aç' : 'Open AI draft') : isTr ? 'AI taslağı' : 'AI draft'}
@@ -359,14 +378,14 @@ export function InboxReviewCard({
               <ReplyTemplatesMenu
                 locale={locale}
                 draft={text}
-                triggerClassName="min-h-11 sm:min-h-0"
+                triggerClassName="min-h-11 bg-[#F6F6F6] px-4 hover:bg-[#EDEDED] sm:min-h-10 sm:bg-white"
                 onInsert={(tpl) =>
                   openComposer(
                     fillReplyTemplate(tpl, { firstName: reviewerFirstName(review.reviewerName), businessName }),
                   )
                 }
               />
-              <button type="button" onClick={() => openComposer('')} className="bz-btn bz-btn-sm min-h-11 sm:min-h-0">
+              <button type="button" onClick={() => openComposer('')} className={`${PILL} bg-[#F6F6F6] hover:bg-[#EDEDED] sm:bg-white`}>
                 <PenLine size={12} aria-hidden="true" />
                 {isTr ? 'Manuel' : 'Manual'}
               </button>
@@ -374,7 +393,9 @@ export function InboxReviewCard({
                 type="button"
                 onClick={onToggleFlag}
                 aria-pressed={flagged}
-                className={`${flagged ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm min-h-11 sm:min-h-0`}
+                className={`${PILL} ${
+                  flagged ? 'bg-[#FFF4D6] text-[#8A5A00] hover:bg-[#FFEDBF]' : 'bg-[#F6F6F6] hover:bg-[#EDEDED] sm:bg-white'
+                }`}
               >
                 <Flag size={12} aria-hidden="true" />
                 {flagged ? (isTr ? 'İşareti kaldır' : 'Unflag') : isTr ? 'Bildir' : 'Flag'}
@@ -383,9 +404,9 @@ export function InboxReviewCard({
           )}
 
           {open && (
-            <div className="mt-3 rounded-[10px] border border-pn-line bg-white p-3">
+            <div className="mt-3 rounded-[20px] bg-white p-3">
               {low && (
-                <p className="mb-2 text-[12px] leading-[1.5] text-[#92400E]">
+                <p className="mb-2 rounded-[14px] bg-[#FFF4D6] px-3 py-2 text-[12px] leading-[1.5] text-[#8A5A00]">
                   {isTr
                     ? 'Düşük puanlı yorum: özür ve somut bir çözüm yaz. Bu yanıt yalnız sen gönderince yayınlanır.'
                     : 'Low rating: apologise and name a concrete fix. Published only when you send it.'}
@@ -393,7 +414,7 @@ export function InboxReviewCard({
               )}
               <textarea
                 ref={textareaRef}
-                className="bz-input min-h-[104px] resize-y text-[16px] sm:text-[13px]"
+                className="bz-input min-h-[104px] resize-y rounded-[16px] border-0 bg-[#F6F6F6] text-[16px] focus:shadow-[0_0_0_2px_#5D3EBC] sm:text-[14px]"
                 value={text}
                 onChange={(e) => setText(e.target.value.slice(0, 4096))}
                 onKeyDown={(e) => {
@@ -413,12 +434,12 @@ export function InboxReviewCard({
                 enterKeyHint="enter"
               />
               <ReplyRiskNotice risk={risk} locale={locale} className="mt-2" />
-              <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#525252]">
+              <label className="mt-2.5 flex cursor-pointer items-start gap-2 px-0.5 text-[12px] leading-relaxed text-[#737373]">
                 <input
                   type="checkbox"
                   checked={confirmed}
                   onChange={(e) => setConfirmed(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-pn-accent"
                 />
                 <span>
                   {isTr
@@ -437,7 +458,7 @@ export function InboxReviewCard({
               </label>
 
               {error && (
-                <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-[14px] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+                <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-[14px] bg-[#FDECEC] px-3 py-2 text-[12px] text-[#D92D20]">
                   <span className="min-w-0 flex-1">{error}</span>
                   {lastAction && (lastAction === 'send' || lastAction === 'next') && (
                     <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-1 font-medium underline sm:min-h-0">
@@ -449,7 +470,7 @@ export function InboxReviewCard({
               )}
 
               <div className="mt-2.5 flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                <button type="button" onClick={() => setOpen(false)} className="bz-btn bz-btn-sm min-h-11 sm:min-h-0">
+                <button type="button" onClick={() => setOpen(false)} className={`${PILL} bg-[#F6F6F6] hover:bg-[#EDEDED]`}>
                   {isTr ? 'Kapat' : 'Close'}
                 </button>
                 {aiEnabled && (
@@ -457,7 +478,7 @@ export function InboxReviewCard({
                     type="button"
                     onClick={() => void draft()}
                     disabled={drafting}
-                    className="bz-btn bz-btn-sm min-h-11 disabled:opacity-60 sm:min-h-0"
+                    className={`${PILL} bg-[#F6F6F6] hover:bg-[#EDEDED]`}
                   >
                     {drafting ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Sparkles size={12} aria-hidden="true" />}
                     {isTr ? 'Yeniden öner' : 'Suggest again'}
@@ -467,7 +488,7 @@ export function InboxReviewCard({
                   type="button"
                   onClick={() => void send(true)}
                   disabled={Boolean(sending) || !text.trim() || risk.blocked}
-                  className="bz-btn bz-btn-sm min-h-11 disabled:opacity-60 sm:min-h-0"
+                  className={`${PILL} bg-[#F6F6F6] hover:bg-[#EDEDED]`}
                   title={isTr ? '⌘/Ctrl + Shift + Enter' : '⌘/Ctrl + Shift + Enter'}
                 >
                   {sending === 'next' ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : null}
@@ -477,7 +498,7 @@ export function InboxReviewCard({
                   type="button"
                   onClick={() => void send(false)}
                   disabled={Boolean(sending) || !text.trim() || risk.blocked}
-                  className="bz-btn-primary bz-btn-sm min-h-11 disabled:opacity-60 sm:min-h-0"
+                  className="bz-btn-primary min-h-11 px-5 text-[13px] disabled:opacity-60 sm:min-h-10"
                   title="⌘/Ctrl + Enter"
                 >
                   {sending === 'send' ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Send size={12} aria-hidden="true" />}
@@ -488,7 +509,7 @@ export function InboxReviewCard({
           )}
 
           {error && !open && (
-            <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-[14px] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+            <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-[14px] bg-[#FDECEC] px-3 py-2 text-[12px] text-[#D92D20]">
               <span className="min-w-0 flex-1">{error}</span>
               {lastAction === 'delete' && (
                 <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-1 font-medium underline sm:min-h-0">

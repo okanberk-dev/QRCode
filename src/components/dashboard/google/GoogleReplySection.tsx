@@ -121,14 +121,14 @@ function ReplySection({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 id="google-reply-title" className="bz-h-tight text-[17px] text-pn-ink">
+          <h2 id="google-reply-title" className="pn-card-title text-pn-ink">
             {isTr ? "Yorumlara Google'dan yanıt ver" : 'Reply to reviews on Google'}
           </h2>
           <Badge kind="ghost" dot={false}>
             {isTr ? 'İsteğe bağlı' : 'Optional'}
           </Badge>
         </div>
-        <p className="mt-1 max-w-2xl text-[13px] leading-[1.6] text-[#525252]">
+        <p className="mt-1 max-w-2xl text-[13px] leading-[1.6] text-[#737373]">
           {REPLY_INTRO[intro][isTr ? 'tr' : 'en']}
         </p>
       </div>
@@ -727,7 +727,7 @@ export function GoogleReplySection({
                     {connectError}
                   </AlertBanner>
                 )}
-                <div className="grid gap-4 rounded-[24px] border border-pn-line bg-pn-canvas p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div className="grid gap-4 rounded-[20px] bg-pn-canvas p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                   <div className="space-y-3">
                     <p className="text-[14px] leading-[1.6] text-[#262626]">
                       {ownerGoogleMessage('reply_connect_hint', locale)}
@@ -738,7 +738,7 @@ export function GoogleReplySection({
                         : ['Every Google review in one list', 'AI drafts in the review language', 'Approved bulk replies for 4–5★']
                       ).map((t) => (
                         <li key={t} className="flex items-start gap-2">
-                          <CheckCircle2 size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-[#65A30D]" />
+                          <CheckCircle2 size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-[#23863A]" />
                           {t}
                         </li>
                       ))}
@@ -763,14 +763,14 @@ export function GoogleReplySection({
         // STEP 2 — Google bağlı ama location seçilmedi. Inline location list.
         <div className="space-y-4">
           <div className="flex items-start gap-3 mb-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent-soft">
-              <MapPin size={20} strokeWidth={2} className="text-pn-ink" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white">
+              <MapPin size={18} strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-[17px] font-medium text-pn-ink">
+              <h3 className="text-[18px] font-medium text-pn-ink">
                 {isTr ? 'Konumunuzu seçin' : 'Select your location'}
               </h3>
-              <p className="text-[13px] text-[#525252] mt-1 leading-relaxed">
+              <p className="text-[13px] text-[#737373] mt-1 leading-relaxed">
                 {isTr
                   ? 'Google hesabınız bağlandı. Yorumları çekmek istediğiniz İşletme Profili konumunu seçin.'
                   : 'Your Google account is connected. Pick the Business Profile location to load reviews from.'}
@@ -854,9 +854,9 @@ export function GoogleReplySection({
                   owner'ı boşuna uğraştırır. Backend'in net sarı banner
                   mesajı (apiNotProvisioned) yeterli. */}
               {inlineAccounts.length === 0 && !apiNotProvisioned && (
-                <div className="rounded-[20px] bg-white border border-[#FDE68A] px-4 py-3">
+                <div className="rounded-[20px] bg-[#FFF4D6] px-4 py-3">
                   <div className="flex items-start gap-3">
-                    <Sparkles size={14} className="shrink-0 text-[#92400E] mt-0.5" />
+                    <Sparkles size={14} className="shrink-0 text-[#8A5A00] mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] text-pn-ink leading-relaxed">
                         {isTr
@@ -915,13 +915,13 @@ export function GoogleReplySection({
             //      + warning text + Primary CTA'ya yönlendirir.
             //   3. TERTIARY (ghost, son çare): "Yeni profil oluştur" —
             //      gerçekten Business Profile yoksa Google'a yönlendirir.
-            <div className="py-6 px-4 rounded-[24px] bg-pn-accent-soft/40 border border-pn-accent/50">
+            <div className="rounded-[20px] bg-pn-accent-soft p-4 sm:p-5">
               <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent ">
-                  <Building2 size={20} strokeWidth={2} className="text-pn-ink" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent">
+                  <Building2 size={18} strokeWidth={2} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="bz-h-tight text-[15px] text-pn-ink">
+                  <p className="text-[16px] font-medium text-pn-ink">
                     {isTr
                       ? 'İşletme Profili muhtemelen farklı bir Google hesabında'
                       : 'Your Business Profile is likely under a different Google account'}
@@ -932,9 +932,9 @@ export function GoogleReplySection({
                       : 'Most people sign up to Buaze with their personal Google account, but their Google Business Profile is linked to a different Google account (often a business email). To manage your Google reviews, please pick the right account.'}
                   </p>
                   {hasAttemptedSameAccount && (
-                    <div className="mt-3 flex items-start gap-2 rounded-[20px] bg-white border border-[#FDE68A] px-3 py-2.5">
-                      <Sparkles size={13} className="shrink-0 text-[#92400E] mt-0.5" />
-                      <p className="text-[12px] text-[#92400E] leading-relaxed">
+                    <div className="mt-3 flex items-start gap-2 rounded-[16px] bg-[#FFF4D6] px-3 py-2.5">
+                      <Sparkles size={13} className="shrink-0 text-[#8A5A00] mt-0.5" />
+                      <p className="text-[12px] text-[#8A5A00] leading-relaxed">
                         {isTr
                           ? 'Bu Google hesabında İşletme Profili görünmüyor. "Farklı Google hesabıyla bağlan" diyerek doğru hesabı seçin veya yeni bir profil oluşturun.'
                           : 'This Google account has no Business Profile. Use "Connect with a different Google account" to pick the right one, or create a new profile.'}
@@ -1006,7 +1006,7 @@ export function GoogleReplySection({
                       {isTr ? 'Yeni profil oluştur' : 'Create new profile'}
                     </a>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-pn-accent/30 flex items-start gap-2">
+                  <div className="mt-4 pt-3 border-t border-pn-accent/15 flex items-start gap-2">
                     <Sparkles size={12} className="shrink-0 text-[#525252] mt-0.5" />
                     <p className="text-[12px] text-[#525252] leading-relaxed">
                       {isTr
@@ -1020,13 +1020,13 @@ export function GoogleReplySection({
           ) : !loadingLocations && !locationError && accountsLoaded && inlineLocations.length === 0 && inlineLocationsSource !== 'empty' ? (
             // Account exists but no location — owner Business Profile açtı ama
             // henüz konum eklemedi. Distinct mesaj. Pulse lime UX.
-            <div className="py-6 px-4 rounded-[24px] bg-pn-accent-soft/40 border border-pn-accent/50">
+            <div className="rounded-[20px] bg-pn-accent-soft p-4 sm:p-5">
               <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent ">
-                  <MapPin size={20} strokeWidth={2} className="text-pn-ink" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent">
+                  <MapPin size={18} strokeWidth={2} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="bz-h-tight text-[15px] text-pn-ink">
+                  <p className="text-[16px] font-medium text-pn-ink">
                     {isTr
                       ? 'Profilinizde henüz konum yok'
                       : 'No location in your profile yet'}
@@ -1091,18 +1091,23 @@ export function GoogleReplySection({
                       key={key}
                       onClick={() => selectInlineLocation(location)}
                       disabled={Boolean(savingLocation)}
-                      className="group rounded-[20px] border border-pn-line bg-pn-canvas p-3.5 text-left transition hover:border-pn-ink hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-start gap-3"
+                      className="group flex items-center gap-3 rounded-[16px] bg-pn-canvas p-3 text-left transition-colors duration-200 hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <MapPin size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-[#737373] group-hover:text-pn-ink" />
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink transition-colors duration-200 group-hover:bg-pn-accent group-hover:text-white"
+                      >
+                        <MapPin size={16} strokeWidth={2} />
+                      </span>
                       <div className="flex-1 min-w-0">
-                        <div className="bz-h-tight text-[14px] truncate">{location.title}</div>
+                        <div className="truncate text-[14px] font-medium text-pn-ink">{location.title}</div>
                         {location.address && (
-                          <div className="text-[12px] text-[#737373] mt-0.5 truncate">
+                          <div className="text-[13px] text-[#9A9A9A] mt-0.5 truncate">
                             {location.address}
                           </div>
                         )}
                       </div>
-                      {saving && <Loader2 size={14} className="animate-spin text-pn-ink shrink-0 mt-0.5" />}
+                      {saving && <Loader2 size={16} className="animate-spin text-pn-accent shrink-0" />}
                     </button>
                   );
                 })}

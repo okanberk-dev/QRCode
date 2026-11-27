@@ -120,7 +120,7 @@ export function CoverField({
             type="button"
             onClick={onShowInHeader}
             disabled={disabled}
-            className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full bg-pn-ink px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-pn-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-60 pointer-fine:min-h-9"
+            className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full bg-pn-accent px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-60 pointer-fine:min-h-9"
           >
             <PanelTop size={14} strokeWidth={2} aria-hidden="true" />
             {copy.design.showCoverInHeader}

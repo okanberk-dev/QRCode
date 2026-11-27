@@ -571,10 +571,10 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                       <span
                         aria-hidden="true"
                         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                          active ? 'border-pn-ink bg-pn-accent' : 'border-pn-line-strong bg-white'
+                          active ? 'border-pn-accent bg-pn-accent' : 'border-pn-line-strong bg-white'
                         }`}
                       >
-                        {active && <Check size={10} strokeWidth={3} className="text-pn-ink" />}
+                        {active && <Check size={10} strokeWidth={3} className="text-white" />}
                       </span>
                       <span className="min-w-0">
                         <span className="block text-[13px] font-medium text-pn-ink">{sector.display[locale]}</span>
@@ -607,12 +607,12 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-2.5">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent" aria-hidden="true">
-                      <Search size={15} strokeWidth={2} className="text-pn-ink" />
+                      <Search size={15} strokeWidth={2} className="text-white" />
                     </div>
                     <div className="min-w-0">
                       <h2 id="cb-google-title" className="text-[14px] font-medium text-pn-ink">
                         {isTr ? "Google'da işletmeni bul" : 'Find your business on Google'}
-                        <span className="ml-1.5 rounded-full bg-pn-accent-soft px-1.5 py-0.5 align-middle text-[12px] font-medium text-[#3F6212]">
+                        <span className="ml-1.5 rounded-full bg-pn-accent-soft px-1.5 py-0.5 align-middle text-[12px] font-medium text-pn-accent">
                           {isTr ? 'önerilir' : 'recommended'}
                         </span>
                       </h2>
@@ -646,14 +646,14 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   <div className="flex items-start justify-between gap-3 rounded-[14px] border border-pn-accent-hover bg-pn-accent-soft p-3">
                     <div className="flex min-w-0 items-start gap-2.5">
                       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pn-accent" aria-hidden="true">
-                        <Check size={13} strokeWidth={2.5} className="text-pn-ink" />
+                        <Check size={13} strokeWidth={2.5} className="text-white" />
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-[13px] font-medium text-pn-ink">{selectedPlace.displayName}</p>
                         {selectedPlace.formattedAddress && (
                           <p className="mt-0.5 truncate text-[12px] text-[#737373]">{selectedPlace.formattedAddress}</p>
                         )}
-                        <p className="mt-1 truncate font-mono text-[12px] text-[#3F6212]">
+                        <p className="mt-1 truncate font-mono text-[12px] text-pn-accent">
                           {isTr ? 'Yorum linki hazır' : 'Review link ready'} · {selectedPlace.placeId}
                         </p>
                       </div>
@@ -885,14 +885,14 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
               </div>
             </div>
 
-            {/* Dark summary card — stays dark (§38.202). */}
+            {/* Summary card — deep purple (§38.202). */}
             <aside
               aria-label={isTr ? 'Özet' : 'Summary'}
-              className="rounded-[20px] border border-pn-line bg-pn-ink p-4 text-white"
+              className="rounded-[20px] bg-[#3B1F8F] p-4 text-white"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[12px] font-medium text-white/70">{isTr ? 'Özet' : 'Summary'}</span>
-                <Sparkles size={15} className="text-pn-accent" aria-hidden="true" />
+                <Sparkles size={15} className="text-white" aria-hidden="true" />
               </div>
               <div className="mt-4 flex items-center gap-3">
                 <div
@@ -910,11 +910,11 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
               <dl className="mt-4 space-y-2 rounded-[20px] bg-white/[0.08] p-3 text-[12px]">
                 <div className="flex items-center justify-between gap-2">
                   <dt className="text-white/70">{isClinic ? (isTr ? 'Hasta geri bildirimi' : 'Patient feedback') : isTr ? 'Yorum akışı' : 'Review flow'}</dt>
-                  <dd className="font-medium text-pn-accent">{isTr ? 'Hazır' : 'Ready'}</dd>
+                  <dd className="font-medium text-white">{isTr ? 'Hazır' : 'Ready'}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <dt className="text-white/70">{isTr ? 'Google bağlantısı' : 'Google link'}</dt>
-                  <dd className="font-medium text-pn-accent">
+                  <dd className="font-medium text-white">
                     {formData.googlePlaceId ? (isTr ? 'Bağlı' : 'Linked') : (isTr ? 'Yok' : 'None')}
                   </dd>
                 </div>

@@ -66,7 +66,7 @@ export default function BlogIndexList({ locale, posts, filters, labels }: Props)
   const featured = visible[0];
   const rest = visible.slice(1);
   const chipBase =
-    'inline-flex min-h-[44px] items-center rounded-full border px-4 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+    'inline-flex min-h-[44px] items-center rounded-full border px-4 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
 
   return (
     <>
@@ -102,9 +102,9 @@ export default function BlogIndexList({ locale, posts, filters, labels }: Props)
         <div className="mx-auto mt-8 w-full max-w-[1200px] px-5 sm:px-10">
           <Link
             href={`/${locale}/blog/${featured.slug}`}
-            className="group grid grid-cols-1 overflow-hidden rounded-[20px] border border-[#EDEDED] bg-white transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 md:grid-cols-[1.4fr_1fr]"
+            className="group grid grid-cols-1 overflow-hidden rounded-[20px] border border-[#EDEDED] bg-white transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 md:grid-cols-[1.4fr_1fr]"
           >
-            <div className="relative aspect-[16/10] overflow-hidden bg-[#C6F24E] md:aspect-auto md:min-h-[340px]">
+            <div className="relative aspect-[16/10] overflow-hidden bg-[#5D3EBC] md:aspect-auto md:min-h-[340px]">
               {featured.coverImage ? (
                 <Image
                   src={featured.coverImage}
@@ -123,13 +123,13 @@ export default function BlogIndexList({ locale, posts, filters, labels }: Props)
                   <path
                     d="M0 90 L30 80 L60 85 L90 50 L120 60 L150 20 L200 30"
                     fill="none"
-                    stroke="#0A0A0A"
+                    stroke="#FFFFFF"
                     strokeWidth="3"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                  <circle cx="90" cy="50" r="5" fill="#0A0A0A" />
-                  <circle cx="150" cy="20" r="6" fill="#0A0A0A" />
+                  <circle cx="90" cy="50" r="5" fill="#FFFFFF" />
+                  <circle cx="150" cy="20" r="6" fill="#FFFFFF" />
                 </svg>
               )}
             </div>
@@ -160,9 +160,9 @@ export default function BlogIndexList({ locale, posts, filters, labels }: Props)
             <li key={p.id}>
               <Link
                 href={`/${locale}/blog/${p.slug}`}
-                className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-[#EDEDED] bg-white transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-[#EDEDED] bg-white transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
               >
-                <div className="relative aspect-[16/10] overflow-hidden bg-[#EAF9B8]">
+                <div className="relative aspect-[16/10] overflow-hidden bg-[#EFEAFB]">
                   {p.coverImage ? (
                     <Image
                       src={p.coverImage}

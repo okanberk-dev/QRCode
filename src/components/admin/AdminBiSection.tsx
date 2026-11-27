@@ -90,10 +90,10 @@ const RANGE_LABELS: Record<Range, string> = {
 
 // Tier palette — stacked area order follows the snapshot keys (tier sort
 // order from the server), `other` = paid subscriptions without a tier link.
-const TIER_AREA_COLORS = ['#000000', '#525252', '#A3A3A3', '#78FC90', '#737373', '#D4D4D4'];
+const TIER_AREA_COLORS = ['#000000', '#525252', '#A3A3A3', '#5D3EBC', '#737373', '#D4D4D4'];
 
 const NPS_PIE_COLORS = {
-  promoters: '#2FB24C',
+  promoters: '#23863A',
   passives: '#A3A3A3',
   detractors: '#FB7185',
 };
@@ -193,7 +193,7 @@ export function AdminBiSection() {
                 key={r}
                 onClick={() => setRange(r)}
                 className={`text-[13px] font-medium rounded-[10px] px-3 py-1.5 transition-colors ${
-                  range === r ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas'
+                  range === r ? 'bg-pn-accent text-white' : 'text-[#525252] hover:bg-pn-canvas'
                 }`}
                 aria-pressed={range === r}
               >
@@ -404,7 +404,7 @@ export function AdminBiSection() {
                     contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EBEBEB' }}
                   />
                   <Bar dataKey="retainedActive" stackId="a" fill="#000000" name="Aktif" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="retainedTrial" stackId="a" fill="#78FC90" name="Deneme" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="retainedTrial" stackId="a" fill="#5D3EBC" name="Deneme" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -451,7 +451,7 @@ export function AdminBiSection() {
                         aria-label={`${step.label}: kaydolanların %${step.pctOfSignups}'i`}
                       >
                         <div
-                          className="h-full rounded-full bg-pn-ink"
+                          className="h-full rounded-full bg-pn-accent"
                           style={{ width: `${Math.min(100, step.pctOfSignups)}%` }}
                         />
                       </div>

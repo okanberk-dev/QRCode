@@ -83,7 +83,7 @@ export default function MailPreviewIndex() {
                 aria-pressed={locale === opt}
                 onClick={() => setLocale(opt)}
                 className={`rounded-[14px] px-3 py-1.5 transition-all ${
-                  locale === opt ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
+                  locale === opt ? 'bg-pn-accent text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {opt === 'tr' ? 'Türkçe' : 'English'}
@@ -115,7 +115,7 @@ export default function MailPreviewIndex() {
                 type="button"
                 onClick={() => sendTest(t.key)}
                 disabled={sending === t.key}
-                className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-3 py-1.5 text-[12px] font-medium text-pn-ink hover:bg-pn-accent-hover active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-pn-accent-hover active:scale-95 disabled:opacity-50"
               >
                 {sending === t.key ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                 Test mail

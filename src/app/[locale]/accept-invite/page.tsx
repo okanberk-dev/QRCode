@@ -332,7 +332,7 @@ function AcceptInviteInner() {
 
       {/* Wizard chrome — eyebrow + progress */}
       <div className="mb-6 flex items-center gap-3">
-        <span className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[#0A0A0A]">
+        <span className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-[#EFEAFB] px-2.5 py-1 text-[#0A0A0A]">
           <Sparkles size={11} strokeWidth={2.4} />
           {isTr ? "EKİP DAVETİ" : "TEAM INVITE"}
         </span>
@@ -357,7 +357,7 @@ function AcceptInviteInner() {
             <span
               key={i}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                active ? "bg-[#C6F24E]" : "bg-[#EDEDED]"
+                active ? "bg-[#5D3EBC]" : "bg-[#EDEDED]"
               }`}
               aria-hidden="true"
             />
@@ -390,8 +390,8 @@ function AcceptInviteInner() {
                   width: 44,
                   height: 44,
                   borderRadius: 12,
-                  background: "#EAF9B8",
-                  color: "#0A0A0A",
+                  background: "#EFEAFB",
+                  color: "#5D3EBC",
                 }}
               >
                 <ShieldCheck size={22} strokeWidth={2} />
@@ -498,7 +498,7 @@ function AcceptInviteInner() {
                       className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1.5 text-[12px] text-[#0A0A0A]"
                     >
                       <span
-                        className="inline-block h-1.5 w-1.5 rounded-full bg-[#A8D62E]"
+                        className="inline-block h-1.5 w-1.5 rounded-full bg-[#5D3EBC]"
                         aria-hidden="true"
                       />
                       {name}
@@ -713,8 +713,8 @@ function AcceptInviteInner() {
                 width: 64,
                 height: 64,
                 borderRadius: 16,
-                background: "#EAF9B8",
-                color: "#0A0A0A",
+                background: "#EFEAFB",
+                color: "#5D3EBC",
               }}
               aria-hidden="true"
             >

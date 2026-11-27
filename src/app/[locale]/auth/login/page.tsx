@@ -69,7 +69,7 @@ export default async function LoginPage({
             className="text-[20px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            buaze<span className="text-[#C6F24E]">.</span>
+            buaze<span className="text-[#5D3EBC]">.</span>
           </span>
         </Link>
 
@@ -121,8 +121,8 @@ export default async function LoginPage({
         <p className="pulse-eyebrow text-[#A3A3A3]">© {new Date().getFullYear()} BUAZE</p>
       </div>
 
-      {/* RIGHT — Dark hero */}
-      <div className="relative hidden lg:flex flex-col justify-between bg-[#0A0A0A] text-white px-12 xl:px-14 py-12 overflow-hidden">
+      {/* RIGHT — Purple brand hero (white text on #5D3EBC) */}
+      <div className="relative hidden lg:flex flex-col justify-between bg-[#5D3EBC] text-white px-12 xl:px-14 py-12 overflow-hidden">
         <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.08]">
           <defs>
             <pattern id="loginGrid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -132,12 +132,12 @@ export default async function LoginPage({
           <rect width="100%" height="100%" fill="url(#loginGrid)" />
         </svg>
 
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#C6F24E]/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#C6F24E]/5 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#3B1F8F]/60 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
-        <div className="relative z-10 inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
-          <span className="pulse-eyebrow text-[#C6F24E]">
+        <div className="relative z-10 inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-white/15 border border-white/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-white pulse-heartbeat" />
+          <span className="pulse-eyebrow text-white">
             {isTr ? 'BUAZE PANELİ' : 'BUAZE PANEL'}
           </span>
         </div>
@@ -153,7 +153,7 @@ export default async function LoginPage({
               ? 'Yorumlar, uyarılar ve yanıt taslakları tek panelde.'
               : 'Reviews, alerts and reply drafts in one panel.'}
           </p>
-          <p className="mt-6 max-w-[440px] text-[15px] leading-[1.6] text-white/70">
+          <p className="mt-6 max-w-[440px] text-[15px] leading-[1.6] text-white/85">
             {isTr
               ? 'Düşük puanlar e-postayla bildirilir. Pulse AI taslakları sen onaylamadan gönderilmez.'
               : 'Low ratings arrive by e-mail. Pulse AI drafts are never sent without your approval.'}
@@ -169,7 +169,7 @@ export default async function LoginPage({
               >
                 {s.k}
               </div>
-              <div className="pulse-eyebrow text-white/60 mt-2">{s.l}</div>
+              <div className="pulse-eyebrow text-white/80 mt-2">{s.l}</div>
             </div>
           ))}
         </div>

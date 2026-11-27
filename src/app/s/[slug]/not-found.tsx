@@ -32,9 +32,14 @@ export default async function SurveyNotAccepting() {
     <main
       lang={locale}
       className="bz-survey-stage flex min-h-dvh items-center justify-center"
-      style={{ fontFamily: 'var(--font-body)' }}
+      style={
+        {
+          fontFamily: 'var(--font-body)',
+          '--bz-survey-stage-mobile': '#5D3EBC',
+        } as React.CSSProperties
+      }
     >
-      <div className="bz-survey-frame" style={{ background: '#0A0A0A' }}>
+      <div className="bz-survey-frame" style={{ background: '#5D3EBC' }}>
         <div
           className="relative flex flex-1 flex-col items-center justify-center text-center"
           style={{ padding: '48px 28px', color: '#fff' }}
@@ -43,15 +48,13 @@ export default async function SurveyNotAccepting() {
             aria-hidden
             style={{
               position: 'absolute',
-              top: '18%',
+              top: '10%',
               left: '50%',
               transform: 'translateX(-50%)',
-              width: 300,
-              height: 300,
+              width: 340,
+              height: 340,
               borderRadius: 999,
-              background: '#C6F24E',
-              opacity: 0.1,
-              filter: 'blur(80px)',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)',
               pointerEvents: 'none',
             }}
           />
@@ -63,9 +66,8 @@ export default async function SurveyNotAccepting() {
               height: 72,
               borderRadius: 999,
               marginBottom: 28,
-              border: '1px solid rgba(255,255,255,0.14)',
-              background: 'rgba(255,255,255,0.06)',
-              color: '#C6F24E',
+              background: '#fff',
+              color: '#5D3EBC',
             }}
           >
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
@@ -75,9 +77,9 @@ export default async function SurveyNotAccepting() {
           </div>
           <div
             className="bz-survey-eyebrow relative mb-3"
-            style={{ color: 'rgba(255,255,255,0.55)' }}
+            style={{ color: 'rgba(255,255,255,0.85)' }}
           >
-            BUAZE
+            Buaze
           </div>
           <h1
             className="bz-survey-head relative"
@@ -90,9 +92,9 @@ export default async function SurveyNotAccepting() {
             style={{
               margin: '16px 0 0',
               maxWidth: 330,
-              fontSize: 14.5,
+              fontSize: 15,
               lineHeight: 1.55,
-              color: 'rgba(255,255,255,0.7)',
+              color: 'rgba(255,255,255,0.85)',
             }}
           >
             {copy.body}

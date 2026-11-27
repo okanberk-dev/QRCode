@@ -80,7 +80,7 @@ export default function WinbackCard({ locale, restaurantId, canManage }: { local
     <section className="bz-card p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-ink text-pn-accent">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent text-white">
             <MailOpen size={17} aria-hidden="true" />
           </span>
           <div className="min-w-0">

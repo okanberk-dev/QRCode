@@ -245,13 +245,13 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
             animation: 'bz-cookie-card-in 480ms cubic-bezier(0.2, 0.8, 0.2, 1)',
           }}
         >
-          <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#0A0A0A] p-[22px] text-[#F6F4EF] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)]">
+          <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-[#3B1F8F] p-[22px] text-[#F6F4EF] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)]">
             <div className="mb-3 flex items-center gap-2.5">
               <span
                 aria-hidden="true"
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#C6F24E]/25 bg-[#C6F24E]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10"
               >
-                <Cookie size={18} strokeWidth={2} className="text-[#C6F24E]" />
+                <Cookie size={18} strokeWidth={2} className="text-white" />
               </span>
               <p
                 id="cookie-banner-title"
@@ -293,14 +293,14 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
               <button
                 type="button"
                 onClick={acceptAll}
-                className="flex min-h-[44px] flex-1 basis-[140px] items-center justify-center whitespace-nowrap rounded-xl bg-[#C6F24E] px-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                className="flex min-h-[44px] flex-1 basis-[140px] items-center justify-center whitespace-nowrap rounded-xl bg-white px-3 text-[14px] font-semibold text-[#5D3EBC] transition-colors hover:bg-[#EFEAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#3B1F8F]"
               >
                 {isTr ? 'Tümünü kabul et' : 'Accept all'}
               </button>
               <button
                 type="button"
                 onClick={onlyEssential}
-                className="flex min-h-[44px] flex-1 basis-[140px] items-center justify-center whitespace-nowrap rounded-xl border border-white/20 bg-transparent px-3 text-[14px] font-semibold text-[#F6F4EF] transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                className="flex min-h-[44px] flex-1 basis-[140px] items-center justify-center whitespace-nowrap rounded-xl border border-white/20 bg-transparent px-3 text-[14px] font-semibold text-[#F6F4EF] transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#3B1F8F]"
               >
                 {isTr ? 'Yalnızca zorunlu' : 'Essential only'}
               </button>
@@ -310,7 +310,7 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
               type="button"
               onClick={openSettings}
               aria-haspopup="dialog"
-              className="mt-2 flex min-h-[40px] w-full items-center justify-center rounded-xl text-[13px] font-medium text-[#F6F4EF]/75 underline decoration-[#F6F4EF]/30 underline-offset-4 transition-colors hover:text-[#F6F4EF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+              className="mt-2 flex min-h-[40px] w-full items-center justify-center rounded-xl text-[13px] font-medium text-[#F6F4EF]/75 underline decoration-[#F6F4EF]/30 underline-offset-4 transition-colors hover:text-[#F6F4EF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               {isTr ? 'Tercihleri yönet' : 'Manage preferences'}
             </button>
@@ -427,7 +427,7 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
                 <button
                   type="button"
                   onClick={acceptAllFromModal}
-                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-[#C6F24E] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:flex-none"
+                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-[#5D3EBC] px-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#4C2FA3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:flex-none"
                 >
                   {isTr ? 'Tümünü kabul et' : 'Accept all'}
                 </button>
@@ -466,9 +466,9 @@ function CategoryRow({
     >
       <div
         aria-hidden="true"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8]"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EFEAFB]"
       >
-        <Icon size={16} strokeWidth={1.8} className="text-[#0A0A0A]" />
+        <Icon size={16} strokeWidth={1.8} className="text-[#5D3EBC]" />
       </div>
       <div>
         <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -507,7 +507,7 @@ function CCToggle({
       onClick={() => !disabled && onChange(!on)}
       disabled={disabled}
       className={`relative mt-1 h-[26px] w-11 rounded-[13px] border-none p-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 ${
-        on ? 'bg-[#C6F24E]' : 'bg-[#0A0A0A]/[0.18]'
+        on ? 'bg-[#5D3EBC]' : 'bg-[#0A0A0A]/[0.18]'
       } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
     >
       <span

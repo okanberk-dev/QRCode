@@ -427,7 +427,7 @@ export default async function FaqPage({
                   <li key={group.id}>
                     <a
                       href={`#${group.id}`}
-                      className="inline-flex min-h-[44px] items-center rounded-full border border-[#EDEDED] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      className="inline-flex min-h-[44px] items-center rounded-full border border-[#EDEDED] bg-white px-4 text-[14px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
                     >
                       {group.title}
                     </a>
@@ -477,14 +477,14 @@ export default async function FaqPage({
             <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               <Link
                 href={`/${lang}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
               >
                 {copy.ctaPrimary}
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
               <Link
                 href={`/${lang}/help`}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#D4D4D4] px-6 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#D4D4D4] px-6 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
               >
                 {copy.ctaSecondary}
               </Link>

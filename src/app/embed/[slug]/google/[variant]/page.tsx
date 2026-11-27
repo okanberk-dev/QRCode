@@ -42,12 +42,12 @@ const PALETTES: Record<Theme, {
   accentInk: string; cardBg: string; star: string; starOff: string;
 }> = {
   light: {
-    bg: '#FFFFFF', fg: '#0A0A0A', muted: '#525252', border: '#EDEDED', accent: '#C6F24E',
-    accentInk: '#0A0A0A', cardBg: '#FAFAFA', star: '#0A0A0A', starOff: '#D4D4D4',
+    bg: '#FFFFFF', fg: '#0A0A0A', muted: '#525252', border: '#EDEDED', accent: '#5D3EBC',
+    accentInk: '#FFFFFF', cardBg: '#FAFAFA', star: '#0A0A0A', starOff: '#D4D4D4',
   },
   dark: {
-    bg: '#0A0A0A', fg: '#FFFFFF', muted: '#A3A3A3', border: '#262626', accent: '#C6F24E',
-    accentInk: '#0A0A0A', cardBg: '#1A1A1A', star: '#C6F24E', starOff: '#404040',
+    bg: '#0A0A0A', fg: '#FFFFFF', muted: '#A3A3A3', border: '#262626', accent: '#DCD3F6',
+    accentInk: '#3B1F8F', cardBg: '#1A1A1A', star: '#DCD3F6', starOff: '#404040',
   },
 };
 

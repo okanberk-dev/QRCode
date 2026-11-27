@@ -59,7 +59,7 @@ export function StatusField({
               onClick={() => onChange(status)}
               onKeyDown={(e) => onKeyDown(e, index)}
               className={`relative flex min-h-[56px] flex-col items-start rounded-[20px] border bg-white px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-60 ${
-                on ? 'border-pn-ink shadow-[0_0_0_1px_#0A0A0A]' : 'border-pn-line-strong hover:border-[#A3A3A3]'
+                on ? 'border-pn-accent shadow-[0_0_0_1px_#5D3EBC]' : 'border-pn-line-strong hover:border-[#A3A3A3]'
               }`}
             >
               <span className="flex items-center gap-1.5 text-[14px] font-medium text-pn-ink">

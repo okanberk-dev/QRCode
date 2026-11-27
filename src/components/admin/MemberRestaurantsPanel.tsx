@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ExternalLink, Loader2, MessageSquare, Store, UtensilsCrossed } from 'lucide-react';
 import { Badge, EmptyState } from '@/components/ui';
+import { readableOn } from '@/lib/audits/kind';
 
 interface RestaurantRow {
   id: string;
@@ -84,8 +85,8 @@ export default function MemberRestaurantsPanel({ userId }: Props) {
       {data.map((r) => (
         <div key={r.id} className="p-4 sm:p-5 flex items-center gap-3 flex-wrap">
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] text-[14px] font-medium text-white"
-            style={{ background: r.primaryColor || '#000000' }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] text-[14px] font-medium"
+            style={{ background: r.primaryColor || '#5D3EBC', color: readableOn(r.primaryColor || '#5D3EBC') }}
           >
             {r.name.charAt(0).toUpperCase()}
           </div>

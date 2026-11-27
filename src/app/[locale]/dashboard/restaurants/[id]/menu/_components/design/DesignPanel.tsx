@@ -251,9 +251,9 @@ export function DesignPanel({
   const styleTab = (
     <div className="space-y-4">
       {refreshNote && (
-        <div role="note" className="flex items-start gap-2.5 rounded-[20px] bg-[#F4FBDF] p-3 ring-1 ring-[#DDEFA6]">
-          <Sparkles size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-[#3F4A00]" aria-hidden="true" />
-          <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[#2F3600]">{copy.design.refreshNote}</p>
+        <div role="note" className="flex items-start gap-2.5 rounded-[20px] bg-[#F6F3FD] p-3 ring-1 ring-[#DCD3F6]">
+          <Sparkles size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-pn-accent" aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[#3B1F8F]">{copy.design.refreshNote}</p>
           <button type="button" onClick={dismissRefresh} className="bz-btn-ghost min-h-11 shrink-0 px-3 pointer-fine:min-h-8">
             {copy.design.refreshDismiss}
           </button>
@@ -448,7 +448,7 @@ export function DesignPanel({
                 className="relative inline-flex h-11 min-w-fit flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[9px] px-2.5 text-[13px] font-medium text-[#525252] transition-colors duration-[160ms] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent data-[state=active]:bg-white data-[state=active]:text-pn-ink data-[state=active]:shadow-[0_1px_3px_rgba(10,10,10,0.12)] pointer-fine:h-9"
               >
                 {name}
-                {isDirty && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#65A30D]" aria-hidden="true" />}
+                {isDirty && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-pn-accent" aria-hidden="true" />}
               </TabsPrimitive.Trigger>
             );
           })}

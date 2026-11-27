@@ -1212,8 +1212,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     const showDelta = weekStats.delta !== null && Math.abs(weekStats.delta) >= 0.05;
     const deltaChip = showDelta ? (
       <span
-        className={`rounded-full px-1.5 text-[12px] font-medium ${
-          (weekStats.delta ?? 0) > 0 ? 'bg-[#F0FDF4] text-[#166534]' : 'bg-[#FEF2F2] text-[#991B1B]'
+        className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
+          (weekStats.delta ?? 0) > 0 ? 'bg-[#E6F7EA] text-[#23863A]' : 'bg-[#FDECEC] text-[#D92D20]'
         }`}
         title={isTr ? 'Önceki 7 güne göre' : 'Compared with the previous 7 days'}
       >
@@ -1244,22 +1244,22 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // Render
   // ============================================================
   return (
-    // §38.62 — full-bleed inbox (no outer max-width wrapper): header and
-    // toolbar carry their own padding, the split panes run edge to edge and
-    // scroll internally on lg.
-    <div className="flex min-h-full w-full min-w-0 flex-col bg-white lg:min-h-0 lg:flex-1 lg:mx-2 lg:mb-2 lg:!w-[calc(100%-16px)] lg:overflow-hidden lg:rounded-[28px]">
+    // §38.62 — full-bleed inbox (no outer max-width wrapper). Fintora
+    // layout: header and toolbar sit on the grey canvas; the list and the
+    // detail are two white cards (24 / 28px) that scroll internally on lg.
+    <div className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       {/* Header — hidden on the mobile detail view (the back bar is there). */}
       <div
-        className={`px-4 pb-3 pt-5 sm:px-7 lg:pb-4 lg:pt-6 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
+        className={`px-4 pb-2 pt-5 sm:px-6 lg:px-4 lg:pb-3 lg:pt-3 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             {/* Desktop shows the title in the shell topbar; keep the h1 in the
                 accessibility tree there (sr-only) so the page always has one. */}
-            <h1 className="bz-h-tight text-[24px] text-pn-ink lg:sr-only">
+            <h1 className="bz-h-tight text-[28px] font-medium text-pn-ink lg:sr-only">
               {isTr ? 'Yorumlar' : 'Reviews'}
             </h1>
-            <div className="mt-0.5 flex min-h-[20px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
+            <div className="mt-1 flex min-h-[22px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373] lg:mt-0">
               {summary}
             </div>
           </div>
@@ -1267,21 +1267,21 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <a
               href={exportHref}
               download
-              className="bz-btn bz-btn-sm max-sm:min-h-[44px]"
+              className="bz-btn max-sm:bg-[#F6F6F6]"
               title={
                 isTr
                   ? 'Seçili işletme ve filtrelerle CSV indir'
                   : 'Download CSV for the selected business and filters'
               }
             >
-              <Download size={13} strokeWidth={2} aria-hidden="true" />
+              <Download size={16} strokeWidth={2} aria-hidden="true" />
               {isTr ? 'Dışa aktar' : 'Export'}
             </a>
             <button
               type="button"
               onClick={onBulkAiReply}
               disabled={bulkBusy || loading || bulkEligibleCount === 0}
-              className="bz-btn-primary bz-btn-sm max-sm:min-h-[44px]"
+              className="bz-btn-primary"
               title={
                 bulkEligibleCount === 0
                   ? isTr
@@ -1293,13 +1293,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               }
             >
               {bulkBusy ? (
-                <Loader2 size={13} strokeWidth={2} className="animate-spin" aria-hidden="true" />
+                <Loader2 size={16} strokeWidth={2} className="animate-spin" aria-hidden="true" />
               ) : (
-                <Sparkles size={13} strokeWidth={2} aria-hidden="true" />
+                <Sparkles size={16} strokeWidth={2} aria-hidden="true" />
               )}
               {isTr ? 'AI taslakları' : 'AI drafts'}
               {!loading && bulkEligibleCount > 0 && (
-                <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-pn-accent px-1.5 text-[12px] font-medium leading-[18px] text-pn-ink tabular-nums">
+                <span className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-white px-1.5 text-[12px] font-medium leading-none text-pn-accent tabular-nums">
                   {bulkEligibleCount}
                 </span>
               )}
@@ -1332,10 +1332,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       />
 
       {/* Split view: list | detail. 2 columns from lg; the list widens with
-          the viewport (360 → 420 → 480) and the detail takes the rest. */}
-      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
+          the viewport (360 → 420 → 480) and the detail takes the rest. Two
+          white cards 10px apart on the canvas; on phones the page is white
+          and the rows carry their own fill. */}
+      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-2 lg:pb-2 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
         <aside
-          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-pn-line ${
+          className={`min-h-0 px-2 pb-4 sm:mx-6 sm:mb-6 sm:rounded-[24px] sm:bg-white sm:p-2 lg:m-0 lg:overflow-y-auto ${
             isMobileDetailView ? 'hidden lg:block' : ''
           }`}
         >
@@ -1363,7 +1365,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         </aside>
 
         <div
-          className={`min-w-0 flex-col lg:flex lg:min-h-0 ${isMobileDetailView ? 'flex' : 'hidden'}`}
+          className={`min-w-0 flex-col bg-white sm:mx-6 sm:mb-6 sm:rounded-[28px] lg:m-0 lg:flex lg:min-h-0 lg:overflow-hidden ${isMobileDetailView ? 'flex' : 'hidden'}`}
         >
           {active ? (
             <FeedbackDetail
@@ -1410,7 +1412,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                     : 'This review is not in the current filters or is on an older page.'
                 }
                 action={
-                  <button type="button" onClick={onBackToList} className="bz-btn bz-btn-sm">
+                  <button type="button" onClick={onBackToList} className="bz-btn bg-[#F6F6F6] hover:bg-[#EDEDED]">
                     {isTr ? 'Yorumlara dön' : 'Back to reviews'}
                   </button>
                 }
@@ -1459,7 +1461,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           aria-live="polite"
           className={`fixed inset-x-4 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 max-w-[560px] rounded-[24px] border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 lg:bottom-4 ${
             bulkNotice.tone === 'success'
-              ? 'border-pn-accent-hover bg-pn-ink text-white'
+              ? 'border-pn-accent-hover bg-pn-accent text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
           }`}
         >
@@ -1469,7 +1471,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               strokeWidth={2}
               aria-hidden="true"
               className={`mt-0.5 shrink-0 ${
-                bulkNotice.tone === 'success' ? 'text-pn-accent' : 'text-[#DC2626]'
+                bulkNotice.tone === 'success' ? 'text-white' : 'text-[#DC2626]'
               }`}
             />
             <p className="flex-1 text-[13px] leading-snug">{bulkNotice.msg}</p>

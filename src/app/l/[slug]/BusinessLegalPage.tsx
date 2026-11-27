@@ -35,8 +35,8 @@ export default async function BusinessLegalPage({
       <div className="mx-auto w-full max-w-[720px] px-4 pb-16 pt-6 sm:px-6">
         <Link
           href={`/l/${program.slug}${tr ? '' : '?lang=en'}`}
-          className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-[13px] font-medium"
-          style={{ borderColor: 'var(--p-border)', background: 'var(--p-surface)' }}
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-full pl-3 pr-4 text-[14px] font-medium transition-opacity duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2"
+          style={{ background: 'var(--p-surface)' }}
         >
           <ChevronLeft size={15} aria-hidden /> {r.name}
         </Link>
@@ -46,7 +46,7 @@ export default async function BusinessLegalPage({
             {doc.description}
           </p>
         )}
-        <article className="prose-legal mt-8 rounded-[24px] border bg-white p-5 sm:p-8" style={{ borderColor: 'var(--p-border)' }}>
+        <article className="prose-legal mt-8 rounded-[24px] bg-white p-5 sm:p-8">
           {blocks}
         </article>
         <p className="mt-6 text-center text-[12px]" style={{ color: 'var(--p-muted)' }}>

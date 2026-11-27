@@ -360,7 +360,7 @@ export function QRCard({
             {downloadError}
           </p>
         )}
-        <p aria-live="polite" className="col-span-2 -mt-1 text-[12px] text-[#3F6212] empty:hidden">
+        <p aria-live="polite" className="col-span-2 -mt-1 text-[12px] text-[#23863A] empty:hidden">
           {copied ? (isTr ? "Bağlantı kopyalandı." : "Link copied.") : ""}
         </p>
       </div>

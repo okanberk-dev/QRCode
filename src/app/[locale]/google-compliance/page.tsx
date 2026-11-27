@@ -424,7 +424,7 @@ export default async function GoogleCompliancePage({
                 <div
                   key={group.title}
                   className={`rounded-[20px] border p-6 sm:p-8 ${
-                    positive ? 'border-[#C6F24E] bg-[#EAF9B8]/50' : 'border-[#EDEDED] bg-white'
+                    positive ? 'border-[#8C6CF0] bg-[#EFEAFB]/50' : 'border-[#EDEDED] bg-white'
                   }`}
                 >
                   <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A]">{group.title}</h3>
@@ -434,11 +434,11 @@ export default async function GoogleCompliancePage({
                         <span
                           aria-hidden="true"
                           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                            positive ? 'bg-[#C6F24E]' : 'bg-[#F2F2F2]'
+                            positive ? 'bg-[#5D3EBC]' : 'bg-[#F2F2F2]'
                           }`}
                         >
                           {positive ? (
-                            <Check size={12} strokeWidth={2.75} className="text-[#0A0A0A]" />
+                            <Check size={12} strokeWidth={2.75} className="text-white" />
                           ) : (
                             <X size={12} strokeWidth={2.75} className="text-[#525252]" />
                           )}
@@ -465,7 +465,7 @@ export default async function GoogleCompliancePage({
                 >
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[14px] font-semibold text-white"
                   >
                     {i + 1}
                   </span>
@@ -487,7 +487,7 @@ export default async function GoogleCompliancePage({
                 <li key={duty} className="flex items-start gap-3 text-[16px] leading-[1.6] text-[#1A1A1A]">
                   <span
                     aria-hidden="true"
-                    className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8]"
+                    className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EFEAFB]"
                   >
                     <Check size={12} strokeWidth={2.75} className="text-[#0A0A0A]" />
                   </span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2, Repeat, Sparkles, ThumbsUp, Wrench } from 'lucide-react';
 
 // §38.53 — AI ÖZET card (3-sinyal: Pozitif / İyileştirme / Tekrar gelme niyeti).
 // Tasarım kaynağı: .design-owner-2026/page-feedbacks.jsx FeedbackDetail body
@@ -77,11 +77,16 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
 
   if (loading) {
     return (
-      <div className="rounded-[10px] border border-pn-line bg-pn-canvas p-4">
-        <div className="flex items-center gap-2 text-[12px] text-[#737373]">
-          <Loader2 size={14} className="animate-spin" />
+      <div className="flex items-center gap-3 rounded-[20px] bg-[#F6F6F6] p-3 sm:p-4">
+        <span
+          aria-hidden="true"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+        >
+          <Loader2 size={16} className="animate-spin" />
+        </span>
+        <span className="text-[13px] text-[#737373]">
           {isTr ? 'AI özet hazırlanıyor…' : 'Preparing AI summary…'}
-        </div>
+        </span>
       </div>
     );
   }
@@ -96,44 +101,76 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
   if (totalSignals === 0) return null;
 
   const intentLabel = INTENT_LABELS[isTr ? 'tr' : 'en'][returnIntent];
-  const intentColor =
-    returnIntent === 'high' ? '#16A34A' : returnIntent === 'low' ? '#DC2626' : '#737373';
+  const intentBadge =
+    returnIntent === 'high'
+      ? 'bg-[#E6F7EA] text-[#23863A]'
+      : returnIntent === 'low'
+        ? 'bg-[#FDECEC] text-[#D92D20]'
+        : 'bg-[#F6F6F6] text-[#525252]';
 
+  // Fintora list: a grey panel inside the white detail card, a purple
+  // sparkle circle in the header and one white row per signal.
   return (
     <section
-      className="rounded-[10px] border border-pn-line bg-pn-canvas p-4"
+      className="rounded-[20px] bg-[#F6F6F6] p-3 sm:p-4"
       aria-label={isTr ? 'AI özeti' : 'AI summary'}
     >
-      <header className="mb-2 flex items-center gap-2">
-        <Sparkles size={13} className="text-pn-accent-ink" strokeWidth={2.2} />
-        <span className="text-[13px] font-medium text-pn-ink">
-          {isTr
-            ? `${totalSignals} sinyal tespit edildi`
-            : `${totalSignals} signals detected`}
+      <header className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+        >
+          <Sparkles size={16} strokeWidth={2} />
         </span>
+        <div className="min-w-0">
+          <p className="text-[14px] font-medium text-pn-ink">{isTr ? 'AI özeti' : 'AI summary'}</p>
+          <p className="text-[13px] text-[#9A9A9A]">
+            {isTr
+              ? `${totalSignals} sinyal tespit edildi`
+              : `${totalSignals} signals detected`}
+          </p>
+        </div>
       </header>
-      <ul className="m-0 list-none p-0 space-y-1.5 text-[13px] leading-[1.55] text-[#525252]">
+      <ul className="m-0 mt-3 list-none space-y-2 p-0">
         {positives.length > 0 && (
-          <li className="flex gap-2">
-            <span className="font-medium text-[#16A34A] shrink-0">
-              {isTr ? 'Pozitif:' : 'Positive:'}
+          <li className="flex items-start gap-3 rounded-[16px] bg-white p-3">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+            >
+              <ThumbsUp size={14} strokeWidth={2} />
             </span>
-            <span>{positives.join(', ')}</span>
+            <div className="min-w-0 pt-0.5">
+              <p className="text-[14px] font-medium text-pn-ink">{isTr ? 'Pozitif' : 'Positive'}</p>
+              <p className="mt-0.5 text-[13px] leading-[1.5] text-[#737373]">{positives.join(', ')}</p>
+            </div>
           </li>
         )}
         {improvements.length > 0 && (
-          <li className="flex gap-2">
-            <span className="font-medium text-[#D97706] shrink-0">
-              {isTr ? 'İyileştirme:' : 'Improvement:'}
+          <li className="flex items-start gap-3 rounded-[16px] bg-white p-3">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pn-ink text-white"
+            >
+              <Wrench size={14} strokeWidth={2} />
             </span>
-            <span>{improvements.join(', ')}</span>
+            <div className="min-w-0 pt-0.5">
+              <p className="text-[14px] font-medium text-pn-ink">{isTr ? 'İyileştirme' : 'Improvement'}</p>
+              <p className="mt-0.5 text-[13px] leading-[1.5] text-[#737373]">{improvements.join(', ')}</p>
+            </div>
           </li>
         )}
-        <li className="flex gap-2">
-          <span className="font-medium text-[#525252] shrink-0">
-            {isTr ? 'Tekrar gelme niyeti:' : 'Return intent:'}
+        <li className="flex items-center gap-3 rounded-[16px] bg-white p-3">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F6F6F6] text-pn-ink"
+          >
+            <Repeat size={14} strokeWidth={2} />
           </span>
-          <span className="font-medium" style={{ color: intentColor }}>
+          <p className="min-w-0 flex-1 text-[14px] font-medium text-pn-ink">
+            {isTr ? 'Tekrar gelme niyeti' : 'Return intent'}
+          </p>
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-medium ${intentBadge}`}>
             {intentLabel}
           </span>
         </li>

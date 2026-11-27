@@ -165,14 +165,14 @@ export default function RedirectThresholdPicker({
               onKeyDown={(event) => onKeyDown(event, index)}
               className={`flex min-h-[44px] items-start gap-3 rounded-[24px] border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 aria-disabled:cursor-wait ${
                 active
-                  ? 'border-pn-ink bg-pn-accent-soft/40'
+                  ? 'border-pn-accent bg-pn-accent-soft/40'
                   : 'border-pn-line bg-white hover:border-[#A3A3A3]'
               }`}
             >
               <span
                 aria-hidden
                 className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                  active ? 'bg-pn-accent text-pn-ink' : 'bg-pn-canvas text-[#525252]'
+                  active ? 'bg-pn-accent text-white' : 'bg-pn-canvas text-[#525252]'
                 }`}
               >
                 {busy ? (

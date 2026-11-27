@@ -98,6 +98,11 @@ export function ReplyTemplatesMenu({ locale, draft, onInsert, triggerClassName =
     }
   };
 
+  // Fintora grey pill on a white surface; a caller on a grey row passes its
+  // own `bg-*` (e.g. `bg-white`) through `triggerClassName`.
+  const triggerBg = /(^|\s)bg-/.test(triggerClassName) ? '' : 'bg-[#F6F6F6] hover:bg-[#EDEDED]';
+  const triggerHeight = /(^|\s)min-h-/.test(triggerClassName) ? '' : 'min-h-11 sm:min-h-9';
+
   return (
     <>
       <PulseMenu
@@ -106,8 +111,15 @@ export function ReplyTemplatesMenu({ locale, draft, onInsert, triggerClassName =
           if (open && templates === null) void load();
         }}
         trigger={
-          <button type="button" className={`bz-btn-ghost bz-btn-sm inline-flex items-center gap-1.5 ${triggerClassName}`}>
-            <FileText size={13} aria-hidden="true" />
+          <button
+            type="button"
+            // Plain pill (not bz-btn): on phones the panel forces every bz-btn
+            // inside a card to white, which would vanish on a white row.
+            className={`inline-flex items-center gap-1.5 rounded-full text-[13px] font-medium text-pn-ink transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent active:scale-[.97] ${
+              /(^|\s)px-/.test(triggerClassName) ? '' : 'px-3.5'
+            } ${triggerHeight} ${triggerBg} ${triggerClassName}`}
+          >
+            <FileText size={14} aria-hidden="true" />
             {isTr ? 'Şablonlar' : 'Templates'}
           </button>
         }
@@ -169,7 +181,7 @@ export function ReplyTemplatesMenu({ locale, draft, onInsert, triggerClassName =
                 className="bz-input mt-1 w-full"
               />
             </label>
-            {error && <p className="text-[12px] text-[#B91C1C]" role="alert">{error}</p>}
+            {error && <p className="text-[12px] text-[#D92D20]" role="alert">{error}</p>}
             <div className="flex justify-end">
               <button
                 type="button"

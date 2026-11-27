@@ -139,7 +139,7 @@ export default function NfcDialog({
     >
       <div className="flex flex-col items-center py-4 text-center">
         <span
-          className={`flex h-20 w-20 items-center justify-center rounded-full ${phase === 'done' ? 'bg-pn-accent-soft text-[#3F6212]' : 'bg-pn-ink text-pn-accent'} ${phase === 'waiting' || phase === 'locking' ? 'pulse-heartbeat' : ''}`}
+          className={`flex h-20 w-20 items-center justify-center rounded-full ${phase === 'done' ? 'bg-[#E7F6EA] text-[#23863A]' : 'bg-pn-accent text-white'} ${phase === 'waiting' || phase === 'locking' ? 'pulse-heartbeat' : ''}`}
         >
           {phase === 'done' ? locked ? <Lock size={32} /> : <Check size={34} /> : phase === 'locking' ? <Lock size={32} /> : <Nfc size={34} />}
         </span>

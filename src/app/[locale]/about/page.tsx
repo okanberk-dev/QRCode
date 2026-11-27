@@ -295,7 +295,7 @@ export async function generateMetadata({
 const sectionTitle = 'mt-4 text-balance text-[28px] leading-[1.08] tracking-[-0.02em] text-[#0A0A0A] sm:text-[40px] lg:text-[48px]';
 const sectionLead = 'mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]';
 const textLink =
-  'inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+  'inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
 
 export default async function AboutPage({
   params,
@@ -352,7 +352,7 @@ export default async function AboutPage({
       value: (
         <a
           href={`mailto:${company.supportEmail}`}
-          className="font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] rounded-sm"
+          className="font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] rounded-sm"
         >
           {company.supportEmail}
         </a>
@@ -420,7 +420,7 @@ export default async function AboutPage({
               <div className="flex flex-col justify-between rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
                 <span
                   aria-hidden="true"
-                  className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#0A0A0A] text-[#C6F24E]"
+                  className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#5D3EBC] text-white"
                 >
                   <QrCode size={20} strokeWidth={2} />
                 </span>
@@ -428,7 +428,7 @@ export default async function AboutPage({
                   <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A]">{copy.flow.step}</h3>
                   <div className="mt-4 flex items-center gap-1" aria-hidden="true">
                     {[0, 1, 2, 3, 4].map((i) => (
-                      <Star key={i} size={20} className="fill-[#C6F24E] text-[#0A0A0A]" strokeWidth={1.5} />
+                      <Star key={i} size={20} className="fill-[#5D3EBC] text-[#5D3EBC]" strokeWidth={1.5} />
                     ))}
                   </div>
                   <p className="mt-2 text-[14px] text-[#737373]">{copy.flow.stepNote}</p>
@@ -441,7 +441,7 @@ export default async function AboutPage({
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
                 <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
-                  <span className="inline-flex items-center rounded-full bg-[#EAF9B8] px-3 py-1 text-[13px] font-medium text-[#0A0A0A]">
+                  <span className="inline-flex items-center rounded-full bg-[#EFEAFB] px-3 py-1 text-[13px] font-medium text-[#0A0A0A]">
                     {copy.flow.highChip}
                   </span>
                   <h3 className="mt-5 text-[22px] leading-[1.2] text-[#0A0A0A]">{copy.flow.highTitle}</h3>
@@ -480,7 +480,7 @@ export default async function AboutPage({
                   >
                     <span
                       aria-hidden="true"
-                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EFEAFB] text-[#0A0A0A]"
                     >
                       <Icon size={20} strokeWidth={2} />
                     </span>
@@ -536,19 +536,19 @@ export default async function AboutPage({
         </section>
 
         {/* Contact + trial */}
-        <section aria-labelledby="about-cta-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
+        <section aria-labelledby="about-cta-title" className="bg-[#5D3EBC] py-[60px] sm:py-24">
           <div className="mx-auto w-full max-w-[880px] px-5 text-center sm:px-10">
             <h2
               id="about-cta-title"
-              className="text-balance text-[30px] leading-[1.06] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]"
+              className="text-balance text-[30px] leading-[1.06] text-white sm:text-[44px] lg:text-[52px]"
             >
               {copy.cta.title}
             </h2>
-            <p className="mx-auto mt-5 max-w-[620px] text-pretty text-[16px] leading-[1.6] text-[#1A1A1A] sm:text-[18px]">
+            <p className="mx-auto mt-5 max-w-[620px] text-pretty text-[16px] leading-[1.6] text-white/90 sm:text-[18px]">
               {copy.cta.bodyStart}{' '}
               <a
                 href={`mailto:${company.supportEmail}`}
-                className="font-semibold text-[#0A0A0A] underline decoration-[#0A0A0A]/40 decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] rounded-sm"
+                className="font-semibold text-white underline decoration-white/50 decoration-2 underline-offset-4 hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm"
               >
                 {company.supportEmail}
               </a>
@@ -559,14 +559,14 @@ export default async function AboutPage({
               <Link
                 href={`/${lang}/auth/register`}
                 rel="nofollow"
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-7 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-white px-7 text-[15px] font-semibold text-[#5D3EBC] transition-colors hover:bg-[#EFEAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#5D3EBC]"
               >
                 {copy.cta.primary}
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
               <Link
                 href={`/${lang}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-full border-2 border-[#0A0A0A] px-7 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-full border-2 border-white px-7 text-[15px] font-semibold text-white transition-colors hover:bg-white hover:text-[#5D3EBC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#5D3EBC]"
               >
                 {copy.cta.secondary}
               </Link>

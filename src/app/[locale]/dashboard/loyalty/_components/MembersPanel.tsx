@@ -206,7 +206,7 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                       <td className="font-mono text-[13px] ">{formatMemberCode(m.code)}</td>
                       <td className="text-right tabular-nums">
                         {m.balance}
-                        {m.balance >= minCost && <span className="ml-1.5 text-[12px] font-medium text-[#4D7C0F]">{tr ? 'hazır' : 'ready'}</span>}
+                        {m.balance >= minCost && <span className="ml-1.5 text-[12px] font-medium text-[#23863A]">{tr ? 'hazır' : 'ready'}</span>}
                       </td>
                       <td className="text-right tabular-nums">{m.visits}</td>
                       <td className="text-right tabular-nums">{m.rewardsRedeemed}</td>
@@ -230,7 +230,7 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                   </span>
                   <span className="shrink-0 text-right">
                     <span className="block text-[16px] font-medium tabular-nums">{m.balance}</span>
-                    {m.balance >= minCost && <span className="text-[12px] font-medium text-[#4D7C0F]">{tr ? 'ödül hazır' : 'reward ready'}</span>}
+                    {m.balance >= minCost && <span className="text-[12px] font-medium text-[#23863A]">{tr ? 'ödül hazır' : 'reward ready'}</span>}
                   </span>
                 </button>
               </li>

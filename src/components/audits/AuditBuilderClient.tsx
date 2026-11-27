@@ -1106,7 +1106,7 @@ function KindPicker({
                 <span
                   aria-hidden="true"
                   className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                    selected ? 'bg-pn-accent text-pn-ink' : 'bg-pn-canvas text-[#525252]'
+                    selected ? 'bg-pn-accent text-white' : 'bg-pn-canvas text-[#525252]'
                   }`}
                 >
                   {o.icon}

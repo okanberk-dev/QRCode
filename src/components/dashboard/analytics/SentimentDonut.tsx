@@ -7,14 +7,11 @@
 // page.tsx feedback rating distribution'dan veya extractThemes aggregate'ten
 // compute eder). 0 örneklem → graceful fallback (donut subtle gri ring).
 //
-// Pulse §11:
-// - pos: #78FC90 (Pano green)
-// - neu: #D4D4D4 (n300 muted, HANDOFF birebir)
-// - neg: #0A0A0A (graphite, HANDOFF birebir — donut'ta en koyu segment
-//   "ağır" his verir; UI'da kırmızı çok agresif olur dengeli sentiment için)
-//
-// Synthetic italic Space Grotesk (CLAUDE.md §38.112 paterni reuse):
-// Google Fonts italic variant kaynağı yok, browser oblique transform ~%85.
+// Pano colours on the purple card (everything on purple is white):
+// - pos: solid white
+// - neu: translucent white
+// - neg: hatched (white stripes on a darker purple) — red would read as an
+//   alarm for a balanced mix
 
 export interface SentimentDonutProps {
   /** 0-100 percentage values. pos + neu + neg = 100 olmalı (caller normalize). */
@@ -38,16 +35,16 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 }
 
 /**
- * Rating mix on the dark Pano card (docs/design/DASHBOARD_DESIGN.md §5.4,
- * §5.11): a thick ring — positive lime, neutral white, negative hatched —
+ * Rating mix on the purple Pano card (docs/design/DASHBOARD_DESIGN.md §5.4,
+ * §5.11): a thick ring — positive white, neutral translucent, negative hatched —
  * with the positive share in the middle.
  */
 export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: SentimentDonutProps) {
   const hasData = pos + neu + neg > 0;
   const GAP = 10; // degrees between segments
   const parts = [
-    { key: 'pos', v: pos, stroke: '#78FC90', label: isTr ? 'Pozitif' : 'Positive' },
-    { key: 'neu', v: neu, stroke: '#FFFFFF', label: isTr ? 'Nötr' : 'Neutral' },
+    { key: 'pos', v: pos, stroke: '#FFFFFF', label: isTr ? 'Pozitif' : 'Positive' },
+    { key: 'neu', v: neu, stroke: 'rgba(255,255,255,0.42)', label: isTr ? 'Nötr' : 'Neutral' },
     { key: 'neg', v: neg, stroke: 'url(#pn-donut-hatch)', label: isTr ? 'Negatif' : 'Negative' },
   ].filter((p) => p.v > 0);
   const usable = 360 - GAP * parts.length;
@@ -71,8 +68,8 @@ export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: Sent
           <svg viewBox="0 0 120 120" className="h-[168px] w-[168px] shrink-0" role="img" aria-label={`${Math.round(pos)}% ${isTr ? 'pozitif' : 'positive'}`}>
             <defs>
               <pattern id="pn-donut-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <rect width="5" height="5" fill="#141414" />
-                <line x1="0" y1="0" x2="0" y2="5" stroke="#4A4A4A" strokeWidth="2.4" />
+                <rect width="5" height="5" fill="rgba(0,0,0,0.22)" />
+                <line x1="0" y1="0" x2="0" y2="5" stroke="rgba(255,255,255,0.34)" strokeWidth="2.4" />
               </pattern>
             </defs>
             {arcs.map((arc) => (
@@ -80,22 +77,22 @@ export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: Sent
             ))}
             <text x="60" y="66" textAnchor="middle" fontSize="20" fontWeight="300" fill="#FFFFFF" fontFamily="var(--font-heading)">
               {Math.round(pos)}
-              <tspan fill="rgba(255,255,255,.45)" fontSize="13">%</tspan>
+              <tspan fill="rgba(255,255,255,.65)" fontSize="13">%</tspan>
             </text>
           </svg>
 
           <ul className="flex w-full flex-1 flex-col gap-3">
             {[
-              { label: isTr ? 'Pozitif' : 'Positive', v: pos, swatch: 'bg-pn-accent' },
-              { label: isTr ? 'Nötr' : 'Neutral', v: neu, swatch: 'bg-white' },
+              { label: isTr ? 'Pozitif' : 'Positive', v: pos, swatch: 'bg-white' },
+              { label: isTr ? 'Nötr' : 'Neutral', v: neu, swatch: 'bg-white/40' },
               { label: isTr ? 'Negatif' : 'Negative', v: neg, swatch: 'pn-hatch-dark' },
             ].map((row) => (
               <li key={row.label} className="flex items-center gap-3">
                 <span aria-hidden="true" className={`h-3 w-6 shrink-0 rounded-full ${row.swatch}`} />
-                <span className="flex-1 text-[14px] text-white/80">{row.label}</span>
+                <span className="flex-1 text-[14px] text-white/85">{row.label}</span>
                 <span className="text-[15px] tabular-nums text-white">
                   {Math.round(row.v)}
-                  <span className="text-white/45">%</span>
+                  <span className="text-white/65">%</span>
                 </span>
               </li>
             ))}

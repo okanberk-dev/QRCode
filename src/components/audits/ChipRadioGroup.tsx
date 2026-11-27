@@ -29,7 +29,7 @@ export default function ChipRadioGroup<T extends string>({
 }) {
   const checkedCls =
     tone === 'lime'
-      ? 'peer-checked:border-pn-accent-hover peer-checked:bg-pn-accent peer-checked:text-pn-ink'
+      ? 'peer-checked:border-pn-accent-hover peer-checked:bg-pn-accent peer-checked:text-white'
       : 'peer-checked:border-pn-ink peer-checked:bg-pn-ink peer-checked:text-white';
   return (
     <div

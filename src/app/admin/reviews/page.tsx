@@ -30,6 +30,8 @@ import { BulkActionToolbar } from './_components/BulkActionToolbar';
 import {
   ADMIN_REVIEWS_ROOT_CLASS,
   ADMIN_REVIEWS_SPLIT_CLASS,
+  ADMIN_REVIEWS_LIST_CLASS,
+  ADMIN_REVIEWS_DETAIL_CLASS,
   AdminReviewsHeader,
   AdminReviewsSkeleton,
 } from './_components/AdminReviewsChrome';
@@ -941,7 +943,7 @@ function AdminReviewsContent() {
     <button
       type="button"
       onClick={() => writeFilters({ restaurantId: '' })}
-      className="inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-pn-ink bg-pn-accent-soft px-3 text-[12px] font-medium text-pn-ink transition-colors hover:bg-[#DDF39A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
+      className="inline-flex h-11 max-w-full items-center gap-1.5 rounded-full bg-pn-accent-soft px-4 text-[13px] font-medium text-pn-accent transition-colors duration-200 hover:bg-[#E4DCF8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 active:scale-[.97] md:h-[46px]"
       title={isTr ? 'İşletme filtresini kaldır' : 'Remove the business filter'}
     >
       <span className="truncate">
@@ -949,7 +951,7 @@ function AdminReviewsContent() {
           ? `${restaurantName ?? 'Seçili işletme'} yorumları`
           : `${restaurantName ?? 'Selected business'} reviews`}
       </span>
-      <X size={13} strokeWidth={2.2} aria-hidden="true" className="shrink-0 text-[#525252]" />
+      <X size={14} strokeWidth={2} aria-hidden="true" className="shrink-0 text-pn-accent" />
       <span className="sr-only">{isTr ? '— filtreyi kaldır' : '— remove filter'}</span>
     </button>
   ) : null;
@@ -1001,11 +1003,7 @@ function AdminReviewsContent() {
 
       {/* Split view: list | detail. */}
       <div className={ADMIN_REVIEWS_SPLIT_CLASS}>
-        <aside
-          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-pn-line ${
-            isMobileDetailView ? 'hidden lg:block' : ''
-          }`}
-        >
+        <aside className={`${ADMIN_REVIEWS_LIST_CLASS} ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
           <AdminFeedbackList
             isTr={isTr}
             loading={loading}
@@ -1028,9 +1026,7 @@ function AdminReviewsContent() {
           />
         </aside>
 
-        <div
-          className={`min-w-0 flex-col lg:flex lg:min-h-0 ${isMobileDetailView ? 'flex' : 'hidden'}`}
-        >
+        <div className={`${ADMIN_REVIEWS_DETAIL_CLASS} ${isMobileDetailView ? 'flex' : 'hidden'}`}>
           {active ? (
             <AdminFeedbackDetail
               feedback={active}
@@ -1072,7 +1068,7 @@ function AdminReviewsContent() {
                     : 'This review is not in the current filters or is on an older page.'
                 }
                 action={
-                  <button type="button" onClick={onBackToList} className="bz-btn bz-btn-sm">
+                  <button type="button" onClick={onBackToList} className="bz-btn bg-[#F6F6F6] hover:bg-[#EDEDED]">
                     {isTr ? 'Yorumlara dön' : 'Back to reviews'}
                   </button>
                 }
@@ -1152,13 +1148,13 @@ function AdminReviewsContent() {
               : 'bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-4'
           } ${
             toast.tone === 'success'
-              ? 'border-pn-accent-hover bg-pn-ink text-white'
+              ? 'border-pn-accent-hover bg-pn-accent text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
           }`}
         >
           <div className="flex items-start gap-3">
             {toast.tone === 'success' ? (
-              <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-pn-accent" />
+              <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-white" />
             ) : (
               <AlertCircle size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#DC2626]" />
             )}

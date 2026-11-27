@@ -110,7 +110,7 @@ export default function AdminCampaignsPage() {
             </button>
             <Link
               href="/admin/newsletters/campaigns/new"
-              className="inline-flex items-center gap-2 rounded-full bg-pn-accent px-4 py-2.5 text-xs font-medium text-pn-ink hover:bg-pn-accent-hover active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-pn-accent px-4 py-2.5 text-xs font-medium text-white hover:bg-pn-accent-hover active:scale-95"
             >
               <Plus size={14} strokeWidth={2.5} />
               Yeni kampanya
@@ -135,7 +135,7 @@ export default function AdminCampaignsPage() {
                 aria-pressed={status === s}
                 onClick={() => setStatus(s)}
                 className={`shrink-0 rounded-[14px] px-3 py-1.5 transition-all ${
-                  status === s ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
+                  status === s ? 'bg-pn-accent text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {s === 'all' ? 'Tümü' : STATUS_LABEL[s as CampaignRow['status']]}

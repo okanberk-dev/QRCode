@@ -41,7 +41,7 @@ export default function OnboardingNudge({
   return (
     <section
       className={`rounded-[24px] p-5 sm:p-6 text-white ${className}`}
-      style={{ background: "linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%)" }}
+      style={{ background: "linear-gradient(135deg, #5D3EBC 0%, #3B1F8F 100%)" }}
       aria-label={isTr ? "Başlangıç" : "Getting started"}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
@@ -50,12 +50,12 @@ export default function OnboardingNudge({
             {isTr ? "Buaze'ye hoş geldin" : "Welcome to Buaze"}
           </h2>
           {description && (
-            <p className="mt-1 max-w-[560px] text-[13px] leading-[1.55] text-white/70">
+            <p className="mt-1 max-w-[560px] text-[13px] leading-[1.55] text-white/85">
               {description}
             </p>
           )}
           {steps.length > 1 && (
-            <p className="mt-1 text-[12px] text-white/60">
+            <p className="mt-1 text-[12px] text-white/80">
               {completed} / {steps.length} {isTr ? "tamamlandı" : "completed"}
             </p>
           )}
@@ -64,7 +64,7 @@ export default function OnboardingNudge({
         {single && (
           <Link
             href={single.href}
-            className="bz-btn-lime inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 self-start text-[13px] sm:min-h-[36px] lg:self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pn-ink"
+            className="bz-btn-lime inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 self-start bg-white text-[13px] text-pn-accent hover:bg-pn-accent-soft sm:min-h-[36px] lg:self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#3B1F8F]"
           >
             {single.label}
             <ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
@@ -77,10 +77,10 @@ export default function OnboardingNudge({
               <li key={s.id}>
                 <Link
                   href={s.href}
-                  className="flex min-h-[44px] flex-col gap-1.5 rounded-[10px] p-2.5 text-left bz-motion-spring active:scale-[0.97] sm:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
+                  className="flex min-h-[44px] flex-col gap-1.5 rounded-[10px] p-2.5 text-left bz-motion-spring active:scale-[0.97] sm:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   style={{
-                    background: s.done ? "rgba(120, 252, 144,0.12)" : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${s.done ? "rgba(120, 252, 144,0.3)" : "rgba(255,255,255,0.1)"}`,
+                    background: s.done ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${s.done ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.12)"}`,
                   }}
                 >
                   <span className="flex items-center justify-between">
@@ -88,8 +88,8 @@ export default function OnboardingNudge({
                       aria-hidden="true"
                       className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full"
                       style={{
-                        background: s.done ? "#78FC90" : "rgba(255,255,255,0.1)",
-                        color: s.done ? "#000000" : "rgba(255,255,255,0.6)",
+                        background: s.done ? "#FFFFFF" : "rgba(255,255,255,0.14)",
+                        color: s.done ? "#5D3EBC" : "rgba(255,255,255,0.75)",
                       }}
                     >
                       {s.done ? (
@@ -99,7 +99,7 @@ export default function OnboardingNudge({
                       )}
                     </span>
                     {!s.done && (
-                      <ArrowRight size={11} color="rgba(255,255,255,0.6)" strokeWidth={2} aria-hidden="true" />
+                      <ArrowRight size={11} color="rgba(255,255,255,0.75)" strokeWidth={2} aria-hidden="true" />
                     )}
                   </span>
                   <span

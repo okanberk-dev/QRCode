@@ -6,7 +6,7 @@ import Link from '@/components/navigation/IntentLink';
 import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, Headset, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, Headset, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -14,9 +14,10 @@ import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import BusinessSwitcher from './BusinessSwitcher';
 import ViewportMount from '@/components/ui/ViewportMount';
+import { SearchTrigger } from '@/components/panel/search/SearchTrigger';
 import { PanelTopNav, type PanoNavEntry } from '@/components/panel/pano/PanelTopNav';
 import { PanelMobileNav } from '@/components/panel/pano/PanelMobileNav';
-import { PanelRail, RailLink } from '@/components/panel/pano/PanelRail';
+import { PanelRail, type RailSection } from '@/components/panel/pano/PanelRail';
 import { detectSector } from '@/lib/sector-platforms';
 import { getSectorByLabel } from '@/lib/sectors';
 import {
@@ -97,7 +98,7 @@ interface UserDashboardShellProps {
    * at most 20 — the same list `GET /api/restaurants` returned to the palette
    * on every open, resolved once by the layout instead.
    */
-  paletteRestaurants?: Array<{ id: string; name: string; slug: string; category: string }>;
+  paletteRestaurants?: Array<{ id: string; name: string; slug: string; category: string; primaryColor?: string | null }>;
   /** §57 — secondary tools shown in the menu (feature-visibility). */
   tools?: { surveys: boolean; audits: boolean };
   children: React.ReactNode;
@@ -509,15 +510,31 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/account?section=notifications`, icon: Bell, label: copy.notifications },
     { href: `/${locale}/help`, icon: BookOpen, label: isTr ? 'Yardım merkezi' : 'Help center' },
   ];
-  const topEntries = panoEntries.filter((entry) => entry.type === 'link');
-  const railEntries: PanoNavEntry[] = panoEntries.flatMap((entry) =>
-    entry.type === 'group' ? entry.children.map((child) => ({ type: 'link' as const, ...child })) : [],
+  // Top row: the daily pages. Sidebar: management, tools and account, all
+  // with their names visible (folds to icons below 1440px).
+  const isManagePage = (href: string) => /\/dashboard\/(platforms|restaurants)(\?|$)/.test(href);
+  const topEntries = panoEntries.filter((entry) => entry.type === 'link' && !isManagePage(entry.href));
+  const manageItems = panoEntries.flatMap((entry) =>
+    entry.type === 'link' && isManagePage(entry.href)
+      ? [{ href: entry.href, label: entry.label, icon: entry.icon, active: entry.active }]
+      : [],
   );
+  const toolSectionItems = panoEntries.flatMap((entry) => (entry.type === 'group' ? entry.children : []));
+  const accountSectionItems = [
+    { href: `/${locale}/dashboard/account`, label: copy.account, icon: UserCircle, active: pathname === `/${locale}/dashboard/account` },
+    { href: `/${locale}/dashboard/account?section=billing`, label: isTr ? 'Faturalama' : 'Billing', icon: CreditCard, active: false },
+  ];
+  const railSections: RailSection[] = [
+    { id: 'manage', label: isTr ? 'Yönetim' : 'Manage', items: manageItems },
+    { id: 'tools', label: isTr ? 'Araçlar' : 'Tools', items: toolSectionItems },
+    { id: 'account', label: isTr ? 'Hesap' : 'Account', items: accountSectionItems },
+  ].filter((section) => section.items.length > 0);
   const helpLabel = isTr ? 'Yardım merkezi' : 'Help center';
   const createQrHref = hrefWithActiveRestaurant(`/${locale}/dashboard/qr?new=1`);
   const railBrand = (
     <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="pn-brand" aria-label="Buaze" title="Buaze">
-      <BuazeLogo size={42} variant="default" imageUrl={logoUrl} className="shrink-0" />
+      <BuazeLogo size={40} variant="default" imageUrl={logoUrl} className="shrink-0" />
+      <span className="pn-brand-word pn-side-label">buaze</span>
     </Link>
   );
   const brand = (
@@ -556,31 +573,16 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
   const desktopActions = (
     <>
-      {workspaceRestaurants.length > 1 && (
-        <BusinessSwitcher
-          locale={locale}
-          variant="topbar"
-          businesses={workspaceRestaurants}
-          activeId={activeRestaurantId}
-          onSelect={selectRestaurantScope}
-          categoryLabel={categoryLabel}
-          manageHref={`/${locale}/dashboard/restaurants`}
-          newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
-        />
-      )}
       <Link href={createQrHref} className="bz-btn hidden min-h-[46px] xl:inline-flex">
         <Plus size={18} aria-hidden="true" />
         {isTr ? 'QR oluştur' : 'Create QR'}
       </Link>
-      <button
-        type="button"
-        onClick={() => setPaletteOpen(true)}
-        className="pn-icon-btn"
-        aria-label={isTr ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-        title={isTr ? 'Ara (⌘K)' : 'Search (⌘K)'}
-      >
-        <Search size={19} aria-hidden="true" />
-      </button>
+      {/* Search field from xl, the round button below that. */}
+      <SearchTrigger
+        locale={locale}
+        variant="pill-xl"
+        onOpen={() => setPaletteOpen(true)}
+      />
       <ViewportMount query="(min-width: 1024px)" fallback={<span aria-hidden className="inline-flex h-[46px] w-[46px] shrink-0" />}>
         <NotificationBell
           locale={locale}
@@ -641,12 +643,40 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <div className="flex min-h-0 flex-1">
       <PanelRail
         brand={railBrand}
-        entries={railEntries}
-        ariaLabel={isTr ? 'Araçlar' : 'Tools'}
-        newLabel={isTr ? 'Yeni' : 'New'}
-        footer={
-          <RailLink entry={{ href: `/${locale}/help`, label: helpLabel, icon: Headset, active: false }} />
+        top={
+          workspaceRestaurants.length > 0 ? (
+            <BusinessSwitcher
+              locale={locale}
+              variant="sidebar"
+              businesses={workspaceRestaurants}
+              activeId={activeRestaurantId}
+              onSelect={selectRestaurantScope}
+              caption={switcherCaption}
+              categoryLabel={categoryLabel}
+              manageHref={`/${locale}/dashboard/restaurants`}
+              newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
+            />
+          ) : null
         }
+        topFolded={
+          workspaceRestaurants.length > 0 ? (
+            <BusinessSwitcher
+              locale={locale}
+              variant="collapsed"
+              businesses={workspaceRestaurants}
+              activeId={activeRestaurantId}
+              onSelect={selectRestaurantScope}
+              categoryLabel={categoryLabel}
+              manageHref={`/${locale}/dashboard/restaurants`}
+              newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
+            />
+          ) : null
+        }
+        sections={railSections}
+        footer={[{ href: `/${locale}/help`, label: helpLabel, icon: Headset, active: false }]}
+        ariaLabel={isTr ? 'Yan menü' : 'Side menu'}
+        labels={{ fold: isTr ? 'Menüyü daralt' : 'Collapse menu', unfold: isTr ? 'Menüyü genişlet' : 'Expand menu' }}
+        newLabel={isTr ? 'Yeni' : 'New'}
       />
       <div className="flex min-w-0 flex-1 flex-col lg:min-h-0">
       <PanelTopNav
@@ -666,16 +696,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           dialog: isTr ? 'Panel menüsü' : 'Panel menu',
         }}
         actions={
-          <ViewportMount query="(max-width: 1023.98px)" fallback={<span aria-hidden className="inline-flex h-11 w-11 shrink-0" />}>
-            <NotificationBell
-              locale={locale}
-              announcements={announcements}
-              panelBase={`/${locale}/dashboard`}
-              reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
-              notificationsSettingsHref={`/${locale}/dashboard/notifications`}
-              restaurantId={activeRestaurantId}
-            />
-          </ViewportMount>
+          <>
+            <SearchTrigger locale={locale} variant="icon" onOpen={() => setPaletteOpen(true)} />
+            <ViewportMount query="(max-width: 1023.98px)" fallback={<span aria-hidden className="inline-flex h-11 w-11 shrink-0" />}>
+              <NotificationBell
+                locale={locale}
+                announcements={announcements}
+                panelBase={`/${locale}/dashboard`}
+                reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
+                notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+                restaurantId={activeRestaurantId}
+              />
+            </ViewportMount>
+          </>
         }
         drawerTop={
           workspaceRestaurants.length > 0 ? (
@@ -760,6 +793,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           locale={locale}
           base={`/${locale}/dashboard`}
           restaurants={paletteRestaurants}
+          canAddBusiness={canAddBusiness}
+          scopeHref={hrefWithActiveRestaurant}
           navItems={[
           { href: `/${locale}/dashboard`, label: copy.dashboard, keywords: ['panel', 'dashboard', 'genel'] },
           { href: `/${locale}/dashboard/feedbacks`, label: copy.feedbacks, keywords: ['yorum', 'review', 'feedback', 'inbox'] },

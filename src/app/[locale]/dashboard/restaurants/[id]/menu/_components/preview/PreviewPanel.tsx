@@ -26,7 +26,7 @@ export function PreviewPanel({ badge, ...phone }: PhoneProps & { badge?: string 
       <div ref={stageRef} className="min-h-0 flex-1 overflow-hidden bg-gradient-to-b from-pn-canvas to-[#F0F0F0] px-4 py-4">
         {badge && (
           <p className="mb-2 text-center">
-            <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2.5 py-1 text-[12px] font-medium text-[#4D5C00]">{badge}</span>
+            <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2.5 py-1 text-[12px] font-medium text-pn-accent">{badge}</span>
           </p>
         )}
         {!fit.tooShort && <PhonePreview {...phone} variant="framed" />}

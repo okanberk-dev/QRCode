@@ -404,7 +404,7 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 ## 11. Marka Kimliği & Tasarım Sistemi (2026-04 Pulse)
 
 > **2026-11-26 (§62):** pazarlama sitesi (üst menüsü `.rt-header` olan sayfalar) "Ritim" tasarımına geçti: sıcak krem/nötr palet, yeşil marka rampası, Figtree + Source Sans 3 + Caveat.
-> **2026-11-27 (§63):** owner + admin panelleri "Pano" tasarımına geçti (Plus Jakarta Sans, yeşil `#78FC90` + siyah `#111110` + `#F6F6F6` tuval, sol ikon şeridi + üst hap sekmeler). Bu bölümdeki Pulse paleti ve fontları artık yalnız e-postalar, `/r`, `/menu`, `/l`, `/hesap` ve auth için geçerlidir.
+> **2026-11-28 (§63, §64):** Buaze'nin tüm yüzeyleri Getir moru + beyaz paletinde (`#5D3EBC`, mor üstünde her zaman beyaz yazı). Panel: Plus Jakarta Sans, `#F6F6F6` tuval, etiketli sol menü + üst hap sekmeler. `/r`, `/s`, `/l`, `/hesap`, auth ve pazarlama da mor + beyaz. Bu bölümdeki Pulse paleti artık yalnız e-postalar için geçerlidir.
 
 > **Özet:** 2026-04 Pulse redesign'ı ile v2 Gold/Navy/Ivory paleti **pure white + graphite + lime** sistemine geçti. Tasarım kaynağı: Claude Design'den gelen "Pulse" yönü (her yorum bir nabız).
 
@@ -5452,7 +5452,7 @@ Tarihsel referans: 2026-05-12 ilk büyük sweep (PR #605, 25.7K→5.3K satır), 
 
 ## §42 — Panel Layout Chrome (canonical, 2026-05)
 
-> **2026-11-27 (§63):** metinli kenar çubuğu ve mobil alt sekme çubuğu kaldırıldı; masaüstünde solda 92 px ikon şeridi (`PanelRail`) + üstte hap sekme satırı (`PanelTopNav`), mobilde beyaz bar + tam ekran çekmece (`PanelMobileNav`). Aşağıdaki sidebar ve bottom-nav maddeleri tarihseldir; kaydırma sütunu kuralları (§42.5.1) aynen geçerli.
+> **2026-11-28 (§63):** mobil alt sekme çubuğu kaldırıldı; masaüstünde solda etiketli, daraltılabilir menü (`PanelRail`, 256 px açık / 92 px daraltılmış, 1440 px altında varsayılan daraltılmış) + üstte hap sekme satırı (`PanelTopNav`), mobilde beyaz bar + tam ekran çekmece (`PanelMobileNav`). Aşağıdaki sidebar ve bottom-nav maddeleri tarihseldir; kaydırma sütunu kuralları (§42.5.1) aynen geçerli.
 
 Owner + admin panel sayfalarında **tek tip** layout sistemi. Drift'i
 tetikleyici şeyler (admin shell double-wrap, eksik scrollbar gutter, 5
@@ -6266,7 +6266,7 @@ Yüksek puan yönlendirmeleri eskiden `comment = 'High Rating Redirect'` ile yor
 - **Yanıt süresi** (`computeReplyTimes`): dönemde gelenlerin ilk yanıta kadar geçen süresinin **medyanı**; 30 günden eski kayda verilen yanıt "eski kayda yanıt" olarak ayrı sayılır. Google analizi aynı kural (oluşturma zamanına göre). Değişim `describeChange`: eşitse "Değişim yok", 2 kat ve üstü "3 kat", süre kısalınca yeşil ↓.
 - **Sağlık skoru**: yanıt bileşeni `loadReplyCoverage` = yanıtlı (1–3★ geri bildirim + Google yorumu) / toplam. Sağlık API'si skoru canlı hesaplar; eski snapshot skorları yeniden yazılmaz.
 - **Google sayısı**: tek sayı = listedeki yorum satırı (`google_reviews`); Google'ın `totalReviewCount`'u geride kalabiliyor (187 vs 188).
-- **Grafik**: Panel "Puan hacmi" ve Analitik aynı `VolumeChart` (`src/components/charts/`, recharts gövdesi `next/dynamic`): günlük ince yığılmış çubuk (yönlendirme lime, geri bildirim grafit), 92 günden uzun pencerede haftalık, gün sınırı işletme saat diliminde (`buildVolumeSeries`). Sparkline monoton eğri (`monotonePath`).
+- **Grafik**: Panel "Puan hacmi" ve Analitik aynı `VolumeChart` (`src/components/charts/`, recharts gövdesi `next/dynamic`): günlük ince yığılmış çubuk (yönlendirme mor, geri bildirim siyah), 92 günden uzun pencerede haftalık, gün sınırı işletme saat diliminde (`buildVolumeSeries`). Sparkline monoton eğri (`monotonePath`).
 - **AI**: Analitik AI çağrılarını beklemez (önbellek varsa gösterir, yoksa arka planda üretir). Önbellek anahtarları `v58` ile yenilendi.
 - **Düzen**: panel sayfaları en çok 1280 px, kartlar arası 24 px, kart içi 24 px (mobilde 16); etiketler 12–13 px normal yazı (büyük harf mono etiket yok). Kaydırma sütunu `bg-[#FAFAFA]` (gri bant içerik ortasında kesilmez).
 - **Yapma**: yönlendirmeyi yorum gibi saymak ya da AI'a göndermek; ortalama yanıt süresi; `%999+`; KPI'yı tanımsız bırakmak.
@@ -6322,7 +6322,7 @@ Pazarlama sayfaları (üst menüsü `.rt-header` olan her sayfa) `ritim-pos-pake
 
 - **Kod**: `src/components/marketing/ritim/` — `ritim.css` (MarketingNavbar import eder; paket CSS'i `rt-` sınıf + `--rt-` değişken önekiyle, bileşenler `@layer components`, taban kurallar ve güvenlik ağı katmansız `:root:has(.rt-header)` kapsamında), `interactive.tsx` (SSS, segment, yapışkan özellik, sektör rayı, e-posta yakalama, dikey sekmeler), `icons.tsx` (+ `Scribble`), `media.ts` (`img()`, `SITE_VIDEOS`). Fontlar `fonts.ts` (Figtree, Source Sans 3, Caveat; `preload: false`).
 - **Alt bilgi**: düz koyu yeşil (`--rt-brand-950`) çerçeve içinde beyaz kart; kartın altında içerik yok. Gradyan, nokta deseni, "yapay zekâya sor" simge satırı ve dev "buaze." yazısı 2026-11-27'de kullanıcı isteğiyle kaldırıldı (yapay zekâ işi gibi duruyordu); geri ekleme.
-- **Marka rengi**: `ritim.css` başındaki 7 `--rt-brand-*` satırı, paketin yeşili (`#08875E` birincil düğme). 2026-11-27'de lime denendi, kullanıcı yeşilde kalmayı seçti; kullanıcı istemedikçe değiştirme. Panel, e-posta ve QR yüzeyleri Pulse kalır (§11).
+- **Marka rengi**: `ritim.css` başındaki 7 `--rt-brand-*` satırı Getir moru rampası (2026-11-28, §64): 600 `#5D3EBC` birincil düğme, 700 `#4C2FA3` bağlantı, 800 `#3B1F8F`, 950 `#1E0F4D` alt bilgi çerçevesi, 50 `#F3F0FC` açık ton; gradyan 500 → 800 (beyaz yazı için 300 kullanılmaz). Mor üstünde her zaman beyaz yazı.
 - **Güvenlik ağı**: eski sayfa kodundaki Pulse sınıfları (`text/bg/border-[#0A0A0A|#C6F24E|#FAFAFA|#EDEDED…]`, `pulse-eyebrow`, `bz-card`) pazarlama sayfasında paket paletine çevrilir; `max-w-[1200px]`/`[1100px]` konteynerler 1320 px olur; koyu/lime hap düğmeler yeşil birincil, gri çerçeveli haplar çerçeveli marka düğmesi olur. Yalnız eski kod içindir; yeni kod `rt-` sınıfları yazar.
 - **Belirme**: `.rt-reveal` kaydırmaya bağlı CSS animasyonudur (`animation-timeline: view()`), **dolgusuz** — kaydırılmayan tam sayfa görüntüsünde / Google render'ında içerik görünür kalır. JS ile gizleme yapma.
 - **Medya**: fotoğraflar `public/images/site/*.jpg` (Unsplash), `next/image`. Video yuvaları (`SITE_VIDEOS.hero`, `.closing`) boş gelir; doluysa sessiz döngülü video, değilse fotoğraf.

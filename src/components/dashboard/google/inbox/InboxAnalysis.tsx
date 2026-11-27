@@ -81,21 +81,31 @@ export function InboxAnalysis({
         type="button"
         onClick={toggle}
         aria-expanded={open}
-        className="flex min-h-12 w-full items-center gap-2 px-4 py-3 text-left sm:px-5"
+        className="flex min-h-12 w-full items-center gap-3 px-4 py-3 text-left sm:px-5"
       >
-        <BarChart3 size={15} aria-hidden="true" className="text-[#525252]" />
-        <span className="text-[14px] font-medium text-pn-ink">{isTr ? 'Analiz' : 'Analysis'}</span>
-        <span className="hidden text-[12px] text-[#737373] sm:inline">
+        <span
+          aria-hidden="true"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+        >
+          <BarChart3 size={16} />
+        </span>
+        <span className="text-[16px] font-medium text-pn-ink">{isTr ? 'Analiz' : 'Analysis'}</span>
+        <span className="hidden text-[13px] text-[#9A9A9A] sm:inline">
           {isTr ? 'Sağlık skoru, puan dağılımı, yanıt süresi, sık geçen kelimeler' : 'Health score, rating mix, reply time, frequent words'}
         </span>
-        <ChevronDown size={16} aria-hidden="true" className={`ml-auto text-[#737373] transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span
+          aria-hidden="true"
+          className="ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-canvas text-pn-ink"
+        >
+          <ChevronDown size={18} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        </span>
       </button>
       )}
 
       {open && (
-        <div className={`space-y-5 px-4 py-4 sm:px-5 ${embedded ? 'sm:py-5' : 'border-t border-pn-line'}`}>
+        <div className={`space-y-5 px-4 pb-4 sm:px-5 ${embedded ? 'pt-4 sm:py-5' : 'pt-1'}`}>
           {error ? (
-            <p className="text-[13px] text-[#991B1B]">{isTr ? 'Analiz yüklenemedi.' : 'Analysis could not be loaded.'}</p>
+            <p className="text-[13px] text-[#D92D20]">{isTr ? 'Analiz yüklenemedi.' : 'Analysis could not be loaded.'}</p>
           ) : !stats ? (
             <div className="flex items-center gap-2 text-[13px] text-[#737373]">
               <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -103,17 +113,17 @@ export function InboxAnalysis({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div>
-                  <p className="text-[13px] font-medium text-[#525252]">{isTr ? 'Puan dağılımı' : 'Rating mix'}</p>
+              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
+                <div className="rounded-[18px] bg-pn-canvas p-4">
+                  <p className="text-[13px] font-medium text-[#737373]">{isTr ? 'Puan dağılımı' : 'Rating mix'}</p>
                   <ul className="mt-2 space-y-1.5">
                     {stats.distribution.map((d) => (
                       <li key={d.rating} className="flex items-center gap-2 text-[12px]">
                         <span className="w-6 tabular-nums text-[#525252]">{d.rating}★</span>
-                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-pn-canvas">
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-black/[0.06]">
                           <span
                             className="block h-full rounded-full"
-                            style={{ width: `${(d.count / max) * 100}%`, background: d.rating >= 4 ? '#000000' : d.rating === 3 ? '#D97706' : '#DC2626' }}
+                            style={{ width: `${(d.count / max) * 100}%`, background: d.rating >= 4 ? '#5D3EBC' : d.rating === 3 ? '#D97706' : '#D92D20' }}
                           />
                         </span>
                         <span className="w-10 text-right tabular-nums text-[#525252]">{d.count}</span>
@@ -122,14 +132,14 @@ export function InboxAnalysis({
                   </ul>
                 </div>
 
-                <div>
-                  <p className="text-[13px] font-medium text-[#525252]">{isTr ? 'Yanıt süresi (medyan)' : 'Reply time (median)'}</p>
-                  <p className="mt-2 text-[24px] font-medium tabular-nums text-pn-ink">
+                <div className="rounded-[18px] bg-pn-canvas p-4">
+                  <p className="text-[13px] font-medium text-[#737373]">{isTr ? 'Yanıt süresi (medyan)' : 'Reply time (median)'}</p>
+                  <p className="mt-2 text-[28px] font-medium tabular-nums text-pn-ink">
                     {rt?.currentHours != null ? formatDuration(rt.currentHours * 3600_000, isTr) : '—'}
                   </p>
                   {rt?.currentHours != null && rt.previousHours != null ? (() => {
                     const c = describeChange(rt.currentHours, rt.previousHours, { isTr, lowerIsBetter: true });
-                    const color = c.tone === 'good' ? '#15803D' : c.tone === 'bad' ? '#B91C1C' : '#737373';
+                    const color = c.tone === 'good' ? '#23863A' : c.tone === 'bad' ? '#D92D20' : '#737373';
                     return (
                       <p className="mt-1 text-[12px] font-medium" style={{ color }}>
                         {c.arrow ? `${c.arrow} ` : ''}
@@ -158,20 +168,20 @@ export function InboxAnalysis({
                   </p>
                 </div>
 
-                <div>
-                  <p className="text-[13px] font-medium text-[#525252]">{isTr ? 'Yeni yorumlar' : 'New reviews'}</p>
-                  <p className="mt-2 text-[24px] font-medium tabular-nums text-pn-ink">{stats.newLast30}</p>
+                <div className="rounded-[18px] bg-pn-canvas p-4">
+                  <p className="text-[13px] font-medium text-[#737373]">{isTr ? 'Yeni yorumlar' : 'New reviews'}</p>
+                  <p className="mt-2 text-[28px] font-medium tabular-nums text-pn-ink">{stats.newLast30}</p>
                   <p className="mt-1 text-[12px] text-[#737373]">
                     {isTr ? `Son 30 gün · önceki 30 gün: ${stats.newPrev30}` : `Last 30 days · previous 30 days: ${stats.newPrev30}`}
                   </p>
-                  <p className="mt-0.5 text-[12px] text-[#A3A3A3]">
+                  <p className="mt-0.5 text-[12px] text-[#9A9A9A]">
                     {isTr ? `Yanıt oranı: %${stats.replyRate ?? 0}` : `Reply rate: ${stats.replyRate ?? 0}%`}
                   </p>
                 </div>
               </div>
 
               <div>
-                <p className="text-[13px] font-medium text-[#525252]">{isTr ? 'Sık geçen kelimeler' : 'Frequent words'}</p>
+                <p className="text-[14px] font-medium text-pn-ink">{isTr ? 'Sık geçen kelimeler' : 'Frequent words'}</p>
                 {stats.keywords.length === 0 ? (
                   <p className="mt-2 text-[13px] text-[#737373]">
                     {isTr ? 'Henüz yeterli yorum metni yok.' : 'Not enough review text yet.'}
@@ -181,12 +191,12 @@ export function InboxAnalysis({
                     {stats.keywords.map((k) => (
                       <li
                         key={k.word}
-                        className={`rounded-full px-2.5 py-1 text-[12px] ${
+                        className={`rounded-full px-3 py-1 text-[13px] ${
                           k.sentiment === 'pos'
-                            ? 'bg-pn-accent-soft text-pn-ink'
+                            ? 'bg-pn-accent-soft text-pn-accent'
                             : k.sentiment === 'neg'
-                              ? 'bg-[#FEF2F2] text-[#991B1B]'
-                              : 'bg-pn-canvas text-[#525252]'
+                              ? 'bg-[#FDECEC] text-[#D92D20]'
+                              : 'bg-black/[0.05] text-[#525252]'
                         }`}
                       >
                         {k.word} <span className="tabular-nums opacity-70">{k.mentions}</span>
@@ -194,7 +204,7 @@ export function InboxAnalysis({
                     ))}
                   </ul>
                 )}
-                <p className="mt-1.5 text-[12px] text-[#A3A3A3]">
+                <p className="mt-2 text-[12px] text-[#9A9A9A]">
                   {isTr
                     ? 'Yalnız müşterinin kendi yazdığı metinden; Google çevirileri sayılmaz.'
                     : "From the customer's own words only; Google translations are not counted."}

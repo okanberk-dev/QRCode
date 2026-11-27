@@ -13,7 +13,7 @@
 import { useMemo, useState } from 'react';
 import { CheckCircle2, Copy, Loader2, XCircle } from 'lucide-react';
 import { APCheckbox } from '@/components/ui';
-import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
+import { PlatformCard } from './PlatformCard';
 import type { PlatformUrlField } from '@/lib/platform-management';
 
 interface ApplyBusiness {
@@ -106,7 +106,8 @@ export function ApplyLinkToBusinesses({
   const failedCount = Object.values(results).filter((result) => !result.ok).length;
 
   return (
-    <SettingsCard
+    <PlatformCard
+      icon={<Copy size={18} aria-hidden="true" />}
       title={isTr ? 'Diğer işletmelere uygula' : 'Apply to your other businesses'}
       description={
         isTr
@@ -114,14 +115,14 @@ export function ApplyLinkToBusinesses({
           : `If your branches share one ${platformName} account, copy this link to them in one go.`
       }
     >
-      <div className="space-y-3 pt-1">
+      <div className="space-y-3">
         {candidates.length === 0 ? (
-          <p className="text-[13px] text-[#525252]">
+          <p className="rounded-[16px] bg-pn-canvas px-4 py-3 text-[14px] text-[#525252]">
             {isTr ? 'Tüm işletmelerinizde bu link zaten kayıtlı.' : 'All your businesses already use this link.'}
           </p>
         ) : (
           <>
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex min-h-[44px] items-center justify-between gap-2 px-1">
               <APCheckbox
                 checked={allSelected}
                 indeterminate={!allSelected && selected.size > 0}
@@ -129,16 +130,16 @@ export function ApplyLinkToBusinesses({
                 label={isTr ? 'Tümünü seç' : 'Select all'}
                 disabled={running}
               />
-              <span className="text-[12px] text-[#737373]">
+              <span className="tabular-nums text-[13px] text-[#737373]">
                 {isTr ? `${selected.size} seçili` : `${selected.size} selected`}
               </span>
             </div>
-            <ul className="divide-y divide-pn-line rounded-[14px] border border-pn-line-strong" role="list">
+            <ul className="space-y-2" role="list">
               {others.map((business) => {
                 const same = (business.url ?? '').trim() === url.trim();
                 const result = results[business.id];
                 return (
-                  <li key={business.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <li key={business.id} className="flex min-h-[56px] items-center gap-3 rounded-[16px] bg-pn-canvas px-3 py-2.5">
                     <APCheckbox
                       checked={same || selected.has(business.id)}
                       onChange={(next) => toggle(business.id, next)}
@@ -146,8 +147,8 @@ export function ApplyLinkToBusinesses({
                       ariaLabel={business.name}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium text-pn-ink">{business.name}</p>
-                      <p className="truncate tabular-nums text-[12px] text-[#737373]">
+                      <p className="truncate text-[14px] font-medium text-pn-ink">{business.name}</p>
+                      <p className="truncate tabular-nums text-[13px] text-[#666666]">
                         {same
                           ? isTr
                             ? 'Aynı link kayıtlı'
@@ -155,9 +156,17 @@ export function ApplyLinkToBusinesses({
                           : business.url?.trim() || (isTr ? 'Link yok' : 'No link')}
                       </p>
                     </div>
-                    {result?.ok && <CheckCircle2 size={15} className="shrink-0 text-[#16A34A]" aria-label={isTr ? 'Kaydedildi' : 'Saved'} />}
+                    {result?.ok && (
+                      <span className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-[#E6F7EA] px-2.5 text-[12px] font-medium text-[#1F7A35]">
+                        <CheckCircle2 size={13} aria-hidden="true" />
+                        {isTr ? 'Kaydedildi' : 'Saved'}
+                      </span>
+                    )}
                     {result && !result.ok && (
-                      <span className="flex shrink-0 items-center gap-1 text-[12px] text-[#B91C1C]" title={result.message}>
+                      <span
+                        className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-[#FDECEC] px-2.5 text-[12px] font-medium text-[#C4271B]"
+                        title={result.message}
+                      >
                         <XCircle size={14} aria-hidden="true" />
                         {isTr ? 'Hata' : 'Failed'}
                       </span>
@@ -170,7 +179,7 @@ export function ApplyLinkToBusinesses({
               type="button"
               onClick={apply}
               disabled={selected.size === 0 || running}
-              className="bz-btn-primary w-full disabled:cursor-not-allowed sm:w-auto"
+              className="bz-btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 disabled:cursor-not-allowed sm:w-auto"
             >
               {running ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
               {running
@@ -183,7 +192,7 @@ export function ApplyLinkToBusinesses({
             </button>
           </>
         )}
-        <p role="status" aria-live="polite" className="text-[12px] text-[#525252] [&:empty]:hidden">
+        <p role="status" aria-live="polite" className="text-[13px] text-[#525252] [&:empty]:hidden">
           {savedCount + failedCount > 0
             ? isTr
               ? `${savedCount} işletmeye kaydedildi${failedCount ? `, ${failedCount} işletmede hata` : ''}.`
@@ -191,7 +200,7 @@ export function ApplyLinkToBusinesses({
             : ''}
         </p>
       </div>
-    </SettingsCard>
+    </PlatformCard>
   );
 }
 

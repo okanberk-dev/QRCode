@@ -144,7 +144,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
               <div className="max-w-[680px]">
                 <span
                   aria-hidden="true"
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#0A0A0A] text-[#C6F24E]"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#5D3EBC] text-white"
                 >
                   <HelpCategoryIcon icon={category.icon} size={22} />
                 </span>
@@ -178,13 +178,13 @@ export default async function HelpCategoryPage({ params }: PageParams) {
               ) : (
                 <ol role="list" className="mt-6 border-t border-[#EDEDED]">
                   {articles.map((item) => (
-                    <li key={item.slug} className="group relative border-b border-[#EDEDED] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2">
+                    <li key={item.slug} className="group relative border-b border-[#EDEDED] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2">
                       <div className="flex items-start justify-between gap-6 py-6 sm:py-7">
                         <div className="min-w-0">
                           <h3 className="text-pretty text-[18px] font-medium leading-[1.3] tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
                             <Link
                               href={`${base}/help/${item.slug}`}
-                              className="decoration-[#C6F24E] decoration-2 underline-offset-4 after:absolute after:inset-0 group-hover:underline focus-visible:outline-none"
+                              className="decoration-[#5D3EBC] decoration-2 underline-offset-4 after:absolute after:inset-0 group-hover:underline focus-visible:outline-none"
                             >
                               {item.title}
                             </Link>
@@ -215,11 +215,11 @@ export default async function HelpCategoryPage({ params }: PageParams) {
                     <li key={item.slug}>
                       <Link
                         href={`${base}/help/category/${item.slug}`}
-                        className="group flex min-h-[52px] items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-4 py-2 transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                        className="group flex min-h-[52px] items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-4 py-2 transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
                       >
                         <span
                           aria-hidden="true"
-                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#F5F5F5] text-[#0A0A0A] transition-colors group-hover:bg-[#C6F24E]"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--rt-cream)] text-[var(--rt-ink-900)] transition-colors group-hover:bg-[#5D3EBC] group-hover:text-white"
                         >
                           <HelpCategoryIcon icon={item.icon} size={16} />
                         </span>

@@ -125,7 +125,7 @@ export function SelectionBar({
     <div ref={wrapRef}>
       <PanelSelectionBar
         count={selection.size}
-        countClassName="text-[13px] font-medium text-pn-accent"
+        countClassName="text-[13px] font-medium text-white"
         label={copy.selection.selectedLabel}
         ariaLabel={copy.selection.barAria}
         actions={barActions}

@@ -376,13 +376,13 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                       onClick={() => setForm((f) => ({ ...f, scoringMode: mode }))}
                       className={`flex items-start gap-3 rounded-[24px] border p-3.5 text-left transition-all ${
                         active
-                          ? 'border-pn-ink bg-pn-canvas'
+                          ? 'border-pn-accent bg-pn-accent-soft'
                           : 'border-pn-line bg-white hover:border-pn-ink/40'
                       }`}
                     >
                       <span
                         className={`mt-0.5 h-3 w-3 shrink-0 rounded-full ${
-                          active ? 'bg-pn-accent ring-2 ring-pn-ink' : 'bg-[#E5E5E5]'
+                          active ? 'bg-pn-accent ring-2 ring-pn-accent-soft' : 'bg-[#E5E5E5]'
                         }`}
                       />
                       <span className="min-w-0">
@@ -427,10 +427,10 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
               </Field>
             </div>
 
-            <div className="rounded-[24px] border border-pn-line bg-pn-ink p-5 text-white">
+            <div className="rounded-[24px] bg-[#3B1F8F] p-5 text-white">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[13px] font-medium text-white/60">ŞABLON ÖZETİ</span>
-                <Sparkles size={15} className="text-pn-accent" />
+                <span className="text-[13px] font-medium text-white/75">ŞABLON ÖZETİ</span>
+                <Sparkles size={15} className="text-white" />
               </div>
               <p className="mt-3 break-words text-[18px] font-medium leading-tight">
                 {form.title || 'Başlıksız şablon'}
@@ -546,7 +546,7 @@ function StepIntro({ icon, title, body }: { icon: React.ReactNode; title: string
   return (
     <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent text-pn-ink">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent text-white">
           {icon}
         </div>
         <div>

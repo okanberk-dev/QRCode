@@ -65,10 +65,10 @@ function PulseLine({ className = '' }: { className?: string }) {
     >
       <defs>
         <linearGradient id="adminPulseFade" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#78FC90" stopOpacity="0" />
-          <stop offset="0.12" stopColor="#78FC90" stopOpacity="1" />
-          <stop offset="0.88" stopColor="#78FC90" stopOpacity="1" />
-          <stop offset="1" stopColor="#78FC90" stopOpacity="0" />
+          <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
+          <stop offset="0.12" stopColor="#FFFFFF" stopOpacity="1" />
+          <stop offset="0.88" stopColor="#FFFFFF" stopOpacity="1" />
+          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path
@@ -176,16 +176,16 @@ function AdminLoginContent() {
     s >= 60 ? `${Math.floor(s / 60)} dk ${String(s % 60).padStart(2, '0')} sn` : `${s} sn`;
 
   return (
-    <main className="relative w-full min-h-[100dvh] bg-white text-pn-ink selection:bg-pn-accent/40 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+    <main className="relative w-full min-h-[100dvh] bg-white text-pn-ink lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
       {/* ================= BRAND PANEL (desktop) ================= */}
-      <aside className="relative hidden overflow-hidden bg-pn-ink text-white lg:flex lg:flex-col">
+      <aside className="relative hidden overflow-hidden bg-pn-accent text-white lg:flex lg:flex-col">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-44 -right-40 h-[520px] w-[520px] rounded-full bg-pn-accent/25 blur-[130px]"
+          className="pointer-events-none absolute -top-44 -right-40 h-[520px] w-[520px] rounded-full bg-[#8C6CF0]/55 blur-[130px]"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute bottom-[-32%] left-[-18%] h-[460px] w-[460px] rounded-full bg-pn-accent-hover/15 blur-[150px]"
+          className="pointer-events-none absolute bottom-[-32%] left-[-18%] h-[460px] w-[460px] rounded-full bg-[#3B1F8F]/45 blur-[150px]"
         />
         <div
           aria-hidden
@@ -201,15 +201,15 @@ function AdminLoginContent() {
           <Link href="/" className="inline-flex items-center gap-2.5 self-start" aria-label="Buaze ana sayfa">
             <BuazeLogo size={36} variant="on-dark" />
             <span className="bz-h-tight text-[22px]" style={{ letterSpacing: '-0.03em' }}>
-              buaze<span className="text-pn-accent">.</span>
+              buaze<span className="text-white">.</span>
             </span>
           </Link>
 
           <div className="max-w-[460px]">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-pn-accent opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-pn-accent" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
               </span>
               <span className="text-[13px] font-medium text-white/80">YÖNETİCİ KONSOLU</span>
             </div>
@@ -217,18 +217,18 @@ function AdminLoginContent() {
             <h2 className="mt-7 text-[44px] xl:text-[56px] font-medium leading-[1.0] tracking-[-0.04em] text-white">
               Her yorum
               <br />
-              bir <span className="text-pn-accent">nabız.</span>
+              bir <span className="text-white">nabız.</span>
             </h2>
-            <p className="mt-5 max-w-[400px] text-[15px] leading-[1.65] text-white/70">
+            <p className="mt-5 max-w-[400px] text-[15px] leading-[1.65] text-white/80">
               İşletmelerin itibarını tek panelden izle: yorum akışı, QR performansı, Pulse AI
               taslakları ve platform sağlığı — hepsi burada.
             </p>
 
             <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.03]">
               <div className="flex items-center justify-between px-4 pt-3.5">
-                <span className="text-[13px] font-medium text-white/50">CANLI NABIZ</span>
-                <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-pn-accent">
-                  <span className="bz-pulse-dot" />
+                <span className="text-[13px] font-medium text-white/75">CANLI NABIZ</span>
+                <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-white">
+                  <span className="bz-pulse-dot bg-white" />
                   Akış aktif
                 </span>
               </div>
@@ -238,12 +238,12 @@ function AdminLoginContent() {
             <ul className="mt-7 space-y-3.5">
               {FEATURES.map(({ icon: Icon, label, sub }) => (
                 <li key={label} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent/12 text-pn-accent">
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-white/15 text-white">
                     <Icon size={16} strokeWidth={2.2} />
                   </span>
                   <span>
                     <span className="block text-[14px] font-medium text-white/90">{label}</span>
-                    <span className="block text-[13px] text-white/50">{sub}</span>
+                    <span className="block text-[13px] text-white/75">{sub}</span>
                   </span>
                 </li>
               ))}
@@ -252,11 +252,11 @@ function AdminLoginContent() {
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {TRUST_MARKS.map((m) => (
-              <span key={m} className="text-[13px] font-medium text-white/40">
+              <span key={m} className="text-[13px] font-medium text-white/80">
                 {m}
               </span>
             ))}
-            <span className="ml-auto text-[12px] text-white/35">
+            <span className="ml-auto text-[12px] text-white/65">
               © {new Date().getFullYear()} BUAZE
             </span>
           </div>
@@ -268,7 +268,7 @@ function AdminLoginContent() {
         {/* Mobile ambient — soft lime wash behind the header */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[280px] bg-[radial-gradient(120%_80%_at_50%_0%,#E6FDEA_0%,rgba(230,253,234,0.35)_45%,rgba(255,255,255,0)_75%)] lg:hidden"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[280px] bg-[radial-gradient(120%_80%_at_50%_0%,#EFEAFB_0%,rgba(239,234,251,0.35)_45%,rgba(255,255,255,0)_75%)] lg:hidden"
         />
 
         <header className="relative flex items-center justify-between px-5 pt-[calc(16px+env(safe-area-inset-top,0px))] sm:px-8 sm:pt-7 lg:justify-end lg:px-12 lg:pt-9">
@@ -293,7 +293,7 @@ function AdminLoginContent() {
               {/* Heading */}
               <div className="mb-6 sm:mb-7">
                 <span className="inline-flex items-center gap-2 rounded-full border border-pn-line bg-pn-canvas px-3 py-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pn-ink text-pn-accent">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pn-accent text-white">
                     <ShieldCheck size={11} strokeWidth={2.5} />
                   </span>
                   <span className="text-[13px] font-medium text-pn-ink">YÖNETİCİ PANELİ</span>
@@ -434,12 +434,12 @@ function AdminLoginContent() {
                       name="rememberMe"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="peer h-5 w-5 appearance-none rounded-[10px] border border-pn-line-strong bg-white transition-colors checked:border-pn-ink checked:bg-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
+                      className="peer h-5 w-5 appearance-none rounded-[10px] border border-pn-line-strong bg-white transition-colors checked:border-pn-accent checked:bg-pn-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
                     />
                     <svg
                       aria-hidden
                       viewBox="0 0 16 16"
-                      className="pointer-events-none absolute h-3 w-3 text-pn-accent opacity-0 transition-opacity peer-checked:opacity-100"
+                      className="pointer-events-none absolute h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
                     >
                       <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -456,7 +456,7 @@ function AdminLoginContent() {
                 <button
                   type="submit"
                   disabled={submitDisabled}
-                  className="bz-btn-lime mt-1 min-h-[54px] w-full text-[15px] shadow-[0_18px_40px_-20px_rgba(120, 252, 144,0.9)] hover:shadow-[0_18px_40px_-18px_rgba(168,214,46,0.9)] disabled:shadow-none"
+                  className="bz-btn-lime mt-1 min-h-[54px] w-full text-[15px] shadow-[0_18px_40px_-20px_rgba(93,62,188,0.9)] hover:shadow-[0_18px_40px_-18px_rgba(76,47,163,0.9)] disabled:shadow-none"
                 >
                   {loading ? (
                     <>

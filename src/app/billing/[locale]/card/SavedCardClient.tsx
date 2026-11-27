@@ -84,16 +84,16 @@ export default function SavedCardClient({
   );
 
   return (
-    <main className="min-h-dvh bg-[#FAFAFA] text-[#0A0A0A]">
+    <main className="min-h-dvh bg-[#F6F6F6] text-[#111110]">
       <header className="h-14 border-b border-[#EDEDED] bg-white">
         <div className="mx-auto flex h-full w-full max-w-[640px] items-center justify-between gap-3 px-4 sm:px-7">
-          <a href={dashboardUrl} className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]">
+          <a href={dashboardUrl} className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC]">
             <BuazeLogo size={28} />
             <span className="text-[17px] font-semibold tracking-[-0.02em] [font-family:var(--font-heading)]">buaze</span>
           </a>
           <a
             href={dashboardUrl}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-1 text-[13px] text-[#525252] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:min-h-0"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-1 text-[13px] text-[#525252] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] sm:min-h-0"
           >
             <ArrowLeft size={14} aria-hidden="true" />
             {t('review.backToPanel')}
@@ -103,7 +103,7 @@ export default function SavedCardClient({
 
       <div className="mx-auto w-full max-w-[640px] px-4 py-10 sm:px-7">
         <div className="bz-card p-5 sm:p-6">
-          <p className="pulse-eyebrow text-[#737373]">{t('pm.eyebrow')}</p>
+          <p className="text-[13px] font-medium text-[#737373]">{t('pm.eyebrow')}</p>
           <h1 className="mt-2 text-[24px] font-medium leading-[1.2] tracking-[-0.02em] [font-family:var(--font-heading)]">{t('card.title')}</h1>
 
           {blocked ? (
@@ -147,7 +147,7 @@ export default function SavedCardClient({
             tabIndex={-1}
             role="status"
             aria-live="polite"
-            className={`mt-4 min-h-[18px] text-[13px] leading-[1.45] focus:outline-none ${status?.tone === 'error' ? 'text-[#991B1B]' : 'text-[#4D5C00]'}`}
+            className={`mt-4 min-h-[18px] text-[13px] leading-[1.45] focus:outline-none ${status?.tone === 'error' ? 'text-[#991B1B]' : 'text-[#1B6B2E]'}`}
           >
             {status ? t(status.key) : ''}
           </p>

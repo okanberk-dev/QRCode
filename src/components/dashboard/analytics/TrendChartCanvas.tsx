@@ -86,8 +86,8 @@ export default function TrendChartCanvas({
     >
       <defs>
         <linearGradient id="mainTrendBuazeQr" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#78FC90" stopOpacity={0.6} />
-          <stop offset="100%" stopColor="#78FC90" stopOpacity={0.05} />
+          <stop offset="0%" stopColor="#5D3EBC" stopOpacity={0.6} />
+          <stop offset="100%" stopColor="#5D3EBC" stopOpacity={0.05} />
         </linearGradient>
       </defs>
       <CartesianGrid vertical={false} stroke="#EBEBEB" strokeDasharray="0" />
@@ -116,7 +116,7 @@ export default function TrendChartCanvas({
         )}
       />
       {/* Stacked area: Google (graphite, base) -> Tripadvisor (muted) ->
-          Buaze QR (lime, accent) -> Other (n200 top). Lower stackId
+          Buaze QR (purple, accent) -> Other (n200 top). Lower stackId
           items render below upper ones in recharts. */}
       <Area
         type="monotone"
@@ -142,7 +142,7 @@ export default function TrendChartCanvas({
         type="monotone"
         dataKey="buazeQr"
         stackId="trend"
-        stroke="#2FB24C"
+        stroke="#5D3EBC"
         strokeWidth={1.5}
         fill="url(#mainTrendBuazeQr)"
         fillOpacity={1}

@@ -48,7 +48,7 @@ export function ChipGroupField<K extends string>({
                       on
                         ? tint
                           ? ''
-                          : 'border-pn-ink bg-pn-ink text-white'
+                          : 'border-pn-accent bg-pn-accent text-white'
                         : 'border-pn-line-strong bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink'
                     }`}
                   >

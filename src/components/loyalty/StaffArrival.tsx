@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import { unlockAudio } from '@/lib/loyalty-sound';
 
 const SHOW_MS = 1500;
-const CORNER = 'absolute h-9 w-9 border-pn-accent';
+const CORNER = 'absolute h-9 w-9 border-white';
 
 export default function StaffArrival({
   locale,
@@ -38,7 +38,7 @@ export default function StaffArrival({
 
   return (
     <div
-      className="bzl-staff-arrival bzl-tap fixed inset-0 z-[90] flex flex-col items-center justify-center bg-pn-ink px-6 text-center text-white"
+      className="bzl-staff-arrival bzl-tap fixed inset-0 z-[90] flex flex-col items-center justify-center bg-[#3B1F8F] px-6 text-center text-white"
       onPointerUp={() => {
         unlockAudio();
         setShow(false);
@@ -54,14 +54,14 @@ export default function StaffArrival({
           <span className={`${CORNER} bottom-0 right-0 rounded-br-[26px] border-b-4 border-r-4`} />
         </div>
         {/* Glow as its own soft layer: a box-shadow on the scaling disc smears into a square on some GPUs. */}
-        <span className="bzl-fade absolute inset-[6px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(198,242,78,0.34) 0%, rgba(198,242,78,0) 68%)' }} />
-        <span className="bzl-pop absolute inset-[34px] flex items-center justify-center rounded-full bg-pn-accent">
+        <span className="bzl-fade absolute inset-[6px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(220,211,246,0.4) 0%, rgba(220,211,246,0) 68%)' }} />
+        <span className="bzl-pop absolute inset-[34px] flex items-center justify-center rounded-full bg-white">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-            <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#0A0A0A" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#5D3EBC" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
       </div>
-      <p className="bzl-rise mt-9 text-[12px] font-semibold uppercase tracking-[0.2em] text-pn-accent" style={{ animationDelay: '120ms' }}>
+      <p className="bzl-rise mt-9 text-[15px] font-medium text-white/80" style={{ animationDelay: '120ms' }}>
         {tr ? 'Kasa modu' : 'Staff mode'}
       </p>
       <p
@@ -70,9 +70,9 @@ export default function StaffArrival({
       >
         {tr ? 'Kart okundu' : 'Card read'}
       </p>
-      <p className="bzl-rise mt-2 text-[15px] text-white/70" style={{ animationDelay: '280ms' }}>
+      <p className="bzl-rise mt-2 text-[15px] text-white/80" style={{ animationDelay: '280ms' }}>
         {customerName ? `${customerName} · ` : ''}
-        <span className="font-mono tracking-[0.12em]">{code}</span>
+        <span className="font-medium tabular-nums tracking-[0.06em]">{code}</span>
       </p>
     </div>
   );

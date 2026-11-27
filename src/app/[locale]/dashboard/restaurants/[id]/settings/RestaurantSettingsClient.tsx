@@ -536,7 +536,7 @@ export default function RestaurantSettingsClient({
           aria-hidden="true"
           className={`pointer-events-none absolute left-0 top-full z-10 mt-1 rounded-full px-3 py-1.5 text-[12px] font-medium sm:left-auto sm:right-0 ${
             copyNotice.ok
-              ? "bg-pn-ink text-white"
+              ? "bg-pn-accent text-white"
               : "border border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]"
           }`}
         >

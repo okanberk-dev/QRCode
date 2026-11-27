@@ -32,7 +32,7 @@ const PublicSurveyView = dynamic(() => import('@/app/s/[slug]/PublicSurveyView')
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center bg-pn-ink" role="status">
-      <Loader2 size={22} className="animate-spin text-pn-accent" aria-hidden="true" />
+      <Loader2 size={22} className="animate-spin text-white" aria-hidden="true" />
       <span className="sr-only">…</span>
     </div>
   ),

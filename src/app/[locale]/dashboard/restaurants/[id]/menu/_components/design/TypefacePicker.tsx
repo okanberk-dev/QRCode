@@ -55,7 +55,7 @@ export function TypefacePicker({
             onClick={() => onChange(key)}
             onKeyDown={(e) => onKeyDown(e, index)}
             className={`relative flex min-w-0 items-center gap-3.5 rounded-[20px] bg-white p-3 text-left transition-shadow duration-[160ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-              on ? 'shadow-[0_0_0_2px_#0A0A0A]' : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3]'
+              on ? 'shadow-[0_0_0_2px_#5D3EBC]' : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3]'
             }`}
             style={{ fontSynthesis: 'none' }}
           >
@@ -86,7 +86,7 @@ export function TypefacePicker({
               </span>
             </span>
             {on && (
-              <span className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-pn-ink" aria-hidden="true">
+              <span className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-pn-accent" aria-hidden="true">
                 <Check size={10} strokeWidth={3} className="text-white" />
               </span>
             )}

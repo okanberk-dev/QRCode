@@ -199,7 +199,7 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
                             {EDIT_TYPE_LABELS[r.editType] ?? r.editType}
                           </span>
                           {isLatest && (
-                            <span className="text-[13px] font-medium rounded-full bg-pn-accent px-2 py-0.5 text-pn-ink">
+                            <span className="text-[13px] font-medium rounded-full bg-pn-accent px-2 py-0.5 text-white">
                               MEVCUT
                             </span>
                           )}

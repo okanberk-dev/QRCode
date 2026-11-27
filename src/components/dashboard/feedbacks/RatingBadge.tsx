@@ -21,7 +21,7 @@ interface RatingBadgeProps {
 }
 
 function toneFor(rating: number): string {
-  if (rating >= 4) return 'bg-pn-accent text-pn-ink';
+  if (rating >= 4) return 'bg-pn-accent text-white';
   if (rating === 3) return 'bg-pn-ink text-white';
   return 'bg-[#FDECEC] text-[#B42318]';
 }

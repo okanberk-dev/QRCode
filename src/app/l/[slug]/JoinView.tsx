@@ -33,13 +33,14 @@ interface Props {
 const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// Pill fields and buttons on borderless 24 px cards; colours come from the
+// business's panel theme (--p-*), so only the shapes are Buaze's.
 const FIELD =
-  'rounded-2xl border px-4 py-3.5 text-[16px] outline-none transition focus:ring-2 focus:ring-[color:var(--p-accent)] bg-[var(--p-bg)] border-[color:var(--p-border)] text-[color:var(--p-text)] placeholder:text-[color:var(--p-muted)] placeholder:opacity-70';
+  'h-[52px] rounded-full border px-5 text-[16px] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)] bg-[var(--p-bg)] border-[color:var(--p-border)] text-[color:var(--p-text)] placeholder:text-[color:var(--p-muted)] placeholder:opacity-70 motion-reduce:transition-none';
 const INPUT = `mt-1.5 w-full ${FIELD}`;
-const PANEL =
-  'rounded-[26px] border p-5 space-y-4 bg-[var(--p-surface)] border-[color:var(--p-border)] shadow-[0_18px_40px_-32px_rgba(0,0,0,0.45)]';
+const PANEL = 'rounded-[24px] p-5 space-y-4 bg-[var(--p-surface)]';
 const PRIMARY =
-  'bzl-tap flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl text-[16.5px] font-semibold transition active:scale-[0.98] hover:opacity-95 disabled:opacity-40 bg-[var(--p-accent)] text-[color:var(--p-on-accent)] shadow-[0_14px_30px_-16px_rgba(0,0,0,0.45)]';
+  'bzl-tap flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full text-[16.5px] font-semibold transition-[opacity,transform] duration-200 active:scale-[0.98] hover:opacity-95 disabled:opacity-40 motion-reduce:transition-none bg-[var(--p-accent)] text-[color:var(--p-on-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
 
 export default function JoinView({ locale, slug, businessName, source, account, program }: Props) {
   const t = PUBLIC_COPY[locale];
@@ -147,13 +148,13 @@ export default function JoinView({ locale, slug, businessName, source, account, 
   const legalQ = locale === 'en' ? '?lang=en' : '';
   const phoneOk = form.phone.replace(/\D/g, '').length >= 7;
   const guestReady = Boolean(form.consent && form.firstName.trim() && form.lastName.trim() && phoneOk);
-  const label = 'text-[13px] font-semibold tracking-[0.01em]';
+  const label = 'px-1 text-[14px] font-medium';
   const muted = { color: 'var(--p-muted)' } as const;
 
   const consentBoxes = (
     <div className="space-y-3 pt-1">
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
-        <input type="checkbox" checked={form.consent} onChange={(e) => set('consent', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#0A0A0A]" />
+        <input type="checkbox" checked={form.consent} onChange={(e) => set('consent', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#5D3EBC]" />
         <span>
           {t.consentAll}{' '}
           <a href={`/l/${slug}/kosullar${legalQ}`} target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
@@ -166,7 +167,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
         </span>
       </label>
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
-        <input type="checkbox" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#0A0A0A]" />
+        <input type="checkbox" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#5D3EBC]" />
         <span>{t.marketing}</span>
       </label>
     </div>
@@ -175,12 +176,12 @@ export default function JoinView({ locale, slug, businessName, source, account, 
   const messages = (
     <>
       {error && (
-        <p className="rounded-2xl bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#991B1B]" role="alert">
+        <p className="rounded-[20px] bg-[#FEF3F2] px-4 py-3 text-[14px] text-[#B42318]" role="alert">
           {error}
         </p>
       )}
       {notice && (
-        <p className="rounded-2xl bg-[#F0FDF4] px-4 py-3 text-[14px] text-[#166534]" role="status">
+        <p className="rounded-[20px] bg-[#EEF8F0] px-4 py-3 text-[14px] text-[#1E7A35]" role="status">
           {notice}
         </p>
       )}
@@ -218,9 +219,9 @@ export default function JoinView({ locale, slug, businessName, source, account, 
       )}
 
       {saved && (
-        <a href={saved} className="bzl-tap flex items-center justify-between gap-3 rounded-2xl border border-[#A8D62E] bg-[#F6FCE4] px-4 py-3.5 text-[#0A0A0A]">
+        <a href={saved} className="bzl-tap flex min-h-[56px] items-center justify-between gap-3 rounded-full bg-[#EFEAFB] py-2 pl-5 pr-2 text-[#111110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2">
           <span className="text-[14px]">{t.savedOnDevice}</span>
-          <span className="text-[14px] font-semibold">{t.openMyCard} →</span>
+          <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-[#5D3EBC] px-4 text-[14px] font-semibold text-white">{t.openMyCard} →</span>
         </a>
       )}
 
@@ -234,7 +235,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
             }}
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E]">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#5D3EBC] text-[18px] font-semibold text-white">
                 {account.firstName.charAt(0)}
               </span>
               <div className="min-w-0">
@@ -263,7 +264,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
             <button type="submit" disabled={busy || !form.consent || !phoneOk} className={PRIMARY}>
               {busy ? <Loader2 size={18} className="animate-spin" /> : t.accountJoin(account.firstName)}
             </button>
-            <button type="button" onClick={() => setMode('guest')} className="w-full py-1 text-center text-[13px] underline underline-offset-2" style={muted}>
+            <button type="button" onClick={() => setMode('guest')} className="min-h-[44px] w-full text-center text-[13.5px] underline underline-offset-4" style={muted}>
               {t.guestInstead}
             </button>
           </form>
@@ -272,10 +273,10 @@ export default function JoinView({ locale, slug, businessName, source, account, 
             {!account && (
               <a
                 href={`/hesap?${locale === 'en' ? 'lang=en&' : ''}next=${encodeURIComponent(`/l/${slug}${source === 'nfc' ? '?source=nfc' : ''}`)}`}
-                className="bzl-tap flex items-center gap-3 rounded-[22px] border px-4 py-3.5 transition hover:opacity-95"
-                style={{ background: 'var(--p-surface)', borderColor: 'var(--p-border)' }}
+                className="bzl-tap flex min-h-[64px] items-center gap-3 rounded-[24px] px-4 py-3 transition-opacity duration-200 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
+                style={{ background: 'var(--p-surface)' }}
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
                   <GoogleMark />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -297,7 +298,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
                 void join(false);
               }}
             >
-              <p className="text-[17px] font-semibold tracking-[-0.01em]">{t.joinTitle}</p>
+              <p className="px-1 text-[18px] font-semibold tracking-[-0.01em]">{t.joinTitle}</p>
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
                   <span className={label}>{t.firstName}</span>
@@ -320,7 +321,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
                 type="button"
                 onClick={() => setMore((v) => !v)}
                 aria-expanded={more}
-                className="flex min-h-[44px] w-full items-center justify-between rounded-2xl px-1 text-left text-[13.5px] font-medium"
+                className="flex min-h-[44px] w-full items-center justify-between rounded-full px-1 text-left text-[14px] font-medium"
                 style={muted}
               >
                 <span>{locale === 'tr' ? 'E-posta ve doğum günü (isteğe bağlı)' : 'E-mail and birthday (optional)'}</span>
@@ -339,22 +340,22 @@ export default function JoinView({ locale, slug, businessName, source, account, 
                     <fieldset>
                       <legend className={label}>{t.birthdayLabel}</legend>
                       <div className="mt-1.5 flex gap-2">
-                        <select value={form.day} onChange={(e) => set('day', e.target.value)} className={`${FIELD} w-28 shrink-0`} aria-label={t.day}>
+                        <SelectBox value={form.day} onChange={(e) => set('day', e.target.value)} className="w-28 shrink-0" aria-label={t.day}>
                           <option value="">{t.day}</option>
                           {Array.from({ length: 31 }, (_, i) => (
                             <option key={i + 1} value={i + 1}>
                               {i + 1}
                             </option>
                           ))}
-                        </select>
-                        <select value={form.month} onChange={(e) => set('month', e.target.value)} className={`${FIELD} min-w-0 flex-1`} aria-label={t.month}>
+                        </SelectBox>
+                        <SelectBox value={form.month} onChange={(e) => set('month', e.target.value)} className="min-w-0 flex-1" aria-label={t.month}>
                           <option value="">{t.month}</option>
                           {months.map((m, i) => (
                             <option key={m} value={i + 1}>
                               {m}
                             </option>
                           ))}
-                        </select>
+                        </SelectBox>
                       </div>
                     </fieldset>
                   )}
@@ -384,7 +385,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
                 )}
               </button>
               {account && (
-                <button type="button" onClick={() => setMode('account')} className="w-full py-1 text-center text-[13px] underline underline-offset-2" style={muted}>
+                <button type="button" onClick={() => setMode('account')} className="min-h-[44px] w-full text-center text-[13.5px] underline underline-offset-4" style={muted}>
                   {t.useAccountInstead}
                 </button>
               )}
@@ -397,7 +398,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
         <div className="bzl-fade fixed inset-x-0 bottom-0 z-40 px-4 sm:hidden" style={{ paddingBottom: 'max(14px, env(safe-area-inset-bottom))' }}>
           <button
             type="button"
-            className={`${PRIMARY} mx-auto max-w-[480px]`}
+            className={`${PRIMARY} mx-auto max-w-[480px] shadow-[0_16px_32px_-16px_rgba(0,0,0,0.45)]`}
             onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           >
             {t.submit}
@@ -405,6 +406,23 @@ export default function JoinView({ locale, slug, businessName, source, account, 
         </div>
       )}
     </div>
+  );
+}
+
+/** Native select in the pill field look; iOS draws no arrow once `appearance` is off. */
+function SelectBox({ className = '', children, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <span className={`relative block ${className}`}>
+      <select {...rest} className={`${FIELD} w-full cursor-pointer appearance-none pr-10`}>
+        {children}
+      </select>
+      <ChevronDown
+        size={16}
+        aria-hidden="true"
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2"
+        style={{ color: 'var(--p-muted)' }}
+      />
+    </span>
   );
 }
 

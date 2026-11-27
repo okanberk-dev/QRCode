@@ -114,7 +114,7 @@ export interface SolutionPageLayoutProps {
 const CONTAINER = 'rt-container';
 const SECTION_Y = 'py-[64px] lg:py-[112px]';
 const FOCUS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
 const TEXT_LINK = 'rt-link-arrow min-h-[44px]';
 
 /** Display names and official brand colours of the review platforms. */
@@ -441,7 +441,7 @@ export default function SolutionPageLayout({
                 <li key={step.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
                   <span
                     aria-hidden="true"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#5D3EBC] font-mono text-[14px] font-semibold text-white"
                   >
                     {i + 1}
                   </span>
@@ -506,7 +506,7 @@ export default function SolutionPageLayout({
                   <li key={item.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
                     <span
                       aria-hidden="true"
-                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EFEAFB] text-[#0A0A0A]"
                     >
                       <Icon size={20} strokeWidth={2} />
                     </span>
@@ -554,7 +554,7 @@ export default function SolutionPageLayout({
               <p className="mt-4">
                 <Link
                   href={`${base}/integrations`}
-                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-white underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-white underline decoration-[#DCD3F6] decoration-2 underline-offset-4 hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
                 >
                   {shared.platformsLink}
                   <ArrowRight size={14} aria-hidden="true" />
@@ -578,7 +578,7 @@ export default function SolutionPageLayout({
                 <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EFEAFB] text-[#0A0A0A]"
                   >
                     <FileText size={18} strokeWidth={2} />
                   </span>
@@ -605,7 +605,7 @@ export default function SolutionPageLayout({
                   <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
                     <span
                       aria-hidden="true"
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EFEAFB] text-[#0A0A0A]"
                     >
                       <FileText size={18} strokeWidth={2} />
                     </span>
@@ -632,7 +632,7 @@ export default function SolutionPageLayout({
                     <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
                       <span
                         aria-hidden="true"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#0A0A0A] text-[#C6F24E]"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#5D3EBC] text-white"
                       >
                         <ClipboardCheck size={18} strokeWidth={2} />
                       </span>
@@ -778,7 +778,7 @@ export default function SolutionPageLayout({
           </div>
         </section>
 
-        {/* 10 · Closing CTA (shared lime band: trial facts, sign-up, pricing) */}
+        {/* 10 · Closing CTA (shared brand band: trial facts, sign-up, pricing) */}
         <FeatureCtaSection locale={locale} title={content.ctaTitle} />
       </main>
 

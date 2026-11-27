@@ -291,7 +291,7 @@ export default function AdminCustomersPage() {
             label="Ortalama puan"
             value={data.summary.avgRating !== null ? data.summary.avgRating.toFixed(2) : '—'}
             icon={<Star size={14} />}
-            accent="#78FC90"
+            accent="#5D3EBC"
           />
         </div>
       )}
@@ -314,7 +314,7 @@ export default function AdminCustomersPage() {
                 onClick={() => setRange(opt.key)}
                 aria-pressed={range === opt.key}
                 className={`flex-auto whitespace-nowrap rounded-[14px] px-2 py-1.5 text-[12px] font-medium transition-all sm:flex-none sm:px-3 ${
-                  range === opt.key ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
+                  range === opt.key ? 'bg-pn-accent text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {opt.label}
@@ -385,7 +385,7 @@ export default function AdminCustomersPage() {
                 onClick={() => setSegmentFilter(pill.key)}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${
                   active
-                    ? 'border-pn-ink bg-pn-ink text-white'
+                    ? 'border-pn-accent bg-pn-accent text-white'
                     : 'border-pn-line bg-white text-[#525252] hover:border-[#A3A3A3]'
                 }`}
               >
@@ -514,8 +514,8 @@ export default function AdminCustomersPage() {
                         </td>
                         <td className="px-5 py-3 text-right">
                           {r.lastRating !== null ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-pn-accent/15 px-2 py-0.5 font-medium text-pn-ink">
-                              <Star size={11} fill="#78FC90" strokeWidth={0} />
+                            <span className="inline-flex items-center gap-1 rounded-full bg-pn-accent-soft px-2 py-0.5 font-medium text-pn-ink">
+                              <Star size={11} fill="#5D3EBC" strokeWidth={0} />
                               {r.lastRating}
                             </span>
                           ) : (
@@ -590,8 +590,8 @@ export default function AdminCustomersPage() {
                         </p>
                       </div>
                       {r.lastRating !== null && (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-pn-accent/15 px-2 py-0.5 text-[12px] font-medium text-pn-ink">
-                          <Star size={11} fill="#78FC90" strokeWidth={0} />
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-ink">
+                          <Star size={11} fill="#5D3EBC" strokeWidth={0} />
                           {r.lastRating}
                         </span>
                       )}

@@ -132,7 +132,7 @@ export default async function AdminAnalyticsPage({
               href={withParam(currentParams, 'range', range)}
               className={`rounded-[10px] px-3 py-1.5 text-[12px] font-medium transition-colors ${
                 rangeKey === range
-                  ? 'bg-pn-ink text-white'
+                  ? 'bg-pn-accent text-white'
                   : 'text-[#525252] hover:bg-pn-canvas'
               }`}
             >
@@ -145,7 +145,7 @@ export default async function AdminAnalyticsPage({
             href={withParam(currentParams, 'platform', null)}
             className={`rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors ${
               !platformFilter
-                ? 'border-pn-ink bg-pn-ink text-white'
+                ? 'border-pn-accent bg-pn-accent text-white'
                 : 'border-pn-line text-[#525252] hover:bg-pn-canvas'
             }`}
           >
@@ -157,7 +157,7 @@ export default async function AdminAnalyticsPage({
               href={withParam(currentParams, 'platform', platform)}
               className={`rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors ${
                 platformFilter === platform
-                  ? 'border-pn-ink bg-white text-pn-ink'
+                  ? 'border-pn-accent bg-pn-accent text-white'
                   : 'border-pn-line text-[#525252] hover:bg-pn-canvas'
               }`}
             >

@@ -216,7 +216,7 @@ export default function MemberActions({
             <span
               aria-hidden="true"
               className="bzl-ring pointer-events-none absolute inset-0 rounded-[20px] border-[3px]"
-              style={{ borderColor: '#78FC90' }}
+              style={{ borderColor: '#5D3EBC' }}
             />
           )}
           <LoyaltyCardFace
@@ -240,7 +240,7 @@ export default function MemberActions({
             <AlertBanner kind="warn">{tr ? 'Program duraklatılmış: kasa işlemleri kapalı.' : 'Programme paused: counter actions are off.'}</AlertBanner>
           )}
           {tier?.perk && (
-            <p className="rounded-[14px] bg-pn-accent-soft px-3 py-2 text-[13px] text-[#3F4A00]">
+            <p className="rounded-[14px] bg-pn-accent-soft px-3 py-2 text-[13px] text-pn-accent">
               <strong>{tier.name}:</strong> {tier.perk}
             </p>
           )}
@@ -302,7 +302,7 @@ export default function MemberActions({
                   type="button"
                   disabled={busy !== null}
                   onClick={() => setConfirmReward({ id: r.id, title: r.title, cost: r.cost })}
-                  className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-pn-accent-hover bg-[#F6FCE4] px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-pn-accent-hover bg-[#F6F3FD] px-4 py-3 text-left"
                 >
                   <span className="flex items-center gap-2 text-[14px] font-medium text-pn-ink">
                     <Gift size={16} aria-hidden="true" /> {r.title}

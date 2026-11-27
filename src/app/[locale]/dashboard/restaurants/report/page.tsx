@@ -228,7 +228,7 @@ export default async function FranchiseReportPage({
             href={`/${locale}/dashboard/restaurants/report?days=${d}`}
             aria-current={d === days ? 'page' : undefined}
             className={`rounded-full border px-3 py-1.5 text-[12px] font-medium ${
-              d === days ? 'border-pn-ink bg-pn-ink text-white' : 'border-pn-line bg-white text-[#525252]'
+              d === days ? 'border-pn-accent bg-pn-accent text-white' : 'border-pn-line bg-white text-[#525252]'
             }`}
           >
             {t.days(d)}

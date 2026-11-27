@@ -77,7 +77,7 @@ export function OptionGroup<V extends string>({
               onKeyDown={(e) => onKeyDown(e, index)}
               className={`inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-medium transition-colors duration-[160ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-60 pointer-fine:h-9 ${
                 on
-                  ? 'bg-pn-ink text-white shadow-[0_1px_2px_rgba(10,10,10,0.2)]'
+                  ? 'bg-pn-accent text-white shadow-[0_1px_2px_rgba(59,31,143,0.25)]'
                   : 'text-[#525252] hover:bg-white hover:text-pn-ink'
               }`}
             >

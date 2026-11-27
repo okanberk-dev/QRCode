@@ -50,9 +50,9 @@ export function WizardSteps({
                 aria-hidden="true"
                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-medium tabular-nums ${
                   active
-                    ? 'bg-pn-accent text-pn-ink'
+                    ? 'bg-white text-pn-accent'
                     : complete
-                      ? 'bg-pn-ink text-pn-accent'
+                      ? 'bg-pn-accent text-white'
                       : 'bg-white text-[#737373]'
                 }`}
               >
@@ -67,7 +67,7 @@ export function WizardSteps({
           const base =
             'flex min-h-[44px] w-full min-w-0 items-center justify-center gap-2 rounded-full px-2 text-[13px] font-medium transition-colors duration-200 sm:px-3 sm:text-[14px]';
           const tone = active
-            ? 'bg-pn-ink text-white'
+            ? 'bg-pn-accent text-white'
             : complete
               ? 'text-pn-ink'
               : 'text-[#737373]';

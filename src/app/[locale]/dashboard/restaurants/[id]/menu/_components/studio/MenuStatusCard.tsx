@@ -190,14 +190,14 @@ export function MenuStatusCard({
 
   if (justPublished && live) {
     return (
-      <section aria-labelledby="menu-status-title" className="bz-card min-h-[164px] border-[#D9EE7A] bg-[#F7FCE6] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
+      <section aria-labelledby="menu-status-title" className="bz-card min-h-[164px] border-[#DCD3F6] bg-[#F6F3FD] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent text-pn-ink">
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white">
             <Rocket size={16} strokeWidth={2} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
             {title(copy.status.liveTitle)}
-            <p aria-live="polite" className="mt-1 text-[13px] leading-relaxed text-[#4D5C00]">
+            <p aria-live="polite" className="mt-1 text-[13px] leading-relaxed text-[#3B1F8F]">
               {copy.status.justPublished}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -310,13 +310,13 @@ export function MenuStatusCard({
               const current = readiness.nextStep === step.id;
               const clickable = canEdit && !step.done && (step.id !== 'publish' || readiness.canPublish);
               const marker = step.done ? (
-                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-pn-accent text-pn-ink">
+                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white">
                   <Check size={10} strokeWidth={3} aria-hidden="true" />
                 </span>
               ) : (
                 <span
                   className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[12px] font-medium ${
-                    current ? 'bg-pn-ink text-white' : 'bg-pn-line text-[#525252]'
+                    current ? 'bg-pn-accent text-white' : 'bg-pn-line text-[#525252]'
                   }`}
                 >
                   {idx + 1}
