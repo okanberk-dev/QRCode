@@ -26,7 +26,11 @@ import { INBOX_PLATFORM_FILTER_IDS, platformLabel } from './inbox-format';
  * Every control applies immediately — no "Apply" step. Touch targets are
  * 44px below md (tabs, search, icon buttons).
  *
- * Mobile: sticky under the 61px shell topbar. lg+: static (the panes below
+ * Fintora layout: the toolbar sits on the grey canvas — white pills
+ * (status tabs, search, icon buttons; grey on phones where the page is
+ * white), the active tab purple with white text. No borders.
+ *
+ * Mobile: sticky under the 72px shell bar. lg+: static (the panes below
  * scroll internally).
  */
 
@@ -122,7 +126,7 @@ function CountBadge({ count, label }: { count: number; label: string }) {
   if (count <= 0) return null;
   return (
     <span
-      className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-pn-accent px-1 text-[12px] font-medium leading-none text-white"
+      className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pn-accent px-1.5 text-[12px] font-medium leading-none text-white"
       aria-label={label}
     >
       {count}
@@ -160,7 +164,7 @@ export function InboxToolbar({
 
   return (
     <div
-      className={`sticky top-[72px] z-20 border-y border-pn-line bg-white/95 px-4 py-3 backdrop-blur sm:px-7 lg:static lg:bg-white lg:backdrop-blur-none ${className}`}
+      className={`sticky top-[72px] z-20 bg-pn-canvas/95 px-4 py-3 backdrop-blur sm:px-6 lg:static lg:bg-transparent lg:px-4 lg:pb-3 lg:pt-1 lg:backdrop-blur-none ${className}`}
     >
       <div className="flex items-center gap-2">
         <InboxStatusTabs
@@ -175,7 +179,7 @@ export function InboxToolbar({
           <button
             type="button"
             onClick={onClear}
-            className="hidden h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-medium text-[#525252] transition-colors hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent md:inline-flex"
+            className="hidden h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-[#525252] transition-colors duration-200 hover:bg-white hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent active:scale-[.97] md:inline-flex"
           >
             <RotateCcw size={13} strokeWidth={2} aria-hidden="true" />
             {isTr ? 'Temizle' : 'Clear'}
@@ -190,9 +194,9 @@ export function InboxToolbar({
               the search takes the full row. Capped at 340px from xl. */}
           <div className="relative min-w-0 flex-1 md:flex-[1_1_240px] xl:max-w-[340px]">
             <Search
-              size={15}
+              size={16}
               strokeWidth={2}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]"
               aria-hidden="true"
             />
             <input
@@ -206,7 +210,7 @@ export function InboxToolbar({
               // Explicit classes, not `bz-input`: the bz-* rules are unlayered,
               // so they would beat `pl-9` / `rounded-full` and the text would
               // run under the search icon.
-              className="h-11 w-full rounded-full border border-pn-line bg-white pl-9 pr-3 text-[16px] text-pn-ink outline-none transition-[border-color,box-shadow] placeholder:text-[#A3A3A3] hover:border-pn-line-strong focus:border-pn-ink focus:shadow-[0_0_0_3px_rgba(93,62,188,0.35)] sm:text-[13px] md:h-[34px]"
+              className="h-11 w-full rounded-full border-0 bg-white pl-11 pr-4 text-[16px] text-pn-ink outline-none transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:shadow-[0_0_0_2px_#5D3EBC] max-sm:bg-[#F6F6F6] sm:text-[14px] md:h-[46px]"
             />
           </div>
 
@@ -214,7 +218,7 @@ export function InboxToolbar({
           <button
             type="button"
             onClick={onOpenAllFilters}
-            className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-pn-line bg-white text-pn-ink transition-colors hover:border-pn-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent md:hidden"
+            className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink transition-colors duration-200 hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent active:scale-[.97] max-sm:bg-[#F6F6F6] md:hidden"
             aria-label={
               allFiltersCount > 0
                 ? `${isTr ? 'Filtreler' : 'Filters'} · ${activeLabel(allFiltersCount)}`
@@ -227,7 +231,7 @@ export function InboxToolbar({
             {allFiltersCount > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-pn-accent px-1 text-[12px] font-medium leading-none text-white"
+                className="absolute -right-0.5 -top-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pn-accent px-1 text-[12px] font-medium leading-none text-white ring-2 ring-white"
               >
                 {allFiltersCount}
               </span>
@@ -237,7 +241,7 @@ export function InboxToolbar({
             <button
               type="button"
               onClick={onClear}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#525252] transition-colors hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent md:hidden"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#525252] transition-colors duration-200 hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent active:scale-[.97] max-sm:bg-[#F6F6F6] md:hidden"
               aria-label={isTr ? 'Filtreleri temizle' : 'Clear filters'}
               title={isTr ? 'Filtreleri temizle' : 'Clear filters'}
             >
@@ -279,7 +283,7 @@ export function InboxToolbar({
                   title={t.title}
                   className={`${
                     t.pressed ? (t.tone === 'danger' ? 'bz-btn-danger' : 'bz-btn-lime') : 'bz-btn'
-                  } bz-btn-sm h-[34px]`}
+                  } h-[46px] text-[14px]`}
                 >
                   {t.icon}
                   {t.label}
@@ -289,7 +293,7 @@ export function InboxToolbar({
                 <button
                   type="button"
                   onClick={onOpenMoreFilters}
-                  className="bz-btn bz-btn-sm h-[34px]"
+                  className="bz-btn h-[46px] text-[14px]"
                   aria-label={
                     moreFiltersCount > 0
                       ? `${isTr ? 'Diğer filtreler' : 'More filters'} · ${activeLabel(moreFiltersCount)}`

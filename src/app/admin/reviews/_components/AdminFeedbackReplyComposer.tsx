@@ -38,34 +38,36 @@ export function AdminPulseAiCard({
   const hasDraft = aiSource !== null;
 
   return (
-    <div className="mt-5 rounded-[24px] bg-[#3B1F8F] p-4 text-white sm:p-5">
+    // Fintora calm AI panel (owner parity): lavender surface, a small purple
+    // sparkle circle, ink text — no dark fill, no gradient, no glow.
+    <div className="mt-5 rounded-[20px] bg-pn-accent-soft p-4 text-pn-ink sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <span
           aria-hidden="true"
-          className="flex h-6 w-6 items-center justify-center rounded-[10px] bg-white text-pn-accent"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-pn-accent text-white"
         >
-          <Sparkles size={13} strokeWidth={2.2} />
+          <Sparkles size={15} strokeWidth={2} />
         </span>
-        <span className="text-[13px] font-medium text-white">
+        <span className="text-[14px] font-medium text-pn-ink">
           {isTr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
         </span>
         {suggesting ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[12px] font-medium text-white/70">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-0.5 text-[12px] font-medium text-[#737373]">
             <Loader2 size={11} className="animate-spin" aria-hidden="true" />
             {isTr ? 'Hazırlanıyor' : 'Working'}
           </span>
         ) : aiSource === 'openai' ? (
-          <span className="rounded-full bg-white px-2 py-0.5 text-[12px] font-medium text-pn-accent">
+          <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-medium text-pn-accent">
             AI
           </span>
         ) : isTemplate ? (
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[12px] font-medium text-white/70">
+          <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-medium text-[#737373]">
             {isTr ? 'Şablon' : 'Template'}
           </span>
         ) : null}
       </div>
 
-      <p className="mt-3 text-[14px] leading-[1.65] text-white/85">
+      <p className="mt-3 text-[14px] leading-[1.65] text-[#262626]">
         {hasDraft
           ? isTr
             ? 'Taslak aşağıdaki yanıt alanına eklendi. Göndermeden önce gözden geçirip düzenleyebilirsin.'
@@ -76,7 +78,7 @@ export function AdminPulseAiCard({
       </p>
 
       {!suggesting && isTemplate && (
-        <p className="mt-3 inline-flex items-start gap-2 text-[12px] leading-[1.5] text-white/60">
+        <p className="mt-3 inline-flex items-start gap-2 text-[13px] leading-[1.5] text-[#8A5A00]">
           <span aria-hidden="true" className="mt-0.5">
             ⚠
           </span>
@@ -93,14 +95,14 @@ export function AdminPulseAiCard({
           type="button"
           onClick={() => onSuggest(aiTone)}
           disabled={suggesting}
-          className="bz-btn-lime w-full sm:w-auto"
+          className="bz-btn-primary w-full sm:min-h-10 sm:w-auto sm:px-5 sm:text-[13px]"
         >
           {suggesting ? (
-            <Loader2 size={13} strokeWidth={2.2} className="animate-spin" aria-hidden="true" />
+            <Loader2 size={15} strokeWidth={2} className="animate-spin" aria-hidden="true" />
           ) : hasDraft ? (
-            <RotateCw size={13} strokeWidth={2.2} aria-hidden="true" />
+            <RotateCw size={15} strokeWidth={2} aria-hidden="true" />
           ) : (
-            <Sparkles size={13} strokeWidth={2.2} aria-hidden="true" />
+            <Sparkles size={15} strokeWidth={2} aria-hidden="true" />
           )}
           {hasDraft
             ? isTr
@@ -115,10 +117,9 @@ export function AdminPulseAiCard({
           onChange={(e) => setAiTone(e.target.value as AiTone)}
           disabled={suggesting}
           aria-label={isTr ? 'Pulse AI yanıt tonu' : 'Pulse AI reply tone'}
-          /* Documented dark native-select exception (§38.202), owner parity.
-             16px + 44px on mobile (iOS zoom, touch target), compact from sm. */
-          className="min-h-[44px] w-full rounded-full border border-white/20 bg-transparent px-3 py-2 text-[16px] font-medium text-white outline-none bz-motion-spring hover:bg-white/10 focus-visible:border-pn-accent focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pn-ink disabled:opacity-50 sm:min-h-0 sm:w-auto sm:py-1.5 sm:text-[12px]"
-          style={{ colorScheme: 'dark' }}
+          /* Native select as a white pill on the lavender AI panel (owner
+             parity). 16px + 44px on mobile (iOS zoom, touch target). */
+          className="min-h-[44px] w-full cursor-pointer rounded-full border-0 bg-white px-4 py-2 text-[16px] font-medium text-pn-ink outline-none transition-colors duration-200 hover:bg-[#FBFAFE] focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:min-h-10 sm:w-auto sm:py-0 sm:text-[13px]"
         >
           <option value="warm" className="text-pn-ink">
             {isTr ? 'Ton: Samimi' : 'Tone: Warm'}
@@ -194,10 +195,10 @@ export function AdminReplyComposerCard({
     // long the draft gets.
     <div className="lg:flex lg:min-h-0 lg:flex-col">
       <div className="flex items-center justify-between gap-2 lg:shrink-0">
-        <label htmlFor={ADMIN_REPLY_TEXTAREA_ID} className="text-[13px] font-medium text-pn-ink">
+        <label htmlFor={ADMIN_REPLY_TEXTAREA_ID} className="text-[14px] font-medium text-pn-ink">
           {isTr ? 'Yanıtınız' : 'Your reply'}
         </label>
-        <span className="text-[12px] tabular-nums text-[#A3A3A3]" aria-live="polite">
+        <span className="text-[12px] tabular-nums text-[#9A9A9A]" aria-live="polite">
           {draft.length} / {ADMIN_REPLY_MAX_LENGTH}
         </span>
       </div>
@@ -223,7 +224,7 @@ export function AdminReplyComposerCard({
         enterKeyHint="send"
         autoCorrect="on"
         spellCheck={true}
-        className="mt-2 max-h-[480px] min-h-[84px] w-full resize-none overflow-y-auto rounded-[20px] border border-pn-line bg-white px-3.5 py-2.5 text-[16px] leading-[1.55] text-pn-ink placeholder:text-[#A3A3A3] focus:border-pn-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:text-[14px] lg:max-h-[200px] lg:min-h-[44px] lg:shrink"
+        className="mt-2 max-h-[480px] min-h-[96px] w-full resize-none overflow-y-auto rounded-[20px] border-0 bg-[#F6F6F6] px-4 py-3 text-[16px] leading-[1.55] text-pn-ink transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:outline-none focus:shadow-[0_0_0_2px_#5D3EBC] sm:text-[14px] lg:max-h-[200px] lg:min-h-[48px] lg:shrink"
       />
       <ReplyRiskNotice risk={risk} locale={isTr ? 'tr' : 'en'} className="mt-2 lg:shrink-0" />
       <p id="admin-reply-textarea-hint" className="sr-only">
@@ -232,16 +233,16 @@ export function AdminReplyComposerCard({
           : 'Press Cmd or Ctrl + Enter to send. Up to 2,000 characters.'}
       </p>
 
-      <div className="mt-2 rounded-[14px] bg-pn-canvas px-3 py-2 text-[12px] lg:shrink-0 lg:py-1.5">
+      <div className="mt-2 rounded-[16px] bg-[#F6F6F6] px-3.5 py-2.5 text-[13px] lg:shrink-0 lg:py-2">
         {active.customerEmail ? (
           <label className="flex cursor-pointer items-start gap-2 text-pn-ink">
             <input
               type="checkbox"
               checked={sendEmail}
               onChange={(e) => setSendEmail(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-pn-accent"
             />
-            <Mail size={12} className="mt-0.5 shrink-0 text-current opacity-60" aria-hidden="true" />
+            <Mail size={14} className="mt-0.5 shrink-0 text-[#737373]" aria-hidden="true" />
             <span className="min-w-0 break-words">
               {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
               <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
@@ -249,7 +250,7 @@ export function AdminReplyComposerCard({
           </label>
         ) : (
           <p className="flex items-start gap-2 text-[#737373]">
-            <Mail size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <Mail size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
             <span>
               {isTr
                 ? `Müşteri e-posta bırakmamış${active.rating >= 4 ? ' (yüksek puanlılar yönlendirildiği için bu beklenir)' : ''} — yanıt sadece dahili olarak kaydedilir.`
@@ -262,12 +263,12 @@ export function AdminReplyComposerCard({
       {/* §45 — Per-message responsibility acknowledgement. Must be ticked for
           every send (the page resets it after a successful send and on every
           review switch). Wording and link verbatim. */}
-      <label className="mt-2 flex cursor-pointer items-start gap-2 text-[12px] leading-[1.5] text-[#525252] lg:shrink-0">
+      <label className="mt-2.5 flex cursor-pointer items-start gap-2 px-0.5 text-[12px] leading-[1.5] text-[#737373] lg:shrink-0">
         <input
           type="checkbox"
           checked={confirmResponsibility}
           onChange={(e) => setConfirmResponsibility(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
+          className="mt-0.5 h-4 w-4 shrink-0 accent-pn-accent"
         />
         <span>
           {isTr ? (
@@ -302,22 +303,22 @@ export function AdminReplyComposerCard({
         </span>
       </label>
 
-      <div className="mt-2.5 flex items-center justify-between gap-3 lg:shrink-0">
+      <div className="mt-3 flex items-center justify-between gap-3 lg:shrink-0">
         <p
           role="status"
           aria-live="polite"
-          className={`min-w-0 text-[12px] leading-[1.45] ${
+          className={`min-w-0 text-[13px] leading-[1.45] ${
             notice?.tone === 'success'
-              ? 'text-[#166534]'
+              ? 'text-[#23863A]'
               : notice?.tone === 'error'
-                ? 'text-[#991B1B]'
-                : 'text-[#525252]'
+                ? 'text-[#D92D20]'
+                : 'text-[#737373]'
           }`}
         >
           {notice?.msg}
         </p>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="hidden text-[12px] text-[#A3A3A3] sm:inline" aria-hidden="true">
+          <span className="hidden text-[12px] text-[#9A9A9A] sm:inline" aria-hidden="true">
             ⌘ Enter
           </span>
           <button
@@ -343,14 +344,14 @@ export function AdminReplyComposerCard({
                       : 'Sending…'
                     : undefined
             }
-            className="bz-btn-primary bz-btn-sm"
+            className="bz-btn-primary sm:min-h-10 sm:px-5"
           >
             {sending ? (
-              <Loader2 size={12} strokeWidth={2} className="animate-spin" aria-hidden="true" />
+              <Loader2 size={15} strokeWidth={2} className="animate-spin" aria-hidden="true" />
             ) : willEmail ? (
-              <Mail size={12} strokeWidth={2} aria-hidden="true" />
+              <Mail size={15} strokeWidth={2} aria-hidden="true" />
             ) : (
-              <Send size={12} strokeWidth={2} aria-hidden="true" />
+              <Send size={15} strokeWidth={2} aria-hidden="true" />
             )}
             {willEmail
               ? isTr

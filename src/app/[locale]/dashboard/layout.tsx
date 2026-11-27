@@ -208,6 +208,7 @@ export default async function DashboardLayout({
       name: restaurant.name,
       slug: restaurant.slug,
       category: restaurant.category,
+      primaryColor: restaurant.primaryColor,
     }));
 
   const totalFeedbacks = restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);

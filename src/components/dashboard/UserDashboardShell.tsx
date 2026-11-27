@@ -98,7 +98,7 @@ interface UserDashboardShellProps {
    * at most 20 — the same list `GET /api/restaurants` returned to the palette
    * on every open, resolved once by the layout instead.
    */
-  paletteRestaurants?: Array<{ id: string; name: string; slug: string; category: string }>;
+  paletteRestaurants?: Array<{ id: string; name: string; slug: string; category: string; primaryColor?: string | null }>;
   /** §57 — secondary tools shown in the menu (feature-visibility). */
   tools?: { surveys: boolean; audits: boolean };
   children: React.ReactNode;

@@ -46,23 +46,23 @@ function ItemEditor({
   const isTr = locale === 'tr';
   const risk = useReplyRisk(item.body);
   return (
-    <li className="space-y-2 border-b border-pn-line py-3 last:border-b-0">
+    <li className="space-y-2 rounded-[16px] bg-[#F6F6F6] p-3">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] font-medium text-pn-ink">{item.reviewerName || (isTr ? 'Google kullanıcısı' : 'Google user')}</span>
-            <span className="inline-flex items-center gap-0.5 text-[12px] text-[#525252]">
-              <Star size={11} aria-hidden="true" fill="#000000" /> {item.rating ?? '–'}
+            <span className="text-[14px] font-medium text-pn-ink">{item.reviewerName || (isTr ? 'Google kullanıcısı' : 'Google user')}</span>
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-accent">
+              <Star size={11} aria-hidden="true" fill="currentColor" /> {item.rating ?? '–'}
             </span>
           </div>
-          <p className="mt-1 line-clamp-2 break-words text-[12px] leading-[1.5] text-[#737373]">
+          <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#737373]">
             {item.originalText ?? (isTr ? 'Yalnız puan verdi.' : 'Rating only.')}
           </p>
         </div>
         <button
           type="button"
           onClick={onRemove}
-          className="bz-btn bz-btn-sm min-h-11 shrink-0 sm:min-h-0"
+          className="bz-btn bz-btn-sm min-h-11 shrink-0 bg-white hover:bg-[#EDEDED] sm:min-h-9"
           aria-label={isTr ? 'Bu yorumu listeden çıkar' : 'Remove this review'}
         >
           <X size={12} aria-hidden="true" />
@@ -70,7 +70,7 @@ function ItemEditor({
         </button>
       </div>
       <textarea
-        className="bz-input min-h-[76px] resize-y text-[16px] sm:text-[13px]"
+        className="bz-input min-h-[76px] resize-y rounded-[16px] border-0 text-[16px] focus:shadow-[0_0_0_2px_#5D3EBC] sm:text-[14px]"
         value={item.body}
         onChange={(e) => onChange(e.target.value.slice(0, 4096))}
         aria-label={isTr ? 'Yanıt metni' : 'Reply text'}
@@ -78,12 +78,12 @@ function ItemEditor({
       />
       <ReplyRiskNotice risk={risk} locale={locale} />
       {item.bannedFound.length > 0 && (
-        <p className="text-[12px] text-[#991B1B]">
+        <p className="text-[12px] text-[#D92D20]">
           {isTr ? 'Yasaklı ifade: ' : 'Banned phrase: '}
           {item.bannedFound.join(', ')}
         </p>
       )}
-      {item.problem && <p role="alert" className="text-[12px] text-[#991B1B]">{item.problem}</p>}
+      {item.problem && <p role="alert" className="text-[12px] text-[#D92D20]">{item.problem}</p>}
     </li>
   );
 }
@@ -271,12 +271,12 @@ export function BulkReplyDialog({
       footer={
         editable ? (
           <div className="space-y-3">
-            <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#525252]">
+            <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#737373]">
               <input
                 type="checkbox"
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-pn-accent"
               />
               <span>
                 {isTr
@@ -289,7 +289,7 @@ export function BulkReplyDialog({
               </span>
             </label>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-9">
+              <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-10">
                 {isTr ? 'Vazgeç' : 'Cancel'}
               </button>
               <button
@@ -306,18 +306,18 @@ export function BulkReplyDialog({
         ) : phase === 'done' ? (
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             {failedItems.length > 0 && (
-              <button type="button" onClick={() => void retryFailed()} className="bz-btn min-h-11 sm:min-h-9">
+              <button type="button" onClick={() => void retryFailed()} className="bz-btn min-h-11 sm:min-h-10">
                 <RotateCcw size={14} aria-hidden="true" />
                 {isTr ? `Başarısızları tekrar dene (${failedItems.length})` : `Retry failed (${failedItems.length})`}
               </button>
             )}
-            <button type="button" onClick={onClose} className="bz-btn-primary min-h-11 sm:min-h-9">
+            <button type="button" onClick={onClose} className="bz-btn-primary min-h-11 sm:min-h-10">
               {isTr ? 'Kapat' : 'Close'}
             </button>
           </div>
         ) : phase === 'sending' ? (
           <div className="flex justify-end">
-            <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-9">
+            <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-10">
               {isTr ? 'Arka planda devam etsin' : 'Keep going in the background'}
             </button>
           </div>
@@ -344,7 +344,7 @@ export function BulkReplyDialog({
               <span className="tabular-nums">%{percent}</span>
             </div>
             <div
-              className="mt-1.5 h-2 overflow-hidden rounded-full bg-pn-canvas"
+              className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/[0.06]"
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={100}
@@ -368,13 +368,13 @@ export function BulkReplyDialog({
                       : 'Sending paused (Google connection or daily limit). The rest is sent automatically later; if the connection broke, reconnect and press "Retry".'}
                   </AlertBanner>
                 ) : (
-                  <p className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#166534]">
+                  <p className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#23863A]">
                     <CheckCircle2 size={14} aria-hidden="true" />
                     {isTr ? `${progress.sent} yanıt yayınlandı.` : `${progress.sent} replies published.`}
                   </p>
                 )}
                 {failedItems.length > 0 && (
-                  <ul className="space-y-1 text-[12px] text-[#991B1B]">
+                  <ul className="space-y-1 text-[12px] text-[#D92D20]">
                     {failedItems.slice(0, 10).map((f) => (
                       <li key={f.reviewId}>• {inboxErrorMessage(f.errorCode, locale)}</li>
                     ))}
@@ -392,7 +392,7 @@ export function BulkReplyDialog({
                 ? 'Her taslağı oku, gerekirse düzenle ya da listeden çıkar. 1-3 yıldızlı yorumlar burada yer almaz; onları tek tek yanıtla.'
                 : 'Read each draft, edit or remove it. 1–3 star reviews are not included; answer those one by one.'}
             </p>
-            <ul>
+            <ul className="space-y-2">
               {items.map((item) => (
                 <ItemEditor
                   key={item.reviewId}

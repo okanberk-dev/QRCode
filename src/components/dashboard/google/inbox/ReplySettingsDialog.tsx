@@ -102,7 +102,7 @@ export function ReplySettingsDialog({
       }
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-9">
+          <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-10">
             {isTr ? 'Vazgeç' : 'Cancel'}
           </button>
           <button
@@ -133,7 +133,7 @@ export function ReplySettingsDialog({
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <label className="block space-y-1">
-              <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Ton' : 'Tone'}</span>
+              <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Ton' : 'Tone'}</span>
               <PulseSelect
                 value={settings.tone}
                 onChange={(v) => update('tone', v as GoogleReplySettings['tone'])}
@@ -146,7 +146,7 @@ export function ReplySettingsDialog({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Uzunluk' : 'Length'}</span>
+              <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Uzunluk' : 'Length'}</span>
               <PulseSelect
                 value={settings.length}
                 onChange={(v) => update('length', v as GoogleReplySettings['length'])}
@@ -160,7 +160,7 @@ export function ReplySettingsDialog({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Hitap (Türkçe)' : 'Address (Turkish)'}</span>
+              <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Hitap (Türkçe)' : 'Address (Turkish)'}</span>
               <PulseSelect
                 value={settings.addressForm}
                 onChange={(v) => update('addressForm', v as GoogleReplySettings['addressForm'])}
@@ -183,9 +183,9 @@ export function ReplySettingsDialog({
           />
 
           <label className="block space-y-1">
-            <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'İmza' : 'Signature'}</span>
+            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'İmza' : 'Signature'}</span>
             <input
-              className="bz-input text-[16px] sm:text-[13px]"
+              className="bz-input text-[16px] sm:text-[14px]"
               value={settings.signature}
               maxLength={MAX_SIGNATURE_LENGTH}
               onChange={(e) => update('signature', e.target.value)}
@@ -195,9 +195,9 @@ export function ReplySettingsDialog({
           </label>
 
           <label className="block space-y-1">
-            <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Yasaklı ifadeler' : 'Banned phrases'}</span>
+            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Yasaklı ifadeler' : 'Banned phrases'}</span>
             <textarea
-              className="bz-input min-h-[88px] text-[16px] sm:text-[13px]"
+              className="bz-input min-h-[88px] text-[16px] sm:text-[14px]"
               value={banned}
               onChange={(e) => {
                 setBanned(e.target.value);
@@ -213,7 +213,7 @@ export function ReplySettingsDialog({
             </span>
           </label>
 
-          <p className="rounded-[14px] bg-pn-canvas px-3 py-2 text-[12px] leading-[1.55] text-[#525252]">
+          <p className="rounded-[16px] bg-pn-accent-soft px-4 py-3 text-[13px] leading-[1.55] text-[#525252]">
             {isTr
               ? 'Kayıtlı şablonlarda {ad} ve {işletme} kullanabilirsin; şablon seçilince müşterinin adı ve işletme adı yerleşir, metni göndermeden önce düzenleyebilirsin.'
               : 'Saved templates can use {ad} (first name) and {işletme} (business name); they are filled in when you pick a template and you can edit before sending.'}

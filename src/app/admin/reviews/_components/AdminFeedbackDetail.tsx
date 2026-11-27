@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeft, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, UserPlus } from 'lucide-react';
-import { AlertBanner, PlatformChip } from '@/components/ui';
+import { PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
 import { FeedbackStatusChips } from '@/components/dashboard/feedbacks/FeedbackStatusChips';
@@ -54,17 +54,17 @@ interface AdminFeedbackDetailProps {
 /** Detail-pane placeholder while the list loads (rating box, title, comment). */
 export function AdminFeedbackDetailSkeleton() {
   return (
-    <div className="px-5 py-5 sm:px-8 sm:py-6" aria-hidden="true">
+    <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-7" aria-hidden="true">
       <div className="flex items-start gap-4">
-        <SkBox className="h-12 w-12 shrink-0 rounded-[24px]" />
+        <SkBox className="h-12 w-12 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-2 pt-1">
           <SkBox className="h-6 w-48 max-w-full" />
           <SkBox className="h-4 w-64 max-w-full" />
           <SkBox className="h-3 w-36" />
         </div>
       </div>
-      <SkBox className="mt-5 h-24 w-full rounded-[24px]" />
-      <SkBox className="mt-5 h-32 w-full rounded-[24px]" />
+      <SkBox className="mt-5 h-24 w-full rounded-[20px]" />
+      <SkBox className="mt-5 h-32 w-full rounded-[20px]" />
     </div>
   );
 }
@@ -111,16 +111,18 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
       type="button"
       onClick={onFlag}
       disabled={flagging}
-      className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
+      className={`bz-btn disabled:opacity-50 ${
+        isFlagged ? 'bg-[#FDECEC] text-[#D92D20] hover:bg-[#FBDADA]' : 'bg-[#F6F6F6] hover:bg-[#EDEDED]'
+      } ${compact ? 'max-sm:w-11 max-sm:px-0' : 'min-h-10 px-4 text-[13px]'}`}
       aria-pressed={isFlagged}
       aria-label={compact ? flagLabel : undefined}
       title={compact ? flagLabel : undefined}
     >
       {flagging ? (
-        <Loader2 size={compact ? 14 : 12} className="animate-spin" aria-hidden="true" />
+        <Loader2 size={compact ? 16 : 14} className="animate-spin" aria-hidden="true" />
       ) : (
         <Flag
-          size={compact ? 14 : 12}
+          size={compact ? 16 : 14}
           strokeWidth={2}
           fill={isFlagged ? 'currentColor' : 'none'}
           aria-hidden="true"
@@ -135,17 +137,19 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
       type="button"
       onClick={onAssign}
       disabled={assigning}
-      className={`${isAssigned ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
+      className={`${isAssigned ? 'bz-btn-primary' : 'bz-btn bg-[#F6F6F6] hover:bg-[#EDEDED]'} disabled:opacity-50 ${
+        compact ? 'max-sm:w-11 max-sm:px-0' : 'min-h-10 px-4 text-[13px]'
+      }`}
       aria-pressed={isAssigned}
       aria-label={compact ? assignLabel : undefined}
       title={compact ? assignLabel : undefined}
     >
       {assigning ? (
-        <Loader2 size={compact ? 14 : 12} className="animate-spin" aria-hidden="true" />
+        <Loader2 size={compact ? 16 : 14} className="animate-spin" aria-hidden="true" />
       ) : isAssigned ? (
-        <Check size={compact ? 14 : 12} strokeWidth={2.2} aria-hidden="true" />
+        <Check size={compact ? 16 : 14} strokeWidth={2.2} aria-hidden="true" />
       ) : (
-        <UserPlus size={compact ? 14 : 12} strokeWidth={2} aria-hidden="true" />
+        <UserPlus size={compact ? 16 : 14} strokeWidth={2} aria-hidden="true" />
       )}
       <span className={compact ? 'hidden sm:inline' : undefined}>{assignLabel}</span>
     </button>
@@ -153,17 +157,17 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
 
   return (
     <section
-      className="flex flex-col bg-white lg:min-h-0 lg:flex-1"
+      className="flex flex-col bg-white sm:rounded-[28px] lg:min-h-0 lg:flex-1"
       role="region"
       aria-labelledby={titleId}
     >
       {/* Mobile sticky back bar — under the 61px admin mobile topbar. */}
       {showBackButton && (
-        <div className="sticky top-[72px] z-10 flex items-center justify-between gap-2 border-b border-pn-line bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+        <div className="sticky top-[72px] z-10 flex items-center justify-between gap-2 bg-white/95 px-4 py-2.5 backdrop-blur sm:rounded-t-[28px] sm:px-6 lg:hidden">
           <button
             type="button"
             onClick={onBack}
-            className="bz-btn bz-btn-sm"
+            className="bz-btn bg-[#F6F6F6] hover:bg-[#EDEDED]"
             aria-label={isTr ? 'Yorumlar listesine dön' : 'Back to reviews'}
           >
             <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
@@ -177,7 +181,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
       )}
 
       <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        <div className="px-5 py-5 sm:px-8 sm:py-6 lg:pb-8">
+        <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-7 lg:pb-8">
           {/* Header. The badge + text block keeps at least 260px; when the
               pane is narrower than that plus the desktop actions, the actions
               wrap onto their own line instead of squeezing the name. */}
@@ -188,11 +192,11 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                 <h2
                   id={titleId}
                   tabIndex={-1}
-                  className="bz-h-tight break-words text-[20px] text-pn-ink outline-none sm:text-[22px]"
+                  className="bz-h-tight break-words text-[20px] font-medium text-pn-ink outline-none"
                 >
                   {active.customerName || (isTr ? 'İsimsiz' : 'Unnamed')}
                 </h2>
-                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
+                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373]">
                   <span className="inline-flex items-center gap-1.5">
                     {iconId ? (
                       <span aria-hidden="true" className="inline-flex">
@@ -219,7 +223,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                   </time>
                 </p>
                 {/* §38.237 / §46 — exact stamp in the business timezone. */}
-                <p className="mt-0.5 text-[12px] tabular-nums text-[#737373]">
+                <p className="mt-0.5 text-[13px] tabular-nums text-[#9A9A9A]">
                   <time dateTime={active.createdAt}>{formatDateTime(active.createdAt, isTr)}</time>
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -236,11 +240,11 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
 
           {/* Comment */}
           {active.comment ? (
-            <blockquote className="mt-5 whitespace-pre-line break-words rounded-[24px] border border-pn-line bg-pn-canvas px-5 py-4 text-[15px] leading-[1.7] text-pn-ink">
+            <blockquote className="mt-5 whitespace-pre-line break-words rounded-[20px] bg-[#F6F6F6] px-5 py-4 text-[15px] leading-[1.7] text-pn-ink">
               {active.comment}
             </blockquote>
           ) : (
-            <p className="mt-5 text-[14px] italic text-[#737373]">
+            <p className="mt-5 rounded-[20px] bg-[#F6F6F6] px-5 py-4 text-[14px] text-[#737373]">
               {isTr
                 ? 'Müşteri yorum yazmadı, yalnızca puan verdi.'
                 : 'The customer left a rating without a comment.'}
@@ -250,15 +254,15 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
           {/* §38.237 — sent replies (`GET /api/feedback/[id]/reply`). */}
           {sentReplies.length > 0 && (
             <div className="mt-6">
-              <div className="mb-2 flex items-center gap-2">
-                <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} aria-hidden="true" />
-                <span className="text-[12px] font-medium text-[#525252]">
+              <div className="mb-2.5 flex items-center gap-2">
+                <MessageSquare size={14} className="text-[#737373]" strokeWidth={2} aria-hidden="true" />
+                <span className="text-[13px] font-medium text-pn-ink">
                   {isTr
                     ? `Gönderilen yanıtlar (${sentReplies.length})`
                     : `Sent replies (${sentReplies.length})`}
                 </span>
               </div>
-              <ol className="flex flex-col gap-2.5">
+              <ol className="flex flex-col gap-2">
                 {sentReplies.map((rep) => {
                   const channelLabel =
                     rep.channel === 'email'
@@ -272,31 +276,40 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                   return (
                     <li
                       key={rep.id}
-                      className={`rounded-[20px] border p-3.5 ${
-                        failed ? 'border-[#FCA5A5] bg-[#FFFBFB]' : 'border-pn-line bg-white'
-                      }`}
+                      className={`rounded-[16px] p-3 ${failed ? 'bg-[#FDECEC]' : 'bg-[#F6F6F6]'}`}
                     >
-                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[12px]">
-                        <span className="inline-flex items-center gap-1.5 font-medium text-[#525252]">
-                          {rep.channel === 'email' && <Mail size={11} strokeWidth={2.2} aria-hidden="true" />}
+                      <div className="mb-2 flex items-center justify-between gap-2 text-[13px]">
+                        <span className="inline-flex items-center gap-2 font-medium text-pn-ink">
+                          <span
+                            aria-hidden="true"
+                            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                              rep.channel === 'email' ? 'bg-pn-accent text-white' : 'bg-white text-pn-ink'
+                            }`}
+                          >
+                            {rep.channel === 'email' ? (
+                              <Mail size={14} strokeWidth={2} />
+                            ) : (
+                              <MessageSquare size={14} strokeWidth={2} />
+                            )}
+                          </span>
                           {channelLabel}
                           {failed && (
-                            <span className="text-[#991B1B]">· {isTr ? 'iletilemedi' : 'failed'}</span>
+                            <span className="font-normal text-[#D92D20]">· {isTr ? 'iletilemedi' : 'failed'}</span>
                           )}
                         </span>
                         <time
                           dateTime={rep.createdAt}
-                          className="tabular-nums text-[#A3A3A3]"
+                          className="text-[12px] tabular-nums text-[#9A9A9A]"
                           title={formatDateTime(rep.createdAt, isTr)}
                         >
                           {formatStamp(rep.createdAt, isTr)}
                         </time>
                       </div>
-                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-pn-ink">
+                      <p className="whitespace-pre-line break-words pl-10 text-[14px] leading-[1.6] text-[#525252]">
                         {rep.body}
                       </p>
                       {failed && (
-                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[14px] border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
+                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[14px] bg-white px-3 py-2 text-[13px] text-[#D92D20]">
                           <span>
                             {isTr
                               ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
@@ -310,7 +323,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                                 document.getElementById(ADMIN_REPLY_TEXTAREA_ID)?.focus(),
                               );
                             }}
-                            className="bz-btn-primary bz-btn-sm shrink-0"
+                            className="bz-btn-primary min-h-10 shrink-0 px-4 text-[13px]"
                           >
                             {isTr ? 'Yeniden dene' : 'Retry'}
                           </button>
@@ -324,7 +337,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
           )}
 
           {sentLoading && sentReplies.length === 0 && active.isReplied && (
-            <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
+            <div className="mt-6 flex items-center gap-2 text-[13px] text-[#9A9A9A]">
               <Loader2 size={12} className="animate-spin" aria-hidden="true" />
               {isTr ? 'Gönderilen yanıtlar yükleniyor…' : 'Loading sent replies…'}
             </div>
@@ -341,47 +354,56 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
               onSuggest={props.onSuggest}
             />
           ) : isHigh ? (
-            <div className="mt-6">
-              <AlertBanner
-                kind="lime"
-                icon={<Sparkles size={14} className="mt-1 text-pn-ink" strokeWidth={2} />}
+            <div role="alert" className="mt-6 flex items-start gap-3 rounded-[20px] bg-pn-accent-soft p-4">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
               >
-                <span className="block text-[#525252]">
-                  <strong className="font-medium text-pn-ink">
-                    {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
-                  </strong>{' '}
-                  {active.platform
-                    ? isTr
-                      ? `Bu ${pLabel} yorumu yüksek puanlı; müşteri paylaşımını platformda yaptı. Takip etmek isterseniz yorumu işaretleyebilir veya atayabilirsiniz.`
-                      : `This ${pLabel} review is high-rated and the customer already posted it on the platform. You can still flag or assign it to follow up.`
-                    : isTr
-                      ? 'Yüksek puanlı bir Buaze QR yorumu. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.'
-                      : 'This is a high-rated Buaze QR review. You can still flag or assign it to follow up.'}
-                </span>
-              </AlertBanner>
+                <Sparkles size={16} strokeWidth={2} />
+              </span>
+              <p className="min-w-0 pt-0.5 text-[14px] leading-[1.55] text-[#525252]">
+                <strong className="block font-medium text-pn-ink">
+                  {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
+                </strong>
+                {active.platform
+                  ? isTr
+                    ? `Bu ${pLabel} yorumu yüksek puanlı; müşteri paylaşımını platformda yaptı. Takip etmek isterseniz yorumu işaretleyebilir veya atayabilirsiniz.`
+                    : `This ${pLabel} review is high-rated and the customer already posted it on the platform. You can still flag or assign it to follow up.`
+                  : isTr
+                    ? 'Yüksek puanlı bir Buaze QR yorumu. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.'
+                    : 'This is a high-rated Buaze QR review. You can still flag or assign it to follow up.'}
+              </p>
             </div>
           ) : lastReplyFailed ? null : (
             // Right after a successful send the composer unmounts (the review
             // is now replied), so its status line would vanish with it — the
             // gate carries the confirmation instead.
-            <div className="mt-6">
-              <AlertBanner
-                kind={props.notice?.tone === 'success' ? 'success' : 'info'}
-                icon={<Check size={14} className="mt-1 text-pn-ink" strokeWidth={2.2} />}
+            <div
+              role="alert"
+              className={`mt-6 flex items-start gap-3 rounded-[20px] p-4 ${
+                props.notice?.tone === 'success' ? 'bg-[#E6F7EA]' : 'bg-[#F6F6F6]'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  props.notice?.tone === 'success' ? 'bg-[#23863A] text-white' : 'bg-white text-pn-ink'
+                }`}
               >
-                <span className="block text-[#525252]">
-                  <strong className="font-medium text-pn-ink">
-                    {props.notice?.tone === 'success'
-                      ? props.notice.msg + '.'
-                      : isTr
-                        ? 'Yanıtlandı.'
-                        : 'Replied.'}
-                  </strong>{' '}
-                  {isTr
-                    ? 'Gönderilen yanıtı yukarıda görebilirsiniz.'
-                    : 'You can see the sent reply above.'}
-                </span>
-              </AlertBanner>
+                <Check size={16} strokeWidth={2.2} />
+              </span>
+              <p className="min-w-0 pt-0.5 text-[14px] leading-[1.55] text-[#525252]">
+                <strong className="block font-medium text-pn-ink">
+                  {props.notice?.tone === 'success'
+                    ? props.notice.msg + '.'
+                    : isTr
+                      ? 'Yanıtlandı.'
+                      : 'Replied.'}
+                </strong>
+                {isTr
+                  ? 'Gönderilen yanıtı yukarıda görebilirsiniz.'
+                  : 'You can see the sent reply above.'}
+              </p>
             </div>
           )}
 
@@ -393,7 +415,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
           as the owner dock: capped at 48% of the pane with a floor so label →
           Send fits on short screens; only the textarea shrinks. */}
       {canReply && (
-        <div className="border-t border-pn-line bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
+        <div className="bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom,0px))] pt-2 sm:rounded-b-[28px] sm:px-6 lg:flex lg:max-h-[max(48%,240px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-t lg:border-pn-line lg:px-7 lg:pb-4 lg:pt-3 lg:focus-within:max-h-[max(48%,272px)]">
           <AdminReplyComposerCard
             feedback={active}
             isTr={isTr}

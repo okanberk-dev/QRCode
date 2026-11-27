@@ -2,7 +2,7 @@
 
 import { redirectBadgeLabel } from '@/lib/feedback-metrics';
 import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles } from 'lucide-react';
-import { AlertBanner, PlatformChip } from '@/components/ui';
+import { PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
@@ -65,20 +65,25 @@ interface FeedbackDetailProps {
   replyNotice: { msg: string; tone: ReplyTone } | null;
 }
 
+/** Fintora pills inside the white detail card (grey idle, soft tint when on). */
+const PILL_IDLE = 'bz-btn bg-[#F6F6F6] hover:bg-[#EDEDED]';
+const PILL_PENDING_ON = 'bz-btn bg-[#FFF4D6] text-[#8A5A00] hover:bg-[#FFEDBF]';
+const PILL_FLAG_ON = 'bz-btn bg-[#FDECEC] text-[#D92D20] hover:bg-[#FBDADA]';
+
 /** Detail-pane placeholder while the list loads (rating box, title, comment). */
 export function FeedbackDetailSkeleton() {
   return (
-    <div className="px-5 py-5 sm:px-8 sm:py-6" aria-hidden="true">
+    <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-7" aria-hidden="true">
       <div className="flex items-start gap-4">
-        <SkBox className="h-12 w-12 shrink-0 rounded-[24px]" />
+        <SkBox className="h-12 w-12 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-2 pt-1">
           <SkBox className="h-6 w-48 max-w-full" />
           <SkBox className="h-4 w-64 max-w-full" />
           <SkBox className="h-3 w-36" />
         </div>
       </div>
-      <SkBox className="mt-5 h-24 w-full rounded-[24px]" />
-      <SkBox className="mt-5 h-32 w-full rounded-[24px]" />
+      <SkBox className="mt-5 h-24 w-full rounded-[20px]" />
+      <SkBox className="mt-5 h-32 w-full rounded-[20px]" />
     </div>
   );
 }
@@ -133,17 +138,17 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
 
   return (
     <section
-      className="flex flex-col bg-white lg:min-h-0 lg:flex-1"
+      className="flex flex-col bg-white sm:rounded-[28px] lg:min-h-0 lg:flex-1"
       role="region"
       aria-labelledby={titleId}
     >
-      {/* Mobile sticky back bar — under the 61px shell topbar. */}
+      {/* Mobile sticky back bar — under the 72px shell bar. */}
       {showBackButton && (
-        <div className="sticky top-[72px] z-10 flex items-center justify-between gap-2 border-b border-pn-line bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+        <div className="sticky top-[72px] z-10 flex items-center justify-between gap-2 bg-white/95 px-4 py-2.5 backdrop-blur sm:rounded-t-[28px] sm:px-6 lg:hidden">
           <button
             type="button"
             onClick={onBack}
-            className="bz-btn bz-btn-sm max-sm:min-h-[44px]"
+            className={PILL_IDLE}
             aria-label={isTr ? 'Yorumlar listesine dön' : 'Back to reviews'}
           >
             <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
@@ -153,15 +158,15 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <button
               type="button"
               onClick={onTogglePending}
-              className={`${isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px] max-sm:min-w-[44px]`}
+              className={`${isPending ? PILL_PENDING_ON : PILL_IDLE} max-sm:w-11 max-sm:px-0`}
               aria-pressed={isPending}
               aria-label={pendingLabel}
               title={pendingLabel}
             >
               <Bookmark
-                size={14}
+                size={16}
                 strokeWidth={2}
-                fill={isPending ? '#92400E' : 'none'}
+                fill={isPending ? 'currentColor' : 'none'}
                 aria-hidden="true"
               />
               <span className="hidden sm:inline">{pendingLabel}</span>
@@ -169,12 +174,12 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <button
               type="button"
               onClick={onFlag}
-              className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px] max-sm:min-w-[44px]`}
+              className={`${isFlagged ? PILL_FLAG_ON : PILL_IDLE} max-sm:w-11 max-sm:px-0`}
               aria-pressed={isFlagged}
               aria-label={flagLabel}
               title={flagLabel}
             >
-              <Flag size={14} strokeWidth={2} fill={isFlagged ? 'currentColor' : 'none'} aria-hidden="true" />
+              <Flag size={16} strokeWidth={2} fill={isFlagged ? 'currentColor' : 'none'} aria-hidden="true" />
               <span className="hidden sm:inline">{flagLabel}</span>
             </button>
           </div>
@@ -182,7 +187,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
       )}
 
       <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        <div className="px-5 py-5 sm:px-8 sm:py-6 lg:pb-8">
+        <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-7 lg:pb-8">
           {/* Header. The badge + text block keeps at least 260px; when the
               pane is narrower than that plus the desktop actions (lg–xl, ~340px
               detail pane at 1024), the actions wrap onto their own line
@@ -194,11 +199,11 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                 <h2
                   id={titleId}
                   tabIndex={-1}
-                  className="bz-h-tight break-words text-[20px] text-pn-ink outline-none sm:text-[22px]"
+                  className="bz-h-tight break-words text-[20px] font-medium text-pn-ink outline-none"
                 >
                   {active.customerName || (isTr ? 'İsimsiz' : 'Unnamed')}
                 </h2>
-                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
+                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373]">
                   <span className="inline-flex items-center gap-1.5">
                     {iconId ? (
                       <span aria-hidden="true" className="inline-flex">
@@ -225,7 +230,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                   </time>
                 </p>
                 {/* §38.237 / §46 — exact stamp in the business timezone. */}
-                <p className="mt-0.5 text-[12px] tabular-nums text-[#737373]">
+                <p className="mt-0.5 text-[13px] tabular-nums text-[#9A9A9A]">
                   <time dateTime={active.createdAt}>{formatDateTime(active.createdAt, locale)}</time>
                 </p>
                 {/* Status chips. The rating itself is the badge on the left
@@ -238,13 +243,13 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               <button
                 type="button"
                 onClick={onTogglePending}
-                className={`${isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
+                className={`${isPending ? PILL_PENDING_ON : PILL_IDLE} min-h-10 px-4 text-[13px]`}
                 aria-pressed={isPending}
               >
                 <Bookmark
-                  size={12}
+                  size={14}
                   strokeWidth={2}
-                  fill={isPending ? '#92400E' : 'none'}
+                  fill={isPending ? 'currentColor' : 'none'}
                   aria-hidden="true"
                 />
                 {pendingLabel}
@@ -252,10 +257,10 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               <button
                 type="button"
                 onClick={onFlag}
-                className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm`}
+                className={`${isFlagged ? PILL_FLAG_ON : PILL_IDLE} min-h-10 px-4 text-[13px]`}
                 aria-pressed={isFlagged}
               >
-                <Flag size={12} strokeWidth={2} fill={isFlagged ? 'currentColor' : 'none'} aria-hidden="true" />
+                <Flag size={14} strokeWidth={2} fill={isFlagged ? 'currentColor' : 'none'} aria-hidden="true" />
                 {flagLabel}
               </button>
             </div>
@@ -263,12 +268,12 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
 
           {/* Comment */}
           {active.comment ? (
-            <blockquote className="mt-5 whitespace-pre-line break-words rounded-[24px] border border-pn-line bg-pn-canvas px-5 py-4 text-[15px] leading-[1.7] text-pn-ink">
+            <blockquote className="mt-5 whitespace-pre-line break-words rounded-[20px] bg-[#F6F6F6] px-5 py-4 text-[15px] leading-[1.7] text-pn-ink">
               {active.comment}
             </blockquote>
           ) : active.redirected ? (
-            <div className="mt-5 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 text-[14px] leading-[1.6] text-[#404040]">
-              <span className="mb-1.5 inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-accent">
+            <div className="mt-5 rounded-[20px] bg-[#F6F6F6] px-5 py-4 text-[14px] leading-[1.6] text-[#525252]">
+              <span className="mb-2 inline-flex items-center rounded-full bg-pn-accent-soft px-2.5 py-0.5 text-[12px] font-medium text-pn-accent">
                 {redirectBadgeLabel(active.platform, isTr)}
               </span>
               <p>
@@ -278,7 +283,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               </p>
             </div>
           ) : (
-            <p className="mt-5 text-[14px] text-[#737373]">
+            <p className="mt-5 rounded-[20px] bg-[#F6F6F6] px-5 py-4 text-[14px] text-[#737373]">
               {isTr
                 ? 'Müşteri metin yazmadı, yalnızca puan verdi.'
                 : 'The customer left a rating without text.'}
@@ -303,7 +308,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               {aspects.map((a) => (
                 <li
                   key={a.key}
-                  className="rounded-full bg-pn-canvas px-2.5 py-1 text-[12px] text-pn-ink"
+                  className="rounded-full bg-[#F6F6F6] px-3 py-1 text-[13px] text-pn-ink"
                 >
                   {a.label} {a.value}/5
                 </li>
@@ -314,15 +319,15 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           {/* Sent reply thread */}
           {sentReplies.length > 0 && (
             <div className="mt-6">
-              <div className="mb-2 flex items-center gap-2">
-                <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} aria-hidden="true" />
-                <span className="text-[12px] font-medium text-[#525252]">
+              <div className="mb-2.5 flex items-center gap-2">
+                <MessageSquare size={14} className="text-[#737373]" strokeWidth={2} aria-hidden="true" />
+                <span className="text-[13px] font-medium text-pn-ink">
                   {isTr
                     ? `Gönderilen yanıtlar (${sentReplies.length})`
                     : `Sent replies (${sentReplies.length})`}
                 </span>
               </div>
-              <ol className="flex flex-col gap-2.5">
+              <ol className="flex flex-col gap-2">
                 {sentReplies.map((rep) => {
                   const channelLabel =
                     rep.channel === 'email'
@@ -332,33 +337,41 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                       : isTr
                         ? 'Dahili kayıt'
                         : 'Internal note';
-                  const tone =
-                    rep.status === 'failed'
-                      ? 'border-[#FCA5A5] bg-[#FFFBFB]'
-                      : 'border-pn-line bg-white';
+                  const tone = rep.status === 'failed' ? 'bg-[#FDECEC]' : 'bg-[#F6F6F6]';
                   return (
-                    <li key={rep.id} className={`rounded-[20px] border ${tone} p-3.5`}>
-                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[12px]">
-                        <span className="inline-flex items-center gap-1.5 font-medium text-[#525252]">
-                          {rep.channel === 'email' && <Mail size={11} strokeWidth={2.2} aria-hidden="true" />}
+                    <li key={rep.id} className={`rounded-[16px] ${tone} p-3`}>
+                      <div className="mb-2 flex items-center justify-between gap-2 text-[13px]">
+                        <span className="inline-flex items-center gap-2 font-medium text-pn-ink">
+                          <span
+                            aria-hidden="true"
+                            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                              rep.channel === 'email' ? 'bg-pn-accent text-white' : 'bg-white text-pn-ink'
+                            }`}
+                          >
+                            {rep.channel === 'email' ? (
+                              <Mail size={14} strokeWidth={2} />
+                            ) : (
+                              <MessageSquare size={14} strokeWidth={2} />
+                            )}
+                          </span>
                           {channelLabel}
                           {rep.status === 'failed' && (
-                            <span className="text-[#991B1B]">· {isTr ? 'iletilemedi' : 'failed'}</span>
+                            <span className="font-normal text-[#D92D20]">· {isTr ? 'iletilemedi' : 'failed'}</span>
                           )}
                         </span>
                         <time
                           dateTime={rep.createdAt}
-                          className="tabular-nums text-[#A3A3A3]"
+                          className="text-[12px] tabular-nums text-[#9A9A9A]"
                           title={formatDateTime(rep.createdAt, locale)}
                         >
                           {formatStamp(rep.createdAt, locale)}
                         </time>
                       </div>
-                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-pn-ink">
+                      <p className="whitespace-pre-line break-words pl-10 text-[14px] leading-[1.6] text-[#525252]">
                         {rep.body}
                       </p>
                       {rep.status === 'failed' && (
-                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[14px] border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
+                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[14px] bg-white px-3 py-2 text-[13px] text-[#D92D20]">
                           <span>
                             {isTr
                               ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
@@ -370,7 +383,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                               props.setReplyDraft(rep.body);
                               focusReplyTextarea();
                             }}
-                            className="bz-btn-primary bz-btn-sm shrink-0"
+                            className="bz-btn-primary min-h-10 shrink-0 px-4 text-[13px]"
                           >
                             {isTr ? 'Yeniden dene' : 'Retry'}
                           </button>
@@ -386,7 +399,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           {/* Only reviews that have a reply can have a thread to load (a
               failed send also sets isReplied), so no loader flash otherwise. */}
           {sentLoading && sentReplies.length === 0 && active.isReplied && (
-            <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
+            <div className="mt-6 flex items-center gap-2 text-[13px] text-[#9A9A9A]">
               <Loader2 size={12} className="animate-spin" aria-hidden="true" />
               {isTr ? 'Yanıtlar yükleniyor…' : 'Loading replies…'}
             </div>
@@ -412,47 +425,56 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               sendingReply={props.sendingReply}
             />
           ) : isHigh ? (
-            <div className="mt-6">
-              <AlertBanner
-                kind="lime"
-                icon={<Sparkles size={14} className="mt-1 text-pn-ink" strokeWidth={2} />}
+            <div role="alert" className="mt-6 flex items-start gap-3 rounded-[20px] bg-pn-accent-soft p-4">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
               >
-                <span className="block text-[#525252]">
-                  <strong className="font-medium text-pn-ink">
-                    {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
-                  </strong>{' '}
-                  {active.platform
-                    ? isTr
-                      ? `Bu ${pLabel} yorumu yüksek puanlı; müşteri paylaşımını platformda yaptı. Takip etmek isterseniz yorumu işaretleyebilirsiniz.`
-                      : `This ${pLabel} review is high-rated and the customer already posted it on the platform. You can still flag it to follow up.`
-                    : isTr
-                      ? 'Yüksek puanlı bir Buaze QR yorumu. Takip etmek isterseniz işaretleyebilirsiniz.'
-                      : 'This is a high-rated Buaze QR review. You can still flag it to follow up.'}
-                </span>
-              </AlertBanner>
+                <Sparkles size={16} strokeWidth={2} />
+              </span>
+              <p className="min-w-0 pt-0.5 text-[14px] leading-[1.55] text-[#525252]">
+                <strong className="block font-medium text-pn-ink">
+                  {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
+                </strong>
+                {active.platform
+                  ? isTr
+                    ? `Bu ${pLabel} yorumu yüksek puanlı; müşteri paylaşımını platformda yaptı. Takip etmek isterseniz yorumu işaretleyebilirsiniz.`
+                    : `This ${pLabel} review is high-rated and the customer already posted it on the platform. You can still flag it to follow up.`
+                  : isTr
+                    ? 'Yüksek puanlı bir Buaze QR yorumu. Takip etmek isterseniz işaretleyebilirsiniz.'
+                    : 'This is a high-rated Buaze QR review. You can still flag it to follow up.'}
+              </p>
             </div>
           ) : !lastReplyFailed ? (
             // Right after a successful send the composer unmounts (the review
             // is now replied), so its status line would vanish with it — the
             // gate carries the confirmation instead.
-            <div className="mt-6">
-              <AlertBanner
-                kind={props.replyNotice?.tone === 'success' ? 'success' : 'info'}
-                icon={<Check size={14} className="mt-1 text-pn-ink" strokeWidth={2.2} />}
+            <div
+              role="alert"
+              className={`mt-6 flex items-start gap-3 rounded-[20px] p-4 ${
+                props.replyNotice?.tone === 'success' ? 'bg-[#E6F7EA]' : 'bg-[#F6F6F6]'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  props.replyNotice?.tone === 'success' ? 'bg-[#23863A] text-white' : 'bg-white text-pn-ink'
+                }`}
               >
-                <span className="block text-[#525252]">
-                  <strong className="font-medium text-pn-ink">
-                    {props.replyNotice?.tone === 'success'
-                      ? props.replyNotice.msg + '.'
-                      : isTr
-                        ? 'Yanıtlandı.'
-                        : 'Replied.'}
-                  </strong>{' '}
-                  {isTr
-                    ? 'Gönderilen yanıtı yukarıda görebilirsiniz.'
-                    : 'You can see the sent reply above.'}
-                </span>
-              </AlertBanner>
+                <Check size={16} strokeWidth={2.2} />
+              </span>
+              <p className="min-w-0 pt-0.5 text-[14px] leading-[1.55] text-[#525252]">
+                <strong className="block font-medium text-pn-ink">
+                  {props.replyNotice?.tone === 'success'
+                    ? props.replyNotice.msg + '.'
+                    : isTr
+                      ? 'Yanıtlandı.'
+                      : 'Replied.'}
+                </strong>
+                {isTr
+                  ? 'Gönderilen yanıtı yukarıda görebilirsiniz.'
+                  : 'You can see the sent reply above.'}
+              </p>
             </div>
           ) : null}
 
@@ -472,7 +494,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           so a long draft scrolls inside the textarea and Send never drops
           out of view; the dock itself only scrolls as a last resort. */}
       {canReply && (
-        <div className="border-t border-pn-line bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
+        <div className="bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom,0px))] pt-2 sm:rounded-b-[28px] sm:px-6 lg:flex lg:max-h-[max(48%,240px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-t lg:border-pn-line lg:px-7 lg:pb-4 lg:pt-3 lg:focus-within:max-h-[max(48%,272px)]">
           <ReplyComposerCard
             feedback={active}
             locale={locale}

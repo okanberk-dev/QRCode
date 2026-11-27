@@ -64,10 +64,10 @@ export function ReplyRiskNotice({
     return (
       <div
         role="alert"
-        className={`rounded-[20px] border px-3 py-2.5 text-[13px] leading-[1.5] ${
+        className={`rounded-[16px] px-4 py-3 text-[13px] leading-[1.5] ${
           tone === 'dark'
-            ? 'border-[#F87171]/40 bg-[#7F1D1D]/40 text-[#FECACA]'
-            : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
+            ? 'border border-[#F87171]/40 bg-[#7F1D1D]/40 text-[#FECACA]'
+            : 'bg-[#FDECEC] text-[#B42318]'
         } ${className}`}
       >
         <p className="flex items-center gap-1.5 font-medium">
@@ -79,7 +79,7 @@ export function ReplyRiskNotice({
             <li key={line}>{line}</li>
           ))}
         </ul>
-        <p className={`mt-1.5 ${tone === 'dark' ? 'text-[#FECACA]/80' : 'text-[#B91C1C]/80'}`}>
+        <p className={`mt-1.5 ${tone === 'dark' ? 'text-[#FECACA]/80' : 'text-[#B42318]/80'}`}>
           {isTr
             ? 'Yanıtlar Buaze üzerinden gider; bu kurallar hem sizi hem Buaze’yi korur.'
             : 'Replies are sent through Buaze; these rules protect you and Buaze.'}
@@ -91,10 +91,10 @@ export function ReplyRiskNotice({
     return (
       <p
         role="status"
-        className={`flex items-start gap-1.5 rounded-[20px] border px-3 py-2 text-[12px] leading-[1.5] ${
+        className={`flex items-start gap-1.5 rounded-[16px] px-3.5 py-2.5 text-[12px] leading-[1.5] ${
           tone === 'dark'
-            ? 'border-[#FDE68A]/40 bg-[#78350F]/30 text-[#FDE68A]'
-            : 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]'
+            ? 'border border-[#FDE68A]/40 bg-[#78350F]/30 text-[#FDE68A]'
+            : 'bg-[#FFF4D6] text-[#8A5A00]'
         } ${className}`}
       >
         <AlertTriangle size={13} strokeWidth={2.2} aria-hidden="true" className="mt-0.5 shrink-0" />

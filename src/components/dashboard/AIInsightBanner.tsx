@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, X } from 'lucide-react';
+import { ArrowUpRight, Sparkles, X } from 'lucide-react';
 
-// Phase 8c+ §38.27 — Tasarım .design-owner-2026/page-dashboard.jsx AI İÇGÖRÜ
-// banner paterni. Graphite bg + lime accent. Owner her hafta bir kez görür
+// Phase 8c+ §38.27 — Haftalık AI içgörü kartı (Pano / Fintora: beyaz kart,
+// mor ikon dairesi, gri "Detay" hapı). Owner her hafta bir kez görür
 // (haftalık dismiss); ertesi hafta yeni AI insight ile tekrar açılır.
 //
 // Backend kaynağı: dashboard'da `extractThemes()` zaten çağrılıyor;
@@ -71,29 +71,47 @@ export function AIInsightBanner({
     <section
       role="status"
       aria-label={isTr ? 'AI içgörü' : 'AI insight'}
-      // Calm light strip (CLAUDE.md §58): two-line summary + "Detay".
-      className="flex items-start gap-3 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 sm:px-5"
+      // Fintora card: white, borderless, a 40px purple sparkle circle, the
+      // weekly summary (two lines) and a grey "Detay ↗" pill + close circle.
+      className="bz-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5"
     >
-      <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-pn-accent" />
-      <p className="min-w-0 flex-1 text-[14px] leading-[1.55] text-[#262626] line-clamp-2">
-        <span className="font-medium text-pn-ink">{isTr ? 'AI özeti: ' : 'AI summary: '}</span>
-        {insight}
-      </p>
-      <Link
-        href={actionHref}
-        className="inline-flex min-h-[44px] shrink-0 items-center gap-1 self-center rounded-full px-1 text-[13px] font-medium text-pn-ink hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover sm:min-h-[32px]"
-      >
-        {actionLabel ?? (isTr ? 'Detay' : 'Details')}
-        <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
-      </Link>
-      <button
-        type="button"
-        onClick={handleDismiss}
-        aria-label={isTr ? 'Bu haftalık içgörüyü gizle' : "Hide this week's insight"}
-        className="-my-2 -mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#737373] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover sm:h-8 sm:w-8 sm:self-center sm:m-0"
-      >
-        <X size={14} strokeWidth={2} aria-hidden="true" />
-      </button>
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span
+          aria-hidden="true"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+        >
+          <Sparkles size={18} strokeWidth={2} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-medium text-pn-ink">{isTr ? 'AI özeti' : 'AI summary'}</p>
+          <p className="mt-0.5 line-clamp-2 text-[13px] leading-[1.55] text-[#737373]">{insight}</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label={isTr ? 'Bu haftalık içgörüyü gizle' : "Hide this week's insight"}
+          className="bz-btn-icon -mr-1 -mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center text-[#737373] hover:text-pn-ink sm:hidden"
+        >
+          <X size={16} strokeWidth={2} aria-hidden="true" />
+        </button>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 pl-[52px] sm:pl-0">
+        <Link
+          href={actionHref}
+          className="bz-btn min-h-11 px-4 text-[13px] sm:min-h-10"
+        >
+          {actionLabel ?? (isTr ? 'Detay' : 'Details')}
+          <ArrowUpRight size={15} strokeWidth={2} aria-hidden="true" />
+        </Link>
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label={isTr ? 'Bu haftalık içgörüyü gizle' : "Hide this week's insight"}
+          className="bz-btn-icon hidden shrink-0 items-center justify-center text-[#737373] hover:text-pn-ink sm:inline-flex"
+        >
+          <X size={16} strokeWidth={2} aria-hidden="true" />
+        </button>
+      </div>
     </section>
   );
 }

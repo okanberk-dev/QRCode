@@ -300,10 +300,10 @@ export function WhatsAppReviewWizard({
   const charCount = message.length;
   const charClass =
     charCount > WHATSAPP_MESSAGE_MAX_CHARS
-      ? "text-[#DC2626]"
+      ? "text-[#C4271B]"
       : charCount > WHATSAPP_MESSAGE_MAX_CHARS * 0.9
-        ? "text-[#D97706]"
-        : "text-[#A3A3A3]";
+        ? "text-[#B45309]"
+        : "text-[#737373]";
 
   return (
     <Modal
@@ -316,27 +316,28 @@ export function WhatsAppReviewWizard({
       onClose={onClose}
       size={620}
       footer={
-        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={stepIndex === 0 ? onClose : goBack}
-              className="bz-btn-ghost inline-flex items-center justify-center gap-1.5"
-              disabled={submitting}
-            >
-              {stepIndex === 0 ? (
-                isTr ? "İptal" : "Cancel"
-              ) : (
-                <>
-                  <ArrowLeft size={13} strokeWidth={2.2} />
-                  {isTr ? "Geri" : "Back"}
-                </>
-              )}
-            </button>
-            <span className="tabular-nums hidden text-[12px] text-[#737373] sm:inline">
-              {stepIndex + 1} / {STEPS.length}
-            </span>
-          </div>
+        // Fintora footer bar: grey "Geri" pill + purple "Devam" pill. The
+        // modal keeps it pinned under the scrolling body (bottom sheet on
+        // phones, above the safe area).
+        <div className="flex w-full items-center gap-2">
+          <button
+            type="button"
+            onClick={stepIndex === 0 ? onClose : goBack}
+            className="bz-btn-ghost inline-flex min-h-[46px] shrink-0 items-center justify-center gap-1.5 bg-[#F6F6F6] px-5 text-[14px] hover:bg-[#EBEBEB]"
+            disabled={submitting}
+          >
+            {stepIndex === 0 ? (
+              isTr ? "İptal" : "Cancel"
+            ) : (
+              <>
+                <ArrowLeft size={15} />
+                {isTr ? "Geri" : "Back"}
+              </>
+            )}
+          </button>
+          <span className="tabular-nums hidden flex-1 text-center text-[13px] text-[#737373] sm:inline">
+            {stepIndex + 1} / {STEPS.length}
+          </span>
           {stepIndex < STEPS.length - 1 ? (
             <button
               type="button"
@@ -345,22 +346,22 @@ export function WhatsAppReviewWizard({
                 (currentStep.id === "verify" && !canAdvanceFromVerify) ||
                 (currentStep.id === "message" && !canAdvanceFromMessage)
               }
-              className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
+              className="bz-btn-primary inline-flex min-h-[46px] flex-1 items-center justify-center gap-1.5 text-[14px] sm:flex-none"
             >
               {isTr ? "Devam et" : "Continue"}
-              <ArrowRight size={13} strokeWidth={2.2} />
+              <ArrowRight size={15} />
             </button>
           ) : (
             <button
               type="button"
               onClick={submit}
               disabled={submitting || !canAdvanceFromVerify}
-              className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
+              className="bz-btn-primary inline-flex min-h-[46px] flex-1 items-center justify-center gap-1.5 text-[14px] sm:flex-none"
             >
               {submitting ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={15} className="animate-spin" />
               ) : (
-                <Save size={14} strokeWidth={2.2} />
+                <Save size={15} />
               )}
               {submitting
                 ? isTr
@@ -375,8 +376,10 @@ export function WhatsAppReviewWizard({
       }
     >
       <div ref={headerRef} className="flex flex-col gap-5">
-        {/* Stepper */}
-        <div className="bz-card-soft flex items-center gap-1 p-1.5 sm:p-2" role="tablist">
+        {/* Stepper — Fintora step pills: the current step is a purple pill
+            with its label, finished steps a purple check circle, the rest
+            grey. On phones only the current step shows its label. */}
+        <div className="flex gap-2" role="tablist">
           {STEPS.map((s, idx) => {
             const active = idx === stepIndex;
             const done = idx < stepIndex;
@@ -384,6 +387,18 @@ export function WhatsAppReviewWizard({
               idx <= stepIndex ||
               (idx === 1 && canAdvanceFromVerify) ||
               (idx === 2 && canAdvanceFromVerify && canAdvanceFromMessage);
+            const pillTone = active
+              ? "bg-pn-accent text-white"
+              : done
+                ? "bg-[#F6F6F6] text-pn-ink hover:bg-[#EBEBEB]"
+                : reachable
+                  ? "bg-[#F6F6F6] text-[#666666] hover:bg-[#EBEBEB]"
+                  : "bg-[#F6F6F6] text-[#9A9A9A]";
+            const circleTone = active
+              ? "bg-white text-pn-accent"
+              : done
+                ? "bg-pn-accent text-white"
+                : "bg-white text-[#737373]";
             return (
               <button
                 key={s.id}
@@ -392,23 +407,19 @@ export function WhatsAppReviewWizard({
                 onClick={() => jumpTo(idx)}
                 disabled={!reachable}
                 aria-selected={active}
-                className="group flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-[14px] px-2 py-2 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
-                style={{
-                  background: active ? "#5D3EBC" : "transparent",
-                  color: active ? "#FFFFFF" : done ? "#000000" : reachable ? "#525252" : "#A3A3A3",
-                }}
+                className={`flex min-h-[46px] min-w-0 items-center justify-center gap-2 rounded-full px-2 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed sm:flex-1 sm:px-3 sm:text-[14px] ${
+                  active ? "flex-1 pr-4" : "shrink-0"
+                } ${pillTone}`}
               >
                 <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
-                  style={{
-                    background: active ? "#FFFFFF" : done ? "#EFEAFB" : "#F6F6F6",
-                    color: active || done ? "#5D3EBC" : "#000000",
-                    border: !active && !done ? "1px solid #EBEBEB" : "none",
-                  }}
+                  aria-hidden="true"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-medium tabular-nums ${circleTone}`}
                 >
-                  {done ? <Check size={11} strokeWidth={2.6} /> : s.icon}
+                  {done ? <Check size={14} strokeWidth={2.6} /> : idx + 1}
                 </span>
-                <span className="truncate">{isTr ? s.labelTr : s.labelEn}</span>
+                <span className={active ? "truncate" : "sr-only sm:not-sr-only sm:truncate"}>
+                  {isTr ? s.labelTr : s.labelEn}
+                </span>
               </button>
             );
           })}
@@ -440,22 +451,19 @@ export function WhatsAppReviewWizard({
 
             {whatsappInput.trim().length > 0 && (
               <div
-                className="rounded-[20px] border p-3 text-[13px]"
-                style={{
-                  borderColor: normalized.ok ? "#D1FAE5" : "#FECACA",
-                  background: normalized.ok ? "#F0FDF4" : "#FEF2F2",
-                  color: normalized.ok ? "#000000" : "#991B1B",
-                }}
+                className={`rounded-[16px] px-4 py-3 text-[14px] ${
+                  normalized.ok ? "bg-[#E6F7EA] text-[#1F6B32]" : "bg-[#FDECEC] text-[#A3261B]"
+                }`}
               >
                 {normalized.ok ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Check size={13} strokeWidth={2.4} className="text-[#16A34A]" />
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <Check size={15} strokeWidth={2.4} />
                     {isTr ? "Geçerli" : "Valid"}:{" "}
                     <span className="tabular-nums font-medium">{normalized.url}</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5">
-                    <AlertTriangle size={13} strokeWidth={2.2} className="text-[#DC2626]" />
+                    <AlertTriangle size={15} className="shrink-0" />
                     {normalized.reason === "EMPTY"
                       ? isTr
                         ? "Numara boş."
@@ -472,7 +480,7 @@ export function WhatsAppReviewWizard({
               </div>
             )}
 
-            <p className="text-[12px] leading-[1.55] text-[#737373]">
+            <p className="text-[13px] leading-[1.55] text-[#737373]">
               {isTr
                 ? "Bu numara müşterinin değerlendirme sayfasında WhatsApp butonuna tıklayınca açılır. Otomatik mesaj gönderilmez — müşteri kendi mesajını da düzenleyebilir."
                 : "This number opens when the customer taps the WhatsApp button on the review surface. No auto-send — the customer can edit the prefilled message before sending."}
@@ -498,12 +506,9 @@ export function WhatsAppReviewWizard({
                       type="button"
                       onClick={() => applyPreset(p.value)}
                       aria-pressed={isActive}
-                      className="rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors"
-                      style={{
-                        borderColor: isActive ? "#5D3EBC" : "#EBEBEB",
-                        background: isActive ? "#5D3EBC" : "#FFFFFF",
-                        color: isActive ? "#FFFFFF" : "#000000",
-                      }}
+                      className={`inline-flex min-h-[40px] items-center rounded-full px-4 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${
+                        isActive ? "bg-pn-accent text-white" : "bg-[#F6F6F6] text-pn-ink hover:bg-[#EBEBEB]"
+                      }`}
                     >
                       {p.label}
                     </button>
@@ -536,11 +541,11 @@ export function WhatsAppReviewWizard({
               />
             </Field>
 
-            <div className="flex items-center justify-between gap-2 -mt-2">
+            <div className="-mt-2 flex items-center justify-between gap-2">
               <span className="text-[13px] font-medium text-[#737373]">
-                {isTr ? "DEĞİŞKEN EKLE" : "INSERT VARIABLE"}
+                {isTr ? "Değişken ekle" : "Insert variable"}
               </span>
-              <span aria-live="polite" className={`tabular-nums text-[12px] tabular-nums ${charClass}`}>
+              <span aria-live="polite" className={`tabular-nums text-[13px] ${charClass}`}>
                 {charCount} / {WHATSAPP_MESSAGE_MAX_CHARS}
               </span>
             </div>
@@ -550,23 +555,28 @@ export function WhatsAppReviewWizard({
                   key={v.token}
                   type="button"
                   onClick={() => insertVariable(v.token)}
-                  className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-2.5 py-1 text-[12px] font-medium text-pn-ink transition-colors hover:border-pn-ink hover:bg-pn-canvas"
+                  className="inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[#F6F6F6] px-3 text-[13px] font-medium text-pn-ink transition-colors duration-200 hover:bg-pn-accent-soft hover:text-pn-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
                   title={isTr ? v.labelTr : v.labelEn}
                 >
-                  <span className="bz-mono">{v.token}</span>
+                  <span className="tabular-nums">{v.token}</span>
                 </button>
               ))}
             </div>
 
             {/* Live preview */}
-            <div className="rounded-[20px] border border-pn-line bg-pn-canvas p-3.5">
-              <div className="flex items-center gap-1.5">
-                <Sparkles size={11} strokeWidth={2.2} className="text-pn-accent-ink" />
+            <div className="rounded-[18px] bg-[#F6F6F6] p-4">
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-pn-accent text-white"
+                >
+                  <Sparkles size={13} />
+                </span>
                 <span className="text-[13px] font-medium text-[#737373]">
-                  {isTr ? "ÖRNEK MESAJ" : "SAMPLE MESSAGE"}
+                  {isTr ? "Örnek mesaj" : "Sample message"}
                 </span>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-[13px] leading-[1.55] text-pn-ink">
+              <p className="mt-2.5 whitespace-pre-wrap text-[14px] leading-[1.55] text-pn-ink">
                 {previewMessage}
               </p>
             </div>
@@ -578,10 +588,10 @@ export function WhatsAppReviewWizard({
           <div className="flex flex-col gap-4">
             {/* Customer-side mock card (matches /r/[slug] thanks step language) */}
             <div className="rounded-[24px] bg-[#3B1F8F] p-5 sm:p-6">
-              <span className="tabular-nums text-[12px] font-medium text-white/75">
-                {isTr ? "MÜŞTERİYE GÖRÜNECEK" : "CUSTOMER PREVIEW"}
+              <span className="text-[13px] font-medium text-white/75">
+                {isTr ? "Müşteriye görünecek" : "Customer preview"}
               </span>
-              <p className="mt-2 text-[13px] text-white/80">
+              <p className="mt-2 text-[14px] text-white/80">
                 {isTr
                   ? "1–3 yıldız veren müşteri değerlendirme sayfası sonunda şu butonu görür:"
                   : "Customers giving 1–3★ see this button at the end of the review page:"}
@@ -591,7 +601,7 @@ export function WhatsAppReviewWizard({
                   type="button"
                   disabled
                   aria-disabled="true"
-                  className="inline-flex w-full max-w-[280px] items-center justify-center gap-2 rounded-[14px] bg-white/10 px-4 py-3 text-[13px] font-medium text-white border border-white/15"
+                  className="inline-flex min-h-[46px] w-full max-w-[280px] items-center justify-center gap-2 rounded-full bg-white/12 px-4 text-[14px] font-medium text-white"
                 >
                   <MessageCircle
                     size={14}
@@ -602,16 +612,14 @@ export function WhatsAppReviewWizard({
                 </button>
               </div>
               {previewUrl && (
-                <p className="mt-3 text-center tabular-nums text-[12px] text-white/40 truncate">
+                <p className="mt-3 truncate text-center tabular-nums text-[12px] text-white/60">
                   {previewUrl}
                 </p>
               )}
             </div>
 
             {/* Enable toggle */}
-            <div
-              className="flex items-start gap-3 rounded-[24px] border border-pn-line bg-white p-4"
-            >
+            <div className="flex items-start gap-3 rounded-[20px] bg-[#F6F6F6] p-4">
               {/* Canonical panel switch (§23.3) — the hand-rolled one was graphite
                   when on and had no accessible name. */}
               <APSwitch
@@ -620,15 +628,15 @@ export function WhatsAppReviewWizard({
                 ariaLabel={isTr ? "WhatsApp geri bildirim butonunu aç" : "Enable the WhatsApp feedback button"}
               />
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-pn-ink">
+                <p className="text-[14px] font-medium text-pn-ink">
                   {isTr ? "Bu özelliği aç" : "Enable this feature"}
                 </p>
-                <p className="mt-0.5 text-[12px] leading-[1.5] text-[#525252]">
+                <p className="mt-0.5 text-[13px] leading-[1.5] text-[#525252]">
                   {isTr
                     ? "Açıkken 1–3 yıldız müşteriler değerlendirme sayfası sonunda WhatsApp butonu görür."
                     : "When on, customers giving 1–3★ see the WhatsApp button on the review thanks step."}
                 </p>
-                <p className="mt-1.5 text-[12px] leading-[1.5] text-[#737373]">
+                <p className="mt-1.5 text-[13px] leading-[1.5] text-[#737373]">
                   {isTr
                     ? "KVKK: Müşteri butona tıklamadan WhatsApp açılmaz; otomatik yönlendirme yoktur."
                     : "KVKK / GDPR: WhatsApp opens only on customer tap; no auto-redirect."}
@@ -637,7 +645,7 @@ export function WhatsAppReviewWizard({
             </div>
 
             {error && (
-              <div className="rounded-[14px] border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+              <div className="rounded-[16px] bg-[#FDECEC] px-4 py-3 text-[14px] text-[#A3261B]">
                 {error}
               </div>
             )}

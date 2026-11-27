@@ -81,54 +81,50 @@ export function PlatformSummaryLine({
 }
 
 /**
- * Which business the platform page is editing: name, sector, the
- * review-link summary and the way to that business's settings. The business
- * itself is picked with the shell's business switcher (sidebar / mobile top
- * bar) — the page follows it through `?restaurantId`, so there is no second
- * picker here.
+ * Which business the platform page is editing (Fintora profile strip): a
+ * purple initial circle, the business name and its sector, and the way to
+ * that business's settings. The review-link counts live in the stat cards
+ * right under it. The business itself is picked with the shell's business
+ * switcher (sidebar / mobile top bar) — the page follows it through
+ * `?restaurantId`, so there is no second picker here.
  */
 export function PlatformBusinessContext({
   locale,
   restaurant,
-  summary,
 }: {
   locale: 'tr' | 'en';
   restaurant: { id: string; name: string; category: string | null };
-  summary: PlatformLinkSummary;
+  /** Kept for callers; the counts are shown by the page's stat cards. */
+  summary?: PlatformLinkSummary;
 }) {
   const isTr = locale === 'tr';
   const initial = restaurant.name.trim().charAt(0).toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US') || '•';
+  const settingsLabel = isTr ? 'İşletme ayarları' : 'Business settings';
   return (
-    <section
-      aria-labelledby="pb-ctx"
-      className="bz-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5"
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-pn-accent text-[14px] font-medium text-white"
+    <section aria-labelledby="pb-ctx" className="bz-card flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
+      <span
+        aria-hidden="true"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-pn-accent text-[18px] font-medium text-white"
+      >
+        {initial}
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2
+          id="pb-ctx"
+          className="scroll-mt-24 truncate text-[18px] font-medium leading-6 tracking-[-0.01em] text-pn-ink"
         >
-          {initial}
-        </span>
-        <div className="min-w-0">
-          <h2 id="pb-ctx" className="bz-h-tight truncate text-[16px] text-pn-ink">
-            {restaurant.name}
-          </h2>
-          <p className="mt-0.5 text-[13px] text-[#525252]">
-            <PlatformSummaryLine
-              summary={summary}
-              locale={locale}
-              lead={sectorLabelFor(restaurant.category, locale)}
-            />
-          </p>
-        </div>
+          {restaurant.name}
+        </h2>
+        <p className="mt-0.5 truncate text-[13px] text-[#737373]">{sectorLabelFor(restaurant.category, locale)}</p>
       </div>
       <Link
         href={settingsPlatformsHref(locale, restaurant.id)}
-        className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2 sm:min-h-[38px]"
+        aria-label={settingsLabel}
+        title={settingsLabel}
+        className="bz-btn-ghost inline-flex h-11 w-11 shrink-0 items-center justify-center gap-1.5 px-0 text-[14px] focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-accent focus-visible:ring-offset-2 sm:w-auto sm:px-5"
       >
-        <Settings size={14} aria-hidden="true" />
-        {isTr ? 'İşletme ayarları' : 'Business settings'}
+        <Settings size={16} aria-hidden="true" />
+        <span className="hidden sm:inline">{settingsLabel}</span>
       </Link>
     </section>
   );

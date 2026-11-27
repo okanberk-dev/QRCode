@@ -20,9 +20,10 @@ interface FeedbackListItemProps {
 }
 
 /**
- * Review row: rating badge · name + age · two-line comment · platform /
- * business / status chips. The coloured rating badge replaces the initials
- * avatar and the 10px star strip, so the rating reads at a glance.
+ * Review row (Fintora notification list): a 16px-radius row with a 40px
+ * rating circle on the left, name + age, a two-line comment and platform /
+ * business / status chips. Unread rows keep the grey fill and a small purple
+ * dot; read rows are white; the open review is lavender.
  */
 export function FeedbackListItem({
   feedback: r,
@@ -63,40 +64,40 @@ export function FeedbackListItem({
         aria-selected={isActive}
         aria-label={`${customerLabel}, ${r.rating}/5, ${stateLabel}`}
         onClick={() => onSelect(r.id)}
-        className={`group flex w-full items-start gap-3 border-b border-pn-line px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent sm:px-5 ${
-          isActive ? 'bg-pn-accent-soft/60 shadow-[inset_3px_0_0_#0A0A0A]' : 'hover:bg-pn-canvas'
+        className={`group flex w-full items-start gap-3 rounded-[16px] p-3 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent ${
+          isActive
+            ? 'bg-pn-accent-soft'
+            : isUnread
+              ? 'bg-[#F6F6F6] hover:bg-[#EDEDED]'
+              : 'bg-white hover:bg-[#F6F6F6]'
         } ${isPulsed ? 'animate-pulse ring-2 ring-inset ring-pn-accent' : ''}`}
       >
         <RatingBadge rating={r.rating} isTr={isTr} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            {isUnread && (
-              <span
-                aria-hidden="true"
-                className="h-2 w-2 shrink-0 self-center rounded-full bg-[#2563EB]"
-                title={isTr ? 'Okunmamış' : 'Unread'}
-              />
-            )}
-            <span
-              className={`truncate text-[14px] text-pn-ink ${isUnread ? 'font-medium' : 'font-medium'}`}
-            >
-              {customerLabel}
-            </span>
+            <span className="truncate text-[14px] font-medium text-pn-ink">{customerLabel}</span>
             <time
               dateTime={r.createdAt}
               title={formatDateTime(r.createdAt, locale)}
-              className="ml-auto shrink-0 text-[12px] tabular-nums text-[#737373]"
+              className="ml-auto inline-flex shrink-0 items-center gap-1.5 text-[12px] tabular-nums text-[#9A9A9A]"
             >
+              {isUnread && (
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 shrink-0 rounded-full bg-pn-accent"
+                  title={isTr ? 'Okunmamış' : 'Unread'}
+                />
+              )}
               {timeAgoLabel(r.createdAt, locale)}
             </time>
           </div>
-          <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#525252]">
+          <p className="mt-0.5 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#737373]">
             {r.redirected ? (
               <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-accent">
                 {redirectBadgeLabel(r.platform, isTr)}
               </span>
             ) : (
-              r.comment || <span className="text-[#737373]">{isTr ? 'Metin yok' : 'No text'}</span>
+              r.comment || <span className="text-[#9A9A9A]">{isTr ? 'Metin yok' : 'No text'}</span>
             )}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] text-[#737373]">

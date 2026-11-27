@@ -18,13 +18,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronRight, Download, Loader2, RefreshCw } from 'lucide-react';
-import { AlertBanner, PageHeader, Tabs } from '@/components/ui';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  CircleDashed,
+  Clock,
+  Download,
+  Loader2,
+  RefreshCw,
+} from 'lucide-react';
+import { AlertBanner, PageHeader, StatCard, Tabs } from '@/components/ui';
 import { PlatformsPortfolio } from '@/components/dashboard/platforms/PlatformsPortfolio';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
 import RedirectThresholdPicker from '@/components/dashboard/RedirectThresholdPicker';
-import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
 import { PlatformBusinessContext } from '@/components/dashboard/platforms/PlatformBusinessContext';
+import { PlatformCard, PLATFORM_ROW_LIST } from '@/components/dashboard/platforms/PlatformCard';
 import { PlatformLinkRow } from '@/components/dashboard/platforms/PlatformLinkRow';
 import { useFocusClearance } from '@/components/dashboard/platforms/useFocusClearance';
 import { PlatformsOverviewBodySkeleton } from '@/components/dashboard/platforms/PlatformSkeletons';
@@ -42,6 +51,7 @@ import {
   computePlatformLinkStatuses,
   countTestableLinks,
   defaultPickerPlatformIds,
+  formatRelativeTime,
   isPlatformLinkVisible,
   sortPlatformLinkStatuses,
   summarizePlatformLinks,
@@ -79,7 +89,7 @@ interface RetestResult {
 }
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-accent focus-visible:ring-offset-2';
 
 function readStoredRestaurantId(): string | null {
   try {
@@ -180,6 +190,12 @@ export default function PlatformsClient({
   const summary = summarizePlatformLinks(reviewVisible);
   const testableCount = countTestableLinks(statuses);
   const pickerIds = useMemo(() => defaultPickerPlatformIds(restaurant), [restaurant]);
+  // Newest check among the links on this page (stat card "Son kontrol").
+  const latestCheckedAt = statuses.reduce<string | null>((latest, status) => {
+    const at = status.lastCheck?.checkedAt;
+    if (!at || !Number.isFinite(Date.parse(at))) return latest;
+    return !latest || Date.parse(at) > Date.parse(latest) ? at : latest;
+  }, null);
 
   const updateRow = useCallback((id: string, patch: Partial<PlatformsRestaurant>) => {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -314,6 +330,66 @@ export default function PlatformsClient({
       />
     ) : null;
 
+  const statCards = [
+    {
+      key: 'connected',
+      label: isTr ? 'Bağlı' : 'Connected',
+      value: summary.connected,
+      icon: <CheckCircle2 size={17} aria-hidden="true" />,
+    },
+    {
+      key: 'issue',
+      label: isTr ? 'Sorunlu' : 'Need attention',
+      value: summary.issue,
+      icon: <AlertTriangle size={17} aria-hidden="true" />,
+    },
+    {
+      key: 'missing',
+      label: isTr ? 'Eksik' : 'Not added',
+      value: summary.missing,
+      icon: <CircleDashed size={17} aria-hidden="true" />,
+    },
+    {
+      key: 'checked',
+      label: isTr ? 'Son kontrol' : 'Last check',
+      value: latestCheckedAt ? formatRelativeTime(latestCheckedAt, locale, nowMs) : '—',
+      icon: <Clock size={17} aria-hidden="true" />,
+    },
+  ];
+
+  const retestButton = (
+    <button
+      type="button"
+      onClick={runRetestAll}
+      // Not `disabled` while running: disabling the focused button
+      // would drop keyboard focus to <body>. The handler guards re-entry.
+      disabled={testableCount === 0}
+      aria-disabled={retesting || undefined}
+      aria-busy={retesting || undefined}
+      title={
+        testableCount === 0
+          ? isTr
+            ? 'Kontrol edilecek aktif link yok.'
+            : 'No active links to check.'
+          : undefined
+      }
+      className={`bz-btn-ghost inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[14px] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${FOCUS_RING}`}
+    >
+      {retesting ? (
+        <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+      ) : (
+        <RefreshCw size={15} aria-hidden="true" />
+      )}
+      {retesting
+        ? isTr
+          ? 'Kontrol ediliyor…'
+          : 'Checking…'
+        : isTr
+          ? 'Tümünü kontrol et'
+          : 'Check all'}
+    </button>
+  );
+
   return (
     <>
       {header}
@@ -335,201 +411,181 @@ export default function PlatformsClient({
       <>
       {viewTabs}
 
-      <PlatformBusinessContext locale={locale} restaurant={restaurant} summary={summary} />
+      {/* Fintora stack: every card 10px apart. */}
+      <div className="space-y-2.5">
+        <PlatformBusinessContext locale={locale} restaurant={restaurant} />
 
-      {restaurant.externalPlatformsEnabled === false && (
-        <AlertBanner kind="info">
-          {isTr
-            ? 'Google dışındaki yorum platformları bu işletme için kapalı. Kayıtlı linkler korunur.'
-            : 'Review platforms other than Google are off for this business. Saved links are kept.'}
-        </AlertBanner>
-      )}
-
-      {/* ── Review platforms ─────────────────────────────────────────── */}
-      <section aria-labelledby="pl-review-title" className="space-y-3">
-        <div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="min-w-0">
-              <h2 id="pl-review-title" className="bz-h-tight text-[18px] text-pn-ink">
-                {isTr ? 'Yorum platformları' : 'Review platforms'}
-              </h2>
-              <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
-                {isTr
-                  ? 'Puanı eşiği geçen müşteriye bu platformlardan biri önerilir.'
-                  : 'Customers above your rating threshold are offered one of these.'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={runRetestAll}
-              // Not `disabled` while running: disabling the focused button
-              // would drop keyboard focus to <body>. The handler guards re-entry.
-              disabled={testableCount === 0}
-              aria-disabled={retesting || undefined}
-              aria-busy={retesting || undefined}
-              title={
-                testableCount === 0
-                  ? isTr
-                    ? 'Kontrol edilecek aktif link yok.'
-                    : 'No active links to check.'
-                  : undefined
-              }
-              className={`bz-btn-ghost inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[38px] sm:w-auto ${FOCUS_RING}`}
-            >
-              {retesting ? (
-                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-              ) : (
-                <RefreshCw size={14} aria-hidden="true" />
-              )}
-              {retesting
-                ? isTr
-                  ? 'Kontrol ediliyor…'
-                  : 'Checking…'
-                : isTr
-                  ? 'Tümünü kontrol et'
-                  : 'Check all'}
-            </button>
-          </div>
-          {/* Always mounted (live regions must exist before their text changes). */}
-          <p role="status" aria-live="polite" className="text-[12px] leading-[1.5] text-[#525252] [&:not(:empty)]:mt-2">
-            {retestNotice}
-          </p>
+        {/* Summary — only counts the page already has (review links + newest check). */}
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          {statCards.map((card) => (
+            <StatCard key={card.key} label={card.label} value={card.value} icon={card.icon} isTr={isTr} />
+          ))}
         </div>
-        {retestError && (
-          <AlertBanner kind="danger" onDismiss={() => setRetestError(null)}>
-            {retestError}
+
+        {restaurant.externalPlatformsEnabled === false && (
+          <AlertBanner kind="info">
+            {isTr
+              ? 'Google dışındaki yorum platformları bu işletme için kapalı. Kayıtlı linkler korunur.'
+              : 'Review platforms other than Google are off for this business. Saved links are kept.'}
           </AlertBanner>
         )}
 
-        <ul role="list" className="bz-card divide-y divide-pn-line overflow-hidden p-0">
-          {reviewVisible.map((status) => (
-            <PlatformLinkRow
-              key={status.platform.slug}
-              status={status}
-              locale={locale}
-              restaurantId={restaurant.id}
-              nowMs={nowMs}
-            />
-          ))}
-        </ul>
-
-        {reviewOther.length > 0 && (
-          <details className="group">
-            <summary
-              className={`flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 rounded-[14px] px-1 text-[13px] font-medium text-pn-ink [&::-webkit-details-marker]:hidden ${FOCUS_RING}`}
-            >
-              <ChevronRight
-                size={14}
-                aria-hidden="true"
-                className="text-[#525252] transition-transform group-open:rotate-90"
-              />
-              {isTr ? `Diğer platformlar (${reviewOther.length})` : `Other platforms (${reviewOther.length})`}
-            </summary>
-            <p className="mb-2 mt-1 px-1 text-[12px] leading-[1.5] text-[#525252]">
-              {isTr
-                ? 'Bu platformlar sektörünüz için tipik değil; yine de link ekleyebilirsiniz.'
-                : 'These are not typical for your sector, but you can still add a link.'}
-            </p>
-            <ul role="list" className="bz-card divide-y divide-pn-line overflow-hidden p-0">
-              {reviewOther.map((status) => (
-                <PlatformLinkRow
-                  key={status.platform.slug}
-                  status={status}
-                  locale={locale}
-                  restaurantId={restaurant.id}
-                  nowMs={nowMs}
-                />
-              ))}
-            </ul>
-          </details>
-        )}
-
-        <p className="text-[12px] leading-[1.55] text-[#525252]">
-          {isTr
-            ? 'Bazı platformlar otomatik kontrolü engelleyebilir; "Sorunlu" görünen bir link tarayıcıda yine de açılabilir.'
-            : 'Some platforms block automated checks; a link marked "Needs attention" may still open in a browser.'}
-        </p>
-      </section>
-
-      {/* ── Customer routing (business-level) ────────────────────────── */}
-      <section id="yonlendirme" aria-labelledby="pl-routing-title" className="scroll-mt-24 space-y-3">
-        <div>
-          <h2 id="pl-routing-title" className="bz-h-tight text-[18px] text-pn-ink">
-            {isTr ? 'Müşteri yönlendirme' : 'Customer routing'}
-          </h2>
-          <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
-            {isTr
-              ? 'Bu ayarlar işletmenin tüm yorum platformları için geçerlidir.'
-              : 'These settings apply to all review platforms of this business.'}
-          </p>
-        </div>
-        <SettingsCard>
-          <div className="space-y-6 pt-4 sm:pt-5">
-            <div className="space-y-3">
-              <h3 id="pl-threshold-label" className="text-[14px] font-medium text-pn-ink">
-                {isTr ? 'Hangi puandan itibaren platform önerilsin?' : 'From which rating should a platform be suggested?'}
-              </h3>
-              <RedirectThresholdPicker
-                key={`threshold-${restaurant.id}`}
-                restaurantId={restaurant.id}
-                initialValue={restaurant.redirectMinRating}
-                locale={locale}
-                labelId="pl-threshold-label"
-                onSaved={(next) => updateRow(restaurant.id, { redirectMinRating: next })}
-              />
-            </div>
-            <div className="space-y-3 border-t border-pn-line pt-5">
-              <h3 id="pl-default-label" className="text-[14px] font-medium text-pn-ink">
-                {isTr ? 'Varsayılan platform' : 'Default platform'}
-              </h3>
-              <DefaultRedirectPicker
-                key={`default-${restaurant.id}`}
-                restaurantId={restaurant.id}
-                enabledPlatforms={pickerIds}
-                initialValue={restaurant.defaultRedirectPlatform}
-                locale={locale}
-                labelId="pl-default-label"
-                onSaved={(next) => updateRow(restaurant.id, { defaultRedirectPlatform: next })}
-              />
-            </div>
-          </div>
-        </SettingsCard>
-      </section>
-
-      {/* ── Contact channels ─────────────────────────────────────────── */}
-      <section aria-labelledby="pl-contact-title" className="space-y-3">
-        <div>
-          <h2 id="pl-contact-title" className="bz-h-tight text-[18px] text-pn-ink">
-            {isTr ? 'İletişim kanalları' : 'Contact channels'}
-          </h2>
-          <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
-            {isTr
-              ? 'Müşteri sayfanızda gösterilen sosyal medya ve mesaj linkleri.'
-              : 'Social and messaging links shown on your customer page.'}
-          </p>
-        </div>
-        <ul role="list" className="bz-card divide-y divide-pn-line overflow-hidden p-0">
-          {contactStatuses.map((status) => (
-            <PlatformLinkRow
-              key={status.platform.slug}
-              status={status}
-              locale={locale}
-              restaurantId={restaurant.id}
-              nowMs={nowMs}
-            />
-          ))}
-        </ul>
-      </section>
-
-      <div>
-        <a
-          href={exportHref}
-          download
-          className={`inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-pn-ink underline-offset-2 hover:underline sm:min-h-[32px] ${FOCUS_RING}`}
+        {/* ── Review platforms ─────────────────────────────────────────── */}
+        <PlatformCard
+          titleId="pl-review-title"
+          title={isTr ? 'Yorum platformları' : 'Review platforms'}
+          description={
+            isTr
+              ? 'Puanı eşiği geçen müşteriye bu platformlardan biri önerilir.'
+              : 'Customers above your rating threshold are offered one of these.'
+          }
+          actions={retestButton}
         >
-          <Download size={13} aria-hidden="true" />
-          {isTr ? 'Kontrol geçmişini indir (CSV)' : 'Download check history (CSV)'}
-        </a>
+          {/* Always mounted (live regions must exist before their text changes). */}
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-[13px] leading-[1.5] text-[#525252] [&:not(:empty)]:-mt-1 [&:not(:empty)]:mb-3"
+          >
+            {retestNotice}
+          </p>
+          {retestError && (
+            <div className="mb-3">
+              <AlertBanner kind="danger" onDismiss={() => setRetestError(null)}>
+                {retestError}
+              </AlertBanner>
+            </div>
+          )}
+
+          <ul role="list" className={PLATFORM_ROW_LIST}>
+            {reviewVisible.map((status) => (
+              <PlatformLinkRow
+                key={status.platform.slug}
+                status={status}
+                locale={locale}
+                restaurantId={restaurant.id}
+                nowMs={nowMs}
+              />
+            ))}
+          </ul>
+
+          {reviewOther.length > 0 && (
+            <details className="group mt-2">
+              <summary
+                className={`flex min-h-[48px] cursor-pointer list-none items-center justify-between gap-3 rounded-[16px] px-3 text-[14px] font-medium text-pn-ink transition-colors hover:bg-pn-canvas [&::-webkit-details-marker]:hidden ${FOCUS_RING}`}
+              >
+                <span>
+                  {isTr ? 'Diğer platformlar' : 'Other platforms'}{' '}
+                  <span className="tabular-nums text-[#737373]">({reviewOther.length})</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pn-canvas text-pn-ink"
+                >
+                  <ChevronDown size={16} className="transition-transform duration-200 group-open:rotate-180" />
+                </span>
+              </summary>
+              <p className="mb-3 mt-1 px-3 text-[13px] leading-[1.5] text-[#737373]">
+                {isTr
+                  ? 'Bu platformlar sektörünüz için tipik değil; yine de link ekleyebilirsiniz.'
+                  : 'These are not typical for your sector, but you can still add a link.'}
+              </p>
+              <ul role="list" className={PLATFORM_ROW_LIST}>
+                {reviewOther.map((status) => (
+                  <PlatformLinkRow
+                    key={status.platform.slug}
+                    status={status}
+                    locale={locale}
+                    restaurantId={restaurant.id}
+                    nowMs={nowMs}
+                  />
+                ))}
+              </ul>
+            </details>
+          )}
+
+          <div className="mt-4 flex flex-col gap-3 border-t border-pn-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[13px] leading-[1.55] text-[#737373]">
+              {isTr
+                ? 'Bazı platformlar otomatik kontrolü engelleyebilir; "Sorunlu" görünen bir link tarayıcıda yine de açılabilir.'
+                : 'Some platforms block automated checks; a link marked "Needs attention" may still open in a browser.'}
+            </p>
+            <a
+              href={exportHref}
+              download
+              className={`bz-btn-ghost inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 text-[13px] ${FOCUS_RING}`}
+            >
+              <Download size={14} aria-hidden="true" />
+              {isTr ? 'Kontrol geçmişini indir (CSV)' : 'Download check history (CSV)'}
+            </a>
+          </div>
+        </PlatformCard>
+
+        {/* ── Customer routing (business-level) ────────────────────────── */}
+        <div id="yonlendirme" className="scroll-mt-24">
+          <PlatformCard
+            titleId="pl-routing-title"
+            title={isTr ? 'Müşteri yönlendirme' : 'Customer routing'}
+            description={
+              isTr
+                ? 'Bu ayarlar işletmenin tüm yorum platformları için geçerlidir.'
+                : 'These settings apply to all review platforms of this business.'
+            }
+          >
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <h3 id="pl-threshold-label" className="text-[14px] font-medium text-pn-ink">
+                  {isTr ? 'Hangi puandan itibaren platform önerilsin?' : 'From which rating should a platform be suggested?'}
+                </h3>
+                <RedirectThresholdPicker
+                  key={`threshold-${restaurant.id}`}
+                  restaurantId={restaurant.id}
+                  initialValue={restaurant.redirectMinRating}
+                  locale={locale}
+                  labelId="pl-threshold-label"
+                  onSaved={(next) => updateRow(restaurant.id, { redirectMinRating: next })}
+                />
+              </div>
+              <div className="space-y-3 border-t border-pn-line pt-5">
+                <h3 id="pl-default-label" className="text-[14px] font-medium text-pn-ink">
+                  {isTr ? 'Varsayılan platform' : 'Default platform'}
+                </h3>
+                <DefaultRedirectPicker
+                  key={`default-${restaurant.id}`}
+                  restaurantId={restaurant.id}
+                  enabledPlatforms={pickerIds}
+                  initialValue={restaurant.defaultRedirectPlatform}
+                  locale={locale}
+                  labelId="pl-default-label"
+                  onSaved={(next) => updateRow(restaurant.id, { defaultRedirectPlatform: next })}
+                />
+              </div>
+            </div>
+          </PlatformCard>
+        </div>
+
+        {/* ── Contact channels ─────────────────────────────────────────── */}
+        <PlatformCard
+          titleId="pl-contact-title"
+          title={isTr ? 'İletişim kanalları' : 'Contact channels'}
+          description={
+            isTr
+              ? 'Müşteri sayfanızda gösterilen sosyal medya ve mesaj linkleri.'
+              : 'Social and messaging links shown on your customer page.'
+          }
+        >
+          <ul role="list" className={PLATFORM_ROW_LIST}>
+            {contactStatuses.map((status) => (
+              <PlatformLinkRow
+                key={status.platform.slug}
+                status={status}
+                locale={locale}
+                restaurantId={restaurant.id}
+                nowMs={nowMs}
+              />
+            ))}
+          </ul>
+        </PlatformCard>
       </div>
       </>
       )}

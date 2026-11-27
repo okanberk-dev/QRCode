@@ -11,6 +11,9 @@ import {
   platformStateLabel,
 } from '@/components/dashboard/platforms/PlatformStatusPill';
 import {
+  PLATFORM_ROW_CLASS,
+  PlatformRowActionIcon,
+  platformRowActionClass,
   platformRowActionLabel,
   platformWizardHref,
 } from '@/components/dashboard/platforms/PlatformLinkRow';
@@ -27,7 +30,7 @@ import {
 } from '@/lib/platform-link-status';
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-accent focus-visible:ring-offset-2';
 
 // "Kapalı" covers owner-off and admin-locked rows (summarizePlatformLinks).
 // WCAG 2.4.11 (focus not obscured): keyboard-focused controls keep clear of
@@ -37,6 +40,14 @@ const FOCUS_CLEARANCE =
   '[&_:is(a,button)]:scroll-mt-24 [&_:is(a,button)]:scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+16px)]';
 
 const SUMMARY_STATES = ['connected', 'issue', 'missing', 'off'] as const;
+
+// Stat tile tone per state (soft Fintora fill + state colour for the icon).
+const STAT_TONE: Record<(typeof SUMMARY_STATES)[number], string> = {
+  connected: 'bg-[#E6F7EA] text-[#1F7A35]',
+  issue: 'bg-[#FDECEC] text-[#C4271B]',
+  missing: 'bg-pn-canvas text-[#666666]',
+  off: 'bg-pn-canvas text-[#666666]',
+};
 
 export type PlatformLinksSummaryRestaurant = PlatformLinkRow & {
   id: string;
@@ -109,32 +120,40 @@ export function BusinessPlatformLinksSummary({
       : 'Automatic';
 
   return (
-    <div className={`space-y-5 ${FOCUS_CLEARANCE}`} data-focus-clearance>
+    <div className={`space-y-2.5 ${FOCUS_CLEARANCE}`} data-focus-clearance>
       <ul
         role="list"
         aria-label={isTr ? 'Yorum platformu durumu' : 'Review platform status'}
         aria-busy={loadingChecks || undefined}
-        className="flex flex-wrap gap-2"
+        className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
       >
         {SUMMARY_STATES.map((state) => {
           const count = summary[state];
           return (
-            <li
-              key={state}
-              className="inline-flex min-h-[32px] items-center gap-2 rounded-full border border-pn-line bg-white py-1 pl-1 pr-3"
-            >
-              {count > 0 ? (
-                <PlatformStatusPill state={state} locale={locale} />
-              ) : (
-                // Zero counts stay neutral — a red "Sorunlu 0" reads as an alarm.
-                <span className="inline-flex items-center gap-1 px-1.5 text-[12px] font-medium text-[#525252]">
-                  <PlatformStateIcon state={state} size={12} />
-                  <span className="sr-only">{isTr ? 'Durum: ' : 'Status: '}</span>
-                  {platformStateLabel(state, locale)}
+            <li key={state} className="bz-card flex min-w-0 flex-col gap-3 p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-2">
+                {count > 0 ? (
+                  <PlatformStatusPill state={state} locale={locale} />
+                ) : (
+                  // Zero counts stay neutral — a red "Sorunlu 0" reads as an alarm.
+                  <span className="inline-flex h-7 items-center gap-1.5 text-[13px] font-medium text-[#666666]">
+                    <span className="sr-only">{isTr ? 'Durum: ' : 'Status: '}</span>
+                    {platformStateLabel(state, locale)}
+                  </span>
+                )}
+                <span
+                  aria-hidden="true"
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                    count > 0 ? STAT_TONE[state] : 'bg-pn-canvas text-[#9A9A9A]'
+                  }`}
+                >
+                  <PlatformStateIcon state={state} size={15} />
                 </span>
-              )}
+              </div>
               <span
-                className={`tabular-nums text-[13px] font-medium ${count > 0 ? 'text-pn-ink' : 'text-[#525252]'}`}
+                className={`tabular-nums text-[28px] font-medium leading-none tracking-[-0.025em] ${
+                  count > 0 ? 'text-pn-ink' : 'text-[#9A9A9A]'
+                }`}
               >
                 {count}
               </span>
@@ -151,42 +170,40 @@ export function BusinessPlatformLinksSummary({
         </AlertBanner>
       )}
 
-      <section aria-labelledby="bpls-review-title" className="space-y-2.5">
-        <h3 id="bpls-review-title" className="bz-h-tight text-[15px] text-pn-ink">
+      <section aria-labelledby="bpls-review-title" className="bz-card p-5 sm:p-6">
+        <h3
+          id="bpls-review-title"
+          className="mb-4 text-[18px] font-medium leading-6 tracking-[-0.01em] text-pn-ink sm:text-[20px] sm:leading-[26px]"
+        >
           {isTr ? 'Yorum platformları' : 'Review platforms'}
         </h3>
-        <ul
-          role="list"
-          aria-busy={loadingChecks || undefined}
-          className="divide-y divide-pn-line overflow-hidden rounded-[24px] border border-pn-line bg-white"
-        >
+        <ul role="list" aria-busy={loadingChecks || undefined} className="space-y-2">
           {visible.map((status) => {
             const actionLabel = platformRowActionLabel(status.state, locale);
             const reason = describePlatformLinkStatus(status, locale, nowMs);
             return (
-              <li key={status.platform.slug} className="flex items-center gap-3 py-2 pl-3 pr-1.5 sm:pl-4 sm:pr-2.5">
-                <PlatformLogo platform={status.platform} size={28} />
-                <div className="min-w-0 flex-1 py-1">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <h4 className="bz-h-tight text-[14px] text-pn-ink">{status.platform.name}</h4>
-                    <PlatformStatusPill state={status.state} locale={locale} />
+              <li key={status.platform.slug} className={PLATFORM_ROW_CLASS}>
+                <PlatformLogo platform={status.platform} size={40} shape="circle" />
+                <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-[14px] font-medium leading-5 text-pn-ink">{status.platform.name}</h4>
+                    <p
+                      className="mt-0.5 truncate text-[13px] leading-[1.45] text-[#666666] sm:whitespace-normal"
+                      title={reason}
+                    >
+                      {reason}
+                    </p>
                   </div>
-                  <p
-                    className="mt-0.5 truncate text-[12px] leading-[1.5] text-[#525252] sm:whitespace-normal"
-                    title={reason}
-                  >
-                    {reason}
-                  </p>
+                  <PlatformStatusPill state={status.state} locale={locale} className="self-start sm:self-center" />
                 </div>
                 {actionLabel && (
                   <Link
                     href={platformWizardHref(locale, status.platform.slug, restaurant.id)}
                     aria-label={`${status.platform.name} — ${actionLabel}`}
-                    className={`inline-flex min-h-[44px] shrink-0 items-center rounded px-3 text-[13px] font-medium underline-offset-2 hover:underline ${
-                      status.state === 'issue' ? 'text-[#991B1B]' : 'text-pn-ink'
-                    } ${FOCUS_RING}`}
+                    title={actionLabel}
+                    className={platformRowActionClass(status.state)}
                   >
-                    {actionLabel}
+                    <PlatformRowActionIcon state={status.state} />
                   </Link>
                 )}
               </li>
@@ -197,13 +214,16 @@ export function BusinessPlatformLinksSummary({
 
       <section
         aria-labelledby="bpls-routing-title"
-        className="rounded-[24px] border border-pn-line bg-pn-canvas px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-4"
+        className="bz-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
       >
         <div className="min-w-0">
-          <h3 id="bpls-routing-title" className="bz-h-tight text-[14px] text-pn-ink">
+          <h3
+            id="bpls-routing-title"
+            className="text-[18px] font-medium leading-6 tracking-[-0.01em] text-pn-ink sm:text-[20px] sm:leading-[26px]"
+          >
             {isTr ? 'Müşteri yönlendirme' : 'Customer routing'}
           </h3>
-          <p className="mt-1 text-[13px] leading-[1.6] text-[#525252]">
+          <p className="mt-1.5 text-[14px] leading-[1.6] text-[#666666]">
             {isTr ? 'Platform önerilen puan: ' : 'Suggested from: '}
             <strong className="font-medium text-pn-ink">
               {redirectThresholdLabel(restaurant.redirectMinRating, locale)}
@@ -217,21 +237,21 @@ export function BusinessPlatformLinksSummary({
         <Link
           href={`${overviewHref}#yonlendirme`}
           aria-label={isTr ? 'Müşteri yönlendirmesini değiştir' : 'Change customer routing'}
-          className={`-ml-1 mt-1 inline-flex min-h-[44px] shrink-0 items-center rounded px-1 text-[13px] font-medium text-pn-ink underline underline-offset-2 sm:mt-0 sm:min-h-[38px] ${FOCUS_RING}`}
+          className={`bz-btn-ghost inline-flex min-h-[44px] w-full shrink-0 items-center justify-center text-[14px] sm:w-auto ${FOCUS_RING}`}
         >
           {isTr ? 'Değiştir' : 'Change'}
         </Link>
       </section>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:gap-4">
         <Link
           href={overviewHref}
           className={`bz-btn-primary inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 sm:w-auto ${FOCUS_RING}`}
         >
           {isTr ? 'Platform bağlantılarını yönet' : 'Manage platform links'}
-          <ArrowRight size={14} aria-hidden="true" />
+          <ArrowRight size={15} aria-hidden="true" />
         </Link>
-        <p className="text-[12px] leading-[1.5] text-[#525252]">
+        <p className="text-[13px] leading-[1.5] text-[#737373]">
           {isTr
             ? 'Linkler ve kontrol sonuçları Platform bağlantıları sayfasında düzenlenir.'
             : 'Links and check results are edited on the Platform links page.'}

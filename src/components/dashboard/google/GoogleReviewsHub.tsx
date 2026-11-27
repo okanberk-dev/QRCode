@@ -118,7 +118,7 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
         </div>
       ) : restaurants.length === 0 ? (
         <div className="bz-card p-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[24px] bg-pn-canvas text-pn-ink">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-pn-accent text-white">
             <Store size={20} />
           </div>
           <h2 className="bz-h-tight mt-4 text-[18px]">{emptyTitle}</h2>
@@ -131,7 +131,7 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
       ) : (
         <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-3">
-            <div className="rounded-[24px] border border-pn-line bg-white p-3 ">
+            <div className="rounded-[24px] bg-white p-3">
               <div className="mb-2 flex items-center gap-2 px-1">
                 <Star size={14} className="text-pn-ink" />
                 <p className="text-[13px] font-medium text-[#737373]">
@@ -147,15 +147,15 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
                       type="button"
                       key={restaurant.id}
                       onClick={() => setSelectedId(restaurant.id)}
-                      className={`w-full rounded-[24px] border p-3 text-left transition-all ${
+                      className={`w-full rounded-[16px] p-3 text-left transition-colors duration-200 ${
                         active
-                          ? "border-pn-accent bg-pn-accent text-white"
-                          : "border-pn-line bg-pn-canvas text-pn-ink hover:border-pn-line-strong hover:bg-white"
+                          ? "bg-pn-accent text-white"
+                          : "bg-[#F6F6F6] text-pn-ink hover:bg-[#EDEDED]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="truncate text-[13px] font-medium">{restaurant.name}</p>
+                          <p className="truncate text-[14px] font-medium">{restaurant.name}</p>
                           <p className={`mt-1 truncate text-[12px] ${active ? "text-white/80" : "text-[#737373]"}`}>
                             {restaurant.city || restaurant.address || restaurant.slug || restaurant.category}
                           </p>
@@ -174,7 +174,7 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
             </div>
 
             {selected ? (
-              <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
+              <div className="rounded-[24px] bg-white p-4">
                 <p className="text-[13px] font-medium text-[#737373]">{isTr ? "Durum" : "Status"}</p>
                 <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
                   {selected.googleReviewManagementEnabled

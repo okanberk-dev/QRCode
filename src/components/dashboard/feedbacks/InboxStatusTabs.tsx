@@ -8,7 +8,9 @@ import { useRef, type KeyboardEvent } from 'react';
  * shows counts it knows to be exact, and none while loading — never a 0
  * placeholder).
  *
- * Pills are 44px tall below sm (touch target), 36px from sm.
+ * Fintora pills on the canvas: white idle pills (grey on phones, where the
+ * page is white), the active one purple with white text. 44px tall below sm
+ * (touch target), 40px from sm.
  *
  * Keyboard: ArrowLeft/Right/Home/End move AND select (same contract as the
  * `<Tabs>` primitive), roving `tabIndex`. If `active` matches no tab (e.g. a
@@ -82,10 +84,10 @@ export function InboxStatusTabs({
         const selected = tab.id === active;
         const showCount = typeof tab.count === 'number';
         const countTone = selected
-          ? 'bg-white/15 text-white'
+          ? 'bg-white/20 text-white'
           : tab.tone === 'danger' && (tab.count ?? 0) > 0
-            ? 'bg-[#FEE2E2] text-[#991B1B]'
-            : 'bg-pn-canvas text-[#525252]';
+            ? 'bg-[#FDECEC] text-[#D92D20]'
+            : 'bg-black/[0.06] text-[#525252]';
         return (
           <button
             key={tab.id}
@@ -100,16 +102,16 @@ export function InboxStatusTabs({
             title={tab.title}
             onClick={() => onChange(tab.id)}
             onKeyDown={(e) => onKeyDown(e, index)}
-            className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 sm:h-9 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 ${
+            className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 active:scale-[.97] sm:h-10 ${
               selected
-                ? 'border-pn-accent bg-pn-accent text-white'
-                : 'border-pn-line bg-white text-[#525252] hover:border-pn-line-strong hover:text-pn-ink'
+                ? 'bg-pn-accent text-white'
+                : 'bg-white text-pn-ink hover:bg-[#EDEDED] max-sm:bg-[#F6F6F6]'
             }`}
           >
             <span>{tab.label}</span>
             {showCount && (
               <span
-                className={`min-w-[20px] rounded-full px-1.5 text-center text-[12px] leading-[18px] tabular-nums ${countTone}`}
+                className={`min-w-[22px] rounded-full px-1.5 text-center text-[12px] font-medium leading-[22px] tabular-nums ${countTone}`}
               >
                 {tab.count}
               </span>

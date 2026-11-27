@@ -20,10 +20,11 @@ interface AdminFeedbackListItemProps {
 }
 
 /**
- * Admin review row — same anatomy as the owner row (rating badge · name + age
- * · two-line comment · platform / business / status chips) with a bulk-select
- * checkbox column first. The business name is always shown: the admin inbox
- * spans every business.
+ * Admin review row — same anatomy as the owner row (Fintora list row: 40px
+ * rating circle · name + age · two-line comment · platform / business /
+ * status chips) with a bulk-select checkbox column first. Unread rows keep
+ * the grey fill and a purple dot; the open review is lavender. The business
+ * name is always shown: the admin inbox spans every business.
  */
 export function AdminFeedbackListItem({
   feedback: r,
@@ -57,17 +58,19 @@ export function AdminFeedbackListItem({
   return (
     <li
       data-feedback-id={r.id}
-      className={`flex w-full items-stretch border-b border-pn-line transition-colors ${
+      className={`flex w-full items-stretch rounded-[16px] transition-colors duration-200 ${
         isActive
-          ? 'bg-pn-accent-soft/60 shadow-[inset_3px_0_0_#0A0A0A]'
+          ? 'bg-pn-accent-soft'
           : isSelected
-            ? 'bg-pn-accent-soft/30'
-            : 'hover:bg-pn-canvas'
+            ? 'bg-pn-accent-soft/60'
+            : isUnread
+              ? 'bg-[#F6F6F6] hover:bg-[#EDEDED]'
+              : 'bg-white hover:bg-[#F6F6F6]'
       } ${isPulsed ? 'animate-pulse ring-2 ring-inset ring-pn-accent' : ''}`}
     >
       {/* Checkbox column — the whole column is the hit area (≥44px tall). */}
       <label
-        className="flex w-11 shrink-0 cursor-pointer justify-center pl-1 pt-[26px]"
+        className="flex w-11 shrink-0 cursor-pointer justify-center pl-1 pt-[24px]"
         title={isTr ? 'Toplu seç' : 'Bulk select'}
       >
         <input
@@ -75,7 +78,7 @@ export function AdminFeedbackListItem({
           checked={isSelected}
           onChange={(e) => onToggleSelect(r.id, e.target.checked)}
           aria-label={isTr ? `${customerLabel} yorumunu seç` : `Select ${customerLabel}'s review`}
-          className="h-4 w-4 cursor-pointer accent-pn-ink"
+          className="h-4 w-4 cursor-pointer accent-pn-accent"
         />
       </label>
       <button
@@ -84,38 +87,34 @@ export function AdminFeedbackListItem({
         onClick={() => onSelect(r.id)}
         aria-current={isActive ? 'true' : undefined}
         aria-label={accessibleName}
-        className="group flex min-w-0 flex-1 items-start gap-3 py-3.5 pl-1 pr-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent sm:pr-5"
+        className="group flex min-w-0 flex-1 items-start gap-3 rounded-r-[16px] py-3 pl-1 pr-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent"
       >
         <RatingBadge rating={r.rating} isTr={isTr} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            {isUnread && (
-              <span
-                aria-hidden="true"
-                className="h-2 w-2 shrink-0 self-center rounded-full bg-[#2563EB]"
-                title={isTr ? 'İşletme henüz okumadı' : 'Not yet read by the business'}
-              />
-            )}
-            <span
-              className={`truncate text-[14px] text-pn-ink ${isUnread ? 'font-medium' : 'font-medium'}`}
-            >
-              {customerLabel}
-            </span>
+            <span className="truncate text-[14px] font-medium text-pn-ink">{customerLabel}</span>
             <time
               dateTime={r.createdAt}
               title={formatDateTime(r.createdAt, isTr)}
-              className="ml-auto shrink-0 text-[12px] tabular-nums text-[#737373]"
+              className="ml-auto inline-flex shrink-0 items-center gap-1.5 text-[12px] tabular-nums text-[#9A9A9A]"
             >
+              {isUnread && (
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 shrink-0 rounded-full bg-pn-accent"
+                  title={isTr ? 'İşletme henüz okumadı' : 'Not yet read by the business'}
+                />
+              )}
               {timeAgoLabel(r.createdAt, isTr)}
             </time>
           </div>
-          <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#525252]">
+          <p className="mt-0.5 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#737373]">
             {r.redirected ? (
               <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-accent">
                 {redirectBadgeLabel(r.platform, isTr)}
               </span>
             ) : (
-              r.comment || <span className="text-[#737373]">{isTr ? 'Metin yok' : 'No text'}</span>
+              r.comment || <span className="text-[#9A9A9A]">{isTr ? 'Metin yok' : 'No text'}</span>
             )}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] text-[#737373]">

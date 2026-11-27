@@ -87,7 +87,7 @@ interface CommandPaletteProps {
    * 20 — what `/api/restaurants` returns). When given, the palette does not
    * fetch them on open.
    */
-  restaurants?: Array<{ id: string; name: string; category?: string | null; slug?: string | null }>;
+  restaurants?: Array<{ id: string; name: string; category?: string | null; slug?: string | null; primaryColor?: string | null }>;
   /** Shows the "add a business" quick action (team members cannot). */
   canAddBusiness?: boolean;
   /** Adds the active business to quick-action links (shell scoping). */
@@ -183,6 +183,7 @@ export default function CommandPalette({
             name: r.name,
             category: r.category ?? null,
             slug: r.slug ?? null,
+            color: r.primaryColor ?? null,
           }))
         : fetchedRestaurants,
     [providedRestaurants, fetchedRestaurants],

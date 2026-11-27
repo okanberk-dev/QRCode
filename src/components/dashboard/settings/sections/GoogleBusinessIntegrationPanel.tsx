@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowUpRight,
   CheckCircle2,
   ExternalLink,
   Loader2,
+  MapPin,
   MessageSquareText,
   RefreshCw,
 } from "lucide-react";
@@ -15,7 +17,7 @@ import { PlacesBusinessPicker } from "@/components/dashboard/google/PlacesBusine
 import { ownerBodyMessage, type PlacesPickerRestaurant } from "@/components/dashboard/google/places-client";
 import { ownerGoogleMessage } from "@/lib/google-owner-copy";
 import { resolveRestaurantPlaceId } from "@/lib/google-places";
-import { SettingsCard } from "../SettingsCard";
+import { PlatformCard } from "@/components/dashboard/platforms/PlatformCard";
 
 interface RestaurantData {
   id: string;
@@ -361,7 +363,8 @@ export function GoogleBusinessIntegrationPanel({
   };
 
   return (
-    <SettingsCard
+    <PlatformCard
+      titleId={`google-business-${restaurant.id}`}
       icon={<MessageSquareText size={18} />}
       title={isTr ? "Google işletme bağlantısı" : "Google Business connection"}
       description={
@@ -375,7 +378,7 @@ export function GoogleBusinessIntegrationPanel({
             returnTo'su; callback success/failure'i burada da görünür. */}
         <GoogleConnectFlashBanner locale={locale} />
 
-        <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4 sm:p-5">
+        <div>
           <PlacesBusinessPicker
             restaurant={pickerRestaurant}
             restaurants={[pickerRestaurant]}
@@ -395,28 +398,29 @@ export function GoogleBusinessIntegrationPanel({
           {profileHref && linked && (
             <Link
               href={profileHref}
-              className="mt-3 inline-flex min-h-11 items-center text-[13px] font-medium text-pn-ink underline decoration-pn-accent decoration-2 underline-offset-4"
+              className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full text-[14px] font-medium text-pn-accent underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
             >
-              {isTr ? "Puanını ve profil eksiklerini gör →" : "See your rating and profile gaps →"}
+              {isTr ? "Puanını ve profil eksiklerini gör" : "See your rating and profile gaps"}
+              <ArrowUpRight size={15} aria-hidden="true" />
             </Link>
           )}
         </div>
 
-        <div className="rounded-[24px] border border-pn-line bg-white p-4 sm:p-5">
+        <div className="border-t border-pn-line pt-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="bz-h-tight text-[15px]">
+            <div className="min-w-0">
+              <div className="text-[16px] font-medium leading-6 text-pn-ink">
                 {isTr ? "Google İşletme Profili yorumları" : "Google Business Profile reviews"}
               </div>
-              <p className="mt-1 max-w-[680px] text-[13px] leading-relaxed text-[#525252]">
+              <p className="mt-1 max-w-[680px] text-[13px] leading-relaxed text-[#737373]">
                 {isTr
                   ? "Yorumları çekmek ve cevap yazmak için işletmenin Google hesabıyla bağlanması gerekir. Hesap, ilgili Google İşletme Profili konumunda sahip veya yönetici olmalı."
                   : "Fetching and replying to reviews requires connecting the business Google account. The account must be an owner or manager of the selected Business Profile location."}
               </p>
             </div>
             {reviewManagementEnabled && status?.connected ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F0FDF4] px-3 py-1.5 text-[12px] text-[#166534]">
-                <CheckCircle2 size={13} />
+              <span className="inline-flex h-7 shrink-0 items-center gap-1.5 self-start rounded-full bg-[#E6F7EA] px-3 text-[12px] font-medium text-[#1F7A35]">
+                <CheckCircle2 size={13} aria-hidden="true" />
                 {isTr ? "Bağlı" : "Connected"}
               </span>
             ) : null}
@@ -443,35 +447,44 @@ export function GoogleBusinessIntegrationPanel({
           {reviewManagementEnabled && status?.oauthConfigured && !status.connected && (
             <button
               type="button"
-              className="bz-btn-primary mt-4 inline-flex items-center gap-1.5 rounded-full text-[13px]"
+              className="bz-btn-primary mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[14px] sm:w-auto"
               onClick={connectGoogle}
             >
-              <ExternalLink size={14} />
+              <ExternalLink size={15} />
               {isTr ? "Google hesabını bağla" : "Connect Google account"}
             </button>
           )}
 
           {reviewManagementEnabled && status?.connected && (
             <div className="mt-4 space-y-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-[13px] text-[#525252]">
-                  {selectedLocation
-                    ? `${isTr ? "Seçili konum:" : "Selected location:"} ${selectedLocation.title}`
-                    : isTr
-                      ? "Henüz Google İşletme Profili konumu seçilmedi."
-                      : "No Google Business location selected yet."}
+              <div className="flex flex-col gap-3 rounded-[18px] bg-pn-canvas p-3 pl-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink max-sm:bg-[#F6F6F6]"
+                  >
+                    <MapPin size={17} />
+                  </span>
+                  <div className="min-w-0 text-[14px] text-[#525252]">
+                    {selectedLocation
+                      ? `${isTr ? "Seçili konum:" : "Selected location:"} ${selectedLocation.title}`
+                      : isTr
+                        ? "Henüz Google İşletme Profili konumu seçilmedi."
+                        : "No Google Business location selected yet."}
+                  </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
-                    className="bz-btn-danger text-[13px]"
+                    className="bz-btn-danger inline-flex min-h-[44px] items-center justify-center text-[14px]"
                     onClick={disconnectGoogle}
                   >
                     {isTr ? "Bağlantıyı kes" : "Disconnect"}
                   </button>
                   <button
                     type="button"
-                    className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
+                    // White on the grey strip (desktop), grey on the white one (phones).
+                    className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 bg-white text-[14px] hover:bg-[#EDEDED] max-sm:bg-[#F6F6F6]!"
                     onClick={() => loadLocations(true)}
                     disabled={locationsLoading || (locationsRetryAfter !== null && locationsRetryAfter > 0)}
                     title={
@@ -480,7 +493,7 @@ export function GoogleBusinessIntegrationPanel({
                         : undefined
                     }
                   >
-                    {locationsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                    {locationsLoading ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
                     {locationsRetryAfter !== null && locationsRetryAfter > 0
                       ? `${locationsRetryAfter}s`
                       : isTr
@@ -509,11 +522,11 @@ export function GoogleBusinessIntegrationPanel({
                   edilmiyordu: owner Google'a bağlanıyor, ekranda hiçbir
                   şey görmüyor ve neden olduğunu anlayamıyordu. */}
               {!locationsLoading && locations.length === 0 && !locationsError && (
-                <div className="rounded-[20px] border border-dashed border-pn-line bg-pn-canvas px-4 py-5 text-center">
-                  <p className="bz-h-tight text-[14px] text-pn-ink">
+                <div className="rounded-[18px] bg-pn-canvas px-4 py-6 text-center">
+                  <p className="text-[15px] font-medium text-pn-ink">
                     {isTr ? 'Konum bulunamadı' : 'No locations found'}
                   </p>
-                  <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-[1.6] text-[#737373]">
+                  <p className="mx-auto mt-1.5 max-w-[460px] text-[13px] leading-[1.6] text-[#737373]">
                     {apiNotProvisioned
                       ? ownerGoogleMessage('reply_connected_not_provisioned', locale)
                       : isTr
@@ -524,10 +537,10 @@ export function GoogleBusinessIntegrationPanel({
               )}
 
               {locations.length > 0 && status?.syncedAt && (
-                <div className="text-[12px] text-[#737373]">
+                <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#737373]">
                   {isTr ? 'Son senkron' : 'Last sync'}: {formatRelativeTime(status.syncedAt, isTr)}
                   {locationsSource === 'cache' && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] text-[#525252]">
+                    <span className="inline-flex h-6 items-center rounded-full bg-pn-canvas px-2.5 text-[12px] font-medium text-[#525252]">
                       {isTr ? 'Önbellek' : 'Cached'}
                     </span>
                   )}
@@ -541,36 +554,52 @@ export function GoogleBusinessIntegrationPanel({
                       type="button"
                       key={`${location.accountName}:${location.locationName}`}
                       onClick={() => selectLocation(location)}
-                      className="rounded-[20px] border border-pn-line bg-pn-canvas p-3 text-left transition hover:border-pn-line-strong hover:bg-white"
+                      className="group flex min-h-[60px] items-center gap-3 rounded-[16px] bg-pn-canvas p-3 text-left transition-colors duration-200 hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
                     >
-                      <div className="bz-h-tight text-[14px]">{location.title}</div>
-                      <div className="mt-1 text-[12px] text-[#737373]">{location.address}</div>
+                      <span
+                        aria-hidden="true"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink max-sm:bg-[#F6F6F6]"
+                      >
+                        <MapPin size={17} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14px] font-medium text-pn-ink">{location.title}</span>
+                        {location.address && (
+                          <span className="mt-0.5 block text-[13px] text-[#666666]">{location.address}</span>
+                        )}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink transition-colors group-hover:bg-pn-accent group-hover:text-white max-sm:bg-[#F6F6F6]"
+                      >
+                        <ArrowUpRight size={17} />
+                      </span>
                     </button>
                   ))}
                 </div>
               )}
 
               {selectedLocation && (
-                <div className="space-y-3">
-                  <a
-                    href={`/${locale}/dashboard/google-reviews?restaurantId=${restaurant.id}`}
-                    className="bz-btn-primary inline-flex items-center gap-1.5 rounded-full text-[13px]"
-                  >
-                    <ExternalLink size={14} />
-                    {isTr ? "Google Yorumlarına Git" : "Go to Google Reviews"}
-                  </a>
-                  <p className="text-[12px] text-[#737373] max-w-[600px] mt-1">
+                <div className="flex flex-col gap-3 rounded-[18px] bg-pn-accent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="max-w-[600px] text-[13px] leading-[1.55] text-[#3B1F8F]">
                     {isTr
                       ? "Google Business Profile hesabınızdaki yorumları okumak, AI ile yanıt taslağı oluşturmak ve doğrudan Google üzerinden yanıtlamak için yeni Google Yorumları sayfasına gidebilirsiniz."
                       : "You can go to the new Google Reviews page to read reviews, generate AI reply drafts, and publish replies directly to Google."}
                   </p>
+                  <a
+                    href={`/${locale}/dashboard/google-reviews?restaurantId=${restaurant.id}`}
+                    className="bz-btn-primary inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 text-[14px]"
+                  >
+                    <ExternalLink size={15} />
+                    {isTr ? "Google Yorumlarına Git" : "Go to Google Reviews"}
+                  </a>
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
-    </SettingsCard>
+    </PlatformCard>
   );
 }
 

@@ -651,6 +651,7 @@ function ReviewContent() {
       {redirecting && (
         <RedirectingOverlay
           locale={locale}
+          rating={rating}
           platformId={redirecting.platformId}
           restaurantName={restaurant.name}
         />
@@ -872,19 +873,6 @@ function ReviewContent() {
                     style={{ fontFamily: 'inherit' }}
                     enterKeyHint="enter"
                   />
-                  {/* Cosmetic badge (visual only, not wired to an AI feature). */}
-                  <div
-                    className="pointer-events-none absolute bottom-3 right-4 inline-flex items-center gap-1.5"
-                    aria-hidden
-                  >
-                    <span
-                      className="h-1.5 w-1.5 rounded-full bg-[#5D3EBC]"
-                      style={{ animation: 'bz-rr-pulse 1.5s ease-in-out infinite' }}
-                    />
-                    <span className="text-[11px] font-medium text-[#5D3EBC]">
-                      {locale === 'tr' ? 'AI yardımcı hazır' : 'AI assist ready'}
-                    </span>
-                  </div>
                 </div>
                 {/* Quick picks — horizontal scroll that bleeds to the sheet
                     edges (the scroller clips, the page never overflows). */}
@@ -1205,12 +1193,9 @@ function ReviewContent() {
                         </svg>
                       </span>
                       <span>
-                        <strong className="font-semibold text-[#111110]">
-                          {locale === 'tr' ? '24 saat' : '24 hours'}
-                        </strong>
                         {locale === 'tr'
-                          ? ' içinde işletme yönetimi seninle iletişime geçecek.'
-                          : ' — management will get back to you.'}
+                          ? 'Mesajın doğrudan işletme yönetimine iletildi.'
+                          : 'Your message went straight to the business.'}
                       </span>
                     </div>
                   )}
@@ -1527,10 +1512,12 @@ function ReviewLoader({
 
 function RedirectingOverlay({
   locale,
+  rating,
   platformId,
   restaurantName,
 }: {
   locale: Locale;
+  rating: number;
   platformId: string;
   restaurantName: string;
 }) {
@@ -1571,8 +1558,8 @@ function RedirectingOverlay({
       </div>
 
       <div className="mb-3 inline-flex items-center gap-2 text-[13px] font-medium text-white/90">
-        <span className="tracking-[0.12em]" aria-hidden>★★★★★</span>
-        {locale === 'tr' ? 'Mükemmel' : 'Excellent'}
+        <span className="tracking-[0.12em]" aria-hidden>{'★'.repeat(Math.max(1, Math.min(5, rating)))}</span>
+        {RATING_LABELS[locale][Math.max(1, Math.min(5, rating)) - 1]}
       </div>
 
       <h2 className="mb-2 text-[26px] font-bold leading-tight text-white" style={HEADING_STYLE}>
