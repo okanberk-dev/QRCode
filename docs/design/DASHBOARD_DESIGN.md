@@ -7,9 +7,9 @@
 > 16 px oluk). **lumin** ("Online Bank / Finance SaaS", Mikalai Haluza,
 > 2024): yalnız kayan sekme hapı ve gri kesirli sayılar kaldı; koyu/ışımalı
 > kahraman kart, üst üste binen kartlar ve kısayol kutuları 2026-11-28'de kaldırıldı.
-> **Renk (2026-11-28):** Fintora'nın kendi paleti: siyah `#111110` dolgu,
-> yeşil `#78FC90` vurgu, beyaz kart, `#F6F6F6` tuval. 2026-11-27'de denenen
-> mor + beyaz palet kullanıcı isteğiyle geri alındı.
+> **Renk (2026-11-28):** siyah `#111110` dolgu, Pulse lime `#C6F24E` vurgu,
+> beyaz kart, `#F6F6F6` tuval. Denenip geri alınanlar: mor + beyaz
+> (2026-11-27) ve Fintora yeşili `#78FC90` (2026-11-28, bir gün).
 > İçerik, logo ve marka Buaze'nindir. Referansların logosu, adı ("Greyola",
 > "lumin"), avatar fotoğrafları, illüstrasyonları ve metinleri kullanılmaz.
 >
@@ -27,12 +27,12 @@
 2. **Solda etiketli menü, üstte hap sekmeler.** Günlük 4 sayfa üstte beyaz
    haplar; yönetim, araçlar, hesap ve admin sayfa grupları solda ikon +
    isimle (daraltılınca ikon + ipucu). Aktif olan her yerde siyah dolar,
-   yazısı beyaz; aktif menü satırının ikonu yeşil.
-3. **Siyah, yeşil, beyaz.** Siyah `#111110` (ana buton, aktif hap, ikon
-   dairesi), yeşil `#78FC90` (vurgu: siyah üstünde ikon/nokta, yeşil zemin
-   üstünde siyah yazı), açık yeşil `#F1FDF3` (seçili satır, sakin not),
-   beyaz kart, tuval `#F6F6F6`. Siyah zeminde yazı beyaz, yeşil zeminde
-   yazı siyah; beyaz zeminde yeşil yazı yok (okunmaz).
+   yazısı beyaz; aktif menü satırının ikonu lime.
+3. **Siyah, lime, beyaz.** Siyah `#111110` (ana buton, aktif hap, ikon
+   dairesi), lime `#C6F24E` (vurgu: siyah üstünde ikon/nokta, lime zemin
+   üstünde siyah yazı), açık lime `#F4FBDC` (seçili satır, sakin not),
+   beyaz kart, tuval `#F6F6F6`. Siyah zeminde yazı beyaz, lime zeminde
+   yazı siyah; beyaz zeminde lime yazı yok (okunmaz).
 4. **Hap ve daire.** Metinli her buton hap; ikonlu her buton dairedir.
    Tuvalde beyaz, beyaz kart içinde gri (`#F6F6F6`). Çerçeve yok.
 5. **Plus Jakarta Sans, orta kalınlık.** Başlıklar ve büyük sayılar 500;
@@ -44,7 +44,7 @@
    etiket + ↗, büyük sayı, yumuşak değişim hapı, 4 gri eylem hapı, siyah
    trend çizgisi ve gri döküm satırları. Koyu dolgulu kahraman kart yok.
 9. **Taralı grafik.** Çubuk ve ilerleme göstergelerinde dolmayan / seçili
-   olmayan kısım 45° çizgili gridir; seçili çubuk yeşil + taralı, ipucu siyah hap.
+   olmayan kısım 45° çizgili gridir; seçili çubuk lime + taralı, ipucu siyah hap.
 10. **Sakin hareket.** Aktif sekme hapı sekmeler arasında kayar (420 ms);
     ok butonu hover'da siyah dolup 45° döner; basınca her buton %3 küçülür.
 
@@ -61,21 +61,21 @@ bileşenler iki yüzeyde de doğru rengi alır.
 |---|---|---|
 | `pn-accent` | `#111110` | Siyah: ana buton, aktif sekme/hap, ikon dairesi, grafik ana seri |
 | `pn-accent-hover` | `#2B2B2A` | Siyah buton hover / basılı |
-| `pn-accent-soft` | `#F1FDF3` | Açık yeşil: seçili liste satırı, sakin not kutusu |
+| `pn-accent-soft` | `#F4FBDC` | Açık lime: seçili liste satırı, sakin not kutusu |
 | `pn-accent-ink` | `#111110` | Beyaz üstünde vurgu metni / ikon |
-| `pn-olive` | `#78FC90` | Yeşil: ikinci veri serisi, seçili çubuk, siyah üstünde ikon |
+| `pn-olive` | `#C6F24E` | Lime: ikinci veri serisi, seçili çubuk, siyah üstünde ikon |
 | `pn-canvas` | `#F6F6F6` | Tuval, kart içi gri yüzey ve butonlar |
 | `pn-line` / `pn-line-strong` | `#EBEBEB` / `#E0E0E0` | Ayraç, input çerçevesi |
 | `pn-ink` | `#111110` | Metin; ipucu (tooltip), bildirim (toast), telefon çerçevesi |
 | `pn-ink-2` / `pn-ink-3` | `#1C1C1B` / `#2B2B2A` | Nötr koyu katmanlar |
 
 Siyah `#000000` (`--pn-deep`) koyu yüzeylerdir: seçim çubuğu, deneme
-bandı, bildirim. Üstünde vurgu yeşil `#78FC90` (`--pn-green`), birincil
-buton yeşil hap + siyah yazı (`bz-btn-lime`). İkincil metin `#737373`,
+bandı, bildirim. Üstünde vurgu lime `#C6F24E` (`--pn-green`), birincil
+buton lime hap + siyah yazı (`bz-btn-lime`). İkincil metin `#737373`,
 soluk metin `#9A9A9A`, olumsuz `#D92D20` (rozet `#D92D20` / `#FDECEC`).
 Durum renkleri anlamını korur: olumlu `#23863A` (açık zeminde), olumsuz
-`#D92D20`. Grafik kütüphanesine hex gerekirse: siyah `#111110`, yeşil
-`#78FC90`, açık gri `#E0E0E0`.
+`#D92D20`. Grafik kütüphanesine hex gerekirse: siyah `#111110`, lime
+`#C6F24E`, açık gri `#E0E0E0`.
 Müşterinin seçtiği renkler (işletme rengi, menü vurgusu, sadakat kartı,
 QR, anket vurgusu) veridir; panel paletine çevrilmez.
 
@@ -100,7 +100,7 @@ QR, anket vurgusu) veridir; panel paletine çevrilmez.
 
 | Öğe | Değer |
 |---|---|
-| Sol menü genişliği | 256 px açık, 92 px daraltılmış; satır 48 px, ikon dairesi 40 px |
+| Sol menü genişliği | 256 px açık, 76 px daraltılmış; satır 42 px, ikon kutusu 34 px |
 | Üst satır yüksekliği | 80 px; sekme hapı 44 px, aralık 8 px |
 | Üst satır daire butonları / avatar | 46 px |
 | Kartlar arası | 10 px |
@@ -120,7 +120,7 @@ QR, anket vurgusu) veridir; panel paletine çevrilmez.
 ### 5.1 Kabuk (masaüstü ≥1024)
 ```
 ┌──────┬──────────────────────────────────────────────────────────────┐
-│ ◆    │ [Panel] (Yorumlar) (Google) (QR) (Analitik)  [İşletme⌄][+ QR][⌕][🔔][●] │ 80px
+│ ◆    │ [Panel] (Yorumlar) (QR) (Analitik)                     [+ QR][⌕][🔔][●] │ 80px
 │      │                                                              │
 │ (👥) │  📁 Panel → 📁 Yorumlar                                       │
 │ (🍴) │  Yorumlar                               (⌕)(⚙)[📅 Son 7 gün ⌄]│
@@ -131,12 +131,15 @@ QR, anket vurgusu) veridir; panel paletine çevrilmez.
 └──────┴──────────────────────────────────────────────────────────────┘
 ```
 - **Sol menü** (`PanelRail`): üstte logo + "buaze", altında işletme seçici
-  (owner), sonra başlıklı bölümler — owner: Yönetim (Platform bağlantıları,
+  (owner), sonra başlıklı bölümler — owner: Genel (Panel, Yorumlar, QR,
+  Analitik; üst sekmelerle aynı sayfalar), Yönetim (Platform bağlantıları,
   İşletmeler), Araçlar (Müşteriler, Menü, Sadakat, Anketler, Denetim,
-  Kılavuz), Hesap (Hesabım, Faturalama); admin: her sayfa grubu bir bölüm.
+  Kılavuz); admin: her sayfa grubu bir bölüm.
   Beyaz, 28 px köşeli yüzen panel (tuvalden 10 px içeride). Satır = 34 px
-  ikon kutusu + isim; hover gri, aktif satır siyah + beyaz yazı + yeşil ikon.
-  Altta Yardım merkezi (owner) / Profilim (admin) ve "Menüyü daralt".
+  ikon kutusu + isim; hover gri, aktif satır siyah + beyaz yazı + lime ikon.
+  Altta kullanıcı kartı (avatar + ad + ikinci satır; owner'da Hesabım'a,
+  admin'de Profilim'e gider) ve yanında yuvarlak düğmeler: Yardım merkezi
+  (owner) ve menüyü daralt.
   1440 px altında varsayılan daraltılmış (76 px, ikon + ipucu; admin
   grupları sağa açılan menü); seçim `localStorage` `buaze:panel:sidebar`.
   Bölüm listesi kendi içinde kayar, hiçbir şey kesilmez.
@@ -156,14 +159,14 @@ butonlar, tarih hapı, siyah ana eylem). Mobilde yol göstergesi gizli.
 | Sınıf | Görünüm |
 |---|---|
 | `bz-btn-primary` | Siyah hap, beyaz yazı (sayfada en çok bir) |
-| `bz-btn-lime` | Yeşil hap, siyah yazı (siyah yüzey üstünde ya da basılı filtre) |
+| `bz-btn-lime` | Lime hap, siyah yazı (siyah yüzey üstünde ya da basılı filtre) |
 | `bz-btn` / `bz-btn-ghost` | Tuvalde beyaz hap, kart/menü/pencere içinde gri hap; çerçeve yok |
 | `bz-btn-danger` | Beyaz hap, kırmızı yazı |
 | `bz-btn-icon` | 40 px daire; tuvalde beyaz, kartta gri |
 | `pn-icon-btn` | 46 px beyaz daire (üst satır, sayfa başlığı) |
 | `pn-arrow-btn` | 44 px gri daire, ↗; hover siyah + 45° döner |
 | `pn-action-pill` | Ana kartta eşit genişlikte gri ikon hapı (40 px) |
-| `pn-side-item` | Sol menü satırı: 34 px ikon kutusu + isim, aktif siyah + yeşil ikon |
+| `pn-side-item` | Sol menü satırı: 34 px ikon kutusu + isim, aktif siyah + lime ikon |
 
 ### 5.4 Kartlar
 - `bz-card`: beyaz, 24 px. Başlık `pn-card-title` + gri tarih satırı,
@@ -180,23 +183,23 @@ Tam kısım siyah, ondalık ve önek/sonek gri. `StatCard` ve analitik KPI'ları
 
 ### 5.6 Rozet (`bz-badge`)
 24 px hap. `ok` yeşil yazı açık yeşil zemin, `danger` kırmızı yazı açık
-kırmızı zemin, `lime` yeşil zemin siyah yazı, `dark` siyah zemin beyaz yazı.
+kırmızı zemin, `lime` siyah zemin beyaz yazı, `dark` koyu zemin + lime nokta.
 
 ### 5.7 Sekmeler / segment
 Beyaz haplar arası 8 px, aktif siyah hap (beyaz yazı). Kart/menü içinde pasif sekmenin
 zemini yok (Fintora "All / Unread"). Seçim kartları (tema, yazı tipi, durum,
-şablon kartı) beyaz kalır; seçili olan 2 px siyah halka ve açık yeşil
+şablon kartı) beyaz kalır; seçili olan 2 px siyah halka ve açık lime
 zeminle işaretlenir. İlerleme çubuğunun dolgusu siyah (`ProgressBar`
-varsayılanı), siyah yüzeyde yeşil.
+varsayılanı), siyah yüzeyde lime.
 
 **Yorumlar kaynak seçici** (`ReviewSourceSwitch`): Yorumlar sayfasının QR
 geri bildirimleri ile Google yorumları aynı sayfanın iki bölümüdür. Beyaz
-kapsül içinde iki bölüm; aktif bölüm siyah hap + yeşil ikon dairesi + sayı.
+kapsül içinde iki bölüm; aktif bölüm siyah hap + lime ikon dairesi + sayı.
 Owner gelen kutusunda araç çubuğu iki satırdır: [kaynak seçici · arama ·
 "Filtreler" (sayılı, tarih/puan/platform/durum penceresini açar)] ve altında
 sakin durum sekmeleri (`InboxStatusTabs variant="soft"`: pasif gri metin,
 aktif beyaz hap). Başlık, araç çubuğu ve kartlar diğer sayfalarla aynı sol
-çizgidedir (24 px). Yanıt kutusunun başlığında "AI taslağı" (siyah hap, yeşil
+çizgidedir (24 px). Yanıt kutusunun başlığında "AI taslağı" (siyah hap, lime
 kıvılcım) + "Şablonlar"; yapay zekâ yalnız bu düğmelerle çalışır, yorum
 açılınca kendiliğinden taslak ya da özet üretilmez.
 
@@ -206,8 +209,8 @@ hover ve seçili gri. Komut paleti: 52 px gri arama hapı + gri kapat dairesi,
 satırlar 16 px köşe, aktif satırda ikon dairesi siyah.
 
 ### 5.9 Grafik
-Çubuklar yuvarlak; ana seri siyah, ikinci seri yeşil; seçili çubuk yeşil +
-taralı, pasif çubuklar açık gri; ipucu siyah yuvarlak kutu (değer önünde yeşil nokta);
+Çubuklar yuvarlak; ana seri siyah, ikinci seri lime; seçili çubuk lime +
+taralı, pasif çubuklar açık gri; ipucu siyah yuvarlak kutu (değer önünde lime nokta);
 ızgara kesikli `pn-line`; eksen çizgisi yok.
 
 ### 5.10 Sihirbazlar (`WizardSteps` kiti)
@@ -216,7 +219,7 @@ beyaz + siyah tik, sıradaki beyaz + gri); telefonda "Adım 2 / 3 · Maddeler"
 satırı + ince siyah ilerleme. `surface="card"` beyaz kart/pencere içinde
 pasif hapları gri yapar, `locale` telefon metnini seçer. Adım gövdesi tek
 beyaz kart (20 px başlık + tek satır gri yardım); seçim satırları gri, seçili
-olan açık yeşil + 1,5 px siyah halka + siyah tik; özet adımı döküm satırları.
+olan açık lime + 1,5 px siyah halka + siyah tik; özet adımı döküm satırları.
 Alt çubuk: gri "Geri" + siyah ana hap; telefonda tam genişlik, alta yapışık,
 güvenli alan boşluklu.
 
@@ -294,14 +297,15 @@ dokunmaz, küçük kart başlıkları 20 px olur,
 
 ## 9. Yapma
 
-- Panelde Pulse lime hex'i (`#C6F24E`, `#A8D62E`, `#EAF9B8`, `#D7FE03`)
-  ya da `pulse-eyebrow` yazma (koruma testi kırılır); `pn-*` tokenlarını
-  kullan. Müşterinin marka/menü renk varsayılanları istisnadır
-  (testteki listeye eklenir).
+- Panelde emekli vurguları (Fintora yeşili `#78FC90` / `#5CF07A`, lumin
+  lime `#D7FE03`, mor `#5D3EBC` ailesi) ya da `pulse-eyebrow` yazma (koruma
+  testi kırılır). Lime için `pn-*` tokenlarını kullan (`bg-pn-olive`,
+  `var(--pn-green)`). Müşterinin marka/menü renk varsayılanları ve resmi
+  platform renkleri istisnadır (testteki listeye eklenir).
 - Geri butonu, köşeli buton, büyük harf etiket, kart gölgesi ya da dış
   çerçeve ekleme.
-- Beyaz zemine yeşil yazı yazma (okunmaz); yeşil zeminde yazı siyah,
-  siyah zeminde yazı beyaz ya da yeşil.
-- Mor ya da başka bir marka rengini panel vurgusu yapma; vurgu siyah +
-  yeşildir. Müşterinin seçtiği renkler veridir, değişmez.
+- Beyaz zemine lime yazı yazma (okunmaz); lime zeminde yazı siyah,
+  siyah zeminde yazı beyaz ya da lime.
+- Mor, eski yeşil ya da başka bir marka rengini panel vurgusu yapma; vurgu siyah +
+  limedir. Müşterinin seçtiği renkler veridir, değişmez.
 - Referansların logosunu, adını, fotoğraflarını ya da metnini kullanma.

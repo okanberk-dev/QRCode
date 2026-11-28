@@ -3,9 +3,9 @@
  * Spec: docs/design/DASHBOARD_DESIGN.md. Layout, palette and type follow the
  * Behance "Fintora" CRM concept (icon rail, pill tabs on a #F6F6F6 canvas,
  * white cards, Plus Jakarta Sans); the sliding tab pill, hero card and
- * grey fraction digits come from the earlier "lumin" concept. Colour: the
- * Fintora palette — black #111110 for primary/active fills (white text),
- * green #C6F24E for highlights (black text), #F6F6F6 canvas, white cards.
+ * grey fraction digits come from the earlier "lumin" concept. Colour:
+ * black #111110 for primary/active fills (white text), Pulse lime #C6F24E
+ * for highlights (black text), #F6F6F6 canvas, white cards.
  * Buaze's own content and logo.
  *
  * Every rule is scoped to `:root:has(.bz-panel)` — the panel shell root —
@@ -38,7 +38,6 @@
   --pn-negative: #D92D20;
   /* Deep black for dark blocks; Pulse lime for highlights (the brand accent). */
   --pn-deep: #000000;
-  --pn-lavender: #C6F24E;
   --pn-green: #C6F24E;
   --pn-hatch: repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.07) 0 3px, transparent 3px 9px);
 
@@ -226,7 +225,7 @@
   :root:has(.bz-panel) .bz-badge--danger { background: #FDECEC; color: #D92D20; border-color: transparent; }
   :root:has(.bz-panel) .bz-badge--warn { background: #FFF4D6; color: #8A5A00; border-color: transparent; }
   :root:has(.bz-panel) .bz-badge--info { background: #EAF1FE; color: #1D4ED8; border-color: transparent; }
-  :root:has(.bz-panel) .bz-badge--dark .dot { background: var(--pn-lavender); }
+  :root:has(.bz-panel) .bz-badge--dark .dot { background: var(--pn-green); }
 
   /* Inputs — 46px, pill single-line fields, 16px textareas. */
   :root:has(.bz-panel) .bz-input {
@@ -307,7 +306,7 @@
   :root:has(.bz-panel) .bz-table tbody tr:hover td,
   :root:has(.bz-panel) .bz-tr-hover:hover { background: var(--color-pn-canvas); }
 
-  /* Avatar — black circle, green initial. */
+  /* Avatar — black circle, lime initial. */
   :root:has(.bz-panel) .bz-avatar {
     border-radius: 999px;
     background: var(--color-pn-ink);
