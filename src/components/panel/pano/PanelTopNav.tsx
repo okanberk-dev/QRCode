@@ -20,6 +20,10 @@ export interface PanoNavChild {
   icon?: LucideIcon;
   active: boolean;
   isNew?: boolean;
+  /** Small count at the end of a sidebar row ("12", "9+"). */
+  badge?: string;
+  /** What the count means, for screen readers. */
+  badgeLabel?: string;
 }
 
 export interface PanoNavLink extends PanoNavChild {

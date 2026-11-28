@@ -24,7 +24,7 @@ export default function QrLandingError({
         aria-hidden
       />
       <div className="relative z-[1] -mt-6 flex w-full flex-1 flex-col items-center rounded-t-[28px] bg-white px-6 pb-12 pt-10 text-center sm:mx-auto sm:mb-10 sm:max-w-[440px] sm:flex-none sm:rounded-[28px]">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#F1FDF3] text-[#111110]">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#F4FBDC] text-[#111110]">
           <AlertTriangle size={24} strokeWidth={2} aria-hidden />
         </div>
         <h1

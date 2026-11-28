@@ -44,7 +44,7 @@ const FALLBACK_SIZE = 640;
 const FALLBACK_INTERVAL_MS = 140;
 
 // Green reads well on the dimmed camera picture.
-const CORNER = 'absolute h-8 w-8 border-[#78FC90]';
+const CORNER = 'absolute h-8 w-8 border-[#C6F24E]';
 
 export default function ScanDialog({
   locale,
@@ -167,7 +167,7 @@ export default function ScanDialog({
                     className="bzl-scan-sweep absolute inset-x-0 top-0 h-full"
                     style={{
                       background:
-                        'linear-gradient(180deg, rgba(166, 143, 235, 0) 0%, rgba(166, 143, 235, 0) 62%, rgba(166, 143, 235, 0.3) 94%, #78FC90 100%)',
+                        'linear-gradient(180deg, rgba(166, 143, 235, 0) 0%, rgba(166, 143, 235, 0) 62%, rgba(166, 143, 235, 0.3) 94%, #C6F24E 100%)',
                     }}
                   />
                 </span>

@@ -35,7 +35,7 @@ export default function AccountShell({
           {signedIn && (
             <Link
               href="/hesap#kartlar"
-              className="inline-flex h-11 items-center rounded-full bg-[#F1FDF3] px-4 text-[13.5px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#CDEFD6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2"
+              className="inline-flex h-11 items-center rounded-full bg-[#F4FBDC] px-4 text-[13.5px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#E3F4A6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2"
             >
               {c.myCards}
             </Link>

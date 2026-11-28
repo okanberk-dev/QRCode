@@ -16,7 +16,7 @@ const KIND_PALETTE: Record<AlertKind, { bg: string; border: string; text: string
   success: { bg: "#F0FDF4", border: "#BBF7D0", text: "#166534", dot: "#16A34A" },
   warn: { bg: "#FFFBEB", border: "#FDE68A", text: "#92400E", dot: "#D97706" },
   danger: { bg: "#FEF2F2", border: "#FECACA", text: "#991B1B", dot: "#DC2626" },
-  lime: { bg: "#F1FDF3", border: "#CDEFD6", text: "#000000", dot: "#111110" },
+  lime: { bg: "#F4FBDC", border: "#E3F4A6", text: "#000000", dot: "#111110" },
 };
 
 export function AlertBanner({

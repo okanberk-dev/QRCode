@@ -64,6 +64,10 @@ Mor ya da başka marka rengini panel vurgusu yapma. Müşterinin seçtiği renkl
 - Süreler `pano.css`'ten: 200 ms hover, 420 ms kayma, 360 ms giriş; `prefers-reduced-motion` altında kapat.
 - Kartlara hover'da kaldırma (lift) ekleme.
 
+## Yapay zekâ
+- AI çağrısı yalnız kullanıcı bir düğmeye basınca yapılır ("Taslak oluştur", "AI taslağı", "Özet çıkar"). Sayfa ya da kayıt açılınca kendiliğinden AI çalıştırma (CLAUDE.md §15).
+- Yalnız ikonlu kısayola tek kelimelik görünür ad ekle; ikon tek başına yetmez.
+
 ## Kontrol listesi (bitirmeden)
 - [ ] `npm test -- tests/pano-guard.test.ts` geçiyor; renkler token.
 - [ ] Butonlar hap/daire; ikon butonların `aria-label`'ı var.

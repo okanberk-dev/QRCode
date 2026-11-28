@@ -35,8 +35,8 @@ export const SERIES_META: Array<{
     key: 'buazeQr',
     labelTr: 'Buaze QR',
     labelEn: 'Buaze QR',
-    fill: '#78FC90',
-    swatch: '#78FC90',
+    fill: '#C6F24E',
+    swatch: '#C6F24E',
     fillOpacity: 0.22,
   },
   {

@@ -73,11 +73,11 @@ test('portalPalette keeps button text readable for any card colour', () => {
 
 test('portalPalette: Buaze default (no card colour) is green with black text', () => {
   const light = portalPalette('light', null);
-  assert.equal(light.accent, '#78FC90');
+  assert.equal(light.accent, '#C6F24E');
   assert.equal(light.onAccent, '#111110');
-  assert.equal(light.band, '#78FC90');
+  assert.equal(light.band, '#C6F24E');
   assert.equal(light.onBand, '#111110');
-  assert.equal(portalPalette('brand', null).band, '#78FC90');
+  assert.equal(portalPalette('brand', null).band, '#C6F24E');
   const dark = portalPalette('dark', null);
   assert.equal(dark.onAccent, '#111110');
   assert.equal(dark.onBand, '#FFFFFF');

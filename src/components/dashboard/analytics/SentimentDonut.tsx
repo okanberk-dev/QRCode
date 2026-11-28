@@ -43,8 +43,8 @@ export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: Sent
   const hasData = pos + neu + neg > 0;
   const GAP = 10; // degrees between segments
   const parts = [
-    { key: 'pos', v: pos, stroke: '#78FC90', label: isTr ? 'Pozitif' : 'Positive' },
-    { key: 'neu', v: neu, stroke: '#CDEFD6', label: isTr ? 'Nötr' : 'Neutral' },
+    { key: 'pos', v: pos, stroke: '#C6F24E', label: isTr ? 'Pozitif' : 'Positive' },
+    { key: 'neu', v: neu, stroke: '#E3F4A6', label: isTr ? 'Nötr' : 'Neutral' },
     { key: 'neg', v: neg, stroke: 'url(#pn-donut-hatch)', label: isTr ? 'Negatif' : 'Negative' },
   ].filter((p) => p.v > 0);
   const usable = 360 - GAP * parts.length;
@@ -84,7 +84,7 @@ export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: Sent
           <ul className="flex w-full flex-1 flex-col gap-2">
             {[
               { label: isTr ? 'Pozitif' : 'Positive', v: pos, swatch: 'bg-pn-accent' },
-              { label: isTr ? 'Nötr' : 'Neutral', v: neu, swatch: 'bg-[#CDEFD6]' },
+              { label: isTr ? 'Nötr' : 'Neutral', v: neu, swatch: 'bg-[#E3F4A6]' },
               { label: isTr ? 'Negatif' : 'Negative', v: neg, swatch: 'pn-hatch' },
             ].map((row) => (
               <li key={row.label} className="pn-row min-h-[48px] py-2.5">

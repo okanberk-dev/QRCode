@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, Repeat, Sparkles, ThumbsUp, Wrench } from 'lucide-react';
 
 // §38.53 — AI ÖZET card (3-sinyal: Pozitif / İyileştirme / Tekrar gelme niyeti).
@@ -8,8 +8,8 @@ import { Loader2, Repeat, Sparkles, ThumbsUp, Wrench } from 'lucide-react';
 // "AI ÖZET" card (n-50 bg + n-150 border + Zap icon + 3-bullet list).
 //
 // Backend: /api/feedback/[id]/summary POST (CLAUDE.md §38.53). 24h cache,
-// rate-limited 30/dk/owner. Empty state (positives + improvements her ikisi
-// boş + intent='medium' default) → kart gizli (graceful).
+// rate-limited 30/dk/owner. The card starts as one row with an "Özet çıkar"
+// button: the AI call runs only when the owner asks (§15).
 
 interface SummaryData {
   positives: string[];
@@ -25,10 +25,10 @@ export interface AiSummaryCardProps {
   locale: 'tr' | 'en';
 }
 
-// Session cache: a review opened again shows its result at once (no loader,
-// no repeat request). `null` = no summary to show (fallback / empty). Errors
-// are not cached, so the next open retries. The parent keys this card by
-// feedback id, so state below is read from the cache on mount.
+// Session cache: a review summarised once shows its result at once when it
+// is opened again (no repeat request). `null` = nothing to show (fallback /
+// empty). Errors are not cached. The parent keys this card by feedback id,
+// so state below is read from the cache on mount.
 const summaryCache = new Map<string, SummaryData | null>();
 
 const INTENT_LABELS = {
@@ -39,61 +39,85 @@ const INTENT_LABELS = {
 export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) {
   const cacheKey = `${feedbackId}:${locale}`;
   const [data, setData] = useState<SummaryData | null>(() => summaryCache.get(cacheKey) ?? null);
-  const [loading, setLoading] = useState(() => !summaryCache.has(cacheKey));
-  const [error, setError] = useState(false);
-
+  // idle → the owner has not asked yet; done → asked (data or nothing to show).
+  const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'error'>(() =>
+    summaryCache.has(cacheKey) ? 'done' : 'idle',
+  );
+  // The parent keys this card by feedback id; guard a late answer anyway.
+  const aliveRef = useRef(true);
   useEffect(() => {
-    if (summaryCache.has(cacheKey)) {
-      setData(summaryCache.get(cacheKey) ?? null);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setData(null);
-    setError(false);
-    setLoading(true);
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
+  // On request only: the summary is an AI call, so opening a review never
+  // spends tokens (same rule as reply drafts).
+  const run = () => {
+    if (phase === 'loading') return;
+    setPhase('loading');
     fetch(`/api/feedback/${feedbackId}/summary?locale=${locale}`, { method: 'POST' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: SummaryData | null) => {
+        if (!aliveRef.current) return;
         if (!d) {
-          if (!cancelled) setError(true);
+          setPhase('error');
           return;
         }
-        summaryCache.set(cacheKey, d.source === 'fallback' ? null : d);
-        if (!cancelled) setData(d);
+        const usable = d.source === 'fallback' ? null : d;
+        summaryCache.set(cacheKey, usable);
+        setData(usable);
+        setPhase('done');
       })
       .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (aliveRef.current) setPhase('error');
       });
+  };
 
-    return () => {
-      cancelled = true;
-    };
-  }, [cacheKey, feedbackId, locale]);
+  const hasSignals =
+    data !== null && data.positives.length + data.improvements.length + (data.returnIntent ? 1 : 0) > 0;
 
-  if (loading) {
+  if (phase !== 'done' || !data || !hasSignals) {
+    const busy = phase === 'loading';
+    const note =
+      phase === 'error'
+        ? isTr
+          ? 'Özet çıkarılamadı. Tekrar deneyebilirsin.'
+          : 'The summary could not be prepared. You can try again.'
+        : phase === 'done'
+          ? isTr
+            ? 'Bu yorumda özetlenecek bir sinyal bulunamadı.'
+            : 'No signal to summarise in this review.'
+          : isTr
+            ? 'Yorumdaki olumlu ve geliştirilecek noktaları çıkarır.'
+            : 'Pulls out what went well and what to improve.';
     return (
       <div className="flex items-center gap-3 rounded-[20px] bg-[#F6F6F6] p-3 sm:p-4">
         <span
           aria-hidden="true"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
         >
-          <Loader2 size={16} className="animate-spin" />
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} strokeWidth={2} />}
         </span>
-        <span className="text-[13px] text-[#737373]">
-          {isTr ? 'AI özet hazırlanıyor…' : 'Preparing AI summary…'}
-        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-medium text-pn-ink">{isTr ? 'AI özeti' : 'AI summary'}</p>
+          <p className="text-[13px] text-[#737373]" role={phase === 'error' ? 'alert' : undefined}>
+            {busy ? (isTr ? 'Hazırlanıyor…' : 'Preparing…') : note}
+          </p>
+        </div>
+        {phase !== 'done' && (
+          <button
+            type="button"
+            onClick={run}
+            disabled={busy}
+            className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-medium text-pn-ink transition-colors duration-200 hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink active:scale-[.97] disabled:opacity-60 max-sm:min-h-[44px]"
+          >
+            {phase === 'error' ? (isTr ? 'Tekrar dene' : 'Try again') : isTr ? 'Özet çıkar' : 'Summarise'}
+          </button>
+        )}
       </div>
     );
-  }
-
-  if (error || !data || data.source === 'fallback') {
-    // Fallback durumda kart gizli (yorum boş, AI key yok, parse fail vb.)
-    return null;
   }
 
   const { positives, improvements, returnIntent } = data;

@@ -1,5 +1,7 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
+
 import { redirectBadgeLabel } from '@/lib/feedback-metrics';
 import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles } from 'lucide-react';
 import { PlatformChip } from '@/components/ui';
@@ -51,6 +53,8 @@ interface FeedbackDetailProps {
   /** Admin master flag `pulseAiEnabled=false` (API 403 `pulse_ai_disabled_by_admin`). */
   aiDisabledByAdmin?: boolean;
   onRegenerateAi: (tone?: AiTone) => void;
+  /** Composer header "AI taslağı": existing draft → reply box, else write one. */
+  onAiDraftToReply?: () => void;
   onUseAiAndSend: () => void;
   onCopyAiToDraft: () => void;
 
@@ -101,6 +105,14 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
     sentLoading,
   } = props;
   const isTr = locale === 'tr';
+  // Another review → both scroll areas start at the top. Without this the
+  // new review opened wherever the last one had been scrolled to.
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+    if (dockRef.current) dockRef.current.scrollTop = 0;
+  }, [active.id]);
   const titleId = `feedback-detail-title-${active.id}`;
   const pLabel = platformLabel(active.platform, isTr);
   const iconId = platformIconId(active.platform);
@@ -186,7 +198,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
         </div>
       )}
 
-      <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+      <div ref={bodyRef} className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-7 lg:pb-8">
           {/* Header. The badge + text block keeps at least 260px; when the
               pane is narrower than that plus the desktop actions (lg–xl, ~340px
@@ -407,8 +419,11 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
 
           {/* Pulse AI suggestion (low rating, not replied) or a gate. */}
           {showAiCard ? (
+            // Shown once there is something to show: a saved or new draft, a
+            // draft being written, or the "turned off" note. With no draft
+            // the composer's "AI taslağı" button is the way in.
+            (props.aiSuggestion || props.aiLoading || props.aiRegenerating || props.aiDisabledByAdmin) && (
             <PulseAiSuggestionCard
-              feedback={active}
               locale={locale}
               aiLoading={props.aiLoading}
               aiRegenerating={props.aiRegenerating}
@@ -424,6 +439,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               confirmResponsibility={props.confirmResponsibility}
               sendingReply={props.sendingReply}
             />
+            )
           ) : isHigh ? (
             <div role="note" className="mt-6 flex items-start gap-3 rounded-[20px] bg-pn-accent-soft p-4">
               <span
@@ -494,7 +510,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           so a long draft scrolls inside the textarea and Send never drops
           out of view; the dock itself only scrolls as a last resort. */}
       {canReply && (
-        <div className="bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom,0px))] pt-2 sm:rounded-b-[28px] sm:px-6 lg:flex lg:max-h-[max(48%,240px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-t lg:border-pn-line lg:px-7 lg:pb-4 lg:pt-3 lg:focus-within:max-h-[max(48%,272px)]">
+        <div ref={dockRef} className="bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom,0px))] pt-2 sm:rounded-b-[28px] sm:px-6 lg:flex lg:max-h-[max(48%,240px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-t lg:border-pn-line lg:px-7 lg:pb-4 lg:pt-3 lg:focus-within:max-h-[max(48%,272px)]">
           <ReplyComposerCard
             feedback={active}
             locale={locale}
@@ -507,6 +523,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             sendingReply={props.sendingReply}
             onSendReply={props.onSendReply}
             replyNotice={props.replyNotice}
+            onAiDraft={showAiCard && !props.aiDisabledByAdmin ? props.onAiDraftToReply : undefined}
+            aiBusy={props.aiLoading || props.aiRegenerating}
+            hasAiDraft={Boolean(props.aiSuggestion)}
           />
         </div>
       )}

@@ -219,7 +219,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
       )}
 
       {saved && (
-        <a href={saved} className="bzl-tap flex min-h-[56px] items-center justify-between gap-3 rounded-full bg-[#F1FDF3] py-2 pl-5 pr-2 text-[#111110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2">
+        <a href={saved} className="bzl-tap flex min-h-[56px] items-center justify-between gap-3 rounded-full bg-[#F4FBDC] py-2 pl-5 pr-2 text-[#111110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2">
           <span className="text-[14px]">{t.savedOnDevice}</span>
           <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-[#111110] px-4 text-[14px] font-semibold text-white">{t.openMyCard} →</span>
         </a>

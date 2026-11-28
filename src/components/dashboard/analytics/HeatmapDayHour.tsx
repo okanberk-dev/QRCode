@@ -76,7 +76,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
         </div>
         <div className="hidden items-center gap-1.5 rounded-full bg-pn-canvas px-3 py-1.5 sm:flex">
           <span className="text-[12px] text-[#737373]">{isTr ? 'Az' : 'Low'}</span>
-          {['#CDEFD6', '#111110', '#78FC90'].map((c) => (
+          {['#E3F4A6', '#111110', '#C6F24E'].map((c) => (
             <span key={c} aria-hidden="true" className="pn-legend-dot h-2.5 w-2.5" style={{ background: c }} />
           ))}
           <span className="text-[12px] text-[#737373]">{isTr ? 'Çok' : 'High'}</span>
@@ -113,7 +113,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
                       const ratio = max > 0 ? v / max : 0;
                       // Pano: empty → canvas grey; low → light green; mid → mid green; peak → black.
                       const fill =
-                        v === 0 ? 'var(--color-pn-canvas)' : ratio < 0.34 ? '#CDEFD6' : ratio < 0.67 ? '#111110' : '#78FC90';
+                        v === 0 ? 'var(--color-pn-canvas)' : ratio < 0.34 ? '#E3F4A6' : ratio < 0.67 ? '#111110' : '#C6F24E';
                       return (
                         <div
                           key={`c-${di}-${hi}`}

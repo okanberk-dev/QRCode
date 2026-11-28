@@ -50,6 +50,11 @@ function SideLink({ item, newLabel }: { item: PanoNavChild; newLabel?: string })
         {Icon ? <Icon size={19} /> : initial(item.label)}
       </span>
       <span className="pn-side-label">{item.label}</span>
+      {item.badge ? (
+        <span className="pn-side-badge" aria-label={item.badgeLabel}>
+          {item.badge}
+        </span>
+      ) : null}
       {item.isNew && newLabel && <span className="pn-side-new">{newLabel}</span>}
     </Link>
   );
@@ -78,6 +83,17 @@ function SectionMenu({ section, newLabel }: { section: RailSection; newLabel?: s
   );
 }
 
+/** The signed-in person, shown as a card at the foot of the sidebar. */
+export interface RailUser {
+  name: string;
+  /** Second line: plan, role or e-mail. */
+  sub?: string;
+  initial: string;
+  href: string;
+  /** Screen-reader / tooltip text, e.g. "Hesabım". */
+  label: string;
+}
+
 interface PanelRailProps {
   /** Logo link; put the wordmark in a `pn-side-label` span so it folds away. */
   brand: ReactNode;
@@ -87,12 +103,14 @@ interface PanelRailProps {
   topFolded?: ReactNode;
   sections: RailSection[];
   footer?: PanoNavChild[];
+  /** Account card at the foot; footer links then sit next to it as icon buttons. */
+  user?: RailUser;
   ariaLabel: string;
   labels: { fold: string; unfold: string };
   newLabel?: string;
 }
 
-export function PanelRail({ brand, top, topFolded, sections, footer = [], ariaLabel, labels, newLabel }: PanelRailProps) {
+export function PanelRail({ brand, top, topFolded, sections, footer = [], user, ariaLabel, labels, newLabel }: PanelRailProps) {
   // SSR and first paint follow the screen width (CSS, no layout shift);
   // a remembered choice is applied after mount.
   const [collapsed, setCollapsed] = useState<CollapsedState>('auto');
@@ -149,18 +167,53 @@ export function PanelRail({ brand, top, topFolded, sections, footer = [], ariaLa
           </div>
         ))}
       </nav>
-      <div className="pn-side-foot">
-        {footer.map((item) => (
-          <SideLink key={item.href} item={item} newLabel={newLabel} />
-        ))}
-        <button type="button" onClick={toggle} className="pn-side-item" data-label={foldLabel} aria-label={foldLabel}>
-          <span className="pn-side-icon" aria-hidden="true">
-            <PanelLeftClose size={19} className="pn-side-open-only" />
-            <PanelLeftOpen size={19} className="pn-side-folded-only" />
-          </span>
-          <span className="pn-side-label">{labels.fold}</span>
-        </button>
-      </div>
+      {user ? (
+        // Account card: who is signed in, with help and the fold switch as
+        // round buttons beside it (folded: stacked under the avatar).
+        <div className="pn-side-foot pn-side-foot--user">
+          <Link
+            href={user.href}
+            className="pn-side-user"
+            aria-label={`${user.label}: ${user.name}`}
+            data-label={user.label}
+          >
+            <span className="pn-side-avatar" aria-hidden="true">
+              {user.initial}
+            </span>
+            <span className="pn-side-label pn-side-user-text">
+              <span className="pn-side-user-name">{user.name}</span>
+              {user.sub && <span className="pn-side-user-sub">{user.sub}</span>}
+            </span>
+          </Link>
+          <div className="pn-side-foot-actions">
+            {footer.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href} className="pn-side-mini" aria-label={item.label} data-label={item.label}>
+                  {Icon ? <Icon size={17} aria-hidden="true" /> : initial(item.label)}
+                </Link>
+              );
+            })}
+            <button type="button" onClick={toggle} className="pn-side-mini" aria-label={foldLabel} data-label={foldLabel}>
+              <PanelLeftClose size={17} className="pn-side-open-only" aria-hidden="true" />
+              <PanelLeftOpen size={17} className="pn-side-folded-only" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="pn-side-foot">
+          {footer.map((item) => (
+            <SideLink key={item.href} item={item} newLabel={newLabel} />
+          ))}
+          <button type="button" onClick={toggle} className="pn-side-item" data-label={foldLabel} aria-label={foldLabel}>
+            <span className="pn-side-icon" aria-hidden="true">
+              <PanelLeftClose size={19} className="pn-side-open-only" />
+              <PanelLeftOpen size={19} className="pn-side-folded-only" />
+            </span>
+            <span className="pn-side-label">{labels.fold}</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

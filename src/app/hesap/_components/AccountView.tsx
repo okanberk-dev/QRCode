@@ -62,7 +62,7 @@ export default function AccountView({
     <div className="space-y-8">
       <section className="relative overflow-hidden rounded-[24px] bg-[#000000] px-5 py-6 text-white sm:px-8 sm:py-9">
         <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#111110] opacity-80 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-10 h-56 w-56 rounded-full bg-[#CDEFD6] opacity-20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-10 h-56 w-56 rounded-full bg-[#E3F4A6] opacity-20 blur-3xl" />
         <p className="relative text-[14px] font-medium text-white/75">{c.brand}</p>
         <h1 className="relative mt-1.5 text-[28px] font-semibold leading-tight tracking-[-0.02em] sm:text-[36px]">{c.hello(account.firstName)}</h1>
         <p className="relative mt-1 text-[14.5px] text-white/75">{c.memberSince(since)}</p>
@@ -89,7 +89,7 @@ export default function AccountView({
         </div>
         {cards.length === 0 ? (
           <div className="rounded-[24px] bg-[#F6F6F6] px-6 py-8 text-center sm:bg-white">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F1FDF3] text-[#111110]">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F4FBDC] text-[#111110]">
               <Gift size={26} aria-hidden />
             </span>
             <p className="mt-3 text-[16px] font-semibold">{c.cardsEmpty}</p>

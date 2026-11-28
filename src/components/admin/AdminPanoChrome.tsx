@@ -144,7 +144,13 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
         brand={railBrand}
         sections={railSections}
         ariaLabel={isEn ? 'Admin sections' : 'Yönetim bölümleri'}
-        footer={[{ href: PROFILE_HREF, label: profileLabel, icon: User, active: pathname === PROFILE_HREF }]}
+        user={{
+          name: displayName,
+          sub: roleLabel,
+          initial: displayName.charAt(0).toLocaleUpperCase(isEn ? 'en-US' : 'tr-TR'),
+          href: PROFILE_HREF,
+          label: profileLabel,
+        }}
         labels={{ fold: isEn ? 'Collapse menu' : 'Menüyü daralt', unfold: isEn ? 'Expand menu' : 'Menüyü genişlet' }}
       />
       <div className="flex min-w-0 flex-1 flex-col lg:min-h-0">

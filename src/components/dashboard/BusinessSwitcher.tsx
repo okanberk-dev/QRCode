@@ -263,7 +263,7 @@ export function BusinessSwitcher({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`${label}: ${activeName}`}
-        className={`flex w-full items-center gap-3 rounded-[24px] border border-pn-line bg-white py-2.5 pl-2.5 pr-4 text-left transition-colors hover:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink ${className}`}
+        className={`flex w-full items-center gap-3 rounded-[18px] bg-pn-canvas py-2 pl-2 pr-3.5 text-left transition-colors duration-200 hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink active:scale-[.98] ${className}`}
       >
         <BusinessChip business={active} size={40} locale={locale} />
         <span className="min-w-0 flex-1">

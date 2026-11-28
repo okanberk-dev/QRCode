@@ -554,7 +554,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         />
         <StatCard
           className="md:col-span-2 xl:col-span-1"
-          label={isTr ? 'Geri dönüş oranı' : 'Return rate'}
+          label={isTr ? 'Geri dönüş' : 'Return rate'}
           info={isTr ? 'Birden fazla değerlendirme bırakan müşterilerin oranı.' : 'Share of customers who rated more than once.'}
           isTr={isTr}
           value={
@@ -672,7 +672,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   // §38.36 — Sentiment-based avatar bg (tasarım line 131-134).
                   const avatarBg =
                     r.sentiment === 'neg' ? '#FEF2F2'
-                    : r.sentiment === 'pos' ? '#F1FDF3'
+                    : r.sentiment === 'pos' ? '#F4FBDC'
                     : '#F5F5F5';
                   const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#000000';
                   // Score 0-100 (avgRating × 20, clamped).
@@ -777,7 +777,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
               const detailHref = buildHref({ detail: detailKey });
               const avatarBg =
                 r.sentiment === 'neg' ? '#FEF2F2'
-                : r.sentiment === 'pos' ? '#F1FDF3'
+                : r.sentiment === 'pos' ? '#F4FBDC'
                 : '#F5F5F5';
               const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#000000';
               const displayName = r.name || (isTr ? 'Anonim' : 'Anonymous');

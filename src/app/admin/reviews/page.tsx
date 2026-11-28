@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { replyErrorMessage } from '@/components/reply/reply-errors';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Inbox, X } from 'lucide-react';
@@ -830,12 +830,14 @@ function AdminReviewsContent() {
   };
 
   // Mobile detail opened → start at the top and move focus to the title.
-  useEffect(() => {
+  // Layout effect: reset before paint, so the detail never flashes at the
+  // list's old scroll position.
+  useLayoutEffect(() => {
     if (!isMobileDetailView || !active || !focusDetailOnOpenRef.current) return;
     focusDetailOnOpenRef.current = false;
     const id = active.id;
+    window.scrollTo(0, 0);
     requestAnimationFrame(() => {
-      window.scrollTo(0, 0);
       document.getElementById(`feedback-detail-title-${id}`)?.focus({ preventScroll: true });
     });
   }, [isMobileDetailView, active]);
@@ -843,12 +845,13 @@ function AdminReviewsContent() {
   // Back to the list (in-app button or browser back) → restore the list
   // scroll position and focus the row that was opened.
   const prevDetailViewRef = useRef(isMobileDetailView);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const was = prevDetailViewRef.current;
     prevDetailViewRef.current = isMobileDetailView;
     if (!was || isMobileDetailView || isLgUp()) return;
     const y = listScrollYRef.current;
     const openedId = lastOpenedIdRef.current;
+    window.scrollTo(0, y);
     requestAnimationFrame(() => {
       window.scrollTo(0, y);
       if (openedId) {
@@ -943,7 +946,7 @@ function AdminReviewsContent() {
     <button
       type="button"
       onClick={() => writeFilters({ restaurantId: '' })}
-      className="inline-flex h-11 max-w-full items-center gap-1.5 rounded-full bg-pn-accent-soft px-4 text-[13px] font-medium text-pn-accent transition-colors duration-200 hover:bg-[#E2F9E6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 active:scale-[.97] md:h-[46px]"
+      className="inline-flex h-11 max-w-full items-center gap-1.5 rounded-full bg-pn-accent-soft px-4 text-[13px] font-medium text-pn-accent transition-colors duration-200 hover:bg-[#EAF9B8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 active:scale-[.97] md:h-[46px]"
       title={isTr ? 'İşletme filtresini kaldır' : 'Remove the business filter'}
     >
       <span className="truncate">

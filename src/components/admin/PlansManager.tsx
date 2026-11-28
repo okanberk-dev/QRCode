@@ -561,7 +561,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     >
                       <span
                         className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          isDark ? 'bg-[#CDEFD6]' : userCount > 0 ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
+                          isDark ? 'bg-[#E3F4A6]' : userCount > 0 ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
                         }`}
                       />
                       {userCount > 0
@@ -648,7 +648,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     >
                       <span
                         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                          isDark ? 'bg-[#CDEFD6]' : 'bg-pn-accent-soft'
+                          isDark ? 'bg-[#E3F4A6]' : 'bg-pn-accent-soft'
                         }`}
                       >
                         <Crown size={9} className="text-pn-ink" strokeWidth={3} />

@@ -24,16 +24,16 @@ export const INPUT =
 const BTN = `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[background-color,transform,opacity] duration-200 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100 ${FOCUS}`;
 
 export const BTN_PRIMARY = `${BTN} h-12 px-6 text-[15px] bg-[#111110] text-white hover:bg-[#2B2B2A]`;
-export const BTN_SECONDARY = `${BTN} h-12 px-5 text-[15px] bg-white text-[#111110] hover:bg-[#F1FDF3] sm:bg-[#F6F6F6] sm:hover:bg-[#F1FDF3]`;
+export const BTN_SECONDARY = `${BTN} h-12 px-5 text-[15px] bg-white text-[#111110] hover:bg-[#F4FBDC] sm:bg-[#F6F6F6] sm:hover:bg-[#F4FBDC]`;
 /** Lavender pill: reads on both the white phone canvas and the grey desktop canvas. */
-export const BTN_SOFT = `${BTN} h-11 px-5 text-[14px] bg-[#F1FDF3] text-[#111110] hover:bg-[#CDEFD6]`;
+export const BTN_SOFT = `${BTN} h-11 px-5 text-[14px] bg-[#F4FBDC] text-[#111110] hover:bg-[#E3F4A6]`;
 export const BTN_SMALL_PRIMARY = `${BTN} h-11 px-4 text-[13.5px] bg-[#111110] text-white hover:bg-[#2B2B2A]`;
-export const BTN_SMALL_SECONDARY = `${BTN} h-11 px-4 text-[13.5px] bg-white text-[#111110] hover:bg-[#F1FDF3] sm:bg-[#F6F6F6] sm:hover:bg-[#F1FDF3]`;
+export const BTN_SMALL_SECONDARY = `${BTN} h-11 px-4 text-[13.5px] bg-white text-[#111110] hover:bg-[#F4FBDC] sm:bg-[#F6F6F6] sm:hover:bg-[#F4FBDC]`;
 export const BTN_DANGER = `${BTN} h-12 px-5 text-[15px] bg-[#D92D20] text-white hover:bg-[#B42318]`;
 export const BTN_DANGER_SOFT = `${BTN} h-11 px-5 text-[14px] bg-[#FEF3F2] text-[#B42318] hover:bg-[#FEE4E2]`;
 
 export const CHECKBOX = 'mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]';
-export const LINK = `rounded-sm font-semibold text-[#111110] underline decoration-[#CDEFD6] decoration-2 underline-offset-4 transition-colors hover:decoration-[#111110] ${FOCUS}`;
+export const LINK = `rounded-sm font-semibold text-[#111110] underline decoration-[#E3F4A6] decoration-2 underline-offset-4 transition-colors hover:decoration-[#111110] ${FOCUS}`;
 
 export const NOTICE_OK = `rounded-[20px] bg-[#EEF8F0] px-4 py-3 text-[14px] font-medium ${SUCCESS_TEXT}`;
 export const NOTICE_WARN = 'rounded-[20px] bg-[#FFFAEB] px-4 py-3 text-[14px] text-[#92400E]';

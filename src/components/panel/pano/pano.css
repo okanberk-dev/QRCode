@@ -5,7 +5,7 @@
  * white cards, Plus Jakarta Sans); the sliding tab pill, hero card and
  * grey fraction digits come from the earlier "lumin" concept. Colour: the
  * Fintora palette — black #111110 for primary/active fills (white text),
- * green #78FC90 for highlights (black text), #F6F6F6 canvas, white cards.
+ * green #C6F24E for highlights (black text), #F6F6F6 canvas, white cards.
  * Buaze's own content and logo.
  *
  * Every rule is scoped to `:root:has(.bz-panel)` — the panel shell root —
@@ -22,9 +22,9 @@
 :root:has(.bz-panel) {
   --color-pn-accent: #111110;
   --color-pn-accent-hover: #2B2B2A;
-  --color-pn-accent-soft: #F1FDF3;
+  --color-pn-accent-soft: #F4FBDC;
   --color-pn-accent-ink: #111110;
-  --color-pn-olive: #78FC90;
+  --color-pn-olive: #C6F24E;
   --color-pn-canvas: #F6F6F6;
   --color-pn-line: #EBEBEB;
   --color-pn-line-strong: #E0E0E0;
@@ -36,10 +36,10 @@
   --pn-text-3: #9A9A9A;
   --pn-positive: #23863A;
   --pn-negative: #D92D20;
-  /* Deep black for dark blocks; soft green for highlights on dark. */
+  /* Deep black for dark blocks; Pulse lime for highlights (the brand accent). */
   --pn-deep: #000000;
-  --pn-lavender: #78FC90;
-  --pn-green: #78FC90;
+  --pn-lavender: #C6F24E;
+  --pn-green: #C6F24E;
   --pn-hatch: repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.07) 0 3px, transparent 3px 9px);
 
   --pn-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -150,7 +150,7 @@
     color: var(--color-pn-ink);
     border: 0;
   }
-  :root:has(.bz-panel) .bz-btn-lime:hover { background: #5CF07A; }
+  :root:has(.bz-panel) .bz-btn-lime:hover { background: #A8D62E; }
   :root:has(.bz-panel) .bz-btn-lime:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px var(--color-pn-accent); }
   :root:has(.bz-panel) .bz-btn-lime:disabled { background: #EDEDF0; color: #A0A0A6; }
 
@@ -521,9 +521,12 @@
     outline: none;
   }
   .pn-action-pill:hover,
-  .pn-action-pill:focus-visible { background: var(--color-pn-accent); color: #FFF; }
-  .pn-action-pill:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px var(--color-pn-accent); }
-  .pn-action-pill:active { transform: scale(0.96); }
+  .pn-action-pill:focus-visible,
+  .pn-action:is(:hover, :focus-visible) .pn-action-pill { background: var(--color-pn-accent); color: #FFF; }
+  .pn-action-pill:focus-visible,
+  .pn-action:focus-visible .pn-action-pill { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px var(--color-pn-accent); }
+  .pn-action-pill:active,
+  .pn-action:active .pn-action-pill { transform: scale(0.96); }
 
   /* Black chart tooltip (Fintora): 12px corners, white text, coloured dots. */
   .pn-chart-tip {
@@ -683,13 +686,6 @@
   .pn-side-brand .pn-brand { gap: 10px; }
   .pn-side-brand .pn-brand-word { font-size: 22px; }
   .pn-side-top { flex-shrink: 0; padding-bottom: 12px; }
-  /* The business switcher sits as a grey block inside the white panel. */
-  .pn-side-top button[aria-haspopup="listbox"] {
-    border-color: transparent;
-    border-radius: 18px;
-    background: var(--color-pn-canvas);
-  }
-  .pn-side-top button[aria-haspopup="listbox"]:hover { background: #EDEDED; }
   .pn-side-scroll {
     display: flex;
     flex: 1 1 auto;
@@ -697,12 +693,18 @@
     gap: 16px;
     min-height: 0;
     margin-right: -4px;
-    padding: 2px 4px 8px 0;
+    /* 20px of bottom padding sits under the fade, so the last page is never
+       dimmed once the list is scrolled to its end. */
+    padding: 2px 4px 20px 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
     scrollbar-color: #E0E0E0 transparent;
+    /* Long lists (admin) scroll inside the panel: fade the cut-off row so it
+       reads as "more below" instead of a clipped label. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
   }
   .pn-side-heading {
     padding: 0 12px 6px;
@@ -718,7 +720,7 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    min-height: 44px;
+    min-height: 42px;
     padding: 4px 12px 4px 6px;
     border: 0;
     border-radius: 14px;
@@ -769,6 +771,75 @@
     padding-top: 8px;
     border-top: 1px solid var(--color-pn-line);
   }
+  /* Count at the end of a row (unanswered reviews): lime on the black
+     active row, lime pill otherwise. */
+  .pn-side-badge {
+    flex-shrink: 0;
+    min-width: 22px;
+    border-radius: 999px;
+    padding: 2px 7px;
+    background: var(--pn-green);
+    color: var(--color-pn-ink);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 18px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Account card at the foot: avatar + name over a grey line, then help and
+     the fold switch as small round buttons. */
+  .pn-side-foot--user { flex-direction: row; align-items: center; gap: 6px; padding-top: 10px; }
+  .pn-side-user {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 6px 8px 6px 6px;
+    border-radius: 16px;
+    color: var(--color-pn-ink);
+    outline: none;
+    transition: background-color 180ms var(--pn-ease), transform 120ms var(--pn-ease);
+  }
+  .pn-side-user:hover { background: var(--color-pn-canvas); }
+  .pn-side-user:active { transform: scale(0.98); }
+  .pn-side-user:focus-visible { box-shadow: inset 0 0 0 2px var(--color-pn-ink); }
+  .pn-side-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: var(--color-pn-ink);
+    color: var(--pn-green);
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .pn-side-user-text { display: flex; flex-direction: column; line-height: 1.25; }
+  .pn-side-user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
+  .pn-side-user-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--pn-text-3); }
+  .pn-side-foot-actions { display: flex; flex-shrink: 0; align-items: center; gap: 4px; }
+  .pn-side-mini {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-pn-canvas);
+    color: #525252;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 180ms var(--pn-ease), color 180ms var(--pn-ease), transform 120ms var(--pn-ease);
+  }
+  .pn-side-mini:hover { background: var(--color-pn-ink); color: #FFF; }
+  .pn-side-mini:active { transform: scale(0.94); }
+  .pn-side-mini:focus-visible { box-shadow: 0 0 0 2px #FFF, 0 0 0 4px var(--color-pn-ink); }
   .pn-side-folded-only { display: none; }
 
   /* Folded: an explicit choice, or the default below 1440px. */
@@ -780,6 +851,10 @@
   .pn-side[data-collapsed="true"] .pn-side-heading { height: 1px; margin: 0 10px 8px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
   .pn-side[data-collapsed="true"] .pn-side-scroll { margin-right: 0; padding-right: 0; align-items: center; }
   .pn-side[data-collapsed="true"] .pn-side-item { width: 48px; padding: 7px; justify-content: center; }
+  .pn-side[data-collapsed="true"] .pn-side-foot--user { flex-direction: column; gap: 6px; }
+  .pn-side[data-collapsed="true"] .pn-side-user { flex: 0 0 auto; padding: 4px; }
+  .pn-side[data-collapsed="true"] .pn-side-foot-actions { flex-direction: column; }
+  .pn-side[data-collapsed="true"] .pn-side-badge { position: absolute; top: 2px; right: 2px; min-width: 16px; padding: 0 4px; font-size: 10px; line-height: 16px; }
   @media (max-width: 1439.98px) {
     .pn-side[data-collapsed="auto"] { width: 76px; padding: 0 10px 12px; }
     .pn-side[data-collapsed="auto"] .pn-side-brand { justify-content: center; padding-left: 0; }
@@ -789,9 +864,15 @@
     .pn-side[data-collapsed="auto"] .pn-side-heading { height: 1px; margin: 0 10px 8px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
     .pn-side[data-collapsed="auto"] .pn-side-scroll { margin-right: 0; padding-right: 0; align-items: center; }
     .pn-side[data-collapsed="auto"] .pn-side-item { width: 48px; padding: 7px; justify-content: center; }
+    .pn-side[data-collapsed="auto"] .pn-side-foot--user { flex-direction: column; gap: 6px; }
+    .pn-side[data-collapsed="auto"] .pn-side-user { flex: 0 0 auto; padding: 4px; }
+    .pn-side[data-collapsed="auto"] .pn-side-foot-actions { flex-direction: column; }
+    .pn-side[data-collapsed="auto"] .pn-side-badge { position: absolute; top: 2px; right: 2px; min-width: 16px; padding: 0 4px; font-size: 10px; line-height: 16px; }
   }
   /* Folded tooltips: the name appears to the right of the button. */
-  .pn-side-item::after {
+  .pn-side-item::after,
+  .pn-side-mini::after,
+  .pn-side-user::after {
     content: attr(data-label);
     position: absolute;
     left: calc(100% + 14px);
@@ -809,9 +890,9 @@
     transform: translateY(-50%);
     z-index: 5;
   }
-  .pn-side[data-collapsed="true"] .pn-side-item:is(:hover, :focus-visible):not([data-state="open"])::after { display: block; }
+  .pn-side[data-collapsed="true"] :is(.pn-side-item, .pn-side-mini, .pn-side-user):is(:hover, :focus-visible):not([data-state="open"])::after { display: block; }
   @media (max-width: 1439.98px) {
-    .pn-side[data-collapsed="auto"] .pn-side-item:is(:hover, :focus-visible):not([data-state="open"])::after { display: block; }
+    .pn-side[data-collapsed="auto"] :is(.pn-side-item, .pn-side-mini, .pn-side-user):is(:hover, :focus-visible):not([data-state="open"])::after { display: block; }
   }
   /* The folded switcher keeps its own round button (grey in the white panel). */
   .pn-side .pn-icon-btn { background: var(--color-pn-canvas); }
