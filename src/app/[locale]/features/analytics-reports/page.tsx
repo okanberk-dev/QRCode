@@ -20,12 +20,12 @@ const META = {
   tr: {
     title: 'Analitik ve raporlar: geri bildirim ve puan takibi',
     description:
-      'Son 7, 30 veya 90 gün, 12 ay ya da özel aralık için yorum sayısını, ortalama puanı, yanıt süresini ve memnun ile memnun olmayan müşteri oranını izleyin; raporu CSV olarak indirin.',
+      'Yorum sayısını, ortalama puanı, yanıt süresini ve memnun müşteri oranını 7, 30, 90 gün, 12 ay ya da özel aralıkta izleyin; raporu CSV olarak indirin.',
   },
   en: {
     title: 'Analytics and reports: feedback and rating trends',
     description:
-      'Track review count, average rating, reply time and the share of happy versus unhappy customers for the last 7, 30 or 90 days, 12 months or a custom range, and export the report as CSV.',
+      'Track review count, average rating, reply time and the share of happy customers over 7, 30 or 90 days, 12 months or a custom range; export as CSV.',
   },
 } as const;
 

@@ -1,3 +1,4 @@
+import { metaDescription } from '@/lib/seo/meta-description';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const doc = await loadLoyaltyLegal(KEY, locale);
   return {
     title: doc.title,
-    description: doc.description,
+    description: metaDescription(doc.description),
     alternates: {
       canonical: `/${locale}/${KEY}`,
       languages: { tr: `/tr/${KEY}`, en: `/en/${KEY}`, 'x-default': `/tr/${KEY}` },
