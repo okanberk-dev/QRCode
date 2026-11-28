@@ -23,7 +23,7 @@ const COPY: Record<'tr' | 'en', { title: string; lead: string; items: StickyItem
       {
         title: 'Müşteri puan verir',
         body: 'Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) seçtiğiniz platformun yorum sayfası açılır. Eşiğin altında müşteri önce size yazabilir; herkese açık yorum bağlantısı aynı ekranda durur.',
-        img: img('misafirler'),
+        img: img('musteri-telefon'),
         caption: 'Her müşteri herkese açık yorum bağlantısını görür.',
       },
       {
@@ -59,7 +59,7 @@ const COPY: Record<'tr' | 'en', { title: string; lead: string; items: StickyItem
       {
         title: 'The customer rates you',
         body: "At or above the threshold you set (5 stars by default), your chosen platform's review page opens. Below it, the customer can write to you first; the public review link stays on the same screen.",
-        img: img('misafirler'),
+        img: img('musteri-telefon'),
         caption: 'Every customer sees the public review link.',
       },
       {

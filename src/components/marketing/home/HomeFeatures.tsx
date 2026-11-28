@@ -19,7 +19,7 @@ function cards(locale: 'tr' | 'en'): { reviews: Card[]; tools: Card[] } {
       {
         title: tr ? 'QR geri bildirim' : 'QR feedback',
         text: tr ? 'İstediğiniz kadar QR kod; yeniden basmadan yön değiştirin.' : 'As many QR codes as you need; redirect them without reprinting.',
-        img: img('restoran-masalar'),
+        img: img('qr-telefon'),
         href: `${b}/features/review-management`,
       },
       {
@@ -45,7 +45,7 @@ function cards(locale: 'tr' | 'en'): { reviews: Card[]; tools: Card[] } {
       {
         title: tr ? 'QR Menü' : 'QR Menu',
         text: tr ? 'Temalar, alerjen etiketleri ve menü analitiği.' : 'Themes, allergen labels and menu analytics.',
-        img: img('yemek-flatlay'),
+        img: img('menu-telefon'),
         href: `${b}/features/menu`,
       },
       {

@@ -43,7 +43,7 @@ export default function HomeQrTeaser({ locale }: { locale: 'tr' | 'en' }) {
             </Link>
           </div>
           <div className="rt-banner__img" style={{ position: 'relative', minHeight: 220 }}>
-            <Image src={img('kafe-sayac')} alt="" fill sizes="(max-width: 1023px) 100vw, 360px" />
+            <Image src={img('qr-telefon')} alt="" fill sizes="(max-width: 1023px) 100vw, 360px" />
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Space_Grotesk, Inter, JetBrains_Mono, Figtree, Source_Sans_3, Caveat, Plus_Jakarta_Sans } from 'next/font/google';
+import { Space_Grotesk, Inter, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 
 // Site fonts (CLAUDE.md §11): Clash Display (headings) + Inter (body) +
@@ -56,29 +56,6 @@ const jetBrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
-// Marketing site ("Ritim" design system, CLAUDE.md §62): Figtree (headings +
-// body), Source Sans 3 (menus, form labels, eyebrows), Caveat (handwritten
-// accent). All OFL. Variable fonts, so no weight list. Not preloaded: the
-// variables sit on every root <html>, and the panels never use them.
-const figtree = Figtree({
-  subsets: ['latin', 'latin-ext'],
-  display: 'swap',
-  preload: false,
-  variable: '--font-figtree',
-});
-const sourceSans = Source_Sans_3({
-  subsets: ['latin', 'latin-ext'],
-  display: 'swap',
-  preload: false,
-  variable: '--font-source-sans',
-});
-const caveat = Caveat({
-  subsets: ['latin', 'latin-ext'],
-  display: 'swap',
-  preload: false,
-  variable: '--font-caveat',
-});
-
 // Owner + admin panels ("Pano" design system, docs/design/DASHBOARD_DESIGN.md):
 // Plus Jakarta Sans (OFL), variable 200–800. The panel scope (`pano.css`)
 // points --font-body / --font-heading at it; no other surface uses it, so it
@@ -90,5 +67,5 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
 });
 
-export const rootFontClassName = `${clashDisplay.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable} ${figtree.variable} ${sourceSans.variable} ${caveat.variable} ${jakarta.variable}`;
+export const rootFontClassName = `${clashDisplay.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable} ${jakarta.variable}`;
 export const rootBodyFontClassName = inter.className;
