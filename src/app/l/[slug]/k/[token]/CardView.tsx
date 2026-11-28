@@ -7,9 +7,30 @@
 // sound plays (if the visitor touched the page once; browsers require it)
 // and the phone vibrates. Without the stream it polls. A reward that just
 // became ready gets confetti. The QR opens full screen for the counter.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bell, BellOff, Cake, Check, Crown, Download, Eye, Gift, Loader2, Maximize2, Share, UserCheck, UserPlus, X } from 'lucide-react';
+import {
+  Bell,
+  BellOff,
+  Cake,
+  Check,
+  ChevronRight,
+  Crown,
+  Download,
+  Eye,
+  Gift,
+  Hourglass,
+  Loader2,
+  Maximize2,
+  Share,
+  SlidersHorizontal,
+  Sparkles,
+  Trash2,
+  UserCheck,
+  UserPlus,
+  UserRound,
+  X,
+} from 'lucide-react';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import ConfettiBurst from '@/components/loyalty/ConfettiBurst';
 import {
@@ -66,11 +87,11 @@ export default function CardView({
   const [stampKey, setStampKey] = useState(0);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [fullQr, setFullQr] = useState(false);
-  const [leaveOpen, setLeaveOpen] = useState(false);
-  const [last4, setLast4] = useState('');
-  const [leaveBusy, setLeaveBusy] = useState(false);
-  const [leaveError, setLeaveError] = useState<string | null>(null);
-  const [left, setLeft] = useState(false);
+  // Shared with CardLeave (frame's end slot) through CardStateProvider.
+  const shared = useContext(CardSharedContext);
+  const [localLeft, setLocalLeft] = useState(false);
+  const left = shared?.left ?? localLeft;
+  const setLeft = shared?.setLeft ?? setLocalLeft;
   const [now, setNow] = useState<Date | null>(null);
   const balanceRef = useRef(initial.member.balance);
   const lastEventRef = useRef<string | null>(initial.events[0]?.id ?? null);
@@ -151,7 +172,7 @@ export default function CardView({
         /* offline: the next tick tries again */
       }
     },
-    [applyCard, left, token],
+    [applyCard, left, setLeft, token],
   );
 
   // Mount: remember this phone, start the clock, celebrate a fresh card.
@@ -234,57 +255,20 @@ export default function CardView({
     };
   }, [left, refresh, token]);
 
-  // How deleting is confirmed: the phone's last 4 digits; without a phone
-  // the account that owns the card, or the card code (§61).
-  const leaveMode: 'phone' | 'account' | 'code' = card.member.phoneEnd
-    ? 'phone'
-    : card.member.hasAccount
-      ? 'account'
-      : 'code';
-  const leaveReady = leaveMode === 'phone' ? last4.length === 4 : leaveMode === 'code' ? last4.trim().length >= 4 : viewer.owns;
-
-  const leave = async () => {
-    setLeaveBusy(true);
-    setLeaveError(null);
-    try {
-      const res = await fetch(`/api/public/loyalty/card/${token}/leave`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leaveMode === 'phone' ? { last4 } : leaveMode === 'code' ? { code: last4 } : {}),
-      });
-      if (res.ok) {
-        try {
-          window.localStorage.removeItem(`${CARD_STORAGE_PREFIX}${slug}`);
-        } catch {
-          /* storage blocked */
-        }
-        setLeft(true);
-        setLeaveOpen(false);
-        return;
-      }
-      setLeaveError(
-        res.status === 400
-          ? leaveMode === 'code'
-            ? t.leaveWrongCode
-            : t.leaveWrong
-          : res.status === 401
-            ? t.leaveSignIn
-            : res.status === 429
-              ? t.errors.RATE_LIMIT
-              : t.errors.DEFAULT,
-      );
-    } catch {
-      setLeaveError(t.errors.DEFAULT);
-    } finally {
-      setLeaveBusy(false);
-    }
-  };
+  // The card settings block at the end of the page (CardLeave) needs the
+  // live phone / account state to pick how deleting is confirmed.
+  const phoneEndNow = card.member.phoneEnd;
+  const hasAccountNow = card.member.hasAccount;
+  const setSharedMember = shared?.setMember;
+  useEffect(() => {
+    setSharedMember?.({ phoneEnd: phoneEndNow, hasAccount: hasAccountNow });
+  }, [hasAccountNow, phoneEndNow, setSharedMember]);
 
   if (left) {
     return (
-      <div className="py-10 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F4FBDC] text-[#111110]">
-          <Check size={22} />
+      <div className="rounded-[28px] bg-[var(--p-surface)] px-6 py-10 text-center" role="status">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--p-accent)] text-[color:var(--p-on-accent)]">
+          <Check size={22} aria-hidden="true" />
         </span>
         <p className="mt-4 text-[16px] font-medium">{t.leaveDone}</p>
       </div>
@@ -299,8 +283,9 @@ export default function CardView({
   const expiry = expiresAt(member, program.expiryDays);
   const dateFmt = (iso: string | Date) =>
     new Date(iso).toLocaleDateString(tr ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul' });
-  // Borderless 24 px cards on the business's page colour (no shadow).
-  const panel = 'rounded-[24px] bg-[var(--p-surface)] p-5';
+  // Borderless cards on the business's page colour, one soft shadow.
+  const panel = 'rounded-[28px] bg-[var(--p-surface)] p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+  const sectionTitle = 'text-[17px] font-medium tracking-[-0.01em] [font-family:var(--font-heading)]';
 
   return (
     <div className="space-y-4">
@@ -321,76 +306,115 @@ export default function CardView({
         </a>
       )}
 
-      <div className="bzl-float">
-        <LoyaltyCardFace
-          key={stampKey}
-          businessName={business.name}
-          programName={program.name}
-          kind={kind}
-          balance={member.balance}
-          rewards={program.rewards}
-          accentColor={business.color}
-          memberName={member.firstName}
-          code={member.code}
-          tierName={tier?.name ?? null}
-          locale={locale}
-          highlightFrom={highlightFrom}
-          shine
-        />
+      {/* The card and its counter stub: one object, like a wallet pass. */}
+      <div>
+        <div className="bzl-float relative z-[1]">
+          <LoyaltyCardFace
+            key={stampKey}
+            businessName={business.name}
+            programName={program.name}
+            kind={kind}
+            balance={member.balance}
+            rewards={program.rewards}
+            accentColor={business.color}
+            memberName={member.firstName}
+            code={member.code}
+            tierName={tier?.name ?? null}
+            locale={locale}
+            highlightFrom={highlightFrom}
+            shine
+          />
+        </div>
+
+        <section
+          aria-label={t.showAtCounter}
+          className="relative mx-2 -mt-4 rounded-b-[28px] rounded-t-[10px] bg-[var(--p-surface)] px-5 pb-5 pt-9 text-center shadow-[0_1px_2px_rgba(0,0,0,0.04),0_20px_40px_-30px_rgba(0,0,0,0.35)]"
+        >
+          <p className="text-[13.5px] font-medium text-[color:var(--p-muted)]">{t.showAtCounter}</p>
+          <button
+            type="button"
+            onClick={() => setFullQr(true)}
+            className="bzl-tap group relative mx-auto mt-4 block rounded-[24px] bg-white p-3.5 shadow-[0_0_0_1px_rgba(17,17,16,0.06),0_8px_20px_-12px_rgba(17,17,16,0.3)] transition-transform duration-200 active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-surface)]"
+            aria-label={tr ? 'QR kodu büyüt' : 'Enlarge the QR code'}
+          >
+            {/* QR corner marks: where to aim. */}
+            <span aria-hidden="true" className="pointer-events-none absolute left-1.5 top-1.5 h-5 w-5 rounded-tl-[14px] border-l-2 border-t-2 border-[#111110]/80" />
+            <span aria-hidden="true" className="pointer-events-none absolute right-1.5 top-1.5 h-5 w-5 rounded-tr-[14px] border-r-2 border-t-2 border-[#111110]/80" />
+            <span aria-hidden="true" className="pointer-events-none absolute bottom-1.5 left-1.5 h-5 w-5 rounded-bl-[14px] border-b-2 border-l-2 border-[#111110]/80" />
+            <span aria-hidden="true" className="pointer-events-none absolute bottom-1.5 right-1.5 h-5 w-5 rounded-br-[14px] border-b-2 border-r-2 border-[#111110]/80" />
+            <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} width={188} height={188} className="h-[188px] w-[188px]" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setFullQr(true)}
+            className="bzl-tap mx-auto mt-3 inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[13.5px] font-medium text-[color:var(--p-text)] transition-colors duration-200 hover:bg-[var(--p-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)]"
+          >
+            <Maximize2 size={14} aria-hidden="true" /> {tr ? 'Tam ekran göster' : 'Show full screen'}
+          </button>
+
+          {/* Perforation: the stub tears off here. */}
+          <div aria-hidden="true" className="relative -mx-5 my-3 h-4">
+            <span className="absolute -left-2 top-0 h-4 w-4 rounded-full bg-[var(--p-bg)]" />
+            <span className="absolute -right-2 top-0 h-4 w-4 rounded-full bg-[var(--p-bg)]" />
+            <span className="absolute inset-x-5 top-1/2 border-t-2 border-dashed border-[color:var(--p-border)]" />
+          </div>
+
+          <p className="text-[12.5px] font-medium text-[color:var(--p-muted)]">{t.code}</p>
+          <p
+            className="mt-1 text-[30px] font-medium tabular-nums tracking-[0.14em]"
+            style={{ fontFamily: 'var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace' }}
+          >
+            {formatMemberCode(member.code)}
+          </p>
+        </section>
       </div>
 
-      <section className={`${panel} text-center`}>
-        <p className="text-[13px] font-medium text-[color:var(--p-muted)]">{t.showAtCounter}</p>
-        <button
-          type="button"
-          onClick={() => setFullQr(true)}
-          className="bzl-tap group relative mx-auto mt-3 block rounded-[24px] bg-white p-3 ring-1 ring-black/5 transition-transform duration-200 active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
-          aria-label={tr ? 'QR kodu büyüt' : 'Enlarge the QR code'}
-        >
-          { }
-          <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} width={196} height={196} className="h-[196px] w-[196px]" />
-          <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#111110] text-white">
-            <Maximize2 size={15} aria-hidden="true" />
-          </span>
-        </button>
-        <p className="mt-4 text-[13px] font-medium text-[color:var(--p-muted)]">{t.code}</p>
-        <p className="mt-0.5 text-[30px] font-semibold tabular-nums tracking-[0.08em]">{formatMemberCode(member.code)}</p>
-      </section>
-
-      {!staffHref && (
-        <AccountBlock t={t} slug={slug} token={token} locale={locale} signedIn={viewer.signedIn} owns={viewer.owns} hasAccount={card.member.hasAccount} />
-      )}
-
       {birthday && program.birthdayReward && (
-        <p className="flex items-start gap-2 rounded-[24px] bg-[#FFF1F5] px-4 py-3.5 text-[14px] text-[#831843]">
-          <Cake size={18} className="mt-0.5 shrink-0" aria-hidden="true" /> {t.birthdayNow(program.birthdayReward)}
+        <p className="flex items-start gap-3 rounded-[24px] bg-[#FFF1F5] px-4 py-3.5 text-[14px] leading-snug text-[#831843]">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FCE7F3]">
+            <Cake size={16} aria-hidden="true" />
+          </span>
+          <span className="pt-1.5">{t.birthdayNow(program.birthdayReward)}</span>
         </p>
       )}
 
       <section className={panel}>
-        <h2 className="text-[16px] font-semibold">{t.rewards}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className={sectionTitle}>{t.rewards}</h2>
+          <span className="rounded-full bg-[var(--p-bg)] px-3 py-1 text-[12.5px] font-medium tabular-nums text-[color:var(--p-muted)]">
+            {member.visits} {t.visits}
+          </span>
+        </div>
         <ul className="mt-3 space-y-2">
           {program.rewards.map((r) => {
             const ready = member.balance >= r.cost;
             const pct = Math.min(100, Math.round((member.balance / r.cost) * 100));
             return (
-              <li key={r.id} className={`overflow-hidden rounded-[20px] ${ready ? 'bg-[#F4FBDC] text-[#111110]' : 'bg-[var(--p-bg)]'}`}>
-                <div className="flex items-center justify-between gap-3 px-3.5 py-3">
-                  <span className="flex min-w-0 items-center gap-2 text-[14.5px] font-medium">
-                    <Gift size={16} className="shrink-0" aria-hidden="true" />
+              <li
+                key={r.id}
+                className={`rounded-[20px] px-3.5 py-3 ${ready ? 'bg-[var(--p-accent)] text-[color:var(--p-on-accent)]' : 'bg-[var(--p-bg)]'}`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-2.5 text-[14.5px] font-medium">
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${ready ? 'bg-black/10' : 'bg-[var(--p-surface)]'}`}
+                      style={ready ? undefined : { color: 'var(--p-strong)' }}
+                    >
+                      <Gift size={15} aria-hidden="true" />
+                    </span>
                     <span className="truncate">{r.title}</span>
                   </span>
-                  <span className={`shrink-0 text-[13px] font-semibold ${ready ? 'text-[#111110]' : 'text-[color:var(--p-muted)]'}`}>
+                  <span className={`shrink-0 text-[13px] font-semibold tabular-nums ${ready ? '' : 'text-[color:var(--p-muted)]'}`}>
                     {ready ? t.rewardReady : t.rewardLeft(r.cost - member.balance, unitLabel(kind, r.cost - member.balance, locale))}
                   </span>
                 </div>
                 {!ready && (
                   <div
-                    className="h-1.5 w-full"
+                    className="ml-[42px] mt-2.5 h-1.5 overflow-hidden rounded-full"
                     // Hatched remainder: what is still to collect.
                     style={{ background: 'repeating-linear-gradient(-45deg, var(--p-border) 0 1.5px, transparent 1.5px 5px)' }}
                   >
-                    <div className="h-full transition-[width] duration-700" style={{ width: `${pct}%`, background: 'var(--p-accent)' }} />
+                    <div className="h-full rounded-full transition-[width] duration-700 motion-reduce:transition-none" style={{ width: `${pct}%`, background: 'var(--p-strong)' }} />
                   </div>
                 )}
               </li>
@@ -398,8 +422,8 @@ export default function CardView({
           })}
         </ul>
         {(tier || upcoming) && (
-          <p className="mt-3 flex items-start gap-2 text-[13.5px]">
-            <Crown size={16} className="mt-0.5 shrink-0 text-[#CA8A04]" aria-hidden="true" />
+          <p className="mt-3 flex items-start gap-2.5 rounded-[18px] bg-[#FEF9E7] px-3.5 py-3 text-[13.5px] leading-snug text-[#5C4204]">
+            <Crown size={16} className="mt-0.5 shrink-0 text-[#A16207]" aria-hidden="true" />
             <span>
               {tier && (
                 <>
@@ -411,106 +435,55 @@ export default function CardView({
             </span>
           </p>
         )}
-        {expiry && <p className="mt-2 text-[12.5px] text-[color:var(--p-muted)]">{t.expires(dateFmt(expiry))}</p>}
-        <p className="mt-2 text-[12.5px] text-[color:var(--p-muted)]">
-          {member.visits} {t.visits}
-        </p>
+        {expiry && <p className="mt-3 px-1 text-[12.5px] leading-relaxed text-[color:var(--p-muted)]">{t.expires(dateFmt(expiry))}</p>}
       </section>
 
+      {!staffHref && (
+        <AccountBlock t={t} slug={slug} token={token} locale={locale} signedIn={viewer.signedIn} owns={viewer.owns} hasAccount={card.member.hasAccount} />
+      )}
       {!staffHref && <InstallCard locale={locale} businessName={business.name} />}
       {!staffHref && pushKey && <NotifyCard locale={locale} token={token} pushKey={pushKey} />}
 
       <section className={panel}>
-        <h2 className="text-[16px] font-semibold">{t.history}</h2>
+        <h2 className={sectionTitle}>{t.history}</h2>
         {card.events.length === 0 ? (
           <p className="mt-2 text-[13px] text-[color:var(--p-muted)]">{t.noHistory}</p>
         ) : (
-          <ul className="mt-2 divide-y divide-[color:var(--p-border)]">
-            {card.events.map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-3 py-2.5 text-[13.5px]">
-                <span className="min-w-0 truncate">
-                  {t.events[e.type] ?? e.type}
-                  {e.rewardTitle ? `: ${e.rewardTitle}` : ''}
-                </span>
-                <span className="flex shrink-0 items-center gap-3">
+          <ol className="mt-3">
+            {card.events.map((e, i) => {
+              const Icon = EVENT_ICONS[e.type] ?? Check;
+              return (
+                <li key={e.id} className="relative flex items-center gap-3 py-2">
+                  {i < card.events.length - 1 && (
+                    <span aria-hidden="true" className="absolute left-[15px] top-[38px] h-[calc(100%-30px)] w-px bg-[var(--p-border)]" />
+                  )}
+                  <span
+                    className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--p-bg)]"
+                    style={{ color: e.amount < 0 ? 'var(--p-muted)' : 'var(--p-strong)' }}
+                  >
+                    <Icon size={15} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium">
+                      {t.events[e.type] ?? e.type}
+                      {e.rewardTitle ? `: ${e.rewardTitle}` : ''}
+                    </span>
+                    <span className="block text-[12px] text-[color:var(--p-muted)]">{dateFmt(e.createdAt)}</span>
+                  </span>
                   {e.amount !== 0 && (
-                    <span className={`font-semibold tabular-nums ${e.amount > 0 ? 'text-[#23863A]' : 'text-[#D92D20]'}`}>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold tabular-nums ${e.amount > 0 ? 'bg-[#E6F7EA] text-[#1E6B2E]' : 'bg-[#FDECEC] text-[#B42318]'}`}
+                    >
                       {e.amount > 0 ? '+' : ''}
                       {e.amount}
                     </span>
                   )}
-                  <span className="text-[12px] text-[color:var(--p-muted)]">{dateFmt(e.createdAt)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+                </li>
+              );
+            })}
+          </ol>
         )}
       </section>
-
-      {!staffHref && (
-        <div className="flex flex-col items-center gap-1 pt-2 text-center">
-          <Link href={`/l/${slug}?new=1${tr ? '' : '&lang=en'}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
-            <UserPlus size={14} aria-hidden="true" /> {tr ? 'Bu telefonda başka biri için kart aç' : 'Open a card for someone else on this phone'}
-          </Link>
-          {!leaveOpen ? (
-            <button type="button" onClick={() => setLeaveOpen(true)} className="min-h-[44px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
-              {t.leave}
-            </button>
-          ) : (
-            <div className="mt-2 w-full rounded-[24px] bg-[var(--p-surface)] p-5 text-left ring-1 ring-[#FECDCA]">
-              <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
-              <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">
-                {leaveMode === 'phone' ? t.leaveBody : leaveMode === 'code' ? t.leaveBodyCode : viewer.owns ? t.leaveBodyAccount : t.leaveSignIn}
-              </p>
-              {leaveMode !== 'account' && (
-                <input
-                  value={last4}
-                  onChange={(e) =>
-                    setLast4(
-                      leaveMode === 'phone'
-                        ? e.target.value.replace(/\D/g, '').slice(0, 4)
-                        : e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8),
-                    )
-                  }
-                  inputMode={leaveMode === 'phone' ? 'numeric' : 'text'}
-                  autoComplete="off"
-                  autoCapitalize={leaveMode === 'code' ? 'characters' : undefined}
-                  spellCheck={false}
-                  className="mt-3 h-12 w-44 rounded-full border border-[color:var(--p-border)] bg-[var(--p-bg)] px-4 text-center text-[20px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)]"
-                  aria-label={leaveMode === 'phone' ? (tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone') : t.code}
-                  placeholder={leaveMode === 'phone' ? '••••' : '••••••'}
-                />
-              )}
-              {leaveMode === 'account' && !viewer.owns && (
-                <a
-                  href={`/hesap/giris?${tr ? '' : 'lang=en&'}next=${encodeURIComponent(`/l/${slug}/k/${token}`)}`}
-                  className="mt-3 inline-flex min-h-[44px] items-center text-[14px] font-medium underline underline-offset-4"
-                >
-                  {tr ? 'Hesabıma giriş yap' : 'Sign in to my account'}
-                </a>
-              )}
-              {leaveError && (
-                <p className="mt-2 text-[13px] text-[#D92D20]" role="alert">
-                  {leaveError}
-                </p>
-              )}
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setLeaveOpen(false)} className="bzl-tap min-h-[48px] flex-1 rounded-full bg-[var(--p-bg)] text-[14px] font-medium transition-transform active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]">
-                  {t.leaveCancel}
-                </button>
-                <button
-                  type="button"
-                  disabled={!leaveReady || leaveBusy}
-                  onClick={() => void leave()}
-                  className="bzl-tap flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-[#D92D20] text-[14px] font-semibold text-white transition-[background-color,transform] hover:bg-[#B42318] active:scale-[0.98] disabled:opacity-40 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D92D20] focus-visible:ring-offset-2"
-                >
-                  {leaveBusy ? <Loader2 size={16} className="animate-spin" /> : t.leaveConfirm}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {fullQr && (
         <FullScreenQr
@@ -526,6 +499,191 @@ export default function CardView({
   );
 }
 
+const EVENT_ICONS: Record<string, typeof Check> = {
+  join: Sparkles,
+  earn: Check,
+  redeem: Gift,
+  birthday: Cake,
+  expire: Hourglass,
+  adjust: SlidersHorizontal,
+};
+
+// ─── card settings (end of the page) ─────────────────────────────────────
+
+/** Live state the card settings block shares with the card (left / member). */
+interface CardShared {
+  left: boolean;
+  setLeft: (v: boolean) => void;
+  member: { phoneEnd: string | null; hasAccount: boolean } | null;
+  setMember: (m: { phoneEnd: string | null; hasAccount: boolean }) => void;
+}
+const CardSharedContext = createContext<CardShared | null>(null);
+
+/** Wraps the card page so CardView and CardLeave (in the frame's end slot) share state. */
+export function CardStateProvider({ children }: { children: React.ReactNode }) {
+  const [left, setLeft] = useState(false);
+  const [member, setMember] = useState<CardShared['member']>(null);
+  const value = useMemo(() => ({ left, setLeft, member, setMember }), [left, member]);
+  return <CardSharedContext.Provider value={value}>{children}</CardSharedContext.Provider>;
+}
+
+/**
+ * "Open a card for someone else" + leave the programme (§61). Rendered at
+ * the very end of the page, above the footer. How deleting is confirmed:
+ * the phone's last 4 digits; without a phone the account that owns the
+ * card, or the card code.
+ */
+export function CardLeave({
+  locale,
+  token,
+  slug,
+  initialMember,
+  viewerOwns,
+}: {
+  locale: PublicLocale;
+  token: string;
+  slug: string;
+  initialMember: { phoneEnd: string | null; hasAccount: boolean };
+  viewerOwns: boolean;
+}) {
+  const t = PUBLIC_COPY[locale];
+  const tr = locale === 'tr';
+  const shared = useContext(CardSharedContext);
+  const member = shared?.member ?? initialMember;
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [last4, setLast4] = useState('');
+  const [leaveBusy, setLeaveBusy] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const [gone, setGone] = useState(false);
+
+  const leaveMode: 'phone' | 'account' | 'code' = member.phoneEnd ? 'phone' : member.hasAccount ? 'account' : 'code';
+  const leaveReady = leaveMode === 'phone' ? last4.length === 4 : leaveMode === 'code' ? last4.trim().length >= 4 : viewerOwns;
+
+  const leave = async () => {
+    setLeaveBusy(true);
+    setLeaveError(null);
+    try {
+      const res = await fetch(`/api/public/loyalty/card/${token}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leaveMode === 'phone' ? { last4 } : leaveMode === 'code' ? { code: last4 } : {}),
+      });
+      if (res.ok) {
+        try {
+          window.localStorage.removeItem(`${CARD_STORAGE_PREFIX}${slug}`);
+        } catch {
+          /* storage blocked */
+        }
+        setLeaveOpen(false);
+        setGone(true);
+        shared?.setLeft(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      setLeaveError(
+        res.status === 400
+          ? leaveMode === 'code'
+            ? t.leaveWrongCode
+            : t.leaveWrong
+          : res.status === 401
+            ? t.leaveSignIn
+            : res.status === 429
+              ? t.errors.RATE_LIMIT
+              : t.errors.DEFAULT,
+      );
+    } catch {
+      setLeaveError(t.errors.DEFAULT);
+    } finally {
+      setLeaveBusy(false);
+    }
+  };
+
+  if (gone || shared?.left) return null;
+
+  const row =
+    'bzl-tap flex min-h-[52px] w-full items-center gap-3 rounded-[18px] px-3 text-left text-[14px] font-medium transition-colors duration-200 hover:bg-[var(--p-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)]';
+
+  return (
+    <section aria-labelledby="card-options" className="rounded-[28px] bg-[var(--p-surface)] p-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <h2 id="card-options" className="px-3 pb-1 pt-2 text-[13px] font-medium text-[color:var(--p-muted)]">
+        {tr ? 'Kart seçenekleri' : 'Card options'}
+      </h2>
+      <Link href={`/l/${slug}?new=1${tr ? '' : '&lang=en'}`} className={row}>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--p-bg)] text-[color:var(--p-muted)]">
+          <UserPlus size={15} aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1">{tr ? 'Bu telefonda başka biri için kart aç' : 'Open a card for someone else on this phone'}</span>
+        <ChevronRight size={16} className="shrink-0 text-[color:var(--p-muted)]" aria-hidden="true" />
+      </Link>
+      {!leaveOpen ? (
+        <button type="button" onClick={() => setLeaveOpen(true)} className={`${row} text-[#B42318]`} aria-expanded={false}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FDECEC] text-[#B42318]">
+            <Trash2 size={15} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">{t.leave}</span>
+          <ChevronRight size={16} className="shrink-0 opacity-70" aria-hidden="true" />
+        </button>
+      ) : (
+        <div className="bzl-fade m-1 mt-2 rounded-[22px] bg-[var(--p-bg)] p-4 text-left ring-1 ring-[#FECDCA]">
+          <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[color:var(--p-muted)]">
+            {leaveMode === 'phone' ? t.leaveBody : leaveMode === 'code' ? t.leaveBodyCode : viewerOwns ? t.leaveBodyAccount : t.leaveSignIn}
+          </p>
+          {leaveMode !== 'account' && (
+            <input
+              value={last4}
+              onChange={(e) =>
+                setLast4(
+                  leaveMode === 'phone'
+                    ? e.target.value.replace(/\D/g, '').slice(0, 4)
+                    : e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8),
+                )
+              }
+              inputMode={leaveMode === 'phone' ? 'numeric' : 'text'}
+              autoComplete="off"
+              autoCapitalize={leaveMode === 'code' ? 'characters' : undefined}
+              spellCheck={false}
+              className="mt-3 h-12 w-44 rounded-full border border-[color:var(--p-border)] bg-[var(--p-surface)] px-4 text-center text-[20px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-strong)] focus:ring-2 focus:ring-[color:var(--p-strong)]"
+              aria-label={leaveMode === 'phone' ? (tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone') : t.code}
+              placeholder={leaveMode === 'phone' ? '••••' : '••••••'}
+            />
+          )}
+          {leaveMode === 'account' && !viewerOwns && (
+            <a
+              href={`/hesap/giris?${tr ? '' : 'lang=en&'}next=${encodeURIComponent(`/l/${slug}/k/${token}`)}`}
+              className="mt-3 inline-flex min-h-[44px] items-center text-[14px] font-medium underline underline-offset-4"
+            >
+              {tr ? 'Hesabıma giriş yap' : 'Sign in to my account'}
+            </a>
+          )}
+          {leaveError && (
+            <p className="mt-2 text-[13px] text-[#D92D20]" role="alert">
+              {leaveError}
+            </p>
+          )}
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setLeaveOpen(false)}
+              className="bzl-tap min-h-[48px] flex-1 rounded-full bg-[var(--p-surface)] text-[14px] font-medium transition-transform active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
+            >
+              {t.leaveCancel}
+            </button>
+            <button
+              type="button"
+              disabled={!leaveReady || leaveBusy}
+              onClick={() => void leave()}
+              className="bzl-tap flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-[#D92D20] text-[14px] font-semibold text-white transition-[background-color,transform] hover:bg-[#B42318] active:scale-[0.98] disabled:opacity-40 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D92D20] focus-visible:ring-offset-2"
+            >
+              {leaveBusy ? <Loader2 size={16} className="animate-spin" /> : t.leaveConfirm}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── pieces ───────────────────────────────────────────────────────────────
 
 function CelebrationLayer({ celebration }: { celebration: Celebration }) {
@@ -535,7 +693,7 @@ function CelebrationLayer({ celebration }: { celebration: Celebration }) {
         className="bzl-toast absolute left-1/2 w-[min(92vw,420px)] rounded-[24px] px-5 py-4 text-center shadow-[0_24px_60px_-24px_rgba(0,0,0,0.5)]"
         style={{ top: 'max(14px, env(safe-area-inset-top))', background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
       >
-        <p className="text-[22px] font-semibold leading-tight tracking-[-0.01em]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <p className="text-[23px] font-medium leading-tight tracking-[-0.02em]" style={{ fontFamily: 'var(--font-heading)' }}>
           {celebration.title}
         </p>
         {celebration.body && <p className="mt-0.5 text-[14px] opacity-85">{celebration.body}</p>}
@@ -583,10 +741,20 @@ function FullScreenQr({
       onClick={onClose}
     >
       <p className="text-[15px] font-medium text-[#6B6B6B]">{businessName}</p>
-      {firstName && <p className="mt-1 text-[20px] font-semibold">{firstName}</p>}
-      { }
-      <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} className="mt-6 aspect-square w-[min(82vw,380px)]" />
-      <p className="mt-6 text-[38px] font-semibold tabular-nums tracking-[0.08em]">{formatMemberCode(code)}</p>
+      {firstName && (
+        <p className="mt-1 text-[24px] font-medium tracking-[-0.02em]" style={{ fontFamily: 'var(--font-space-grotesk), var(--font-inter), sans-serif' }}>
+          {firstName}
+        </p>
+      )}
+      <div className="mt-6 rounded-[28px] p-4 shadow-[0_0_0_1px_rgba(17,17,16,0.06),0_24px_48px_-28px_rgba(17,17,16,0.35)]">
+        <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} className="aspect-square w-[min(76vw,360px)]" />
+      </div>
+      <p
+        className="mt-6 text-[36px] font-medium tabular-nums tracking-[0.14em]"
+        style={{ fontFamily: 'var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace' }}
+      >
+        {formatMemberCode(code)}
+      </p>
       <p className="mt-3 max-w-[300px] text-center text-[14px] leading-relaxed text-[#525252]">
         {tr ? 'Ekran parlaklığını artırın; görevli QR’ı okutur ya da kodu yazar.' : 'Turn the brightness up; staff scan the QR or type the code.'}
       </p>
@@ -635,7 +803,7 @@ function InstallCard({ locale, businessName }: { locale: PublicLocale; businessN
   }, []);
 
   if (mode === 'hidden') return null;
-  const box = 'rounded-[24px] bg-[var(--p-surface)] p-4';
+  const box = 'rounded-[28px] bg-[var(--p-surface)] p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
   if (mode === 'done') {
     return (
       <p className={`${box} flex items-center gap-2 text-[14px]`}>
@@ -657,7 +825,7 @@ function InstallCard({ locale, businessName }: { locale: PublicLocale; businessN
             </p>
             <button
               type="button"
-              className="bzl-tap mt-3 inline-flex h-11 items-center rounded-full px-5 text-[14px] font-semibold transition-transform active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
+              className="bzl-tap mt-3 inline-flex h-11 items-center rounded-full px-5 text-[14px] font-semibold transition-transform active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
               style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
               onClick={async () => {
                 const p = promptRef.current;
@@ -785,9 +953,9 @@ function NotifyCard({ locale, token, pushKey }: { locale: PublicLocale; token: s
   };
 
   if (state === 'hidden') return null;
-  const box = 'rounded-[24px] bg-[var(--p-surface)] p-4';
+  const box = 'rounded-[28px] bg-[var(--p-surface)] p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
   const btn =
-    'bzl-tap mt-3 inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] transition-transform active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
+    'bzl-tap mt-3 inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] transition-transform active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
 
   return (
     <div className={`${box} flex items-start gap-3`}>
@@ -860,9 +1028,9 @@ function AccountBlock({
   const [state, setState] = useState<'idle' | 'busy' | 'verify' | 'done' | 'taken' | 'error'>(owns ? 'done' : 'idle');
   const [digits, setDigits] = useState('');
   const [message, setMessage] = useState<string | null>(null);
-  const box = 'rounded-[24px] bg-[var(--p-surface)] p-4';
+  const box = 'rounded-[28px] bg-[var(--p-surface)] p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
   const btn =
-    'bzl-tap inline-flex min-h-[48px] items-center justify-center rounded-full px-5 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] transition-transform active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
+    'bzl-tap inline-flex min-h-[48px] items-center justify-center rounded-full px-5 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] transition-transform active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
 
   const link = async (last4?: string) => {
     setState('busy');
@@ -902,10 +1070,13 @@ function AccountBlock({
   if (state === 'done') {
     return (
       <div className={`${box} flex items-center justify-between gap-3`}>
-        <span className="flex items-center gap-2 text-[14px] font-medium">
-          <UserCheck size={17} aria-hidden /> {t.inAccount}
+        <span className="flex min-w-0 items-center gap-3 text-[14px] font-medium">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--p-bg)]" style={{ color: 'var(--p-strong)' }}>
+            <UserCheck size={18} aria-hidden />
+          </span>
+          {t.inAccount}
         </span>
-        <Link href="/hesap" className="inline-flex min-h-[44px] items-center text-[14px] font-semibold underline underline-offset-4">
+        <Link href="/hesap" className="inline-flex min-h-[44px] shrink-0 items-center rounded-full px-3 text-[14px] font-semibold underline underline-offset-4">
           {tr ? 'Kartlarım' : 'My cards'}
         </Link>
       </div>
@@ -930,7 +1101,7 @@ function AccountBlock({
               onChange={(e) => setDigits(e.target.value.replace(/\D/g, '').slice(0, 4))}
               inputMode="numeric"
               autoComplete="off"
-              className="h-12 w-32 rounded-full border border-[color:var(--p-border)] bg-[var(--p-bg)] px-4 text-center text-[18px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)]"
+              className="h-12 w-32 rounded-full border border-[color:var(--p-border)] bg-[var(--p-bg)] px-4 text-center text-[18px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-strong)] focus:ring-2 focus:ring-[color:var(--p-strong)]"
               aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
               placeholder="••••"
             />
@@ -947,25 +1118,40 @@ function AccountBlock({
       );
     }
     return (
-      <div className={`${box} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
-        <span className="text-[13.5px]">{state === 'error' && message ? message : t.createAccountLead}</span>
-        <button type="button" className={btn} onClick={() => void link()} disabled={state === 'busy'}>
-          {state === 'busy' ? <Loader2 size={16} className="animate-spin" /> : t.addToAccount}
-        </button>
+      <div className={`${box} flex items-start gap-3`}>
+        <AccountChip />
+        <div className="min-w-0 flex-1">
+          <p className="text-[14.5px] font-semibold">{t.addToAccount}</p>
+          <p className={`mt-0.5 text-[12.5px] leading-relaxed ${state === 'error' && message ? 'text-[#D92D20]' : 'text-[color:var(--p-muted)]'}`} role={state === 'error' && message ? 'alert' : undefined}>
+            {state === 'error' && message ? message : t.createAccountLead}
+          </p>
+          <button type="button" className={`${btn} mt-3`} onClick={() => void link()} disabled={state === 'busy'}>
+            {state === 'busy' ? <Loader2 size={16} className="animate-spin" /> : t.addToAccount}
+          </button>
+        </div>
       </div>
     );
   }
   if (hasAccount) return null;
   const next = encodeURIComponent(`/l/${slug}/k/${token}`);
   return (
-    <div className={`${box} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
-      <span className="min-w-0">
-        <span className="block text-[14px] font-semibold">{t.createAccount}</span>
-        <span className="block text-[12.5px] text-[color:var(--p-muted)]">{t.createAccountLead}</span>
-      </span>
-      <Link href={`/hesap/kayit?${locale === 'en' ? 'lang=en&' : ''}next=${next}`} className={btn}>
-        {t.addToAccount}
-      </Link>
+    <div className={`${box} flex items-start gap-3`}>
+      <AccountChip />
+      <div className="min-w-0 flex-1">
+        <p className="text-[14.5px] font-semibold">{t.createAccount}</p>
+        <p className="mt-0.5 text-[12.5px] leading-relaxed text-[color:var(--p-muted)]">{t.createAccountLead}</p>
+        <Link href={`/hesap/kayit?${locale === 'en' ? 'lang=en&' : ''}next=${next}`} className={`${btn} mt-3`}>
+          {t.addToAccount}
+        </Link>
+      </div>
     </div>
+  );
+}
+
+function AccountChip() {
+  return (
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}>
+      <UserRound size={18} aria-hidden="true" />
+    </span>
   );
 }

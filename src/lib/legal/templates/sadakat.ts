@@ -366,7 +366,7 @@ KVKK m. 11'deki haklarınızı {{KVKK_CONTACT_EMAIL}} adresine yazarak kullanabi
 
 export const MUSTERI_HESABI_AYDINLATMA_EN = {
   title: 'Buaze Customer Account Privacy Notice',
-  description: 'How Buaze processes your customer account data (KVKK Art. 10).',
+  description: 'How Buaze processes the personal data in your free customer account: what is collected, why, how long it is kept and your rights (KVKK Art. 10).',
   effectiveLabel: 'Effective date',
   content: `## 1. Data controller
 

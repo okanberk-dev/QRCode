@@ -120,7 +120,7 @@ export default async function LoyaltyJoinPage({ params, searchParams }: PageProp
         programName={program.name}
         account={account ? { firstName: account.firstName } : null}
         hideSignIn
-        headerStart={<SoundToggle locale={locale} />}
+        headerStart={<SoundToggle locale={locale} variant="band" />}
         info={
           <PortalRewardsInfo
             locale={locale}

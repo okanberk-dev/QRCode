@@ -9,8 +9,10 @@ import { Volume2, VolumeX } from 'lucide-react';
 import { isSoundOn, playSound, setSoundOn, soundSupported, unlockAudio } from '@/lib/loyalty-sound';
 
 const VARIANTS = {
-  /** Over a photo or brand colour (customer panel header). */
+  /** Over a photo or brand colour (generic). */
   overlay: 'h-11 w-11 rounded-full bg-black/35 text-white backdrop-blur-md hover:bg-black/50 focus-visible:ring-white',
+  /** Customer panel header: readable chip colours set by LoyaltyPortalFrame (--p-chip-*). */
+  band: 'h-11 w-11 rounded-full bg-[var(--p-chip-bg)] text-[color:var(--p-chip-fg)] backdrop-blur-md hover:bg-[var(--p-chip-hover)] focus-visible:ring-[color:var(--p-chip-fg)]',
   /** On a coloured bar (staff mode header, purple). */
   dark: 'h-10 w-10 rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:ring-white',
   /** On a panel card: grey circle, no border (Pano icon button). */

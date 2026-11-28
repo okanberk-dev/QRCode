@@ -27,7 +27,7 @@ import SoundToggle from '@/components/loyalty/SoundToggle';
 import { loadStaffCard, pickCardView, staffPanelHref } from '@/lib/loyalty-staff';
 import { vapidPublicKey } from '@/lib/web-push';
 import { pickPublicLocale } from '../../../loyalty-public';
-import CardView from './CardView';
+import CardView, { CardLeave, CardStateProvider } from './CardView';
 import StaffCounterView from './StaffCounterLazy';
 
 export const dynamic = 'force-dynamic';
@@ -133,39 +133,52 @@ export default async function LoyaltyCardPage({ params, searchParams }: PageProp
           firstName={dto.member.firstName}
         />
       )}
-      <LoyaltyPortalFrame
-        locale={locale}
-        slug={slug}
-        portal={dto.portal}
-        business={dto.business}
-        accentColor={card.program.accentColor}
-        programName={card.program.name}
-        account={account ? { firstName: account.firstName } : null}
-        headerStart={<SoundToggle locale={locale} />}
-        info={
-          <PortalRewardsInfo
-            locale={locale}
-            earnLine={earnRuleLine(card.program, locale)}
-            rewardLines={dto.program.rewards.map((r) => rewardRuleLine(dto.program.kind, r, locale))}
-            birthdayReward={dto.program.birthdayReward}
-            tiers={dto.program.tiers}
-            terms={dto.program.terms}
-            branchNames={dto.business.branchNames}
-          />
-        }
-      >
-        <CardView
+      <CardStateProvider>
+        <LoyaltyPortalFrame
           locale={locale}
-          token={token}
           slug={slug}
-          initial={dto}
-          qrDataUrl={qrDataUrl}
-          justJoined={sp.new === '1'}
-          viewer={{ signedIn: Boolean(account), owns: Boolean(account && card.member.customerAccountId === account.id) }}
-          staffHref={staff ? `/l/${slug}/k/${token}?from=customer${locale === 'en' ? '&lang=en' : ''}` : null}
-          pushKey={vapidPublicKey()}
-        />
-      </LoyaltyPortalFrame>
+          portal={dto.portal}
+          business={dto.business}
+          accentColor={card.program.accentColor}
+          programName={card.program.name}
+          account={account ? { firstName: account.firstName } : null}
+          headerStart={<SoundToggle locale={locale} variant="band" />}
+          info={
+            <PortalRewardsInfo
+              locale={locale}
+              earnLine={earnRuleLine(card.program, locale)}
+              rewardLines={dto.program.rewards.map((r) => rewardRuleLine(dto.program.kind, r, locale))}
+              birthdayReward={dto.program.birthdayReward}
+              tiers={dto.program.tiers}
+              terms={dto.program.terms}
+              branchNames={dto.business.branchNames}
+            />
+          }
+          end={
+            staff ? null : (
+              <CardLeave
+                locale={locale}
+                token={token}
+                slug={slug}
+                initialMember={{ phoneEnd: dto.member.phoneEnd, hasAccount: dto.member.hasAccount }}
+                viewerOwns={Boolean(account && card.member.customerAccountId === account.id)}
+              />
+            )
+          }
+        >
+          <CardView
+            locale={locale}
+            token={token}
+            slug={slug}
+            initial={dto}
+            qrDataUrl={qrDataUrl}
+            justJoined={sp.new === '1'}
+            viewer={{ signedIn: Boolean(account), owns: Boolean(account && card.member.customerAccountId === account.id) }}
+            staffHref={staff ? `/l/${slug}/k/${token}?from=customer${locale === 'en' ? '&lang=en' : ''}` : null}
+            pushKey={vapidPublicKey()}
+          />
+        </LoyaltyPortalFrame>
+      </CardStateProvider>
     </>
   );
 }

@@ -19,6 +19,7 @@ import { getHealthSnapshotDelta } from '@/lib/reputation/snapshot';
 import { getProfileRecommendations, type HealthSnapshotInput } from '@/lib/reputation/health-score';
 import { alreadySent, recordSent } from '@/lib/email/lifecycle';
 import { sendMonthlyHealthReportEmail } from '@/lib/email';
+import { loadQrReplyCoverage } from '@/lib/reputation/reply-stats';
 import * as Sentry from '@sentry/nextjs';
 import { notifyOpsOfMailFailure } from '@/lib/email/ops-alert';
 
@@ -154,7 +155,9 @@ async function runMonthlyHealthReport(): Promise<MonthlyHealthReportSummary> {
       const ownerLocale = (r.user?.locale === 'en' ? 'en' : 'tr') as 'tr' | 'en';
       const recs = getProfileRecommendations(snapshotInput, ownerLocale);
 
+      const replyBase = await loadQrReplyCoverage(r.id).catch(() => null);
       const ok = await sendMonthlyHealthReportEmail({
+        replyBase,
         to: recipient,
         locale: ownerLocale,
         ownerName: r.user?.name ?? null,

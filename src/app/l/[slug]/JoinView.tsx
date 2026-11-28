@@ -44,13 +44,14 @@ const INTENT_KEY = (slug: string) => `buaze:loyalty-google:${slug}`;
 // Pill fields and buttons on borderless 24 px cards; colours come from the
 // business's panel theme (--p-*), so only the shapes are Buaze's.
 const FIELD =
-  'h-[52px] rounded-full border px-5 text-[16px] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)] bg-[var(--p-bg)] border-[color:var(--p-border)] text-[color:var(--p-text)] placeholder:text-[color:var(--p-muted)] placeholder:opacity-70 motion-reduce:transition-none';
+  'h-[52px] rounded-full border px-5 text-[16px] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[color:var(--p-strong)] focus:ring-2 focus:ring-[color:var(--p-strong)] bg-[var(--p-bg)] border-[color:var(--p-border)] text-[color:var(--p-text)] placeholder:text-[color:var(--p-muted)] placeholder:opacity-70 motion-reduce:transition-none';
 const INPUT = `mt-1.5 w-full ${FIELD}`;
-const PANEL = 'rounded-[24px] p-5 space-y-4 bg-[var(--p-surface)]';
+const PANEL = 'rounded-[28px] p-5 sm:p-6 space-y-4 bg-[var(--p-surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_18px_40px_-28px_rgba(0,0,0,0.25)]';
+const TITLE = 'text-[21px] font-medium leading-tight tracking-[-0.02em] [font-family:var(--font-heading)]';
 const PRIMARY =
-  'bzl-tap flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full text-[16.5px] font-semibold transition-[opacity,transform] duration-200 active:scale-[0.98] hover:opacity-95 disabled:opacity-40 motion-reduce:transition-none bg-[var(--p-accent)] text-[color:var(--p-on-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
+  'bzl-tap flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full text-[16.5px] font-semibold transition-[opacity,transform] duration-200 active:scale-[0.98] hover:opacity-95 disabled:opacity-40 motion-reduce:transition-none bg-[var(--p-accent)] text-[color:var(--p-on-accent)] shadow-[0_10px_24px_-14px_rgba(0,0,0,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-surface)]';
 const SECONDARY =
-  'bzl-tap flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-[opacity,transform] duration-200 active:scale-[0.98] hover:opacity-90 motion-reduce:transition-none bg-[var(--p-bg)] text-[color:var(--p-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-surface)]';
+  'bzl-tap flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-[opacity,transform] duration-200 active:scale-[0.98] hover:opacity-90 motion-reduce:transition-none bg-[var(--p-bg)] text-[color:var(--p-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-surface)]';
 
 type JoinResponse = { status?: string; cardPath?: string | null; emailSent?: boolean; code?: string } | null;
 
@@ -233,8 +234,11 @@ export default function JoinView({ locale, slug, businessName, source, account, 
     return false;
   };
 
+  // Classic Google button (2026-11-28, kullanıcı kararı): one tap opens
+  // Google straight away, like signing up on the site. Acceptance is the
+  // "Devam ederek … kabul etmiş olursunuz" line under the button; only the
+  // optional marketing opt-in stays a checkbox (never pre-checked).
   const joinWithGoogle = async () => {
-    if (!requireConsent()) return;
     // Inside the tap: lets the card page play its sound after the redirect.
     unlockAudio();
     haptic(10);
@@ -326,7 +330,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
   const linkCls = 'font-medium underline underline-offset-2';
 
   const consentBoxes = (withAccountTerms: boolean) => (
-    <div className="space-y-3 pt-1">
+    <div className="space-y-3 rounded-[20px] bg-[var(--p-bg)] p-4">
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
         <input
           ref={consentRef}
@@ -338,7 +342,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
           }}
           aria-invalid={consentError || undefined}
           aria-describedby={consentError ? 'join-consent-error' : undefined}
-          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]"
+          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[color:var(--p-text)]"
         />
         <span>
           {t.consentAll}{' '}
@@ -367,12 +371,12 @@ export default function JoinView({ locale, slug, businessName, source, account, 
         </span>
       </label>
       {consentError && (
-        <p id="join-consent-error" className="px-1 text-[13px] font-medium text-[#B42318]" role="alert">
+        <p id="join-consent-error" className="rounded-[12px] bg-[#FEF3F2] px-3 py-2 text-[13px] font-medium text-[#B42318]" role="alert">
           {t.consentMissing}
         </p>
       )}
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
-        <input type="checkbox" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]" />
+        <input type="checkbox" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[color:var(--p-text)]" />
         <span>{t.marketing}</span>
       </label>
     </div>
@@ -381,12 +385,12 @@ export default function JoinView({ locale, slug, businessName, source, account, 
   const messages = (
     <>
       {error && (
-        <p className="rounded-[20px] bg-[#FEF3F2] px-4 py-3 text-[14px] text-[#B42318]" role="alert">
+        <p className="rounded-[16px] bg-[#FEF3F2] px-4 py-3 text-[14px] leading-snug text-[#B42318]" role="alert">
           {error}
         </p>
       )}
       {notice && (
-        <p className="rounded-[20px] bg-[#EEF8F0] px-4 py-3 text-[14px] text-[#1E7A35]" role="status">
+        <p className="rounded-[16px] bg-[#EEF8F0] px-4 py-3 text-[14px] leading-snug text-[#1E7A35]" role="status">
           {notice}
         </p>
       )}
@@ -465,7 +469,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
         }}
       >
         <div className="space-y-1 px-1">
-          <p className="text-[18px] font-semibold tracking-[-0.01em]">{t.googleNameTitle}</p>
+          <p className={TITLE}>{t.googleNameTitle}</p>
           <p className="text-[13.5px]" style={muted}>
             {t.googleNameLead}
           </p>
@@ -487,7 +491,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
         }}
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#111110] text-[18px] font-semibold text-white">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--p-accent)] text-[18px] font-semibold text-[color:var(--p-on-accent)]">
             {account.firstName.charAt(0)}
           </span>
           <div className="min-w-0">
@@ -534,7 +538,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
           void join(false);
         }}
       >
-        <p className="px-1 text-[18px] font-semibold tracking-[-0.01em]">{t.joinTitle}</p>
+        <p className={`px-1 ${TITLE}`}>{t.joinTitle}</p>
         {nameFields}
         {moreToggle(t.optionalMore)}
         {more && (
@@ -590,27 +594,56 @@ export default function JoinView({ locale, slug, businessName, source, account, 
     body = (
       <div className={PANEL}>
         <div className="space-y-1 px-1">
-          <p className="text-[18px] font-semibold tracking-[-0.01em]">{t.joinTitle}</p>
+          <p className={TITLE}>{t.joinTitle}</p>
           <p className="text-[13.5px] leading-relaxed" style={muted}>
             {t.googleJoinLead}
           </p>
         </div>
-        {consentBoxes(true)}
         {messages}
-        <button type="button" onClick={() => void joinWithGoogle()} disabled={busy !== null} className={PRIMARY}>
+        <button
+          type="button"
+          onClick={() => void joinWithGoogle()}
+          disabled={busy !== null}
+          className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-full border border-[#DADCE0] bg-white px-5 text-[15px] font-medium text-[#1F1F1F] shadow-[0_1px_2px_rgba(60,64,67,0.15)] transition-[background-color,box-shadow,scale] duration-200 hover:bg-[#F8F9FA] hover:shadow-[0_1px_3px_rgba(60,64,67,0.25)] active:scale-[0.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F1F1F] focus-visible:ring-offset-2"
+        >
           {busy === 'google' ? (
             <>
               <Loader2 size={18} className="animate-spin" /> {t.googleJoinBusy}
             </>
           ) : (
             <>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white">
-                <GoogleMark />
-              </span>
+              <GoogleMark />
               {t.googleJoin}
             </>
           )}
         </button>
+        <p className="px-1 text-center text-[12.5px] leading-relaxed" style={muted}>
+          {t.googleLegalPrefix}{' '}
+          <a href={`/l/${slug}/kosullar${legalQ}`} target="_blank" rel="noopener" className={linkCls}>
+            {t.googleLegalTerms}
+          </a>{' '}
+          {t.googleLegalAnd}{' '}
+          <a href={accountLegal.terms} target="_blank" rel="noopener" className={linkCls}>
+            {t.googleLegalAccount}
+          </a>{' '}
+          {t.googleLegalSuffix}{' '}
+          <a href={`/l/${slug}/aydinlatma${legalQ}`} target="_blank" rel="noopener" className={linkCls}>
+            {t.privacyLink}
+          </a>
+          {' · '}
+          <a href={accountLegal.privacy} target="_blank" rel="noopener" className={linkCls}>
+            {t.accountPrivacyLink}
+          </a>
+        </p>
+        <label className="flex cursor-pointer items-start gap-3 rounded-[16px] bg-[var(--p-bg)] px-4 py-3 text-[13px] leading-relaxed">
+          <input
+            type="checkbox"
+            checked={form.marketing}
+            onChange={(e) => set('marketing', e.target.checked)}
+            className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[color:var(--p-text)]"
+          />
+          <span>{t.marketing}</span>
+        </label>
         <div className="flex items-center gap-3 text-[13px]" style={muted}>
           <span className="h-px flex-1" style={{ background: 'var(--p-border)' }} />
           {t.or}
@@ -654,24 +687,33 @@ export default function JoinView({ locale, slug, businessName, source, account, 
       </div>
 
       {program.welcomeBonus > 0 && (
-        <p className="flex items-center justify-center gap-1.5 text-center text-[13.5px] font-medium" style={muted}>
-          <Sparkles size={15} aria-hidden="true" />
-          {locale === 'tr'
-            ? `Katılınca ${program.welcomeBonus} ${program.kind === 'stamps' ? 'damga' : 'puan'} hediye`
-            : `${program.welcomeBonus} ${program.kind === 'stamps' ? (program.welcomeBonus === 1 ? 'stamp' : 'stamps') : 'points'} free when you join`}
+        <p className="flex justify-center">
+          <span className="inline-flex min-h-[36px] items-center gap-2 rounded-full bg-[var(--p-surface)] py-1.5 pl-1.5 pr-4 text-[13.5px] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--p-accent)] text-[color:var(--p-on-accent)]">
+              <Sparkles size={13} aria-hidden="true" />
+            </span>
+            {locale === 'tr'
+              ? `Katılınca ${program.welcomeBonus} ${program.kind === 'stamps' ? 'damga' : 'puan'} hediye`
+              : `${program.welcomeBonus} ${program.kind === 'stamps' ? (program.welcomeBonus === 1 ? 'stamp' : 'stamps') : 'points'} free when you join`}
+          </span>
         </p>
       )}
 
       {source === 'nfc' && (
-        <p className="flex items-start gap-2 text-[13px]" style={muted}>
-          <Nfc size={16} className="mt-0.5 shrink-0" aria-hidden /> {t.nfcHint}
+        <p className="flex items-start gap-2.5 rounded-[20px] bg-[var(--p-surface)] px-4 py-3 text-[13px] leading-relaxed" style={muted}>
+          <Nfc size={16} className="mt-0.5 shrink-0" style={{ color: 'var(--p-strong)' }} aria-hidden /> {t.nfcHint}
         </p>
       )}
 
       {saved && (
-        <a href={saved} className="bzl-tap flex min-h-[56px] items-center justify-between gap-3 rounded-full bg-[#F4FBDC] py-2 pl-5 pr-2 text-[#111110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2">
-          <span className="text-[14px]">{t.savedOnDevice}</span>
-          <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-[#111110] px-4 text-[14px] font-semibold text-white">{t.openMyCard} →</span>
+        <a
+          href={saved}
+          className="bzl-tap flex min-h-[60px] items-center justify-between gap-3 rounded-full bg-[var(--p-surface)] py-2 pl-5 pr-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-transform duration-200 active:scale-[0.99] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
+        >
+          <span className="text-[14px] font-medium">{t.savedOnDevice}</span>
+          <span className="inline-flex h-11 shrink-0 items-center rounded-full bg-[var(--p-accent)] px-4 text-[14px] font-semibold text-[color:var(--p-on-accent)]">
+            {t.openMyCard} →
+          </span>
         </a>
       )}
 

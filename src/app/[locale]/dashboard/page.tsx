@@ -313,6 +313,9 @@ async function renderDashboardPage({
               WHERE f.restaurant_id IN (${Prisma.join(restIds)})
                 AND f.rating <= 3
                 AND f.redirected = FALSE
+                -- §58: only feedback that can get a reply (customer e-mail)
+                -- is pending or counts toward the reply rate.
+                AND NULLIF(btrim(f.email), '') IS NOT NULL
             ) l
           ) low
         `)

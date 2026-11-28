@@ -13,15 +13,16 @@ import { FeedbackDetailSkeleton } from './_components/FeedbackDetail';
 export default function Loading() {
   return (
     <div className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
-      {/* Header — breadcrumb, title + summary, actions (same box as the page). */}
-      <div className="px-4 pb-2 pt-5 sm:px-7 lg:pb-3 lg:pt-8">
+      {/* Header — breadcrumb, title + summary, actions (same box as the page;
+          one compact row on lg). */}
+      <div className="px-4 pb-2 pt-5 sm:px-7 lg:pb-1 lg:pt-5">
         <div className="hidden h-[22px] items-center sm:flex">
           <SkBox className="h-4 w-40" />
         </div>
-        <div className="flex flex-col gap-3 sm:mt-2.5 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
-            <SkBox className="h-9 w-40" />
-            <div className="mt-1.5 flex min-h-[22px] items-center">
+        <div className="flex flex-col gap-3 sm:mt-2.5 md:flex-row md:items-end md:justify-between lg:items-center">
+          <div className="min-w-0 lg:flex lg:items-center lg:gap-4">
+            <SkBox className="h-9 w-40 lg:w-36" />
+            <div className="mt-1.5 flex min-h-[22px] items-center lg:mt-0">
               <SkBox className="h-4 w-56 max-w-full" />
             </div>
           </div>

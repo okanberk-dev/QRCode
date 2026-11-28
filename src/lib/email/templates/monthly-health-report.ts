@@ -47,6 +47,13 @@ export interface MonthlyHealthReportParams {
   };
   recommendations: MonthlyHealthReportRecommendation[];
   appUrl: string;
+  /**
+   * 1–3★ feedback the owner could answer (customer left an e-mail) and how
+   * many got a reply (§58). When present the "Yanıt oranı" card uses it;
+   * the snapshot's feedbackReplied / feedbackTotal divide by every rating,
+   * high ratings that need no reply included.
+   */
+  replyBase?: { total: number; replied: number } | null;
 }
 
 const SEVERITY_COLORS: Record<MonthlyHealthReportRecommendation['severity'], { bg: string; fg: string; label: string }> = {
@@ -193,8 +200,11 @@ export function renderMonthlyHealthReport(
   const statRow = (left: string, right: string) => `
     <tr>${left}${statGap}${right}</tr>`;
 
-  const replyRate =
-    params.metrics.feedbackTotal && params.metrics.feedbackTotal > 0
+  const replyRate = params.replyBase
+    ? params.replyBase.total > 0
+      ? `%${Math.round((params.replyBase.replied / params.replyBase.total) * 100)}`
+      : '—'
+    : params.metrics.feedbackTotal && params.metrics.feedbackTotal > 0
       ? `%${Math.round(((params.metrics.feedbackReplied ?? 0) / params.metrics.feedbackTotal) * 100)}`
       : '—';
 

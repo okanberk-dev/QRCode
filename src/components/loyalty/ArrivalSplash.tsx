@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Hand, Nfc, ScanLine, Volume2, VolumeX } from 'lucide-react';
 import { haptic, isSoundOn, playSound, setSoundOn, soundSupported, unlockAudio } from '@/lib/loyalty-sound';
+import PortalRings from './PortalRings';
+import { GRAIN_IMAGE, INK, mix } from './portal-colors';
 
 const AUTO_CLOSE_MS = 7000;
 const EXIT_MS = 760;
@@ -93,6 +95,12 @@ export default function ArrivalSplash({
   // background, the band colour as ink (white on dark brands, graphite on light).
   const chipBg = coverUrl ? '#FFFFFF' : onBand;
   const chipInk = coverUrl ? '#111110' : band;
+  const ink = coverUrl ? '#FFFFFF' : onBand;
+  const inkIsDark = !coverUrl && onBand === INK;
+  // Soft glass on the band: a light veil on light brands, a dark one on dark brands and photos.
+  const glass = inkIsDark ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.16)';
+  const ring = inkIsDark ? 'rgba(17,17,16,0.22)' : 'rgba(255,255,255,0.5)';
+  const band2 = inkIsDark ? mix(band, '#000000', 0.12) : mix(band, '#FFFFFF', 0.12);
   const title =
     mode === 'card'
       ? firstName
@@ -111,7 +119,7 @@ export default function ArrivalSplash({
       ref={rootRef}
       data-leaving={leaving ? 'true' : 'false'}
       className="bzl-splash bzl-tap fixed inset-0 z-[90] flex flex-col overflow-hidden"
-      style={{ background: band, color: onBand }}
+      style={{ background: `linear-gradient(165deg, ${band} 0%, ${band} 40%, ${band2} 100%)`, color: onBand }}
       onPointerUp={(e) => close(true, e.clientX, e.clientY)}
       onKeyDown={(e) => {
         if (e.key === 'Escape') close(false);
@@ -134,23 +142,23 @@ export default function ArrivalSplash({
             className="bzl-aurora absolute -bottom-1/4 -right-1/4 h-[70vh] w-[70vh] rounded-full opacity-40 blur-3xl [animation-delay:-6s]"
             style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 60%)' }}
           />
+          <div className="absolute inset-0" style={{ backgroundImage: GRAIN_IMAGE, opacity: 0.12, mixBlendMode: 'soft-light' }} />
+          <PortalRings className="absolute -right-24 -top-24 h-[340px] w-[340px]" style={{ opacity: 0.14 }} />
+          <PortalRings className="absolute -bottom-32 -left-28 h-[300px] w-[300px]" style={{ opacity: 0.08 }} />
         </div>
       )}
 
-      <div
-        className="relative flex flex-1 flex-col items-center justify-center px-6 text-center"
-        style={{
-          paddingTop: 'max(24px, env(safe-area-inset-top))',
-          color: coverUrl ? '#FFFFFF' : onBand,
-        }}
-      >
+      <div className="relative flex justify-center px-6" style={{ paddingTop: 'max(20px, calc(env(safe-area-inset-top) + 12px))', color: ink }}>
         <p
-          className="bzl-rise mb-8 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium backdrop-blur-md"
-          style={{ background: 'rgba(255,255,255,0.16)', animationDelay: '120ms' }}
+          className="bzl-rise inline-flex min-h-[34px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium backdrop-blur-md"
+          style={{ background: glass, animationDelay: '120ms' }}
         >
           {source === 'nfc' ? <Nfc size={14} aria-hidden="true" /> : <ScanLine size={14} aria-hidden="true" />}
           {sourceLabel}
         </p>
+      </div>
+
+      <div className="relative flex flex-1 flex-col items-center justify-center px-6 text-center" style={{ color: ink }}>
 
         <div className="relative flex h-[132px] w-[132px] items-center justify-center">
           {[0, 1, 2].map((i) => (
@@ -158,7 +166,7 @@ export default function ArrivalSplash({
               key={i}
               aria-hidden="true"
               className="bzl-ripple absolute inset-0 rounded-[38px] border-2"
-              style={{ borderColor: 'rgba(255,255,255,0.55)', animationDelay: `${i * 0.8}s` }}
+              style={{ borderColor: ring, animationDelay: `${i * 0.8}s` }}
             />
           ))}
           <div
@@ -177,7 +185,7 @@ export default function ArrivalSplash({
         <p
           role="heading"
           aria-level={2}
-          className="bzl-rise mt-8 max-w-[340px] text-[32px] font-semibold leading-[1.05] tracking-[-0.02em]"
+          className="bzl-rise mt-9 max-w-[340px] text-[34px] font-medium leading-[1.05] tracking-[-0.03em] [overflow-wrap:anywhere]"
           style={{ fontFamily: 'var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif', animationDelay: '220ms' }}
         >
           {businessName}
@@ -189,7 +197,7 @@ export default function ArrivalSplash({
 
       <div
         className="relative flex flex-col items-center gap-3 px-6"
-        style={{ paddingBottom: 'max(28px, calc(env(safe-area-inset-bottom) + 20px))', color: coverUrl ? '#FFFFFF' : onBand }}
+        style={{ paddingBottom: 'max(28px, calc(env(safe-area-inset-bottom) + 20px))', color: ink }}
       >
         <button
           ref={buttonRef}
@@ -225,8 +233,8 @@ export default function ArrivalSplash({
                 setSoundOn(next);
               }
             }}
-            className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full px-4 text-[13px] font-medium opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
-            style={{ background: 'rgba(255,255,255,0.16)' }}
+            className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full px-4 text-[13px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            style={{ background: glass }}
           >
             {sound ? <Volume2 size={14} aria-hidden="true" /> : <VolumeX size={14} aria-hidden="true" />}
             {sound ? (tr ? 'Sesli karşılama açık' : 'Sound on') : tr ? 'Ses kapalı' : 'Sound off'}

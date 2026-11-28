@@ -9,7 +9,10 @@
  *   the inbox by default, never sent to AI, not counted as a review.
  * - Geri bildirim (feedback): a rating submitted with the private form
  *   (`redirected = false`). These are the inbox rows.
- * - Yanıt bekleyen (pending): 1–3★ feedback with no reply, all time.
+ * - Yanıt bekleyen (pending): 1–3★ feedback with no reply where the customer
+ *   left an e-mail, all time. Replies go out by e-mail only, so feedback
+ *   without an e-mail can never be answered: no composer, no "needs reply"
+ *   chip, not counted as pending and not in the reply-rate denominator.
  * Pure: no Prisma, no React — tests pin the math (tests/feedback-metrics.test.ts).
  */
 
@@ -17,6 +20,44 @@
 export const FEEDBACK_ONLY = { redirected: false } as const;
 /** Prisma `where` fragment for redirect events. */
 export const REDIRECTS_ONLY = { redirected: true } as const;
+
+/** A reply can be sent: the customer left an e-mail (replies go out by e-mail). */
+export function hasReplyChannel(email: string | null | undefined): boolean {
+  return typeof email === 'string' && email.trim() !== '';
+}
+
+/** Ratings at or below this are "low": the only feedback that gets a reply. */
+export const LOW_RATING_MAX = 3;
+
+/** 1–3★, not replied yet, and the customer left an e-mail. */
+export function needsReply(f: {
+  rating: number;
+  isReplied?: boolean | null;
+  customerEmail?: string | null;
+}): boolean {
+  return f.rating <= LOW_RATING_MAX && f.isReplied !== true && hasReplyChannel(f.customerEmail);
+}
+
+type EmailClause = { email: { not: null } } | { NOT: { email: string } };
+
+/**
+ * Prisma `where` fragment: the customer left a usable e-mail. Its single
+ * `AND` key must not be spread into a where that has its own `AND`.
+ */
+export const HAS_EMAIL: { AND: EmailClause[] } = {
+  AND: [{ email: { not: null } }, { NOT: { email: '' } }],
+};
+
+/** Prisma `where` fragment: low feedback that can and should get a reply. */
+export const NEEDS_REPLY: {
+  rating: { lte: number };
+  replies: { none: Record<string, never> };
+  AND: EmailClause[];
+} = {
+  rating: { lte: LOW_RATING_MAX },
+  replies: { none: {} },
+  ...HAS_EMAIL,
+};
 
 /** Reviews older than this when they get their first reply are a backlog reply. */
 export const BACKLOG_REPLY_DAYS = 30;
@@ -67,14 +108,14 @@ export const METRICS: Record<MetricKey, { tr: string; en: string; infoTr: string
   pending: {
     tr: 'Yanıt bekleyen',
     en: 'Awaiting reply',
-    infoTr: 'Henüz yanıt verilmemiş 1–3 yıldızlı geri bildirimler (tüm zamanlar).',
-    infoEn: '1–3 star feedback with no reply yet (all time).',
+    infoTr: 'Müşterinin e-posta bıraktığı, henüz yanıt verilmemiş 1–3 yıldızlı geri bildirimler (tüm zamanlar). E-posta bırakmayan müşteriye yanıt gönderilemediği için sayılmaz.',
+    infoEn: '1–3 star feedback with no reply yet where the customer left an e-mail (all time). Feedback without an e-mail cannot be answered, so it is not counted.',
   },
   lowReplyRate: {
     tr: 'Yanıt oranı',
     en: 'Reply rate',
-    infoTr: 'Seçili dönemde gelen 1–3 yıldızlı geri bildirimlerden yanıtlananların oranı.',
-    infoEn: 'Share of 1–3 star feedback in the selected period that got a reply.',
+    infoTr: 'Seçili dönemde gelen ve müşterinin e-posta bıraktığı 1–3 yıldızlı geri bildirimlerden yanıtlananların oranı.',
+    infoEn: 'Share of 1–3 star feedback in the selected period, where the customer left an e-mail, that got a reply.',
   },
   replyTime: {
     tr: 'Yanıt süresi',

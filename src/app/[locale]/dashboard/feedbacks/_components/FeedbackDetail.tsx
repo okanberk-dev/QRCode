@@ -2,8 +2,8 @@
 
 import { useLayoutEffect, useRef } from 'react';
 
-import { redirectBadgeLabel } from '@/lib/feedback-metrics';
-import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles } from 'lucide-react';
+import { hasReplyChannel, redirectBadgeLabel } from '@/lib/feedback-metrics';
+import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MailX, MessageSquare, QrCode, Sparkles } from 'lucide-react';
 import { PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
@@ -124,8 +124,12 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
   const lastReplyFailed =
     sentReplies.length > 0 && sentReplies[sentReplies.length - 1]?.status === 'failed';
   const isHigh = active.rating >= 4;
-  const canReply = !isHigh && (!active.isReplied || lastReplyFailed);
-  const showAiCard = !isHigh && !active.isReplied;
+  // Replies go out by e-mail only (§58): without a customer e-mail there is
+  // no composer, no AI draft and no "needs reply" — a short note instead.
+  const hasEmail = hasReplyChannel(active.customerEmail);
+  const canReply = !isHigh && hasEmail && (!active.isReplied || lastReplyFailed);
+  const showAiCard = !isHigh && hasEmail && !active.isReplied;
+  const noReplyChannel = !isHigh && !hasEmail && !active.isReplied;
 
   const aspects = [
     { key: 'food', label: isTr ? 'Yemek' : 'Food', value: active.foodRating },
@@ -459,6 +463,36 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                   : isTr
                     ? 'Yüksek puanlı bir QR geri bildirimi. Takip etmek isterseniz işaretleyebilirsiniz.'
                     : 'This is high-rated QR feedback. You can still flag it to follow up.'}
+              </p>
+            </div>
+          ) : noReplyChannel ? (
+            <div role="note" className="mt-6 flex items-start gap-3 rounded-[20px] bg-[#F6F6F6] p-4">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink"
+              >
+                <MailX size={16} strokeWidth={2} />
+              </span>
+              <p className="min-w-0 pt-0.5 text-[14px] leading-[1.55] text-[#525252]">
+                <strong className="block font-medium text-pn-ink">
+                  {isTr ? 'Müşteri e-posta bırakmadı.' : 'No customer e-mail.'}
+                </strong>
+                {isTr
+                  ? 'Yanıtlar e-postayla gittiği için bu geri bildirime buradan yanıt gönderilemez. Takip etmek isterseniz işaretleyebilir ya da beklemeye alabilirsiniz.'
+                  : 'Replies go out by e-mail, so this feedback cannot be answered from here. You can flag it or mark it pending to follow up.'}
+                {active.customerPhone && (
+                  <>
+                    {' '}
+                    {isTr ? 'Müşterinin bıraktığı telefon:' : 'Phone the customer left:'}{' '}
+                    <a
+                      href={`tel:${active.customerPhone.replace(/[^\d+]/g, '')}`}
+                      className="font-medium text-pn-ink underline-offset-2 hover:underline"
+                    >
+                      {active.customerPhone}
+                    </a>
+                    .
+                  </>
+                )}
               </p>
             </div>
           ) : !lastReplyFailed ? (

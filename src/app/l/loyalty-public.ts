@@ -11,6 +11,11 @@ export function pickPublicLocale(langParam: string | undefined, acceptLanguage: 
 export const PUBLIC_COPY = {
   tr: {
     googleJoin: 'Google ile katıl',
+    googleLegalPrefix: 'Devam ederek',
+    googleLegalAnd: 've',
+    googleLegalSuffix: 'kabul etmiş, aydınlatma metinlerini okumuş olursunuz.',
+    googleLegalTerms: 'üyelik koşullarını',
+    googleLegalAccount: 'Buaze hesap koşullarını',
     googleJoinBusy: 'Google açılıyor…',
     googleJoinLead: 'Tek dokunuşla katılın; kartınız ücretsiz Buaze hesabınızda saklanır, telefon değiştirseniz de kaybolmaz.',
     googleUnavailable: 'Google ile katılım şu an kullanılamıyor. Google olmadan devam edin.',
@@ -127,6 +132,11 @@ export const PUBLIC_COPY = {
   },
   en: {
     googleJoin: 'Join with Google',
+    googleLegalPrefix: 'By continuing you accept the',
+    googleLegalAnd: 'and the',
+    googleLegalSuffix: 'and confirm you have read the privacy notices.',
+    googleLegalTerms: 'membership terms',
+    googleLegalAccount: 'Buaze account terms',
     googleJoinBusy: 'Opening Google…',
     googleJoinLead: 'Join in one tap; your card is kept in a free Buaze account, even if you change phones.',
     googleUnavailable: 'Joining with Google is not available right now. Continue without Google.',

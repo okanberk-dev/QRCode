@@ -1,6 +1,8 @@
 // The loyalty card itself (CLAUDE.md §60) — one renderer for the panel
-// preview, the counter screen and the customer's card page, so what the
-// owner designs is exactly what the customer sees. No hooks, no fetch.
+// preview, the counter screen, the customer's card page and the marketing
+// page, so what the owner designs is exactly what the customer sees. No
+// hooks, no fetch. Static look is inline (no CSS file needed): only the
+// optional `bzl-*` motion classes come from loyalty-motion.css.
 import { Check, Gift } from 'lucide-react';
 import {
   formatMemberCode,
@@ -10,21 +12,15 @@ import {
   type LoyaltyKind,
   type LoyaltyRewardLike,
 } from '@/lib/loyalty';
+import { BUAZE_LIME, GRAIN_IMAGE, INK, alpha, contrast, inkOn, isHexColor, mix } from './portal-colors';
 
-// Buaze default when the business picked no card colour; a chosen colour wins.
+// Buaze default when the business picked no card colour: black card with
+// lime stamps (§64). A colour the business chose always wins (its data).
 const DEFAULT_BG = '#111110';
-const INK = '#111110';
-
-function isLight(hex: string): boolean {
-  const m = /^#([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return false;
-  const n = parseInt(m[1], 16);
-  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
-    const c = v / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4;
-}
+// A hand-pressed stamp is never perfectly straight.
+const TILT = [-8, 5, -3, 7, -5, 3, -7, 6, -2, 4];
+const HEADING_FONT = "var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif";
+const CODE_FONT = "var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace";
 
 export interface LoyaltyCardFaceProps {
   businessName: string;
@@ -44,6 +40,13 @@ export interface LoyaltyCardFaceProps {
   shine?: boolean;
 }
 
+/** Columns of the stamp grid: one row up to 5, two rows up to 12, then three. */
+function stampColumns(size: number): number {
+  if (size <= 5) return size;
+  if (size <= 12) return Math.ceil(size / 2);
+  return Math.ceil(size / 3);
+}
+
 export function LoyaltyCardFace({
   businessName,
   programName,
@@ -60,24 +63,45 @@ export function LoyaltyCardFace({
   shine = false,
 }: LoyaltyCardFaceProps) {
   const tr = locale === 'tr';
-  const bg = accentColor && /^#[0-9a-f]{6}$/i.test(accentColor) ? accentColor : DEFAULT_BG;
-  const light = isLight(bg);
-  const fg = light ? INK : '#FFFFFF';
-  // Opacities keep small text at 4.5:1 on the card colour (white on purple ≈ 5:1).
-  const muted = light ? 'rgba(17,17,16,0.66)' : 'rgba(255,255,255,0.78)';
-  // Filled stamps and badges: the text colour as fill, the card colour as ink.
-  const mark = fg;
-  const markFg = bg;
+  const custom = isHexColor(accentColor);
+  const bg = custom ? accentColor : DEFAULT_BG;
+  const fg = inkOn(bg);
+  const light = fg === INK;
+  // A colour close to the black/white crossover gets a flatter gradient and
+  // stronger secondary text, so small text keeps ~4.5:1 everywhere.
+  const roomy = contrast(fg, bg) >= 7;
+  const muted = light ? `rgba(17,17,16,${roomy ? 0.68 : 0.78})` : `rgba(255,255,255,${roomy ? 0.78 : 0.88})`;
+  const top = mix(bg, '#FFFFFF', light ? 0.2 : roomy ? 0.1 : 0.03);
+  const bottom = mix(bg, '#000000', light ? (roomy ? 0.1 : 0.04) : 0.18);
+  // Filled stamps: the card's text colour as ink (lime on the Buaze default).
+  const mark = custom ? fg : BUAZE_LIME;
+  const markFg = custom ? bg : INK;
+
+  const activeCosts = new Set(rewards.filter((r) => r.isActive !== false).map((r) => r.cost));
   const next = nextReward(balance, rewards);
   const ready = rewards.some((r) => r.isActive !== false && r.cost <= balance);
-
   const size = stampCardSize(rewards);
   const filled = Math.min(balance, size);
+  const cols = stampColumns(size);
+
+  const footerText = ready
+    ? tr
+      ? 'Ödülünüz hazır — kasada gösterin'
+      : 'Your reward is ready — show it at the counter'
+    : next
+      ? tr
+        ? `${next.remaining} ${unitLabel(kind, next.remaining, locale)} sonra: ${next.reward.title}`
+        : `${next.remaining} more ${unitLabel(kind, next.remaining, locale)}: ${next.reward.title}`
+      : '';
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-[24px] p-5 shadow-[0_18px_36px_-22px_rgba(17,17,16,0.45)] ${className}`}
-      style={{ background: bg, color: fg }}
+      className={`relative isolate w-full overflow-hidden rounded-[22px] p-5 ${className}`}
+      style={{
+        background: `linear-gradient(140deg, ${top} 0%, ${bg} 46%, ${bottom} 100%)`,
+        color: fg,
+        boxShadow: `inset 0 1px 0 ${alpha('#FFFFFF', light ? 0.45 : 0.14)}, 0 1px 2px rgba(0,0,0,0.08), 0 12px 24px -14px rgba(0,0,0,0.38), 0 30px 56px -32px rgba(0,0,0,0.5)`,
+      }}
       role="img"
       aria-label={
         kind === 'stamps'
@@ -89,31 +113,56 @@ export function LoyaltyCardFace({
             : `${programName}: ${balance} points`
       }
     >
+      {/* Grain + a stamp-ring motif: tactile, quiet, in the card's own ink. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{ backgroundImage: GRAIN_IMAGE, opacity: light ? 0.07 : 0.1, mixBlendMode: 'soft-light' }}
+      />
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 200 200"
+        className="pointer-events-none absolute -right-14 -top-16 -z-10 h-[190px] w-[190px]"
+        fill="none"
+        stroke={fg}
+        style={{ opacity: light ? 0.12 : 0.1 }}
+      >
+        <circle cx="100" cy="100" r="96" strokeWidth="1.5" />
+        <circle cx="100" cy="100" r="78" strokeWidth="1.5" strokeDasharray="2 5" />
+        <circle cx="100" cy="100" r="60" strokeWidth="1.5" />
+        <circle cx="100" cy="100" r="42" strokeWidth="1.5" strokeDasharray="2 5" />
+      </svg>
       {shine && (
         <span
           aria-hidden="true"
           className="bzl-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)' }}
+          style={{ background: `linear-gradient(90deg, transparent, ${alpha('#FFFFFF', light ? 0.32 : 0.2)}, transparent)` }}
         />
       )}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full opacity-[0.14]"
-        style={{ background: mark }}
-      />
+
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-medium" style={{ color: muted }}>
+          <p className="truncate text-[12.5px] font-medium" style={{ color: muted }}>
             {businessName}
           </p>
-          <p className="mt-1 truncate text-[19px] font-semibold leading-tight">{programName}</p>
+          <p
+            className="mt-0.5 truncate text-[20px] font-medium leading-tight tracking-[-0.02em]"
+            style={{ fontFamily: HEADING_FONT }}
+          >
+            {programName}
+          </p>
         </div>
         {tierName ? (
-          <span
-            className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-            style={{ background: mark, color: markFg }}
-          >
+          <span className="shrink-0 rounded-full px-2.5 py-1 text-[11.5px] font-semibold" style={{ background: mark, color: markFg }}>
             {tierName}
+          </span>
+        ) : kind === 'stamps' ? (
+          <span
+            className="shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold tabular-nums"
+            style={{ background: alpha(fg, 0.14), color: fg }}
+            aria-hidden="true"
+          >
+            {filled}/{size}
           </span>
         ) : (
           <Gift size={20} aria-hidden="true" style={{ color: mark }} />
@@ -122,43 +171,69 @@ export function LoyaltyCardFace({
 
       {kind === 'stamps' ? (
         <div
-          className="relative mt-5 grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${size <= 6 ? size : size <= 12 ? Math.ceil(size / 2) : Math.ceil(size / 3)}, minmax(0, 1fr))` }}
+          className="relative mt-5 grid gap-x-2 gap-y-2.5"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
           aria-hidden="true"
         >
           {Array.from({ length: size }).map((_, i) => {
             const on = i < filled;
             const landing = on && highlightFrom !== null && i >= highlightFrom;
+            const rewardSlot = activeCosts.has(i + 1);
             return (
-              <span
-                key={i}
-                className={`flex aspect-square items-center justify-center rounded-full border text-[11px] font-semibold ${landing ? 'bzl-stamp-in' : ''}`}
-                style={{
-                  animationDelay: landing ? `${(i - (highlightFrom ?? 0)) * 120}ms` : undefined,
-                  borderColor: on ? mark : light ? 'rgba(17,17,16,0.28)' : 'rgba(255,255,255,0.4)',
-                  background: on ? mark : 'transparent',
-                  color: on ? markFg : muted,
-                }}
-              >
-                {on ? <Check size={14} strokeWidth={3} /> : i + 1}
+              <span key={i} className="flex items-center justify-center">
+                <span
+                  className={`relative flex aspect-square w-full max-w-[46px] items-center justify-center rounded-full text-[11px] font-semibold tabular-nums ${landing ? 'bzl-stamp-in' : ''}`}
+                  style={
+                    on
+                      ? {
+                          animationDelay: landing ? `${(i - (highlightFrom ?? 0)) * 120}ms` : undefined,
+                          background: mark,
+                          color: markFg,
+                          boxShadow: `inset 0 0 0 2.5px ${alpha(markFg, 0.16)}, 0 2px 6px -2px rgba(0,0,0,${light ? 0.25 : 0.45})`,
+                        }
+                      : rewardSlot
+                        ? {
+                            border: `1.5px dashed ${alpha(fg, 0.5)}`,
+                            color: muted,
+                          }
+                        : {
+                            background: alpha(fg, light ? 0.07 : 0.08),
+                            boxShadow: `inset 0 1px 2px rgba(0,0,0,${light ? 0.14 : 0.4}), inset 0 0 0 1px ${alpha(fg, 0.12)}`,
+                            color: muted,
+                          }
+                  }
+                >
+                  <span className="flex items-center justify-center" style={{ transform: on ? `rotate(${TILT[i % TILT.length]}deg)` : undefined }}>
+                    {rewardSlot ? (
+                      <Gift size={on ? 16 : 15} strokeWidth={on ? 2.4 : 2} />
+                    ) : on ? (
+                      <Check size={16} strokeWidth={3} />
+                    ) : (
+                      i + 1
+                    )}
+                  </span>
+                </span>
               </span>
             );
           })}
         </div>
       ) : (
         <div className="relative mt-5" aria-hidden="true">
-          <p className={`text-[40px] font-semibold leading-none tabular-nums ${highlightFrom !== null ? 'bzl-pop' : ''}`}>
+          <p
+            className={`text-[44px] font-medium leading-none tracking-[-0.03em] tabular-nums ${highlightFrom !== null ? 'bzl-pop' : ''}`}
+            style={{ fontFamily: HEADING_FONT }}
+          >
             {balance.toLocaleString(tr ? 'tr-TR' : 'en-GB')}
-            <span className="ml-2 text-[14px] font-medium" style={{ color: muted }}>
+            <span className="ml-2 text-[14px] font-medium tracking-normal" style={{ color: muted, fontFamily: 'inherit' }}>
               {unitLabel('points', balance, locale)}
             </span>
           </p>
           {next && (
             <div
-              className="mt-3 h-2 w-full overflow-hidden rounded-full"
+              className="mt-3.5 h-2 w-full overflow-hidden rounded-full"
               style={{
                 // Hatched remainder: what is still to collect.
-                background: `repeating-linear-gradient(-45deg, ${light ? 'rgba(17,17,16,0.22)' : 'rgba(255,255,255,0.34)'} 0 1.5px, transparent 1.5px 5px)`,
+                background: `repeating-linear-gradient(-45deg, ${light ? 'rgba(17,17,16,0.22)' : 'rgba(255,255,255,0.32)'} 0 1.5px, transparent 1.5px 5px)`,
               }}
             >
               <div
@@ -170,22 +245,22 @@ export function LoyaltyCardFace({
         </div>
       )}
 
-      <div className="relative mt-4 flex items-end justify-between gap-3 text-[12px]">
-        <p className="min-w-0 truncate" style={{ color: muted }}>
-          {ready
-            ? tr
-              ? 'Ödülünüz hazır — kasada gösterin'
-              : 'Your reward is ready — show it at the counter'
-            : next
-              ? tr
-                ? `${next.remaining} ${unitLabel(kind, next.remaining, locale)} sonra: ${next.reward.title}`
-                : `${next.remaining} more ${unitLabel(kind, next.remaining, locale)}: ${next.reward.title}`
-              : ''}
+      <div className="relative mt-4 flex items-end justify-between gap-3">
+        <p className="min-w-0 text-[12.5px] leading-snug" style={{ color: ready ? fg : muted, fontWeight: ready ? 600 : 400 }}>
+          {footerText}
         </p>
         {(memberName || code) && (
-          <p className="shrink-0 text-right" style={{ color: muted }}>
-            {memberName && <span className="block truncate font-medium" style={{ color: fg }}>{memberName}</span>}
-            {code && <span className="font-medium tabular-nums tracking-[0.06em]">{formatMemberCode(code)}</span>}
+          <p className="shrink-0 text-right leading-tight">
+            {memberName && (
+              <span className="block max-w-[140px] truncate text-[13px] font-semibold" style={{ color: fg }}>
+                {memberName}
+              </span>
+            )}
+            {code && (
+              <span className="mt-0.5 block text-[12px] font-medium tracking-[0.08em]" style={{ color: muted, fontFamily: CODE_FONT }}>
+                {formatMemberCode(code)}
+              </span>
+            )}
           </p>
         )}
       </div>

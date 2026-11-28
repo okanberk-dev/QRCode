@@ -1,6 +1,6 @@
 'use client';
 
-import { redirectBadgeLabel } from '@/lib/feedback-metrics';
+import { redirectBadgeLabel, needsReply } from '@/lib/feedback-metrics';
 import { QrCode } from 'lucide-react';
 import { PlatformChip } from '@/components/ui';
 import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
@@ -40,16 +40,17 @@ export function AdminFeedbackListItem({
   const customerLabel = r.customerName || (isTr ? 'İsimsiz' : 'Unnamed');
   const iconId = platformIconId(r.platform);
   const pLabel = platformLabel(r.platform, isTr);
-  // High-rated reviews need no reply (the detail says so) — no state then.
+  // Only feedback that can get a reply (1–3★ with a customer e-mail) waits
+  // for one; high ratings and no-e-mail feedback have no state (§58).
   const stateLabel = r.isReplied
     ? isTr
       ? 'yanıtlandı'
       : 'replied'
-    : r.rating >= 4
-      ? null
-      : isTr
+    : needsReply(r)
+      ? isTr
         ? 'yanıt bekliyor'
-        : 'awaiting reply';
+        : 'awaiting reply'
+      : null;
   // Concise accessible name (owner pattern): who, rating, where, state.
   const accessibleName = [customerLabel, `${r.rating}/5`, r.restaurant?.name, stateLabel]
     .filter(Boolean)

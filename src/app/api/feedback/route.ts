@@ -2,6 +2,7 @@ import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { HAS_EMAIL, LOW_RATING_MAX, hasReplyChannel } from '@/lib/feedback-metrics';
 import { publishFeedbackCreated, toLiveFeedbackRow } from '@/lib/live-events';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -295,7 +296,7 @@ export async function POST(req: NextRequest) {
       // drafts (`autoDraftAllowed`); by default the owner writes a draft with
       // "Taslak oluştur", so no tokens go to reviews nobody opens. When on:
       // fire-and-forget, never blocks the customer's 201 response.
-      if (aiDraftEnabled && autoDraftAllowed() && hasOpenAIKey()) {
+      if (aiDraftEnabled && autoDraftAllowed() && hasOpenAIKey() && hasReplyChannel(email)) {
         void generateAiDraftBackground(
           feedback.id,
           coerceTone(aiDraftTone, 'warm'),
@@ -488,7 +489,10 @@ async function handleGET(req: NextRequest) {
   if (hasReplyParam === 'true') {
     joinWhere.replies = { some: {} };
   } else if (hasReplyParam === 'false') {
-    joinWhere.replies = { none: {} };
+    // "Yanıt bekleyen" (§58): 1–3★, no reply yet and the customer left an
+    // e-mail (replies go out by e-mail only). One AND key so it never
+    // overwrites the base `rating` filter when the two are spread together.
+    joinWhere.AND = [{ replies: { none: {} } }, { rating: { lte: LOW_RATING_MAX } }, HAS_EMAIL];
   }
   if (isFlaggedParam === 'true') {
     joinWhere.flag = { isNot: null };

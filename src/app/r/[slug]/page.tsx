@@ -110,59 +110,6 @@ const RATING_HINTS: Record<Locale, string[]> = {
   ],
 };
 
-// §38.130 Stage 49 — public review surface tag chip picker.
-// Locale-agnostic ENUM key'leri (frontend label'ları locale'e göre map eder).
-// Backend whitelist (`/api/feedback/route.ts:VALID_ASPECT_TAGS`) bu key'leri
-// enforce eder; bilinmeyen key'ler silent drop edilir. Yeni aspect eklerken
-// 3 nokta drift disipline: bu const + ASPECT_TAG_LABELS + backend whitelist.
-const ASPECT_TAG_KEYS = [
-  'food_taste',
-  'service_speed',
-  'temperature',
-  'portion',
-  'price',
-  'cleanliness',
-  'atmosphere',
-  'staff',
-  'music',
-  'wait_time',
-] as const;
-
-const ASPECT_TAG_LABELS: Record<Locale, Record<(typeof ASPECT_TAG_KEYS)[number], string>> = {
-  tr: {
-    food_taste: 'Yemek tadı',
-    service_speed: 'Servis hızı',
-    temperature: 'Sıcaklık',
-    portion: 'Porsiyon',
-    price: 'Fiyat',
-    cleanliness: 'Temizlik',
-    atmosphere: 'Atmosfer',
-    staff: 'Personel ilgisi',
-    music: 'Müzik',
-    wait_time: 'Bekleme',
-  },
-  en: {
-    food_taste: 'Food taste',
-    service_speed: 'Service speed',
-    temperature: 'Temperature',
-    portion: 'Portion',
-    price: 'Price',
-    cleanliness: 'Cleanliness',
-    atmosphere: 'Atmosphere',
-    staff: 'Staff',
-    music: 'Music',
-    wait_time: 'Wait time',
-  },
-};
-
-// §38.130 Stage 49 — AI preset chips (kullanıcı kararı: cosmetic decoration).
-// Comment textarea'sına tek tıkla ekleyici visual yardım. Backend AI
-// feature ile bağlı değil; "AI YARDIMCI HAZIR" badge purely visual.
-const PRESET_CHIPS: Record<Locale, string[]> = {
-  tr: ['Yemek soğuktu', 'Çok bekledim', 'Sipariş yanlış geldi', 'Personel ilgisizdi', 'Hesap hatalıydı'],
-  en: ['Food was cold', 'Long wait', 'Wrong order', 'Inattentive staff', 'Bill error'],
-};
-
 // §38.130 Stage 49 — Reference number formatter. Feedback CUID'den derive
 // edilir; "BZ-XXX-YYY" pattern. İlk 3 + son 3 char uppercase. Müşteri
 // thanks screen'de görür → ileride owner ile iletişimde kayıp önleme.
@@ -226,17 +173,12 @@ function ReviewContent() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [comment, setComment] = useState('');
-  // §38.130 Stage 49 — selected tag chips ENUM key array.
-  // Whitelist `ASPECT_TAG_KEYS`'den seçilenler; backend `aspectTags` POST
-  // body field'ına gönderilir + DB `aspectsJson` field'ında saklanır.
-  const [selectedAspectTags, setSelectedAspectTags] = useState<string[]>([]);
   // KVKK işareti default true — submit-gate olarak işlev görür ("kullanıcı
   // formu submitliyorsa veri işleme rızası action implies consent doktrinine
   // göre verilmiş sayılır" + UI submit'i KVKK işaretsizse kilitler).
-  // Marketing (iletişim) izni KVKK + GDPR gereği **opt-in zorunlu** — default
-  // false olmalı. Pre-checked marketing onayı Açık Rıza ihlal riski taşır.
+  // No marketing opt-in here (2026-11-28, kullanıcı kararı: the low-rating
+  // form stays minimal); hasMarketingConsent is always false from this page.
   const [kvkk, setKvkk] = useState(true);
-  const [marketing, setMarketing] = useState(false);
   const [website, setWebsite] = useState(''); // honeypot
 
   const [error, setError] = useState('');
@@ -391,8 +333,6 @@ function ReviewContent() {
   const visibleRating = hover || rating;
   const labels = RATING_LABELS[locale] ?? RATING_LABELS.tr;
   const hints = RATING_HINTS[locale] ?? RATING_HINTS.tr;
-  const aspectLabels = ASPECT_TAG_LABELS[locale] ?? ASPECT_TAG_LABELS.tr;
-  const presetChips = PRESET_CHIPS[locale] ?? PRESET_CHIPS.tr;
 
   // High-rating handler factored out so it can be triggered both from a
   // direct star tap (4-5 → instant redirect, design 1:1) and defensively from
@@ -493,27 +433,6 @@ function ReviewContent() {
     }
   };
 
-  // §38.130 Stage 49 — tag chip toggle. Click ekler/çıkarır; max 10 cap
-  // backend whitelist ile aynı (ASPECT_TAG_KEYS.length === 10).
-  const toggleAspectTag = (key: string) => {
-    setSelectedAspectTags((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
-  };
-
-  // §38.130 Stage 49 — preset chip click. Comment textarea'sına ekler;
-  // mevcut text varsa "\n+ {preset}" formatla. Pure UI yardım, backend AI
-  // feature ile bağlı değil (kullanıcı kararı: cosmetic decoration).
-  const appendPresetToComment = (preset: string) => {
-    setComment((prev) => {
-      const trimmed = prev.trim();
-      if (!trimmed) return preset;
-      // Aynı preset zaten eklenmişse skip
-      if (trimmed.includes(preset)) return prev;
-      return `${trimmed}\n+ ${preset}`;
-    });
-  };
-
   // Stage 57 §38.138 — Reference number "Kopyala" button. Clipboard API
   // (HTTPS context'te async) → fallback document.execCommand (legacy).
   // Başarılı → 1.6sn "Kopyalandı" feedback (refCopied state). Hata sessiz
@@ -603,7 +522,7 @@ function ReviewContent() {
           phone: null,
           comment: comment.trim(),
           hasKvkkConsent: kvkk,
-          hasMarketingConsent: marketing,
+          hasMarketingConsent: false,
           rating,
           source: sourceParam,
           branch: restaurant.name,
@@ -611,10 +530,6 @@ function ReviewContent() {
           restaurantSlug: slug,
           platform: resolution.provider || null,
           aspects: null,
-          // §38.130 Stage 49 — tag chip ENUM key array. Backend
-          // `aspectTags` whitelist filter eder + `aspectsJson` JSONB
-          // field'ında saklar.
-          aspectTags: selectedAspectTags,
           website,
           recaptchaToken,
           locale,
@@ -764,154 +679,63 @@ function ReviewContent() {
             <div>
               <StepProgress current={2} locale={locale} />
 
-              {/* Acknowledgement card. Generic "management" signature, no
-                  owner name exposed. */}
-              <div className="mt-5 rounded-[24px] bg-[#F4FBDC] px-5 py-4">
-                <p className="text-[13px] font-semibold text-[#111110]">
-                  {locale === 'tr' ? 'Üzgünüz · İşletme yönetimi' : "We're sorry · Management"}
-                </p>
-                <p
-                  className="mt-1.5 text-[18px] font-semibold leading-[1.3] text-[#111110]"
+              {/* Low rating: one question, one box (2026-11-28, kullanıcı
+                  kararı — no tag chips, quick picks or quote card). */}
+              <div className="mt-6">
+                <label
+                  htmlFor="review-comment"
+                  className="block text-[22px] font-semibold leading-[1.25] text-[#111110]"
                   style={HEADING_STYLE}
                 >
+                  {locale === 'tr' ? 'Üzgünüz. Ne oldu?' : "We're sorry. What happened?"}
+                </label>
+                <p className="mt-1.5 text-[14px] leading-[1.5] text-[#525252]">
                   {locale === 'tr'
-                    ? '"Söyle, neyi yanlış yaptık?"'
-                    : '"Tell us, what did we get wrong?"'}
+                    ? 'Yazdıkların doğrudan işletme yönetimine iletilir.'
+                    : 'What you write goes straight to the management.'}
                 </p>
-                <p className="mt-1.5 text-[13px] leading-[1.5] text-[#525252]">
-                  {locale === 'tr'
-                    ? 'Geri bildirimin doğrudan işletme yönetimine ulaşacak.'
-                    : 'Your feedback goes directly to the team.'}
-                </p>
-              </div>
-
-              {/* Improvement tags — ENUM keys whitelisted by the backend,
-                  locale-aware labels. */}
-              <div className="mt-7">
-                <div className="mb-3 flex items-baseline justify-between gap-3">
-                  <h3
-                    className="text-[16px] font-semibold leading-snug text-[#111110]"
-                    style={HEADING_STYLE}
-                  >
-                    {locale === 'tr' ? 'Hangi konularda iyileşmemizi istersin?' : 'What should we work on?'}
-                  </h3>
-                  <span className="shrink-0 text-[12px] text-[#737373]">
-                    {locale === 'tr' ? 'Birden fazla' : 'Pick any'}
-                  </span>
-                </div>
-                <div
-                  className="flex flex-wrap gap-2"
-                  role="group"
-                  aria-label={
-                    locale === 'tr' ? 'İyileştirilecek konular' : 'Improvement areas'
+                <textarea
+                  id="review-comment"
+                  className="mt-4 block w-full resize-none rounded-[20px] border border-[#EBEBEB] bg-[#F6F6F6] px-4 py-3.5 text-[16px] leading-[1.5] text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-[#737373] focus:border-[#111110] focus:bg-white focus:shadow-[0_0_0_4px_rgba(17,17,16,0.14)]"
+                  placeholder={
+                    locale === 'tr'
+                      ? 'Birkaç cümleyle anlatabilirsin.'
+                      : 'A few sentences are enough.'
                   }
-                >
-                  {ASPECT_TAG_KEYS.map((key) => {
-                    const selected = selectedAspectTags.includes(key);
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => toggleAspectTag(key)}
-                        aria-pressed={selected}
-                        className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium transition-colors duration-200 active:scale-95 ${FOCUS_RING} ${
-                          selected
-                            ? 'bg-[#111110] text-white hover:bg-[#2B2B2A]'
-                            : 'bg-[#F6F6F6] text-[#111110] hover:bg-[#F4FBDC]'
-                        }`}
-                      >
-                        {selected && <Check size={15} strokeWidth={2.6} aria-hidden />}
-                        {aspectLabels[key]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Comment + quick-pick chips. */}
-              <div className="mt-7">
-                <div className="mb-2.5 flex items-baseline justify-between gap-3">
-                  <label
-                    htmlFor="review-comment"
-                    className="text-[16px] font-semibold leading-snug text-[#111110]"
-                    style={HEADING_STYLE}
-                  >
-                    {locale === 'tr' ? 'Detayları paylaşır mısın?' : 'Tell us a bit more'}
-                  </label>
-                  <span className="shrink-0 text-[12px] tabular-nums text-[#737373]">
-                    {comment.length} / 500
-                  </span>
-                </div>
-                <div className="relative">
-                  <textarea
-                    id="review-comment"
-                    className="block w-full resize-none rounded-[20px] border border-[#EBEBEB] bg-[#F6F6F6] px-4 pb-9 pt-3.5 text-[16px] leading-[1.5] text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-[#737373] focus:border-[#111110] focus:bg-white focus:shadow-[0_0_0_4px_rgba(17,17,16,0.14)]"
-                    placeholder={
-                      locale === 'tr'
-                        ? 'Yaşadığın durumu birkaç cümleyle anlat — yönetim seninle ilgilenecek.'
-                        : 'Describe what happened — management will reach out.'
-                    }
-                    rows={4}
-                    maxLength={500}
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    onFocus={(event) => {
-                      // Mobile keyboard avoidance: centre the textarea so the
-                      // submit button + consent rows stay reachable once the
-                      // keyboard opens. Reduced motion → instant scroll.
-                      const target = event.currentTarget;
-                      const reduceMotion =
-                        typeof window !== 'undefined' &&
-                        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                      window.requestAnimationFrame(() => {
-                        target.scrollIntoView({
-                          block: 'center',
-                          behavior: reduceMotion ? 'auto' : 'smooth',
-                        });
+                  rows={4}
+                  maxLength={500}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  onFocus={(event) => {
+                    // Mobile keyboard avoidance: centre the textarea so the
+                    // submit button stays reachable once the keyboard opens.
+                    // Reduced motion → instant scroll.
+                    const target = event.currentTarget;
+                    const reduceMotion =
+                      typeof window !== 'undefined' &&
+                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    window.requestAnimationFrame(() => {
+                      target.scrollIntoView({
+                        block: 'center',
+                        behavior: reduceMotion ? 'auto' : 'smooth',
                       });
-                    }}
-                    style={{ fontFamily: 'inherit' }}
-                    enterKeyHint="enter"
-                  />
-                </div>
-                {/* Quick picks — horizontal scroll that bleeds to the sheet
-                    edges (the scroller clips, the page never overflows). */}
-                <div
-                  className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5 py-1 sm:-mx-7 sm:px-7"
-                  style={{ scrollSnapType: 'x mandatory', scrollPaddingInline: 20 }}
-                  role="group"
-                  aria-label={locale === 'tr' ? 'Hızlı seçimler' : 'Quick picks'}
-                >
-                  {presetChips.map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => appendPresetToComment(preset)}
-                      className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-full border border-[#E3F4A6] bg-white px-3.5 text-[13px] font-medium text-[#111110] transition-colors duration-200 hover:bg-[#F4FBDC] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#111110]"
-                      style={{ scrollSnapAlign: 'start' }}
-                    >
-                      <span aria-hidden>+</span>
-                      {preset}
-                    </button>
-                  ))}
-                </div>
+                    });
+                  }}
+                  style={{ fontFamily: 'inherit' }}
+                  enterKeyHint="enter"
+                />
               </div>
 
               {/* Contact — both fields optional; POST body unchanged. */}
               <div className="mt-6 flex flex-col gap-4">
                 <div>
-                  <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
-                    <label htmlFor="review-name" className="text-[14px] font-semibold text-[#111110]">
-                      {locale === 'tr' ? 'Ad' : 'Name'}
-                    </label>
-                    <span className="text-[12px] text-[#737373]">
-                      {locale === 'tr' ? 'İsteğe bağlı' : 'Optional'}
-                    </span>
-                  </div>
+                  <label htmlFor="review-name" className="mb-2 block px-1 text-[14px] font-semibold text-[#111110]">
+                    {locale === 'tr' ? 'Adın' : 'Your name'}{' '}
+                    <span className="font-normal text-[#737373]">{locale === 'tr' ? '(isteğe bağlı)' : '(optional)'}</span>
+                  </label>
                   <input
                     id="review-name"
                     className={FIELD_CLASS}
-                    placeholder={locale === 'tr' ? 'Adın' : 'Your name'}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     autoComplete="name"
@@ -920,16 +744,15 @@ function ReviewContent() {
                   />
                 </div>
                 <div>
-                  <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
-                    <label htmlFor="review-email" className="text-[14px] font-semibold text-[#111110]">
-                      {locale === 'tr' ? 'E-posta' : 'Email'}
-                    </label>
-                  </div>
+                  <label htmlFor="review-email" className="mb-2 block px-1 text-[14px] font-semibold text-[#111110]">
+                    {locale === 'tr' ? 'E-posta' : 'Email'}{' '}
+                    <span className="font-normal text-[#737373]">{locale === 'tr' ? '(isteğe bağlı)' : '(optional)'}</span>
+                  </label>
                   <input
                     id="review-email"
                     className={FIELD_CLASS}
                     type="email"
-                    placeholder={locale === 'tr' ? 'yanıt için, isteğe bağlı' : 'for a reply, optional'}
+                    placeholder={locale === 'tr' ? 'ornek@eposta.com' : 'you@example.com'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -940,12 +763,12 @@ function ReviewContent() {
                     enterKeyHint="next"
                     aria-describedby="feedback-email-hint"
                   />
-                  {/* Why leave an email (CLAUDE.md §57): only ~39% of private
-                      feedback carried contact info, so the owner could not reply. */}
+                  {/* Why leave an email (CLAUDE.md §57, §58): replies go out by
+                      e-mail only, so without one the business cannot answer. */}
                   <p id="feedback-email-hint" className="mt-2 px-1 text-[12.5px] leading-[1.5] text-[#737373]">
                     {locale === 'tr'
-                      ? 'E-posta bırakırsan işletme sana doğrudan yanıt verebilir. İzin vermedikçe kampanya e-postası gönderilmez.'
-                      : 'Leave your email and the business can reply to you directly. No marketing emails unless you allow them.'}
+                      ? 'İşletme sana yalnızca bu adresten yanıt verebilir.'
+                      : 'The business can only reply to you at this address.'}
                   </p>
                 </div>
               </div>
@@ -984,28 +807,6 @@ function ReviewContent() {
                       : ' and grant explicit consent for processing.'}
                   </span>
                 </label>
-                {/* Marketing consent — opt-in, unchecked by default (KVKK Açık Rıza + ETK m.6) */}
-                <label className="flex cursor-pointer items-start gap-3 py-1.5 text-[13px] leading-[1.5] text-[#525252]">
-                  <input
-                    type="checkbox"
-                    checked={marketing}
-                    onChange={(e) => setMarketing(e.target.checked)}
-                    className={CHECKBOX_CLASS}
-                  />
-                  <span>
-                    {locale === 'tr' ? 'Kampanya ve duyurular için ' : 'For campaigns and announcements I accept the '}
-                    <a
-                      href={`/${locale}/ticari-ileti`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={LEGAL_LINK_CLASS}
-                    >
-                      {locale === 'tr' ? 'Ticari Elektronik İleti İzni' : 'Commercial Electronic Message Consent'}
-                    </a>
-                    {locale === 'tr' ? ' kapsamında iletişim onayı veriyorum (opsiyonel).' : ' (optional).'}
-                  </span>
-                </label>
-
                 <input
                   type="text"
                   tabIndex={-1}

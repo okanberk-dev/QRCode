@@ -22,12 +22,12 @@ const SLUG = 'loyalty';
 
 const META = {
   tr: {
-    title: 'Dijital sadakat kartı: kafe, restoran ve berber için damga kartı',
+    title: 'Dijital sadakat kartı: kafe ve restoran için damga kartı',
     description:
       'Uygulamasız dijital damga ya da puan kartı: müşteri QR ile katılır, siz kartını telefonla okutup damga eklersiniz. Şubelerde tek kart, ödül bildirimi, NFC.',
   },
   en: {
-    title: 'Digital loyalty card: stamp cards for cafés, restaurants and barbers',
+    title: 'Digital loyalty stamp cards for cafés and restaurants',
     description:
       'An app-free digital stamp or points card: customers join with a QR, you scan their card with a phone and add stamps. One card for all branches, reward alerts, NFC.',
   },
