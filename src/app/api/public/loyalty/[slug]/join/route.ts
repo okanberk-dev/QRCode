@@ -1,8 +1,10 @@
 // Customer joins a loyalty program (CLAUDE.md §60, §61). Public, rate
-// limited, honeypot. Two ways in: as a guest (first + last name, phone) or
-// with the signed-in Buaze customer account (`useAccount`), which fills the
-// card from the profile and keeps it in "Kartlarım". A phone already in the
-// program never reveals that card: the link is mailed to the address on
+// limited, honeypot. Two ways in: as a guest (first + last name; phone,
+// e-mail and birthday only if the customer adds them) or with the signed-in
+// Buaze customer account (`useAccount`, usually right after "Google ile
+// katıl"), which fills the card from the profile and keeps it in
+// "Kartlarım". The phone is never required (2026-11-28). A phone already in
+// the program never reveals that card: the link is mailed to the address on
 // file (if any) and the customer is told to ask at the counter otherwise.
 import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
@@ -131,10 +133,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   if (!firstName || !lastName) {
     return NextResponse.json({ error: 'NAME_REQUIRED', code: 'NAME_REQUIRED' }, { status: 400 });
   }
-  const phone = normalizePhone(d.phone ?? account?.phone ?? '');
-  if (!phone) return NextResponse.json({ error: 'INVALID_PHONE', code: 'INVALID_PHONE' }, { status: 400 });
+  // Optional: a typed phone must be valid; no phone at all is fine.
+  const typedPhone = d.phone?.trim() ? d.phone : null;
+  const phone = normalizePhone(typedPhone ?? account?.phone ?? '') || null;
+  if (typedPhone && !phone) return NextResponse.json({ error: 'INVALID_PHONE', code: 'INVALID_PHONE' }, { status: 400 });
   const [phoneLimit, programLimit] = await Promise.all([
-    rateLimit(`loyalty-join:phone:${program.id}:${phone}`, 5, 60 * 60_000),
+    phone ? rateLimit(`loyalty-join:phone:${program.id}:${phone}`, 5, 60 * 60_000) : Promise.resolve({ allowed: true }),
     rateLimit(`loyalty-join:program:${program.id}`, 400, 60 * 60_000),
   ]);
   if (!phoneLimit.allowed || !programLimit.allowed) {
@@ -167,7 +171,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       customerAccountId: account?.id ?? null,
     });
     // A phone given here fills an empty account phone.
-    if (account && !account.phone) {
+    if (account && !account.phone && phone) {
       const acc = account;
       after(() =>
         prisma.customerAccount.update({ where: { id: acc.id }, data: { phone } }).then(() => undefined, () => undefined),
@@ -208,7 +212,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       });
       if (own) return NextResponse.json({ status: 'own', cardPath: loyaltyCardPath(program.slug, own.cardToken) });
     }
-    if (err instanceof LoyaltyError && err.code === 'PHONE_EXISTS') {
+    if (err instanceof LoyaltyError && err.code === 'PHONE_EXISTS' && phone) {
       const existing = await prisma.loyaltyMember.findUnique({
         where: { programId_phone: { programId: program.id, phone } },
         select: { id: true, email: true, name: true, cardToken: true, customerAccountId: true },

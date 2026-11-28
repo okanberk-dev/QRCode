@@ -183,7 +183,7 @@ export function AdminBiSection() {
         <div className="min-w-0">
           <h2 className="text-[24px] font-medium leading-tight tracking-[-0.02em] text-pn-ink">İş zekası göstergeleri</h2>
           <p className="mt-1.5 max-w-[640px] text-[13px] text-[#9A9A9A]">
-            Tüm işletmeler · aylık gelir, kayıp oranı, NPS, kayıt kohortları ve kurulum hunisi.
+            Tüm işletmeler · aylık gelir, kayıp oranı, müşteri memnuniyeti, kayıt ayına göre devam eden işletmeler ve kurulum adımları.
             Bu bölüm kendi tarih aralığını kullanır.
           </p>
         </div>
@@ -233,7 +233,7 @@ export function AdminBiSection() {
           {/* 1. MRR TREND — area chart, tier stacked (USD, §15.2 canonical billing) */}
           <div className="bz-card p-5 sm:p-6">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="pn-card-title text-pn-ink">MRR trendi</h3>
+              <h3 className="pn-card-title text-pn-ink">Aylık tekrarlayan gelir</h3>
               <span className="pn-change pn-change--flat">
                 {formatUsd(snapshot.mrr[snapshot.mrr.length - 1]?.total ?? 0)}
               </span>
@@ -338,9 +338,10 @@ export function AdminBiSection() {
           {/* 3. NPS — pie chart */}
           <div className="bz-card p-5 sm:p-6">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="pn-card-title text-pn-ink">NPS dağılımı</h3>
-              <span className="pn-change pn-change--flat">
-                Skor: {snapshot.nps.score}
+              <h3 className="pn-card-title text-pn-ink">Müşteri memnuniyeti</h3>
+              <span className="pn-change pn-change--flat" title="5★ oranı eksi 1–3★ oranı (−100 ile +100 arası)">
+                Memnuniyet farkı: {snapshot.nps.score > 0 ? '+' : ''}
+                {snapshot.nps.score}
               </span>
             </div>
             <p className="mt-1 text-[13px] text-[#9A9A9A]">
@@ -355,9 +356,9 @@ export function AdminBiSection() {
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Destekçi (5★)', value: snapshot.nps.promoters, color: NPS_PIE_COLORS.promoters },
-                        { name: 'Nötr (4★)', value: snapshot.nps.passives, color: NPS_PIE_COLORS.passives },
-                        { name: 'Eleştiren (1-3★)', value: snapshot.nps.detractors, color: NPS_PIE_COLORS.detractors },
+                        { name: 'Memnun (5★)', value: snapshot.nps.promoters, color: NPS_PIE_COLORS.promoters },
+                        { name: 'Orta (4★)', value: snapshot.nps.passives, color: NPS_PIE_COLORS.passives },
+                        { name: 'Memnun değil (1–3★)', value: snapshot.nps.detractors, color: NPS_PIE_COLORS.detractors },
                       ]}
                       dataKey="value"
                       nameKey="name"
@@ -386,13 +387,13 @@ export function AdminBiSection() {
           {/* 4. COHORT RETENTION — bar chart stacked */}
           <div className="bz-card p-5 sm:p-6">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="pn-card-title text-pn-ink">Kohort elde tutma</h3>
+              <h3 className="pn-card-title text-pn-ink">Kayıt ayına göre devam edenler</h3>
               <span className="pn-change pn-change--flat">
                 <Users size={13} aria-hidden="true" />
                 {snapshot.cohort.reduce((acc, p) => acc + p.signups, 0)}
               </span>
             </div>
-            <p className="mt-1 text-[13px] text-[#9A9A9A]">Kayıt ayına göre, bugün hâlâ aktif veya denemede olanlar</p>
+            <p className="mt-1 text-[13px] text-[#9A9A9A]">Her ay kaydolan işletmelerden bugün hâlâ ücretli ya da denemede olanlar</p>
             <div className="mt-4 h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={snapshot.cohort} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
@@ -424,7 +425,7 @@ export function AdminBiSection() {
               gaps). Same step definitions as the owner setup checklist. */}
           <div className="bz-card p-5 sm:p-6 lg:col-span-2">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="pn-card-title text-pn-ink">Kurulum hunisi</h3>
+              <h3 className="pn-card-title text-pn-ink">Kurulum adımları</h3>
               <span className="pn-change pn-change--flat">
                 <Users size={13} aria-hidden="true" />
                 {snapshot.funnel.steps[0]?.count ?? 0}

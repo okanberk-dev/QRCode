@@ -5,7 +5,6 @@ import { isAdminRole, verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { PageHeader, PLATFORMS, type PlatformId } from '@/components/ui';
 import { AnalyticsKpiGrid } from '@/components/dashboard/analytics/AnalyticsKpiGrid';
-import { AnalyticsLiveIndicator } from '@/components/dashboard/analytics/AnalyticsLiveIndicator';
 import { MainTrendChart } from '@/components/dashboard/analytics/MainTrendChart';
 import { ChannelDistributionMini } from '@/components/dashboard/analytics/ChannelDistributionMini';
 import { SentimentDonut } from '@/components/dashboard/analytics/SentimentDonut';
@@ -104,8 +103,6 @@ export default async function AdminAnalyticsPage({
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-7 lg:py-8 space-y-3.5">
-      <AnalyticsLiveIndicator isTr={isTr} />
-
       <PageHeader
         titleScale="compact"
         eyebrow={isTr ? 'ADMIN ANALİTİK' : 'ADMIN ANALYTICS'}

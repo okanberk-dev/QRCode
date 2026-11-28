@@ -9,7 +9,7 @@ import { AnalyticsMock } from '../_components/mocks';
 // /features/analytics-reports — the owner analytics page. Facts from
 // src/app/[locale]/dashboard/analytics/page.tsx: periods 7/30/90 days,
 // 12 months or custom; 5 KPIs (total reviews, average rating with target,
-// average reply time, NPS estimated from ratings, return rate); day/hour
+// average reply time, happy-vs-unhappy gap from ratings, return rate); day/hour
 // distribution and heatmap; channel and rating-based satisfaction split;
 // optional AI topics; CSV export. Weekly summary e-mail every Monday.
 // No conversion KPI, no "all time", no API (marketing spec §3).
@@ -20,12 +20,12 @@ const META = {
   tr: {
     title: 'Analitik ve raporlar: geri bildirim ve puan takibi',
     description:
-      'Son 7, 30 veya 90 gün, 12 ay ya da özel aralık için yorum sayısını, ortalama puanı, yanıt süresini ve tahmini NPS’i izleyin; raporu CSV olarak indirin.',
+      'Son 7, 30 veya 90 gün, 12 ay ya da özel aralık için yorum sayısını, ortalama puanı, yanıt süresini ve memnun ile memnun olmayan müşteri oranını izleyin; raporu CSV olarak indirin.',
   },
   en: {
     title: 'Analytics and reports: feedback and rating trends',
     description:
-      'Track review count, average rating, reply time and estimated NPS for the last 7, 30 or 90 days, 12 months or a custom range, and export the report as CSV.',
+      'Track review count, average rating, reply time and the share of happy versus unhappy customers for the last 7, 30 or 90 days, 12 months or a custom range, and export the report as CSV.',
   },
 } as const;
 
@@ -48,16 +48,16 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
     return {
       eyebrow: 'Analitik ve raporlar',
       title: 'Geri bildirimlerinizi tek raporda izleyin',
-      lead: 'Seçtiğiniz dönemin yorum sayısını, ortalama puanını, yanıt süresini ve puanlardan tahmini NPS’ini görün; raporu CSV olarak indirin, her pazartesi haftalık özet alın.',
+      lead: 'Seçtiğiniz dönemin yorum sayısını, ortalama puanını, yanıt süresini ve memnun ile memnun olmayan müşteri oranını görün; raporu CSV olarak indirin, her pazartesi haftalık özet alın.',
       secondary: { href: `${base}/features/review-management`, label: 'Yorum yönetimini inceleyin' },
       mockCaption:
-        'Örnek ekran: 30 günlük dönemde toplam yorum, ortalama puan ve tahmini NPS kartları ile gün ve saate göre yorum yoğunluğu.',
+        'Örnek ekran: 30 günlük dönemde toplam yorum, ortalama puan ve memnuniyet farkı kartları ile gün ve saate göre yorum yoğunluğu.',
       definition: {
         eyebrow: 'Tanım',
         title: 'Geri bildirim analitiği nedir?',
         paragraphs: [
           'Geri bildirim analitiği, müşterilerinizin bıraktığı puan ve yorumları zaman içinde okunabilir rakamlara çevirir. Buaze’de rapor, seçtiğiniz işletmenin QR akışından gelen geri bildirimlerle hazırlanır; dönemi son 7, 30 veya 90 gün, son 12 ay ya da kendi belirlediğiniz bir tarih aralığı olarak seçersiniz.',
-          'Analitikteki NPS bir anket sonucu değil, puanlardan yapılan bir tahmindir: 5 yıldız destekçi, 4 yıldız pasif, 1–3 yıldız eleştiren sayılır. Müşteriye 0–10 ölçeğinde gerçek bir tavsiye sorusu sormak isterseniz Anketler’i kullanabilirsiniz.',
+          'Memnuniyet farkı 5 yıldız veren müşterilerin oranından 1–3 yıldız verenlerin oranı çıkarılarak bulunur; artıdaysa memnun müşteri daha fazladır. Müşteriye 0–10 ölçeğinde bir tavsiye sorusu sormak isterseniz Anketler’i kullanabilirsiniz.',
           'Tekrar gelme oranı yalnızca iletişim bilgisi bırakan ve KVKK onayı veren müşterilerden hesaplanır.',
         ],
         note: 'Öne çıkan konular ve haftalık özetteki değerlendirme için yorum metinleri yapay zekâ sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir. Diğer göstergeler yapay zekâ kullanılmadan hesaplanır.',
@@ -70,7 +70,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: Gauge,
             title: 'Beş temel gösterge',
-            body: 'Toplam yorum, ortalama puan, ortalama yanıt süresi, puanlardan tahmini NPS ve tekrar gelme oranı. Toplam yorum bir önceki dönemle karşılaştırılır, ortalama puanın yanında belirlediğiniz hedef puan görünür.',
+            body: 'Toplam yorum, ortalama puan, ortalama yanıt süresi, memnuniyet farkı (memnun müşteri oranı eksi memnun olmayan) ve tekrar gelme oranı. Toplam yorum bir önceki dönemle karşılaştırılır, ortalama puanın yanında belirlediğiniz hedef puan görünür.',
           },
           {
             icon: CalendarRange,
@@ -109,7 +109,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             title: 'Göstergelere bakın',
-            body: 'Yorum sayısını, ortalama puanı, yanıt süresini, tahmini NPS’i ve tekrar gelme oranını bir arada görün.',
+            body: 'Yorum sayısını, ortalama puanı, yanıt süresini, memnuniyet farkını ve tekrar gelme oranını bir arada görün.',
           },
           {
             title: 'Yoğun saatleri bulun',
@@ -151,8 +151,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
             a: 'Son 7, 30 veya 90 gün, son 12 ay ya da başlangıç ve bitiş tarihini kendiniz belirlediğiniz özel bir aralık. Toplam yorum sayısı, aynı uzunluktaki bir önceki dönemle karşılaştırılır.',
           },
           {
-            q: 'NPS nasıl hesaplanıyor?',
-            a: 'Analitikteki NPS yıldız puanlarından tahmin edilir: 5 yıldız destekçi, 4 yıldız pasif, 1–3 yıldız eleştiren sayılır ve destekçi oranından eleştiren oranı çıkarılır. Müşteriye 0–10 tavsiye sorusu sormak isterseniz Anketler’deki tavsiye sorusunu kullanabilirsiniz.',
+            q: 'Memnuniyet farkı nasıl hesaplanıyor?',
+            a: '5 yıldız veren müşterilerin oranından 1–3 yıldız verenlerin oranı çıkarılır; 4 yıldız iki tarafa da sayılmaz. Sonuç −100 ile +100 arasındadır ve artıdaysa memnun müşteri daha fazladır. Müşteriye 0–10 tavsiye sorusu sormak isterseniz Anketler’deki tavsiye sorusunu kullanabilirsiniz.',
           },
           {
             q: 'Diğer platformlardaki yorumlar rapora dahil mi?',
@@ -185,16 +185,16 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
   return {
     eyebrow: 'Analytics and reports',
     title: 'Track your feedback in one report',
-    lead: 'See review count, average rating, reply time and an NPS estimated from ratings for the period you pick; export the report as CSV and get a weekly summary every Monday.',
+    lead: 'See review count, average rating, reply time and the share of happy versus unhappy customers for the period you pick; export the report as CSV and get a weekly summary every Monday.',
     secondary: { href: `${base}/features/review-management`, label: 'Explore review management' },
     mockCaption:
-      'Sample screen: total reviews, average rating and estimated NPS cards for a 30-day period, with review activity by day and hour.',
+      'Sample screen: total reviews, average rating and happy-vs-unhappy cards for a 30-day period, with review activity by day and hour.',
     definition: {
       eyebrow: 'Definition',
       title: 'What is feedback analytics?',
       paragraphs: [
         'Feedback analytics turns the ratings and comments your customers leave into figures you can read over time. In Buaze the report is built from the feedback that comes through the QR flow of the business you select; you pick the last 7, 30 or 90 days, the last 12 months or a date range of your own.',
-        'The NPS in analytics is not a survey result but an estimate from ratings: 5 stars count as promoters, 4 stars as passives and 1–3 stars as detractors. To ask customers a real 0–10 recommend question, use Surveys.',
+        'The happy-vs-unhappy figure is the share of 5-star ratings minus the share of 1–3-star ratings; above zero means more happy customers. To ask customers a 0–10 recommend question, use Surveys.',
         'The return rate is calculated only from customers who left contact details and gave KVKK consent.',
       ],
       note: 'For recurring topics and the assessment in the weekly summary, comment text is sent to our AI provider (Anthropic, with OpenAI as a backup). The other metrics are calculated without AI.',
@@ -207,7 +207,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: Gauge,
           title: 'Five core metrics',
-          body: 'Total reviews, average rating, average reply time, NPS estimated from ratings and return rate. Total reviews are compared with the previous period, and the average rating is shown next to the target rating you set.',
+          body: 'Total reviews, average rating, average reply time, happy vs unhappy (share of happy minus unhappy customers) and return rate. Total reviews are compared with the previous period, and the average rating is shown next to the target rating you set.',
         },
         {
           icon: CalendarRange,
@@ -246,7 +246,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           title: 'Check the metrics',
-          body: 'See review count, average rating, reply time, estimated NPS and return rate together.',
+          body: 'See review count, average rating, reply time, happy vs unhappy and return rate together.',
         },
         {
           title: 'Find the busy hours',
@@ -288,8 +288,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           a: 'The last 7, 30 or 90 days, the last 12 months, or a custom range where you set the start and end dates. Total reviews are compared with the previous period of the same length.',
         },
         {
-          q: 'How is NPS calculated?',
-          a: 'The NPS in analytics is estimated from star ratings: 5 stars count as promoters, 4 stars as passives and 1–3 stars as detractors, and the share of detractors is subtracted from the share of promoters. To ask customers a 0–10 recommend question, use the recommend question in Surveys.',
+          q: 'How is happy vs unhappy calculated?',
+          a: 'The share of 1–3-star ratings is subtracted from the share of 5-star ratings; 4 stars count for neither. The result runs from −100 to +100, and above zero means more happy customers. To ask customers a 0–10 recommend question, use the recommend question in Surveys.',
         },
         {
           q: 'Are reviews from other platforms included in the report?',

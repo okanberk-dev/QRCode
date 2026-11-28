@@ -3,7 +3,8 @@ import type { KpiSpec } from '@/components/dashboard/analytics/AnalyticsKpiGrid'
 import type { ChannelMiniRow } from '@/components/dashboard/analytics/ChannelDistributionMini';
 import type { ThemeMention } from '@/components/dashboard/analytics/TopMentionsPolarity';
 import { buildPlatformDailyTrend } from '@/lib/analytics-platform-trend';
-import { calculateNPS } from '@/lib/analytics-nps';
+import { calculateNPS, satisfactionDisplay } from '@/lib/analytics-nps';
+import { describeChange, metricInfo, metricLabel } from '@/lib/feedback-metrics';
 import { prisma } from '@/lib/prisma';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 
@@ -58,22 +59,6 @@ export interface PanelAnalyticsData {
   insight: { trend: string; win: string; risk: string };
   reviewsCount: number;
   windowDays: number;
-}
-
-function pctDelta(
-  curr: number,
-  prev: number,
-  isTr = true,
-): { value: string; kind: 'up' | 'down' | 'neutral' } {
-  if (prev === 0) {
-    if (curr === 0) return { value: '0%', kind: 'neutral' };
-    return { value: isTr ? 'Yeni' : 'New', kind: 'up' };
-  }
-  const pct = Math.round(((curr - prev) / prev) * 1000) / 10;
-  return {
-    value: `${pct >= 0 ? '+' : ''}${pct}%`,
-    kind: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral',
-  };
 }
 
 function responseLabel(hours: number | null, isTr: boolean) {
@@ -232,7 +217,6 @@ export async function buildPanelAnalyticsData({
   ]);
 
   const reviewsCount = feedbacksWindow.length;
-  const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow, isTr);
   const avgRatingNow =
     reviewsCount > 0
       ? feedbacksWindow.reduce((sum, feedback) => sum + (feedback.rating ?? 0), 0) / reviewsCount
@@ -287,14 +271,16 @@ export async function buildPanelAnalyticsData({
       ? Math.round((targetRatings.reduce((sum, rating) => sum + rating, 0) / targetRatings.length) * 10) / 10
       : 4.0;
 
+  // Same card language as the owner analytics page (§58): sentence-case
+  // labels, Turkish decimals, a trend only where it is the card's own series.
+  const dec = (v: number, digits: number) => (isTr ? v.toFixed(digits).replace('.', ',') : v.toFixed(digits));
+  const ratingGap = avgRatingNow - resolvedTargetRating;
+  const satisfaction = satisfactionDisplay(npsResult, isTr);
   const kpis: KpiSpec[] = [
     {
-      label: isTr ? 'TOPLAM YORUM' : 'TOTAL REVIEWS',
+      label: isTr ? 'Toplam yorum' : 'Total reviews',
       value: reviewsCount.toLocaleString(isTr ? 'tr-TR' : 'en-US'),
-      // No previous-period reviews → no percentage to show ("Yeni" was
-      // unclear); the subtitle says why instead (same as the owner page).
-      delta: feedbacksPrevWindow === 0 ? null : reviewsDelta.value,
-      deltaKind: reviewsDelta.kind,
+      change: feedbacksPrevWindow === 0 ? null : describeChange(reviewsCount, feedbacksPrevWindow, { isTr }),
       subtitle:
         feedbacksPrevWindow === 0
           ? isTr
@@ -304,65 +290,45 @@ export async function buildPanelAnalyticsData({
             ? `önceki dönemde ${feedbacksPrevWindow.toLocaleString('tr-TR')}`
             : `${feedbacksPrevWindow.toLocaleString('en-US')} in previous period`,
       sparkline: sparkReviews,
-      sparklineColor: '#0A0A0A',
+      sparklineColor: '#111110',
     },
     {
-      label: isTr ? 'ORTALAMA PUAN' : 'AVG RATING',
-      value: avgRatingNow > 0 ? avgRatingNow.toFixed(2) : '—',
-      delta: avgRatingNow > 0 ? `${avgRatingNow >= resolvedTargetRating ? '+' : ''}${(avgRatingNow - resolvedTargetRating).toFixed(2)}` : null,
-      deltaKind: avgRatingNow >= resolvedTargetRating ? 'up' : 'down',
-      subtitle: isTr ? `hedef ${resolvedTargetRating.toFixed(1)}` : `target ${resolvedTargetRating.toFixed(1)}`,
-      sparkline: sparkReviews,
-      sparklineColor: '#C6F24E',
+      label: isTr ? 'Ortalama puan' : 'Average rating',
+      value: avgRatingNow > 0 ? dec(avgRatingNow, 2) : '—',
+      delta: avgRatingNow > 0 ? `${ratingGap >= 0 ? '+' : '−'}${dec(Math.abs(ratingGap), 2)}` : null,
+      deltaKind: ratingGap >= 0 ? 'up' : 'down',
+      subtitle: isTr ? `hedef ${dec(resolvedTargetRating, 1)} · fark hedefe göre` : `target ${dec(resolvedTargetRating, 1)} · gap to target`,
     },
     {
-      label: isTr ? 'YANIT SÜRESİ' : 'REPLY TIME',
+      label: isTr ? 'Yanıt süresi' : 'Reply time',
       value: responseLabel(avgResponseHours, isTr),
-      delta: avgResponseHours !== null ? (isTr ? 'ortalama' : 'avg') : null,
-      deltaKind: 'flat',
       subtitle:
         reviewsCount > 0
           ? isTr
-            ? `${repliedCount}/${reviewsCount} yanıtlandı`
-            : `${repliedCount}/${reviewsCount} replied`
+            ? `ortalama · ${repliedCount}/${reviewsCount} yanıtlandı`
+            : `average · ${repliedCount}/${reviewsCount} replied`
           : isTr
             ? 'henüz yanıt yok'
             : 'no replies yet',
-      sparkline: sparkReviews,
-      sparklineColor: '#C6F24E',
     },
     {
-      label: 'NPS',
-      value: npsResult.total > 0 ? String(npsResult.npsScore) : '—',
-      delta: null,
-      deltaKind: 'flat',
-      // 5★ promoter, 4★ passive, 1-3★ detractor (lib/analytics-nps.ts).
-      subtitle:
-        npsResult.total > 0
-          ? isTr
-            ? `${npsResult.promoters}\u00a0destekçi · ${npsResult.passives}\u00a0pasif · ${npsResult.detractors}\u00a0eleştiren`
-            : `${npsResult.promoters}\u00a0promoters · ${npsResult.passives}\u00a0passive · ${npsResult.detractors}\u00a0detractors`
-          : isTr
-            ? 'yeterli veri yok'
-            : 'not enough data',
-      sparkline: sparkReviews,
-      sparklineColor: '#C6F24E',
+      // "NPS" in plain words (2026-11-28, lib/analytics-nps.ts satisfactionDisplay).
+      label: metricLabel('satisfaction', isTr),
+      info: metricInfo('satisfaction', isTr),
+      value: satisfaction?.value ?? '—',
+      subtitle: satisfaction?.subtitle ?? (isTr ? 'yeterli veri yok' : 'not enough data'),
     },
     {
-      label: isTr ? 'TEKRAR GELME' : 'RETURN RATE',
-      value: returnRate !== null ? `%${returnRate}` : '—',
-      delta: returnRate !== null ? `${returningCustomers}/${totalUniqueCustomers}` : null,
-      deltaKind: 'flat',
+      label: isTr ? 'Tekrar gelen' : 'Returning',
+      value: returnRate !== null ? (isTr ? `%${returnRate}` : `${returnRate}%`) : '—',
       subtitle:
         totalUniqueCustomers > 0
           ? isTr
-            ? `${totalUniqueCustomers} tekil müşteri`
-            : `${totalUniqueCustomers} unique`
+            ? `${totalUniqueCustomers} müşteriden ${returningCustomers} kişi`
+            : `${returningCustomers} of ${totalUniqueCustomers}`
           : isTr
             ? 'KVKK onaylı veri yok'
             : 'no consented data',
-      sparkline: sparkReviews,
-      sparklineColor: '#0A0A0A',
     },
   ];
 

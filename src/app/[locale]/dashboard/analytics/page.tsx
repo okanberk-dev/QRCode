@@ -54,7 +54,7 @@ import { SentimentDonut } from '@/components/dashboard/analytics/SentimentDonut'
 import { TopMentionsPolarity } from '@/components/dashboard/analytics/TopMentionsPolarity';
 import { extractThemes, getCachedThemes } from '@/lib/analytics-themes';
 import { extractStructuredInsight, getCachedStructuredInsight } from '@/lib/weekly-structured-insight';
-import { calculateNPS } from '@/lib/analytics-nps';
+import { calculateNPS, satisfactionDisplay } from '@/lib/analytics-nps';
 // §38.158 — buildWeeklyTrend + getWeeklyTrendWindow import kaldırıldı
 // (PulseTrendChart 14-haftalık görünüm sadece bu helper'ları tüketiyordu).
 // Helper dosyası lib/analytics-weekly-trend.ts orphan kaldı — gelecek
@@ -382,6 +382,7 @@ async function renderAnalyticsPage({
   const ratingChange = describeRatingChange(avgRatingNow || null, prevAggregate._avg.rating ?? null, isTr);
   // NPS over every rating.
   const npsResult = calculateNPS(feedbacksWindow.map((f) => ({ rating: f.rating ?? 0 })));
+  const satisfaction = satisfactionDisplay(npsResult, isTr);
   // 1–3★ feedback reply rate in the window.
   const lowFeedback = feedbackOnly.filter((f) => (f.rating ?? 0) <= 3);
   const lowReplied = lowFeedback.filter((f) => f.replies.length > 0).length;
@@ -633,7 +634,7 @@ async function renderAnalyticsPage({
       <AnalyticsFilterBar isTr={isTr} branches={branches} />
 
       {/* §38.50 — KPI 5-col single row (tasarım birebir parity).
-          Toplam yorum / Ortalama puan / Yanıt süresi / NPS / Tekrar gelme.
+          Toplam yorum / Ortalama puan / Yanıt süresi / Memnuniyet farkı / Tekrar gelme.
           Secondary 3 KPI (Dönüşüm/Yönlendirme/AI Yanıt) silindi — owner kararı. */}
       <AnalyticsKpiGrid
         kpis={[
@@ -679,19 +680,11 @@ async function renderAnalyticsPage({
               .join(' · '),
           },
           {
-            label: 'NPS',
-            info: isTr
-              ? '5★ destekçi, 4★ pasif, 1–3★ eleştiren. NPS = destekçi % − eleştiren %.'
-              : '5★ promoter, 4★ passive, 1–3★ detractor. NPS = promoter % − detractor %.',
-            value: npsResult.total > 0 ? String(npsResult.npsScore) : '—',
-            subtitle:
-              npsResult.total > 0
-                ? isTr
-                  ? `${npsResult.promoters}\u00a0destekçi · ${npsResult.passives}\u00a0pasif · ${npsResult.detractors}\u00a0eleştiren`
-                  : `${npsResult.promoters}\u00a0promoters · ${npsResult.passives}\u00a0passive · ${npsResult.detractors}\u00a0detractors`
-                : isTr
-                  ? 'yeterli veri yok'
-                  : 'not enough data',
+            // "NPS" in plain words (2026-11-28): happy share minus unhappy share.
+            label: metricLabel('satisfaction', isTr),
+            info: metricInfo('satisfaction', isTr),
+            value: satisfaction?.value ?? '—',
+            subtitle: satisfaction?.subtitle ?? (isTr ? 'yeterli veri yok' : 'not enough data'),
           },
           {
             label: metricLabel('returning', isTr),

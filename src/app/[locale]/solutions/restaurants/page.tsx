@@ -96,7 +96,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: BarChart3,
           title: 'Yoğun saatleri görün',
           body:
-            'Analitik ekranındaki gün ve saat haritası geri bildirimlerin hangi saatlerde yoğunlaştığını gösterir. Ortalama puanı, platformlara göre dağılımı ve puanlardan tahmin edilen NPS’i 7, 30 ya da 90 günlük dönemlerle izlersiniz.',
+            'Analitik ekranındaki gün ve saat haritası geri bildirimlerin hangi saatlerde yoğunlaştığını gösterir. Ortalama puanı, platformlara göre dağılımı ve memnun ile memnun olmayan müşteri oranını 7, 30 ya da 90 günlük dönemlerle izlersiniz.',
         },
         {
           icon: Gift,
@@ -262,7 +262,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: BarChart3,
           title: 'See your busy hours',
           body:
-            'The day-and-hour map on the analytics screen shows when feedback comes in. You follow your average rating, the split across platforms and the NPS estimated from ratings over 7, 30 or 90 days.',
+            'The day-and-hour map on the analytics screen shows when feedback comes in. You follow your average rating, the split across platforms and the share of happy versus unhappy customers over 7, 30 or 90 days.',
         },
         {
           icon: Gift,

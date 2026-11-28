@@ -1232,7 +1232,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     <div className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       {/* Header — hidden on the mobile detail view (the back bar is there). */}
       <div
-        className={`px-4 pb-2 pt-5 sm:px-6 lg:pb-3 lg:pt-8 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
+        className={`px-4 pb-2 pt-5 sm:px-7 lg:pb-3 lg:pt-8 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
       >
         {/* Fintora page header: folder breadcrumb, title, actions on the
             same line. The review source switch leads the toolbar below. */}
@@ -1329,7 +1329,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           the viewport (360 → 420 → 480) and the detail takes the rest. Two
           white cards 10px apart on the canvas; on phones the page is white
           and the rows carry their own fill. */}
-      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-6 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
+      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-7 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
         <aside
           className={`min-h-0 px-2 pb-4 sm:mx-6 sm:mb-6 sm:rounded-[24px] sm:bg-white sm:p-2 lg:m-0 lg:overflow-y-auto ${
             isMobileDetailView ? 'hidden lg:block' : ''

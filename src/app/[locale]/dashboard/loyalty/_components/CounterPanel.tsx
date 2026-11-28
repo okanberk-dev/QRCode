@@ -119,8 +119,14 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
   };
 
   const submitEnrol = async () => {
-    if (!normalizePhone(enrol.phone)) {
-      setEnrolError(tr ? 'Telefon numarasını kontrol edin.' : 'Check the phone number.');
+    // The phone is optional (2026-11-28); a name or a phone is enough.
+    const hasPhone = enrol.phone.trim().length > 0;
+    if (hasPhone && !normalizePhone(enrol.phone)) {
+      setEnrolError(tr ? 'Telefon numarasını kontrol edin ya da boş bırakın.' : 'Check the phone number or leave it empty.');
+      return;
+    }
+    if (!hasPhone && !enrol.firstName.trim() && !enrol.lastName.trim()) {
+      setEnrolError(tr ? 'Müşterinin adını ya da telefonunu yazın.' : 'Enter the customer’s name or phone.');
       return;
     }
     if (!enrol.notice) {
@@ -138,7 +144,7 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
         body: JSON.stringify({
           firstName: enrol.firstName.trim() || null,
           lastName: enrol.lastName.trim() || null,
-          phone: enrol.phone,
+          phone: enrol.phone.trim() || null,
           email: enrol.email.trim() || null,
           ...(hasBirthday ? { birthMonth: month, birthDay: day } : {}),
           marketingConsent: enrol.marketing,
@@ -243,7 +249,8 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
                   <span className="min-w-0">
                     <span className="block truncate text-[14px] font-medium text-pn-ink">{m.name || (tr ? 'İsimsiz üye' : 'Unnamed')}</span>
                     <span className="text-[12px] text-[#737373]">
-                      {formatMemberCode(m.code)} · {m.phoneMasked}
+                      {formatMemberCode(m.code)}
+                      {m.phoneMasked ? ` · ${m.phoneMasked}` : ''}
                     </span>
                   </span>
                   <span className="shrink-0 text-[13px] font-medium tabular-nums">{m.balance}</span>
@@ -269,8 +276,8 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
           !results && (
             <p className="mt-4 text-[13px] text-[#737373]">
               {tr
-                ? 'Müşterinin telefonundaki kart QR’ını okutun ya da kartın altındaki kodu yazın. Kartı yoksa telefon numarasıyla bulabilir ya da yeni kart açabilirsiniz.'
-                : 'Scan the QR on the customer’s card or type the code under it. No card? Find them by phone or open a new card.'}
+                ? 'Müşterinin telefonundaki kart QR’ını okutun ya da kartın altındaki kodu yazın. Kartı yoksa adıyla ya da telefonuyla bulabilir, yeni kart açabilirsiniz.'
+                : 'Scan the QR on the customer’s card or type the code under it. No card? Find them by name or phone, or open a new card.'}
             </p>
           )
         )}
@@ -323,9 +330,6 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
           }
         >
           <div className="space-y-3">
-            <Field label={tr ? 'Telefon' : 'Phone'} htmlFor="enrol-phone" required>
-              <input id="enrol-phone" value={enrol.phone} onChange={(e) => setEnrol((s) => ({ ...s, phone: e.target.value }))} className="bz-input w-full" inputMode="tel" autoComplete="off" placeholder="05xx xxx xx xx" enterKeyHint="next" />
-            </Field>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label={tr ? 'Ad' : 'First name'} htmlFor="enrol-first">
                 <input id="enrol-first" value={enrol.firstName} onChange={(e) => setEnrol((s) => ({ ...s, firstName: e.target.value }))} className="bz-input w-full" autoCapitalize="words" autoComplete="off" enterKeyHint="next" />
@@ -334,6 +338,9 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
                 <input id="enrol-last" value={enrol.lastName} onChange={(e) => setEnrol((s) => ({ ...s, lastName: e.target.value }))} className="bz-input w-full" autoCapitalize="words" autoComplete="off" enterKeyHint="next" />
               </Field>
             </div>
+            <Field label={tr ? 'Telefon (isteğe bağlı)' : 'Phone (optional)'} htmlFor="enrol-phone">
+              <input id="enrol-phone" value={enrol.phone} onChange={(e) => setEnrol((s) => ({ ...s, phone: e.target.value }))} className="bz-input w-full" inputMode="tel" autoComplete="off" placeholder="05xx xxx xx xx" enterKeyHint="next" />
+            </Field>
             <Field label={tr ? 'E-posta (kart bağlantısı için, isteğe bağlı)' : 'E-mail (optional)'} htmlFor="enrol-email">
               <input id="enrol-email" type="email" value={enrol.email} onChange={(e) => setEnrol((s) => ({ ...s, email: e.target.value }))} className="bz-input w-full" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
             </Field>

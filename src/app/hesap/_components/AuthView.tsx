@@ -2,10 +2,11 @@
 
 // Sign in / sign up for the Buaze customer account (CLAUDE.md §61): Google
 // first, e-mail + password below. A new Google user sees one consent step
-// (name check, optional phone, terms + privacy notice, opt-in marketing).
+// (name check, terms + privacy notice, opt-in marketing). Phone and birthday
+// are never asked for: they fold away as optional (2026-11-28).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { ACCOUNT_COPY, accountError, accountLegalLinks, customerApi, errorCode, type AccountLocale } from '../account-copy';
 import { BTN_PRIMARY, BTN_SECONDARY, CARD, CHECKBOX, INPUT, LINK, MUTED, NOTICE_ERROR, NOTICE_WARN, SelectBox } from './ui';
 
@@ -49,6 +50,7 @@ export default function AuthView({
     website: '',
   });
   const [google, setGoogle] = useState<{ idToken: string; profile: GoogleProfile } | null>(null);
+  const [more, setMore] = useState(false);
   const attempt = useRef(0);
 
   const done = useCallback(() => {
@@ -253,22 +255,35 @@ export default function AuthView({
 
   const extraFields = (
     <>
-      <Labeled label={c.phone} id="acc-phone" hint={c.phoneHint}>
-        <input id="acc-phone" value={form.phone} onChange={(e) => set('phone', e.target.value)} className={`${INPUT} w-full`} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" enterKeyHint="next" />
-      </Labeled>
-      <Labeled label={c.birthday} id="acc-bday" hint={c.birthdayHint}>
-        <div className="flex gap-2">
-          <input id="acc-bday" value={form.birthDay} onChange={(e) => set('birthDay', e.target.value.replace(/\D/g, '').slice(0, 2))} className={`${INPUT} w-20 text-center`} inputMode="numeric" placeholder={c.day} aria-label={c.day} />
-          <SelectBox value={form.birthMonth} onChange={(e) => set('birthMonth', e.target.value)} className="min-w-0 flex-1" aria-label={c.month}>
-            <option value="">{c.month}</option>
-            {c.months.map((m, i) => (
-              <option key={m} value={String(i + 1)}>
-                {m}
-              </option>
-            ))}
-          </SelectBox>
-        </div>
-      </Labeled>
+      <button
+        type="button"
+        onClick={() => setMore((v) => !v)}
+        aria-expanded={more}
+        className={`flex min-h-[44px] w-full items-center justify-between rounded-full px-1 text-left text-[14px] font-medium ${MUTED}`}
+      >
+        <span>{c.optionalMore}</span>
+        <ChevronDown size={18} aria-hidden="true" className={`transition-transform motion-reduce:transition-none ${more ? 'rotate-180' : ''}`} />
+      </button>
+      {more && (
+        <>
+        <Labeled label={c.phone} id="acc-phone" hint={c.phoneHint}>
+          <input id="acc-phone" value={form.phone} onChange={(e) => set('phone', e.target.value)} className={`${INPUT} w-full`} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" enterKeyHint="next" />
+        </Labeled>
+        <Labeled label={c.birthday} id="acc-bday" hint={c.birthdayHint}>
+          <div className="flex gap-2">
+            <input id="acc-bday" value={form.birthDay} onChange={(e) => set('birthDay', e.target.value.replace(/\D/g, '').slice(0, 2))} className={`${INPUT} w-20 text-center`} inputMode="numeric" placeholder={c.day} aria-label={c.day} />
+            <SelectBox value={form.birthMonth} onChange={(e) => set('birthMonth', e.target.value)} className="min-w-0 flex-1" aria-label={c.month}>
+              <option value="">{c.month}</option>
+              {c.months.map((m, i) => (
+                <option key={m} value={String(i + 1)}>
+                  {m}
+                </option>
+              ))}
+            </SelectBox>
+          </div>
+        </Labeled>
+        </>
+      )}
     </>
   );
 

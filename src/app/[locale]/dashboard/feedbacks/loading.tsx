@@ -14,7 +14,7 @@ export default function Loading() {
   return (
     <div className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       {/* Header — breadcrumb, title + summary, actions (same box as the page). */}
-      <div className="px-4 pb-2 pt-5 sm:px-6 lg:pb-3 lg:pt-8">
+      <div className="px-4 pb-2 pt-5 sm:px-7 lg:pb-3 lg:pt-8">
         <div className="hidden h-[22px] items-center sm:flex">
           <SkBox className="h-4 w-40" />
         </div>
@@ -33,7 +33,7 @@ export default function Loading() {
       </div>
 
       {/* Toolbar — same rows as InboxToolbar (button mode). */}
-      <div className="px-4 py-3 sm:px-6 lg:pb-3 lg:pt-1" aria-hidden="true">
+      <div className="px-4 py-3 sm:px-7 lg:pb-3 lg:pt-1" aria-hidden="true">
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <SkBox className="h-12 w-[300px] max-w-full rounded-full" />
           <div className="flex min-w-0 items-center gap-2 md:ml-auto md:w-[min(460px,52%)] xl:w-[min(460px,40%)]">
@@ -49,7 +49,7 @@ export default function Loading() {
       </div>
 
       {/* Split — same tracks and cards as the page. */}
-      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-6 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
+      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-7 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
         <div className="min-h-0 space-y-2 px-2 pb-4 sm:mx-6 sm:mb-6 sm:rounded-[24px] sm:bg-white sm:p-2 lg:m-0 lg:overflow-hidden">
           {Array.from({ length: 6 }).map((_, i) => (
             <FeedbackListSkeletonRow key={i} />

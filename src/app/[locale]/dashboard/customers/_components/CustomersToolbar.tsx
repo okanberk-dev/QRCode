@@ -206,7 +206,7 @@ export function CustomersToolbar({
           }))}
           active={segment}
           onChange={setSegment}
-          ariaLabel="Segment"
+          ariaLabel={isTr ? 'Müşteri grubu' : 'Customer group'}
           className="hidden shrink-0 @min-[68rem]:inline-flex"
         />
 
@@ -251,7 +251,7 @@ export function CustomersToolbar({
             value={segment}
             onChange={setSegment}
             options={segmentOptions}
-            ariaLabel="Segment"
+            ariaLabel={isTr ? 'Müşteri grubu' : 'Customer group'}
             className="w-full [&>button]:h-11 lg:[&>button]:h-[38px] @min-[40rem]:w-[190px] @min-[68rem]:hidden"
           />
           <PulseSelect

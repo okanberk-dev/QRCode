@@ -31,7 +31,7 @@ Bu koşullar, {{ISLETME_ADI}} ("İşletme") tarafından sunulan sadakat program�
 ## 2. Üyelik
 
 - Üyelik ücretsizdir. 18 yaşından küçükler veli veya vasisinin onayıyla katılabilir.
-- Üye olmak için ad, soyad ve cep telefonu numarası gerekir; e-posta ve doğum günü isteğe bağlıdır.
+- Üye olmak için ad ve soyad yeterlidir; telefon numarası, e-posta ve doğum günü isteğe bağlıdır. Üye Google hesabıyla katılırsa kart ücretsiz Buaze müşteri hesabına bağlanır.
 - Her kişi bir programda bir kart açabilir. Kart kişiye özeldir; devredilemez, satılamaz.
 - Kart bağlantısı (QR kod ve kart kodu) kartın anahtarıdır. Üye bu bağlantıyı başkalarıyla paylaşmamakla yükümlüdür; paylaşımdan doğan kayıplardan İşletme ve Buaze sorumlu değildir.
 
@@ -91,7 +91,7 @@ Business contact: {{ISLETME_ILETISIM}}
 ## 2. Membership
 
 - Membership is free. Minors may join with the consent of a parent or guardian.
-- Joining requires first name, last name and mobile number; e-mail and birthday are optional.
+- A first and last name are enough to join; phone number, e-mail and birthday are optional. A member who joins with Google gets the card in a free Buaze customer account.
 - One card per person per programme. The card is personal and cannot be transferred or sold.
 - The card link (QR code and card code) is the key to the card; do not share it.
 
@@ -154,7 +154,7 @@ Programın yazılımı, İşletme adına veri işleyen sıfatıyla {{COMPANY_NAM
 ## 2. İşlenen kişisel veriler
 
 - **Kimlik:** ad, soyad
-- **İletişim:** cep telefonu numarası, (verdiyseniz) e-posta adresi
+- **İletişim:** (verdiyseniz) cep telefonu numarası ve e-posta adresi
 - **Müşteri işlem:** kart kodu, damga/puan bakiyesi, ziyaret ve ödül hareketleri, harcama tutarı (puan kartında personelin girdiği tutar), seviye
 - **Doğum günü:** (verdiyseniz) gün ve ay — yıl bilgisi alınmaz
 - **Pazarlama:** ticari ileti onayı ve tarihi
@@ -203,7 +203,7 @@ Your loyalty programme data is processed by **{{ISLETME_ADI}}** (the "Business")
 ## 2. Data processed
 
 - Identity: first and last name
-- Contact: mobile number, e-mail (if given)
+- Contact: mobile number and e-mail (if given)
 - Customer transactions: card code, balance, visits, rewards, spend entered by staff (points cards), tier
 - Birthday: day and month (if given), never the year
 - Marketing: consent and its date
@@ -243,14 +243,14 @@ Bu koşullar, {{COMPANY_NAME}} ("Buaze") ile Buaze müşteri hesabı ("Hesap") o
 
 ## 2. Hesap oluşturma
 
-- Hesap e-posta ve şifre ile veya Google hesabınızla oluşturulur. Ad, soyad ve e-posta zorunludur; telefon numarası sadakat kartı açmak için gerekir.
+- Hesap e-posta ve şifre ile veya Google hesabınızla oluşturulur. Ad, soyad ve e-posta zorunludur; telefon numarası isteğe bağlıdır.
 - Verdiğiniz bilgilerin doğru ve güncel olması sizin sorumluluğunuzdadır.
 - Şifrenizin gizliliğinden siz sorumlusunuz. Hesabınızın izinsiz kullanıldığını düşünüyorsanız şifrenizi değiştirin ve {{SUPPORT_EMAIL}} adresine bildirin.
 - 18 yaşından küçükler veli veya vasisinin onayıyla hesap açabilir.
 
 ## 3. İşletmelerle ilişkiniz
 
-- Bir işletmenin sadakat programına hesabınızla katıldığınızda ad, soyad, telefon, (verdiyseniz) e-posta ve doğum günü bilgileriniz, onayınızla o işletmeye iletilir. Bu andan itibaren kart verileriniz bakımından o işletme veri sorumlusudur.
+- Bir işletmenin sadakat programına hesabınızla katıldığınızda ad, soyad, e-posta ve (verdiyseniz) telefon ve doğum günü bilgileriniz, onayınızla o işletmeye iletilir. Bu andan itibaren kart verileriniz bakımından o işletme veri sorumlusudur.
 - Sadakat programlarının kuralları ve ödülleri ilgili işletme tarafından belirlenir ve sağlanır; Buaze bu programların tarafı değildir. Her programın **Sadakat Programı Üyelik Koşulları** ayrıca geçerlidir.
 - Profilinizde yaptığınız ad, e-posta ve doğum günü değişiklikleri hesabınıza bağlı kartlara da yansıtılır.
 
@@ -287,13 +287,13 @@ These terms govern the free Buaze customer account (the "Account") between {{COM
 
 ## 2. Creating an account
 
-- Sign up with e-mail and password or with Google. First name, last name and e-mail are required; a phone number is needed to open a loyalty card.
+- Sign up with e-mail and password or with Google. First name, last name and e-mail are required; a phone number is optional.
 - Keep your details accurate and your password secret. Report misuse to {{SUPPORT_EMAIL}}.
 - Minors need the consent of a parent or guardian.
 
 ## 3. You and the businesses
 
-- When you join a programme with your Account, your name, phone, e-mail (if given) and birthday (if given) are shared with that business with your consent. The business is the data controller of your card data.
+- When you join a programme with your Account, your name, e-mail, and phone and birthday (if given) are shared with that business with your consent. The business is the data controller of your card data.
 - Each business sets and provides its own programme and rewards; its **Loyalty Programme Membership Terms** also apply.
 - Changes to your name, e-mail and birthday are copied to the cards linked to your Account.
 
@@ -328,7 +328,7 @@ Hesabınızla katıldığınız sadakat programlarındaki kart verilerinizin ver
 ## 2. İşlenen kişisel veriler
 
 - **Kimlik:** ad, soyad
-- **İletişim:** e-posta adresi, telefon numarası
+- **İletişim:** e-posta adresi, (verdiyseniz) telefon numarası
 - **Hesap:** şifrenin geri döndürülemez özeti (şifrenin kendisi saklanmaz), Google ile girişte Google hesap kimliği, dil tercihi, e-posta doğrulama durumu
 - **Profil:** (verdiyseniz) doğum günü — gün ve ay
 - **İşlem güvenliği:** giriş zamanları, IP adresi, tarayıcı bilgisi

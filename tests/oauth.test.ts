@@ -178,6 +178,40 @@ describe('OAuth login (returning user)', () => {
   });
 });
 
+describe('OAuth sign-in page (allowCreate: false)', () => {
+  it('does not open a business account for an unknown e-mail', async () => {
+    const { deps, store } = buildDeps();
+
+    const result = await handleOAuthSignIn({ idToken: 'good', allowCreate: false }, deps);
+
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.status, 409);
+    assert.equal(result.code, 'NO_BUSINESS_ACCOUNT');
+    assert.equal(result.email, 'jane@example.com');
+    assert.equal(store.createCalls, 0);
+    assert.equal(store.signCalls, 0);
+  });
+
+  it('still signs in an existing business account', async () => {
+    const existing = buildUser({ id: 'user_existing' });
+    const store: TestStore = {
+      byEmail: new Map([[existing.email, existing]]),
+      byId: new Map([[existing.id, existing]]),
+      createCalls: 0,
+      signCalls: 0,
+    };
+    const { deps } = buildDeps({ store });
+
+    const result = await handleOAuthSignIn({ idToken: 'good', allowCreate: false }, deps);
+
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.isNewUser, false);
+    assert.equal(store.createCalls, 0);
+  });
+});
+
 describe('OAuth error cases', () => {
   it('rejects a missing idToken with 400', async () => {
     const { deps } = buildDeps();

@@ -54,7 +54,7 @@ const GUIDE: Record<HelpPlatform, { title: string; steps: string[]; hint?: strin
       'Tarayıcının adres çubuğundaki tam URL\'yi kopyalayın.',
       'Bu alana yapıştırın. URL "tripadvisor.com/..." ile başlamalı.',
     ],
-    hint: 'Otel ve konaklama segmentinde 4+ yıldız verenler buraya yönlendirilebilir.',
+    hint: 'Otel ve konaklama işletmelerinde 4+ yıldız verenler buraya yönlendirilebilir.',
   },
   airbnb: {
     title: 'Airbnb İlan Linki',
@@ -63,7 +63,7 @@ const GUIDE: Record<HelpPlatform, { title: string; steps: string[]; hint?: strin
       'Tarayıcının adres çubuğundaki tam URL\'yi kopyalayın.',
       'Bu alana yapıştırın. URL "airbnb.com/rooms/..." veya "airbnb.com.tr/..." ile başlamalı.',
     ],
-    hint: 'Sadece konaklama segmenti için. Yorumlar Airbnb hesabınız üzerinden bırakılır.',
+    hint: 'Yalnız konaklama işletmeleri için. Yorumlar Airbnb hesabınız üzerinden bırakılır.',
   },
   booking: {
     title: 'Booking.com Otel Linki',
@@ -72,7 +72,7 @@ const GUIDE: Record<HelpPlatform, { title: string; steps: string[]; hint?: strin
       'Tarayıcının adres çubuğundaki tam URL\'yi kopyalayın.',
       'Bu alana yapıştırın. URL "booking.com/hotel/..." ile başlamalı.',
     ],
-    hint: 'Otel / konaklama segmenti için. 4+ yıldız verenler buraya yönlendirilebilir.',
+    hint: 'Otel ve konaklama işletmeleri için. 4+ yıldız verenler buraya yönlendirilebilir.',
   },
   yandex: {
     title: 'Yandex Haritalar İşletme Linki',

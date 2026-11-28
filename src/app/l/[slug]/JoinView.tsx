@@ -1,14 +1,19 @@
 'use client';
 
 // The way into a loyalty program (CLAUDE.md §60, §61), inside the
-// business's customer panel. Signed-in Buaze customer → one tap, the card
-// lands in "Kartlarım". Otherwise a short guest form: first + last name and
-// phone; e-mail and birthday fold away as optional. Membership terms +
-// privacy notice must be accepted; marketing is opt-in (§19.1). The tap on
-// the join button also unlocks sound for the card page's celebration.
-import { useEffect, useRef, useState } from 'react';
+// business's customer panel. One screen, no second sign-in page:
+// - Signed-in Buaze customer → one tap, the card lands in "Kartlarım".
+// - "Google ile katıl" → the Google window, then the account is opened (or
+//   signed in) and the card is created in the same tap. A Google name
+//   without a last name asks for it once.
+// - "Google olmadan katıl" → first + last name only; phone, e-mail and
+//   birthday fold away as optional (the phone is never asked for, 2026-11-28).
+// Membership terms + privacy notice must be accepted (one box, which also
+// names the account terms for the Google path); marketing is opt-in for the
+// business only (§19.1). The join tap also unlocks the card page's sound.
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, Loader2, Nfc, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, Nfc, ShieldCheck, Sparkles } from 'lucide-react';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import type { LoyaltyKind } from '@/lib/loyalty';
 import { haptic, unlockAudio } from '@/lib/loyalty-sound';
@@ -19,7 +24,7 @@ interface Props {
   slug: string;
   businessName: string;
   source: 'qr' | 'nfc' | 'link';
-  account: { firstName: string; lastName: string; phone: string | null; email: string } | null;
+  account: { firstName: string; lastName: string; phone: string | null; email: string; hasBirthday: boolean } | null;
   program: {
     name: string;
     kind: LoyaltyKind;
@@ -33,6 +38,9 @@ interface Props {
 const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** Survives the Google redirect fallback (popup blocked): what was ticked. */
+const INTENT_KEY = (slug: string) => `buaze:loyalty-google:${slug}`;
+
 // Pill fields and buttons on borderless 24 px cards; colours come from the
 // business's panel theme (--p-*), so only the shapes are Buaze's.
 const FIELD =
@@ -41,17 +49,22 @@ const INPUT = `mt-1.5 w-full ${FIELD}`;
 const PANEL = 'rounded-[24px] p-5 space-y-4 bg-[var(--p-surface)]';
 const PRIMARY =
   'bzl-tap flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full text-[16.5px] font-semibold transition-[opacity,transform] duration-200 active:scale-[0.98] hover:opacity-95 disabled:opacity-40 motion-reduce:transition-none bg-[var(--p-accent)] text-[color:var(--p-on-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
+const SECONDARY =
+  'bzl-tap flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-[opacity,transform] duration-200 active:scale-[0.98] hover:opacity-90 motion-reduce:transition-none bg-[var(--p-bg)] text-[color:var(--p-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-surface)]';
+
+type JoinResponse = { status?: string; cardPath?: string | null; emailSent?: boolean; code?: string } | null;
 
 export default function JoinView({ locale, slug, businessName, source, account, program }: Props) {
   const t = PUBLIC_COPY[locale];
   const router = useRouter();
   const [saved, setSaved] = useState<string | null>(null);
-  const [mode, setMode] = useState<'account' | 'guest'>(account ? 'account' : 'guest');
+  // guest = the no-Google form; account = signed in; choose = Google first.
+  const [step, setStep] = useState<'choose' | 'guest' | 'account'>(account ? 'account' : 'choose');
   const [more, setMore] = useState(false);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
-    phone: account?.phone ?? '',
+    phone: '',
     email: '',
     day: '',
     month: '',
@@ -59,11 +72,16 @@ export default function JoinView({ locale, slug, businessName, source, account, 
     marketing: false,
     website: '',
   });
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<null | 'google' | 'join'>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [consentError, setConsentError] = useState(false);
+  // Google said yes but the name has no last name: ask once, then retry.
+  const [googleName, setGoogleName] = useState<{ idToken: string } | null>(null);
   const [showFloat, setShowFloat] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+  const consentRef = useRef<HTMLInputElement>(null);
+  const attempt = useRef(0);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -89,83 +107,270 @@ export default function JoinView({ locale, slug, businessName, source, account, 
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
 
-  const join = async (useAccount: boolean) => {
-    if (!form.consent) return;
-    // Inside the tap: lets the card page play its sound after the redirect.
-    unlockAudio();
-    haptic(10);
-    setBusy(true);
-    setError(null);
-    setNotice(null);
+  const birthday = () => {
     const month = Number.parseInt(form.month, 10);
     const day = Number.parseInt(form.day, 10);
-    const bday = Number.isFinite(month) && Number.isFinite(day) ? { birthMonth: month, birthDay: day } : {};
-    try {
+    return Number.isFinite(month) && Number.isFinite(day) ? { birthMonth: month, birthDay: day } : {};
+  };
+
+  const openCard = useCallback(
+    (data: JoinResponse) => {
+      if (!data?.cardPath) return false;
+      try {
+        window.localStorage.setItem(`${CARD_STORAGE_PREFIX}${slug}`, data.cardPath);
+      } catch {
+        /* storage blocked */
+      }
+      const qs = [locale === 'en' ? 'lang=en' : null, data.status === 'created' ? 'new=1' : null].filter(Boolean).join('&');
+      router.push(`${data.cardPath}${qs ? `?${qs}` : ''}`);
+      return true;
+    },
+    [locale, router, slug],
+  );
+
+  /** Creates the card; `useAccount` uses the signed-in profile. */
+  const postJoin = useCallback(
+    async (useAccount: boolean, marketing: boolean, extra: Record<string, unknown>) => {
       const res = await fetch(`/api/public/loyalty/${slug}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          useAccount
-            ? { useAccount: true, phone: form.phone || null, ...bday, consent: true, marketingConsent: form.marketing, locale, source }
-            : {
-                firstName: form.firstName.trim(),
-                lastName: form.lastName.trim(),
-                phone: form.phone,
-                email: form.email.trim() || null,
-                ...bday,
-                consent: true,
-                marketingConsent: form.marketing,
-                locale,
-                source,
-                ...(form.website ? { website: form.website } : {}),
-              },
-        ),
+        body: JSON.stringify({ ...extra, useAccount, consent: true, marketingConsent: marketing, locale, source }),
       });
-      const data = (await res.json().catch(() => null)) as { status?: string; cardPath?: string | null; emailSent?: boolean; code?: string } | null;
-      if (res.ok && (data?.status === 'created' || data?.status === 'own') && data.cardPath) {
-        try {
-          window.localStorage.setItem(`${CARD_STORAGE_PREFIX}${slug}`, data.cardPath);
-        } catch {
-          /* storage blocked */
-        }
-        const qs = [locale === 'en' ? 'lang=en' : null, data.status === 'created' ? 'new=1' : null].filter(Boolean).join('&');
-        router.push(`${data.cardPath}${qs ? `?${qs}` : ''}`);
-        return;
-      }
+      const data = (await res.json().catch(() => null)) as JoinResponse;
+      if (res.ok && (data?.status === 'created' || data?.status === 'own') && openCard(data)) return true;
       if (res.ok && data?.status === 'exists') {
         setNotice(data.emailSent ? t.existsMailed : t.exists);
-        return;
+        return false;
       }
       setError(t.errors[data?.code ?? ''] ?? t.errors.DEFAULT);
+      return false;
+    },
+    [locale, openCard, slug, source, t],
+  );
+
+  /**
+   * Google → Buaze customer account (opened with the account terms the
+   * customer just accepted, or simply signed in) → card. Business marketing
+   * consent is not the account's: the account starts without it.
+   */
+  const finishGoogle = useCallback(
+    async (idToken: string, marketing: boolean, names?: { firstName: string; lastName: string }) => {
+      setBusy('google');
+      setError(null);
+      try {
+        const res = await fetch('/api/customer/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            idToken,
+            locale,
+            consentTerms: true,
+            consentPrivacy: true,
+            marketingConsent: false,
+            ...(names ?? {}),
+          }),
+        });
+        const data = (await res.json().catch(() => null)) as { code?: string } | null;
+        if (!res.ok) {
+          if (data?.code === 'NAME_REQUIRED') {
+            setGoogleName({ idToken });
+            setBusy(null);
+            return;
+          }
+          setGoogleName(null);
+          setError(t.errors[data?.code ?? ''] ?? t.errors.DEFAULT);
+          setBusy(null);
+          return;
+        }
+        setGoogleName(null);
+        if (!(await postJoin(true, marketing, {}))) setBusy(null);
+      } catch {
+        setError(t.errors.DEFAULT);
+        setBusy(null);
+      }
+    },
+    [locale, postJoin, t],
+  );
+
+  // Google redirect fallback (popup blocked): finish on return.
+  useEffect(() => {
+    if (account) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const mod = await import('@/lib/firebase-client');
+        mod.preloadGoogleSignIn();
+        if (!mod.isGoogleRedirectPending()) return;
+        let intent: { marketing?: boolean } | null = null;
+        try {
+          intent = JSON.parse(window.sessionStorage.getItem(INTENT_KEY(slug)) ?? 'null');
+          window.sessionStorage.removeItem(INTENT_KEY(slug));
+        } catch {
+          intent = null;
+        }
+        setBusy('google');
+        const idToken = await mod.consumeGoogleRedirectIdToken();
+        if (cancelled) return;
+        if (!idToken || !intent) {
+          setBusy(null);
+          return;
+        }
+        setForm((f) => ({ ...f, consent: true, marketing: Boolean(intent?.marketing) }));
+        await finishGoogle(idToken, Boolean(intent.marketing));
+      } catch {
+        if (!cancelled) setBusy(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [account, finishGoogle, slug]);
+
+  const requireConsent = () => {
+    if (form.consent) return true;
+    setConsentError(true);
+    consentRef.current?.focus();
+    return false;
+  };
+
+  const joinWithGoogle = async () => {
+    if (!requireConsent()) return;
+    // Inside the tap: lets the card page play its sound after the redirect.
+    unlockAudio();
+    haptic(10);
+    setError(null);
+    setNotice(null);
+    setBusy('google');
+    const mine = ++attempt.current;
+    let settled = false;
+    let stop = () => {};
+    try {
+      window.sessionStorage.setItem(INTENT_KEY(slug), JSON.stringify({ marketing: form.marketing }));
+    } catch {
+      /* storage blocked: the popup path still works */
+    }
+    try {
+      const mod = await import('@/lib/firebase-client');
+      stop = mod.watchPopupFocusReturn(() => {
+        if (!settled && attempt.current === mine) setBusy(null);
+      });
+      const result = await mod.startGoogleSignIn();
+      settled = true;
+      stop();
+      if (attempt.current !== mine) return;
+      if (result.status === 'unconfigured') {
+        setError(t.googleUnavailable);
+        setBusy(null);
+        return;
+      }
+      if (result.status === 'idToken') {
+        try {
+          window.sessionStorage.removeItem(INTENT_KEY(slug));
+        } catch {
+          /* ignore */
+        }
+        await finishGoogle(result.idToken, form.marketing);
+      }
+    } catch (err) {
+      settled = true;
+      stop();
+      if (attempt.current !== mine) return;
+      setBusy(null);
+      const code = (err as { code?: string })?.code ?? '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+      if (code.startsWith('auth/')) {
+        const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
+        setError(getFirebaseErrorMessage(err, locale));
+        return;
+      }
+      setError(t.errors.DEFAULT);
+    }
+  };
+
+  const join = async (useAccount: boolean) => {
+    if (!requireConsent()) return;
+    unlockAudio();
+    haptic(10);
+    setBusy('join');
+    setError(null);
+    setNotice(null);
+    const phone = form.phone.trim() || null;
+    try {
+      const ok = await postJoin(
+        useAccount,
+        form.marketing,
+        useAccount
+          ? { phone, ...birthday() }
+          : {
+              firstName: form.firstName.trim(),
+              lastName: form.lastName.trim(),
+              phone,
+              email: form.email.trim() || null,
+              ...birthday(),
+              ...(form.website ? { website: form.website } : {}),
+            },
+      );
+      if (!ok) setBusy(null);
     } catch {
       setError(t.errors.DEFAULT);
-    } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
   const months = locale === 'tr' ? MONTHS_TR : MONTHS_EN;
   const legalQ = locale === 'en' ? '?lang=en' : '';
-  const phoneOk = form.phone.replace(/\D/g, '').length >= 7;
-  const guestReady = Boolean(form.consent && form.firstName.trim() && form.lastName.trim() && phoneOk);
+  const accountLegal = { terms: `/${locale}/musteri-hesabi-kosullari`, privacy: `/${locale}/musteri-hesabi-aydinlatma` };
+  const guestReady = Boolean(form.firstName.trim() && form.lastName.trim());
   const label = 'px-1 text-[14px] font-medium';
   const muted = { color: 'var(--p-muted)' } as const;
+  const linkCls = 'font-medium underline underline-offset-2';
 
-  const consentBoxes = (
+  const consentBoxes = (withAccountTerms: boolean) => (
     <div className="space-y-3 pt-1">
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
-        <input type="checkbox" checked={form.consent} onChange={(e) => set('consent', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]" />
+        <input
+          ref={consentRef}
+          type="checkbox"
+          checked={form.consent}
+          onChange={(e) => {
+            set('consent', e.target.checked);
+            if (e.target.checked) setConsentError(false);
+          }}
+          aria-invalid={consentError || undefined}
+          aria-describedby={consentError ? 'join-consent-error' : undefined}
+          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]"
+        />
         <span>
           {t.consentAll}{' '}
-          <a href={`/l/${slug}/kosullar${legalQ}`} target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
+          <a href={`/l/${slug}/kosullar${legalQ}`} target="_blank" rel="noopener" className={linkCls}>
             {t.termsLink}
           </a>
           {' · '}
-          <a href={`/l/${slug}/aydinlatma${legalQ}`} target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
+          <a href={`/l/${slug}/aydinlatma${legalQ}`} target="_blank" rel="noopener" className={linkCls}>
             {t.privacyLink}
           </a>
+          {withAccountTerms && (
+            <>
+              <br />
+              <span style={muted}>
+                {t.consentGoogle}{' '}
+                <a href={accountLegal.terms} target="_blank" rel="noopener" className={linkCls}>
+                  {t.accountTermsLink}
+                </a>
+                {' · '}
+                <a href={accountLegal.privacy} target="_blank" rel="noopener" className={linkCls}>
+                  {t.accountPrivacyLink}
+                </a>
+              </span>
+            </>
+          )}
         </span>
       </label>
+      {consentError && (
+        <p id="join-consent-error" className="px-1 text-[13px] font-medium text-[#B42318]" role="alert">
+          {t.consentMissing}
+        </p>
+      )}
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
         <input type="checkbox" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]" />
         <span>{t.marketing}</span>
@@ -187,6 +392,251 @@ export default function JoinView({ locale, slug, businessName, source, account, 
       )}
     </>
   );
+
+  const birthdayFields = program.birthdayReward ? (
+    <fieldset>
+      <legend className={label}>{t.birthdayLabel}</legend>
+      <div className="mt-1.5 flex gap-2">
+        <SelectBox value={form.day} onChange={(e) => set('day', e.target.value)} className="w-28 shrink-0" aria-label={t.day}>
+          <option value="">{t.day}</option>
+          {Array.from({ length: 31 }, (_, i) => (
+            <option key={i + 1} value={i + 1}>
+              {i + 1}
+            </option>
+          ))}
+        </SelectBox>
+        <SelectBox value={form.month} onChange={(e) => set('month', e.target.value)} className="min-w-0 flex-1" aria-label={t.month}>
+          <option value="">{t.month}</option>
+          {months.map((m, i) => (
+            <option key={m} value={i + 1}>
+              {m}
+            </option>
+          ))}
+        </SelectBox>
+      </div>
+    </fieldset>
+  ) : null;
+
+  const phoneField = (
+    <label className="block">
+      <span className={label}>{t.phoneOptional}</span>
+      <input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} className={INPUT} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" enterKeyHint="done" />
+      <span className="mt-1.5 block text-[12.5px]" style={muted}>
+        {t.phoneHint}
+      </span>
+    </label>
+  );
+
+  const moreToggle = (text: string) => (
+    <button
+      type="button"
+      onClick={() => setMore((v) => !v)}
+      aria-expanded={more}
+      className="flex min-h-[44px] w-full items-center justify-between rounded-full px-1 text-left text-[14px] font-medium"
+      style={muted}
+    >
+      <span>{text}</span>
+      <ChevronDown size={18} aria-hidden="true" className={`transition-transform motion-reduce:transition-none ${more ? 'rotate-180' : ''}`} />
+    </button>
+  );
+
+  const nameFields = (
+    <div className="grid grid-cols-2 gap-3">
+      <label className="block">
+        <span className={label}>{t.firstName}</span>
+        <input required value={form.firstName} maxLength={40} onChange={(e) => set('firstName', e.target.value)} className={INPUT} autoComplete="given-name" autoCapitalize="words" enterKeyHint="next" />
+      </label>
+      <label className="block">
+        <span className={label}>{t.lastName}</span>
+        <input required value={form.lastName} maxLength={40} onChange={(e) => set('lastName', e.target.value)} className={INPUT} autoComplete="family-name" autoCapitalize="words" enterKeyHint="done" />
+      </label>
+    </div>
+  );
+
+  let body: React.ReactNode;
+  if (googleName) {
+    body = (
+      <form
+        className={PANEL}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!guestReady) return;
+          void finishGoogle(googleName.idToken, form.marketing, { firstName: form.firstName.trim(), lastName: form.lastName.trim() });
+        }}
+      >
+        <div className="space-y-1 px-1">
+          <p className="text-[18px] font-semibold tracking-[-0.01em]">{t.googleNameTitle}</p>
+          <p className="text-[13.5px]" style={muted}>
+            {t.googleNameLead}
+          </p>
+        </div>
+        {nameFields}
+        {messages}
+        <button type="submit" disabled={busy !== null || !guestReady} className={PRIMARY}>
+          {busy ? <Loader2 size={18} className="animate-spin" /> : t.googleNameContinue}
+        </button>
+      </form>
+    );
+  } else if (account && step === 'account') {
+    body = (
+      <form
+        className={PANEL}
+        onSubmit={(e) => {
+          e.preventDefault();
+          void join(true);
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#111110] text-[18px] font-semibold text-white">
+            {account.firstName.charAt(0)}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[16px] font-semibold">
+              {account.firstName} {account.lastName}
+            </p>
+            <p className="truncate text-[13px]" style={muted}>
+              {account.email}
+            </p>
+          </div>
+        </div>
+        <p className="flex items-start gap-2 text-[12.5px]" style={muted}>
+          <ShieldCheck size={15} className="mt-0.5 shrink-0" aria-hidden /> {t.accountShares}
+        </p>
+        {(!account.phone || (program.birthdayReward && !account.hasBirthday)) && (
+          <>
+            {moreToggle(t.optionalMoreAccount)}
+            {more && (
+              <div className="bzl-fade space-y-4">
+                {!account.phone && phoneField}
+                {!account.hasBirthday && birthdayFields}
+              </div>
+            )}
+          </>
+        )}
+        {consentBoxes(false)}
+        {messages}
+        <button type="submit" disabled={busy !== null} className={PRIMARY}>
+          {busy ? <Loader2 size={18} className="animate-spin" /> : t.accountJoin(account.firstName)}
+        </button>
+        <button type="button" onClick={() => setStep('guest')} className="min-h-[44px] w-full text-center text-[13.5px] underline underline-offset-4" style={muted}>
+          {t.guestInstead}
+        </button>
+      </form>
+    );
+  } else if (step === 'guest') {
+    body = (
+      <form
+        className={PANEL}
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!guestReady) return;
+          void join(false);
+        }}
+      >
+        <p className="px-1 text-[18px] font-semibold tracking-[-0.01em]">{t.joinTitle}</p>
+        {nameFields}
+        {moreToggle(t.optionalMore)}
+        {more && (
+          <div className="bzl-fade space-y-4">
+            {phoneField}
+            <label className="block">
+              <span className={label}>{t.email}</span>
+              <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} className={INPUT} inputMode="email" autoComplete="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+              <span className="mt-1.5 block text-[12.5px]" style={muted}>
+                {t.emailHint}
+              </span>
+            </label>
+            {birthdayFields}
+          </div>
+        )}
+        {/* Honeypot: hidden from people, tempting for bots. */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={form.website}
+          onChange={(e) => set('website', e.target.value)}
+          className="absolute -left-[9999px] h-0 w-0 opacity-0"
+          aria-hidden="true"
+        />
+        {consentBoxes(false)}
+        {messages}
+        <button type="submit" disabled={busy !== null || !guestReady} className={PRIMARY}>
+          {busy ? (
+            <>
+              <Loader2 size={18} className="animate-spin" /> {t.submitting}
+            </>
+          ) : (
+            t.submit
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setStep(account ? 'account' : 'choose');
+            setError(null);
+          }}
+          className="flex min-h-[44px] w-full items-center justify-center gap-1.5 text-center text-[13.5px] underline underline-offset-4"
+          style={muted}
+        >
+          {!account && <ArrowLeft size={14} aria-hidden="true" />}
+          {account ? t.useAccountInstead : t.backToGoogle}
+        </button>
+      </form>
+    );
+  } else {
+    body = (
+      <div className={PANEL}>
+        <div className="space-y-1 px-1">
+          <p className="text-[18px] font-semibold tracking-[-0.01em]">{t.joinTitle}</p>
+          <p className="text-[13.5px] leading-relaxed" style={muted}>
+            {t.googleJoinLead}
+          </p>
+        </div>
+        {consentBoxes(true)}
+        {messages}
+        <button type="button" onClick={() => void joinWithGoogle()} disabled={busy !== null} className={PRIMARY}>
+          {busy === 'google' ? (
+            <>
+              <Loader2 size={18} className="animate-spin" /> {t.googleJoinBusy}
+            </>
+          ) : (
+            <>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white">
+                <GoogleMark />
+              </span>
+              {t.googleJoin}
+            </>
+          )}
+        </button>
+        <div className="flex items-center gap-3 text-[13px]" style={muted}>
+          <span className="h-px flex-1" style={{ background: 'var(--p-border)' }} />
+          {t.or}
+          <span className="h-px flex-1" style={{ background: 'var(--p-border)' }} />
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setStep('guest');
+            setError(null);
+          }}
+          disabled={busy !== null}
+          className={SECONDARY}
+        >
+          {t.withoutGoogle}
+        </button>
+        <a
+          href={`/hesap/giris?${locale === 'en' ? 'lang=en&' : ''}next=${encodeURIComponent(`/l/${slug}${source === 'nfc' ? '?source=nfc' : ''}`)}`}
+          className="block min-h-[44px] pt-2 text-center text-[13px] underline underline-offset-4"
+          style={muted}
+        >
+          {t.emailSignIn}
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -226,172 +676,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
       )}
 
       <div ref={formRef} id="katil" className="scroll-mt-6">
-        {account && mode === 'account' ? (
-          <form
-            className={PANEL}
-            onSubmit={(e) => {
-              e.preventDefault();
-              void join(true);
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#111110] text-[18px] font-semibold text-white">
-                {account.firstName.charAt(0)}
-              </span>
-              <div className="min-w-0">
-                <p className="text-[16px] font-semibold">
-                  {account.firstName} {account.lastName}
-                </p>
-                <p className="truncate text-[13px]" style={muted}>
-                  {account.email}
-                </p>
-              </div>
-            </div>
-            {!account.phone && (
-              <label className="block">
-                <span className={label}>{t.phone}</span>
-                <input required type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} className={INPUT} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" />
-                <span className="mt-1.5 block text-[12.5px]" style={muted}>
-                  {t.phoneHint}
-                </span>
-              </label>
-            )}
-            <p className="flex items-start gap-2 text-[12.5px]" style={muted}>
-              <ShieldCheck size={15} className="mt-0.5 shrink-0" aria-hidden /> {t.accountShares}
-            </p>
-            {consentBoxes}
-            {messages}
-            <button type="submit" disabled={busy || !form.consent || !phoneOk} className={PRIMARY}>
-              {busy ? <Loader2 size={18} className="animate-spin" /> : t.accountJoin(account.firstName)}
-            </button>
-            <button type="button" onClick={() => setMode('guest')} className="min-h-[44px] w-full text-center text-[13.5px] underline underline-offset-4" style={muted}>
-              {t.guestInstead}
-            </button>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            {!account && (
-              <a
-                href={`/hesap?${locale === 'en' ? 'lang=en&' : ''}next=${encodeURIComponent(`/l/${slug}${source === 'nfc' ? '?source=nfc' : ''}`)}`}
-                className="bzl-tap flex min-h-[64px] items-center gap-3 rounded-[24px] px-4 py-3 transition-opacity duration-200 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
-                style={{ background: 'var(--p-surface)' }}
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
-                  <GoogleMark />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14.5px] font-semibold">{t.withAccountTitle}</span>
-                  <span className="block truncate text-[12.5px]" style={muted}>
-                    {t.signInGoogle}
-                  </span>
-                </span>
-                <span aria-hidden="true" className="text-[18px]" style={muted}>
-                  →
-                </span>
-              </a>
-            )}
-            <form
-              className={PANEL}
-              noValidate
-              onSubmit={(e) => {
-                e.preventDefault();
-                void join(false);
-              }}
-            >
-              <p className="px-1 text-[18px] font-semibold tracking-[-0.01em]">{t.joinTitle}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <span className={label}>{t.firstName}</span>
-                  <input required value={form.firstName} maxLength={40} onChange={(e) => set('firstName', e.target.value)} className={INPUT} autoComplete="given-name" autoCapitalize="words" enterKeyHint="next" />
-                </label>
-                <label className="block">
-                  <span className={label}>{t.lastName}</span>
-                  <input required value={form.lastName} maxLength={40} onChange={(e) => set('lastName', e.target.value)} className={INPUT} autoComplete="family-name" autoCapitalize="words" enterKeyHint="next" />
-                </label>
-              </div>
-              <label className="block">
-                <span className={label}>{t.phone}</span>
-                <input required type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} className={INPUT} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" enterKeyHint="done" />
-                <span className="mt-1.5 block text-[12.5px]" style={muted}>
-                  {t.phoneHint}
-                </span>
-              </label>
-
-              <button
-                type="button"
-                onClick={() => setMore((v) => !v)}
-                aria-expanded={more}
-                className="flex min-h-[44px] w-full items-center justify-between rounded-full px-1 text-left text-[14px] font-medium"
-                style={muted}
-              >
-                <span>{locale === 'tr' ? 'E-posta ve doğum günü (isteğe bağlı)' : 'E-mail and birthday (optional)'}</span>
-                <ChevronDown size={18} aria-hidden="true" className={`transition-transform ${more ? 'rotate-180' : ''}`} />
-              </button>
-              {more && (
-                <div className="bzl-fade space-y-4">
-                  <label className="block">
-                    <span className={label}>{t.email}</span>
-                    <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} className={INPUT} inputMode="email" autoComplete="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
-                    <span className="mt-1.5 block text-[12.5px]" style={muted}>
-                      {t.emailHint}
-                    </span>
-                  </label>
-                  {program.birthdayReward && (
-                    <fieldset>
-                      <legend className={label}>{t.birthdayLabel}</legend>
-                      <div className="mt-1.5 flex gap-2">
-                        <SelectBox value={form.day} onChange={(e) => set('day', e.target.value)} className="w-28 shrink-0" aria-label={t.day}>
-                          <option value="">{t.day}</option>
-                          {Array.from({ length: 31 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>
-                              {i + 1}
-                            </option>
-                          ))}
-                        </SelectBox>
-                        <SelectBox value={form.month} onChange={(e) => set('month', e.target.value)} className="min-w-0 flex-1" aria-label={t.month}>
-                          <option value="">{t.month}</option>
-                          {months.map((m, i) => (
-                            <option key={m} value={i + 1}>
-                              {m}
-                            </option>
-                          ))}
-                        </SelectBox>
-                      </div>
-                    </fieldset>
-                  )}
-                </div>
-              )}
-
-              {/* Honeypot: hidden from people, tempting for bots. */}
-              <input
-                type="text"
-                name="website"
-                tabIndex={-1}
-                autoComplete="off"
-                value={form.website}
-                onChange={(e) => set('website', e.target.value)}
-                className="absolute -left-[9999px] h-0 w-0 opacity-0"
-                aria-hidden="true"
-              />
-              {consentBoxes}
-              {messages}
-              <button type="submit" disabled={busy || !guestReady} className={PRIMARY}>
-                {busy ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" /> {t.submitting}
-                  </>
-                ) : (
-                  t.submit
-                )}
-              </button>
-              {account && (
-                <button type="button" onClick={() => setMode('account')} className="min-h-[44px] w-full text-center text-[13.5px] underline underline-offset-4" style={muted}>
-                  {t.useAccountInstead}
-                </button>
-              )}
-            </form>
-          </div>
-        )}
+        {body}
       </div>
 
       {showFloat && (

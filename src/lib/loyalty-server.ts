@@ -426,7 +426,8 @@ export class LoyaltyError extends Error {
 export interface NewMemberInput {
   firstName: string | null;
   lastName: string | null;
-  phone: string;
+  /** Optional (2026-11-28): the customer may join without a phone. */
+  phone: string | null;
   email: string | null;
   birthMonth: number | null;
   birthDay: number | null;
@@ -445,11 +446,13 @@ export async function createLoyaltyMember(
   input: NewMemberInput,
   actor?: LoyaltyActor | null,
 ): Promise<LoyaltyMemberRow & { cardToken: string }> {
-  const existing = await prisma.loyaltyMember.findUnique({
-    where: { programId_phone: { programId: program.id, phone: input.phone } },
-    select: { id: true },
-  });
-  if (existing) throw new LoyaltyError('PHONE_EXISTS', 409, { memberId: existing.id });
+  if (input.phone) {
+    const existing = await prisma.loyaltyMember.findUnique({
+      where: { programId_phone: { programId: program.id, phone: input.phone } },
+      select: { id: true },
+    });
+    if (existing) throw new LoyaltyError('PHONE_EXISTS', 409, { memberId: existing.id });
+  }
 
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
@@ -495,7 +498,7 @@ export async function createLoyaltyMember(
       if (target.includes('customer_account') || target.includes('customerAccount')) {
         throw new LoyaltyError('ACCOUNT_HAS_CARD', 409);
       }
-      if (target.includes('phone')) {
+      if (target.includes('phone') && input.phone) {
         const again = await prisma.loyaltyMember.findUnique({
           where: { programId_phone: { programId: program.id, phone: input.phone } },
           select: { id: true },

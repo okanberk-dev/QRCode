@@ -63,24 +63,35 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   const [challengeEmail, setChallengeEmail] = useState<string>('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
-  const finalizeGoogleSignIn = async (idToken: string) => {
+  // Google said who it is but there is no business account for that e-mail:
+  // a loyalty customer (§61) goes to their cards, a new business opens one.
+  const [noBusiness, setNoBusiness] = useState<{ idToken: string; customerAccount: boolean } | null>(null);
+  const [choiceBusy, setChoiceBusy] = useState<null | 'customer' | 'business'>(null);
+
+  const finalizeGoogleSignIn = async (idToken: string, intent: 'login' | 'register' = 'login') => {
     setLoading(true);
     setGoogleStage('finalizing');
     // Token was prefetched the moment the Google popup opened (see
     // handleGoogleSignIn) — by now it is usually already resolved, so this
     // no longer adds a script-load + execute round-trip after the popup.
-    const recaptchaToken = await takeRecaptchaToken('auth_google');
+    const recaptchaToken = intent === 'login' ? await takeRecaptchaToken('auth_google') : await getRecaptchaToken('auth_google');
     let res: Response;
-    let data: { error?: string; isNewUser?: boolean; onboardingCompleted?: boolean };
+    let data: { error?: string; isNewUser?: boolean; onboardingCompleted?: boolean; code?: string; customerAccount?: boolean };
     try {
       res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, recaptchaToken, locale }),
+        body: JSON.stringify({ idToken, recaptchaToken, locale, intent }),
       });
       data = await res.json();
     } catch {
       setError(locale === 'tr' ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');
+      setLoading(false);
+      setGoogleStage('idle');
+      return;
+    }
+    if (res.status === 409 && data.code === 'NO_BUSINESS_ACCOUNT') {
+      setNoBusiness({ idToken, customerAccount: Boolean(data.customerAccount) });
       setLoading(false);
       setGoogleStage('idle');
       return;
@@ -268,6 +279,39 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
     }
   };
 
+  /** Sign in to the Buaze customer account with the same Google answer. */
+  const continueAsCustomer = async () => {
+    if (!noBusiness) return;
+    setChoiceBusy('customer');
+    setError('');
+    try {
+      const res = await fetch('/api/customer/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: noBusiness.idToken, locale }),
+      });
+      if (res.ok) {
+        window.location.href = `/hesap${locale === 'en' ? '?lang=en' : ''}`;
+        return;
+      }
+      // No customer account yet: the customer page asks for its consents.
+      window.location.href = `/hesap/kayit${locale === 'en' ? '?lang=en' : ''}`;
+    } catch {
+      setError(locale === 'tr' ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');
+      setChoiceBusy(null);
+    }
+  };
+
+  const openBusinessAccount = async () => {
+    if (!noBusiness) return;
+    setChoiceBusy('business');
+    setError('');
+    const idToken = noBusiness.idToken;
+    setNoBusiness(null);
+    await finalizeGoogleSignIn(idToken, 'register');
+    setChoiceBusy(null);
+  };
+
   const cancelTwoFactor = () => {
     setChallengeToken(null);
     setTwoFactorCode('');
@@ -320,6 +364,77 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         </button>
         <RecaptchaNotice locale={locale} />
       </form>
+    );
+  }
+
+  if (noBusiness) {
+    const tr = locale === 'tr';
+    const customerFirst = noBusiness.customerAccount;
+    const customerBtn = (
+      <button
+        type="button"
+        onClick={() => void continueAsCustomer()}
+        disabled={choiceBusy !== null}
+        className={`${customerFirst ? 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]' : 'border border-[#E5E5E5] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]'} inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors disabled:opacity-60`}
+      >
+        {choiceBusy === 'customer' && <Loader2 size={16} className="animate-spin" aria-hidden />}
+        {customerFirst ? (tr ? 'Sadakat kartlarıma git' : 'Go to my loyalty cards') : tr ? 'Müşteri olarak devam et' : 'Continue as a customer'}
+      </button>
+    );
+    const businessBtn = (
+      <button
+        type="button"
+        onClick={() => void openBusinessAccount()}
+        disabled={choiceBusy !== null}
+        className={`${customerFirst ? 'border border-[#E5E5E5] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]' : 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]'} inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors disabled:opacity-60`}
+      >
+        {choiceBusy === 'business' && <Loader2 size={16} className="animate-spin" aria-hidden />}
+        {tr ? 'İşletme hesabı aç (14 gün ücretsiz)' : 'Open a business account (14 days free)'}
+      </button>
+    );
+    return (
+      <div className="flex flex-col gap-3.5" role="region" aria-live="polite">
+        {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+        <div className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3.5 text-[13.5px] leading-relaxed text-[#525252]">
+          <p className="text-[15px] font-semibold text-[#0A0A0A]">
+            {customerFirst
+              ? tr
+                ? 'Bu Google hesabı bir müşteri hesabı'
+                : 'This Google account is a customer account'
+              : tr
+                ? 'Bu Google hesabıyla bir işletme hesabı yok'
+                : 'No business account for this Google account'}
+          </p>
+          <p className="mt-1">
+            {customerFirst
+              ? tr
+                ? 'Bu hesapla Buaze sadakat kartlarınızı kullanıyorsunuz. Kartlarınıza gidebilir ya da işletmeniz için ayrı bir işletme hesabı açabilirsiniz.'
+                : 'You use this account for your Buaze loyalty cards. Go to your cards, or open a separate business account for your business.'
+              : tr
+                ? 'Bir işletmeyi yönetecekseniz işletme hesabı açın. Bir işletmenin sadakat kartını kullanıyorsanız müşteri olarak devam edin.'
+                : 'If you run a business, open a business account. If you use a business’s loyalty card, continue as a customer.'}
+          </p>
+        </div>
+        {customerFirst ? (
+          <>
+            {customerBtn}
+            {businessBtn}
+          </>
+        ) : (
+          <>
+            {businessBtn}
+            {customerBtn}
+          </>
+        )}
+        <button
+          type="button"
+          onClick={() => setNoBusiness(null)}
+          disabled={choiceBusy !== null}
+          className="self-center text-[12.5px] text-[#737373] transition-colors hover:text-[#0A0A0A]"
+        >
+          {tr ? '← Giriş ekranına dön' : '← Back to sign in'}
+        </button>
+      </div>
     );
   }
 
@@ -444,6 +559,12 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         <Link href={`/${locale}/auth/register`} className="text-[#0A0A0A] font-semibold hover:text-[#A8D62E] transition-colors">
           {locale === 'tr' ? 'Kayıt ol' : 'Sign up'}
         </Link>
+      </p>
+      <p className="text-center text-[12.5px] text-[#737373]">
+        {locale === 'tr' ? 'Sadakat kartı müşterisi misiniz?' : 'Using a loyalty card?'}{' '}
+        <a href={`/hesap/giris${locale === 'en' ? '?lang=en' : ''}`} className="font-medium text-[#0A0A0A] underline underline-offset-2 hover:text-[#525252]">
+          {locale === 'tr' ? 'Müşteri girişi' : 'Customer sign-in'}
+        </a>
       </p>
     </form>
   );

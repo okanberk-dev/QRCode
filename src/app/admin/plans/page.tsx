@@ -161,7 +161,7 @@ export default async function AdminPlansPage() {
           icon={<Crown size={14} strokeWidth={2} />}
         />
         <StatCard
-          label="Aylık MRR (tahmini)"
+          label="Aylık gelir (tahmini)"
           value={formatUsd(mrrUsd)}
           delta={
             revenue.activeSubscriptions > 0

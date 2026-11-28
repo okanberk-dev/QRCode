@@ -153,8 +153,9 @@ export type CustomerCard = Awaited<ReturnType<typeof listCustomerCards>>[number]
  * Adds a card to the account. Holding the card link alone is not enough (a
  * link can leak through a screenshot or a key fob): the account's phone must
  * be the card's phone, or the customer types the card phone's last 4 digits
- * (5 tries per card per hour). A card already in another account, or a
- * second card of the same programme, is refused.
+ * (5 tries per card per hour). A card without a phone links with its link
+ * alone. A card already in another account, or a second card of the same
+ * programme, is refused.
  */
 export async function linkCardByToken(
   account: { id: string; phone: string | null },
@@ -169,8 +170,10 @@ export async function linkCardByToken(
   if (!card) throw new CustomerAccountError('CARD_NOT_FOUND', 404);
   if (card.customerAccountId === account.id) return { slug: card.program.slug };
   if (card.customerAccountId) throw new CustomerAccountError('CARD_IN_OTHER_ACCOUNT', 409);
+  // A card without a phone (optional since 2026-11-28) has nothing to check
+  // against: its secret link, which the customer holds, is the proof.
   const samePhone = Boolean(card.phone && normalizePhone(account.phone ?? '') === card.phone);
-  if (!samePhone) {
+  if (card.phone && !samePhone) {
     if (!last4) throw new CustomerAccountError('CARD_VERIFY_REQUIRED', 409);
     const tries = await rateLimit(`loyalty-link-verify:${card.id}`, 5, 60 * 60_000);
     if (!tries.allowed) throw new CustomerAccountError('RATE_LIMIT', 429);

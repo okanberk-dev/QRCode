@@ -234,6 +234,15 @@ export default function CardView({
     };
   }, [left, refresh, token]);
 
+  // How deleting is confirmed: the phone's last 4 digits; without a phone
+  // the account that owns the card, or the card code (§61).
+  const leaveMode: 'phone' | 'account' | 'code' = card.member.phoneEnd
+    ? 'phone'
+    : card.member.hasAccount
+      ? 'account'
+      : 'code';
+  const leaveReady = leaveMode === 'phone' ? last4.length === 4 : leaveMode === 'code' ? last4.trim().length >= 4 : viewer.owns;
+
   const leave = async () => {
     setLeaveBusy(true);
     setLeaveError(null);
@@ -241,7 +250,7 @@ export default function CardView({
       const res = await fetch(`/api/public/loyalty/card/${token}/leave`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ last4 }),
+        body: JSON.stringify(leaveMode === 'phone' ? { last4 } : leaveMode === 'code' ? { code: last4 } : {}),
       });
       if (res.ok) {
         try {
@@ -253,7 +262,17 @@ export default function CardView({
         setLeaveOpen(false);
         return;
       }
-      setLeaveError(res.status === 400 ? t.leaveWrong : res.status === 429 ? t.errors.RATE_LIMIT : t.errors.DEFAULT);
+      setLeaveError(
+        res.status === 400
+          ? leaveMode === 'code'
+            ? t.leaveWrongCode
+            : t.leaveWrong
+          : res.status === 401
+            ? t.leaveSignIn
+            : res.status === 429
+              ? t.errors.RATE_LIMIT
+              : t.errors.DEFAULT,
+      );
     } catch {
       setLeaveError(t.errors.DEFAULT);
     } finally {
@@ -440,16 +459,36 @@ export default function CardView({
           ) : (
             <div className="mt-2 w-full rounded-[24px] bg-[var(--p-surface)] p-5 text-left ring-1 ring-[#FECDCA]">
               <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
-              <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">{t.leaveBody}</p>
-              <input
-                value={last4}
-                onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                inputMode="numeric"
-                autoComplete="off"
-                className="mt-3 h-12 w-40 rounded-full border border-[color:var(--p-border)] bg-[var(--p-bg)] px-4 text-center text-[20px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)]"
-                aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
-                placeholder="••••"
-              />
+              <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">
+                {leaveMode === 'phone' ? t.leaveBody : leaveMode === 'code' ? t.leaveBodyCode : viewer.owns ? t.leaveBodyAccount : t.leaveSignIn}
+              </p>
+              {leaveMode !== 'account' && (
+                <input
+                  value={last4}
+                  onChange={(e) =>
+                    setLast4(
+                      leaveMode === 'phone'
+                        ? e.target.value.replace(/\D/g, '').slice(0, 4)
+                        : e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8),
+                    )
+                  }
+                  inputMode={leaveMode === 'phone' ? 'numeric' : 'text'}
+                  autoComplete="off"
+                  autoCapitalize={leaveMode === 'code' ? 'characters' : undefined}
+                  spellCheck={false}
+                  className="mt-3 h-12 w-44 rounded-full border border-[color:var(--p-border)] bg-[var(--p-bg)] px-4 text-center text-[20px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)]"
+                  aria-label={leaveMode === 'phone' ? (tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone') : t.code}
+                  placeholder={leaveMode === 'phone' ? '••••' : '••••••'}
+                />
+              )}
+              {leaveMode === 'account' && !viewer.owns && (
+                <a
+                  href={`/hesap/giris?${tr ? '' : 'lang=en&'}next=${encodeURIComponent(`/l/${slug}/k/${token}`)}`}
+                  className="mt-3 inline-flex min-h-[44px] items-center text-[14px] font-medium underline underline-offset-4"
+                >
+                  {tr ? 'Hesabıma giriş yap' : 'Sign in to my account'}
+                </a>
+              )}
               {leaveError && (
                 <p className="mt-2 text-[13px] text-[#D92D20]" role="alert">
                   {leaveError}
@@ -461,7 +500,7 @@ export default function CardView({
                 </button>
                 <button
                   type="button"
-                  disabled={last4.length !== 4 || leaveBusy}
+                  disabled={!leaveReady || leaveBusy}
                   onClick={() => void leave()}
                   className="bzl-tap flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-[#D92D20] text-[14px] font-semibold text-white transition-[background-color,transform] hover:bg-[#B42318] active:scale-[0.98] disabled:opacity-40 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D92D20] focus-visible:ring-offset-2"
                 >

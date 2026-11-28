@@ -81,7 +81,7 @@ export default function GoogleReviewsEmbedCard({
         )}
       </header>
       <h3 id="google-embed-title" className="sr-only">
-        {isTr ? 'Google yorumları widgetı' : 'Google reviews widget'}
+        {isTr ? 'Sitenizde Google yorumları' : 'Google reviews on your website'}
       </h3>
 
       {status.tenantAllowed === false ? (

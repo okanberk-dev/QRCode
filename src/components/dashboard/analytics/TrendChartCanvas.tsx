@@ -76,6 +76,9 @@ export default function TrendChartCanvas({
   isTr,
   tickInterval,
 }: TrendChartCanvasProps) {
+  // A series with no data would draw a zero-height band whose line sits on
+  // top of the band below it (a lime line over Google): leave it out.
+  const has = (key: 'google' | 'tripadvisor' | 'buazeQr' | 'other') => points.some((p) => (p[key] ?? 0) > 0);
   return (
     <ComposedChart
       width={width}
@@ -117,47 +120,55 @@ export default function TrendChartCanvas({
       {/* Stacked soft areas with a line on top of each band (Fintora
           "Transaction Performance"): Google ink, Tripadvisor grey, Buaze QR
           black with a gradient, other light green. */}
-      <Area
-        type="monotone"
-        dataKey="google"
-        stackId="trend"
-        stroke="#111110"
-        strokeWidth={1.75}
-        fill="#111110"
-        fillOpacity={0.1}
-        isAnimationActive={false}
-      />
-      <Area
-        type="monotone"
-        dataKey="tripadvisor"
-        stackId="trend"
-        stroke="#9A9A9A"
-        strokeWidth={1.5}
-        fill="#9A9A9A"
-        fillOpacity={0.14}
-        isAnimationActive={false}
-      />
-      <Area
-        type="monotone"
-        dataKey="buazeQr"
-        stackId="trend"
-        stroke="#C6F24E"
-        strokeWidth={2}
-        fill="url(#mainTrendBuazeQr)"
-        fillOpacity={1}
-        activeDot={{ r: 5, fill: '#C6F24E', stroke: '#FFFFFF', strokeWidth: 2 }}
-        isAnimationActive={false}
-      />
-      <Area
-        type="monotone"
-        dataKey="other"
-        stackId="trend"
-        stroke="#111110"
-        strokeWidth={1.5}
-        fill="#111110"
-        fillOpacity={0.16}
-        isAnimationActive={false}
-      />
+      {has('google') && (
+        <Area
+          type="monotone"
+          dataKey="google"
+          stackId="trend"
+          stroke="#111110"
+          strokeWidth={1.75}
+          fill="#111110"
+          fillOpacity={0.1}
+          isAnimationActive={false}
+        />
+      )}
+      {has('tripadvisor') && (
+        <Area
+          type="monotone"
+          dataKey="tripadvisor"
+          stackId="trend"
+          stroke="#9A9A9A"
+          strokeWidth={1.5}
+          fill="#9A9A9A"
+          fillOpacity={0.14}
+          isAnimationActive={false}
+        />
+      )}
+      {has('buazeQr') && (
+        <Area
+          type="monotone"
+          dataKey="buazeQr"
+          stackId="trend"
+          stroke="#C6F24E"
+          strokeWidth={2}
+          fill="url(#mainTrendBuazeQr)"
+          fillOpacity={1}
+          activeDot={{ r: 5, fill: '#C6F24E', stroke: '#FFFFFF', strokeWidth: 2 }}
+          isAnimationActive={false}
+        />
+      )}
+      {has('other') && (
+        <Area
+          type="monotone"
+          dataKey="other"
+          stackId="trend"
+          stroke="#111110"
+          strokeWidth={1.5}
+          fill="#111110"
+          fillOpacity={0.16}
+          isAnimationActive={false}
+        />
+      )}
     </ComposedChart>
   );
 }

@@ -140,6 +140,7 @@ const MESSAGES: Record<string, { tr: string; en: string }> = {
   BIRTHDAY_NOT_AVAILABLE: { tr: 'Doğum günü hediyesi şu an verilemez.', en: 'The birthday gift is not available now.' },
   PHONE_EXISTS: { tr: 'Bu telefonla kayıtlı bir kart zaten var.', en: 'A card with this phone already exists.' },
   INVALID_PHONE: { tr: 'Telefon numarasını kontrol edin.', en: 'Check the phone number.' },
+  NAME_REQUIRED: { tr: 'Müşterinin adını ya da telefonunu yazın.', en: 'Enter the customer’s name or phone.' },
   INVALID_EMAIL: { tr: 'E-posta adresini kontrol edin.', en: 'Check the e-mail address.' },
   INVALID_BIRTHDAY: { tr: 'Doğum gününü kontrol edin.', en: 'Check the birthday.' },
   CONTENT_BLOCKED: {
