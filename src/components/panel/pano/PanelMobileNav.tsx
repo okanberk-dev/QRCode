@@ -2,14 +2,15 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import Link from '@/components/navigation/IntentLink';
 import type { PanoNavEntry } from './PanelTopNav';
 
 /**
  * Pano mobile chrome (docs/design/DASHBOARD_DESIGN.md §7, below 1024px): a
- * floating white bar (brand + actions + menu circle) and a full-screen white
- * drawer with pill links. There is no bottom tab bar.
+ * floating white bar (brand + actions + menu circle), a full-screen white
+ * drawer with pill links, and a floating black bottom tab bar (the daily
+ * pages + "Menü", which opens the drawer; active tab = lime circle).
  */
 
 interface PanelMobileNavProps {
@@ -21,7 +22,9 @@ interface PanelMobileNavProps {
   drawerTop?: ReactNode;
   /** Below the links in the drawer (account, sign out). */
   drawerFooter?: ReactNode;
-  labels: { open: string; close: string; dialog: string };
+  /** Bottom tab bar: up to four daily pages (links only). */
+  bottomEntries?: PanoNavEntry[];
+  labels: { open: string; close: string; dialog: string; more?: string; bottom?: string };
 }
 
 function MenuGlyph() {
@@ -33,7 +36,8 @@ function MenuGlyph() {
   );
 }
 
-export function PanelMobileNav({ brand, entries, actions, drawerTop, drawerFooter, labels }: PanelMobileNavProps) {
+export function PanelMobileNav({ brand, entries, actions, drawerTop, drawerFooter, bottomEntries = [], labels }: PanelMobileNavProps) {
+  const tabs = bottomEntries.flatMap((entry) => (entry.type === 'link' ? [entry] : [])).slice(0, 4);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -76,6 +80,34 @@ export function PanelMobileNav({ brand, entries, actions, drawerTop, drawerFoote
           </div>
         </div>
       </div>
+
+      {tabs.length > 0 && !open && (
+        <nav className="pn-bottomnav lg:hidden" aria-label={labels.bottom ?? labels.dialog}>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-current={tab.active ? 'page' : undefined}
+                data-active={tab.active ? 'true' : undefined}
+                className="pn-bottomnav-item"
+              >
+                <span className="pn-bottomnav-icon" aria-hidden="true">
+                  {Icon ? <Icon size={20} /> : tab.label.charAt(0)}
+                </span>
+                <span className="pn-bottomnav-label">{tab.shortLabel ?? tab.label}</span>
+              </Link>
+            );
+          })}
+          <button type="button" className="pn-bottomnav-item" onClick={() => setOpen(true)} aria-expanded={open}>
+            <span className="pn-bottomnav-icon" aria-hidden="true">
+              <Menu size={20} />
+            </span>
+            <span className="pn-bottomnav-label">{labels.more ?? labels.open}</span>
+          </button>
+        </nav>
+      )}
 
       {open && (
         <div className="pn-drawer lg:hidden" role="dialog" aria-modal="true" aria-label={labels.dialog}>
