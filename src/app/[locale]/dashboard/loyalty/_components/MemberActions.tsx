@@ -302,7 +302,7 @@ export default function MemberActions({
                   type="button"
                   disabled={busy !== null}
                   onClick={() => setConfirmReward({ id: r.id, title: r.title, cost: r.cost })}
-                  className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-pn-accent-hover bg-[#F6F3FD] px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-pn-accent-hover bg-[#F4FBDC] px-4 py-3 text-left"
                 >
                   <span className="flex items-center gap-2 text-[14px] font-medium text-pn-ink">
                     <Gift size={16} aria-hidden="true" /> {r.title}

@@ -190,7 +190,7 @@ export function MenuStatusCard({
 
   if (justPublished && live) {
     return (
-      <section aria-labelledby="menu-status-title" className="bz-card min-h-[164px] border-[#CDEFD6] bg-[#F6F3FD] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
+      <section aria-labelledby="menu-status-title" className="bz-card min-h-[164px] border-[#E3F4A6] bg-[#F4FBDC] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white">
             <Rocket size={16} strokeWidth={2} aria-hidden="true" />

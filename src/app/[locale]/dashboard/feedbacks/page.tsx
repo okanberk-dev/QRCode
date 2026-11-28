@@ -2,7 +2,7 @@
 
 import { ReviewSourceSwitch } from '@/components/dashboard/feedbacks/ReviewSourceSwitch';
 import { PanelBreadcrumb } from '@/components/panel/pano/PanelBreadcrumb';
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode, useLayoutEffect } from 'react';
 import { replyErrorMessage } from '@/components/reply/reply-errors';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
@@ -658,8 +658,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [],
   );
 
-  const onRegenerateAi = async (toneOverride?: AiTone) => {
-    if (!active) return;
+  const onRegenerateAi = async (toneOverride?: AiTone): Promise<string | null> => {
+    if (!active) return null;
     const targetId = active.id;
     const targetTone = toneOverride ?? aiTone;
     // A draft that arrives after the owner moved to another review must not
@@ -667,17 +667,21 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     const stillShown = () => activeIdRef.current === targetId;
     setAiRegenerating(true);
     setAiFromBackground(false);
+    let drafted: string | null = null;
     try {
       const res = await fetch(`/api/feedback/${targetId}/suggest-reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locale, tone: targetTone }),
       });
-      if (!stillShown()) return;
+      if (!stillShown()) return null;
       if (res.ok) {
         const data = await res.json();
-        if (!stillShown()) return;
-        if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
+        if (!stillShown()) return null;
+        if (typeof data?.suggestion === 'string') {
+          setAiSuggestion(data.suggestion);
+          drafted = data.suggestion;
+        }
         if (typeof data?.source === 'string') setAiSource(data.source);
         if (data?.tone === 'warm' || data?.tone === 'formal' || data?.tone === 'apologetic') {
           setAiTone(data.tone);
@@ -705,6 +709,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     } finally {
       setAiRegenerating(false);
     }
+    return drafted;
+  };
+
+  // Composer "AI taslağı": use the draft that is already there, or write one
+  // now and drop it into an empty reply box. One click, one AI call at most.
+  const onAiDraftToReply = async () => {
+    if (aiRegenerating) return;
+    if (aiSuggestion) {
+      setReplyDraft(aiSuggestion);
+      return;
+    }
+    const text = await onRegenerateAi();
+    if (text) setReplyDraft((current) => (current.trim() ? current : text));
   };
 
   const sendReply = async (overrideBody?: string) => {
@@ -927,12 +944,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   };
 
   // Mobile detail opened → start at the top and move focus to the title.
-  useEffect(() => {
+  // Layout effect: the scroll is reset before the detail paints, so it never
+  // shows for a frame at the list's old position and then jumps.
+  useLayoutEffect(() => {
     if (!isMobileDetailView || !active || !focusDetailOnOpenRef.current) return;
     focusDetailOnOpenRef.current = false;
     const id = active.id;
+    window.scrollTo(0, 0);
     requestAnimationFrame(() => {
-      window.scrollTo(0, 0);
       document
         .getElementById(`feedback-detail-title-${id}`)
         ?.focus({ preventScroll: true });
@@ -942,12 +961,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // Back to the list (in-app button or browser back) → restore the list
   // scroll position and focus the row that was opened.
   const prevDetailViewRef = useRef(isMobileDetailView);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const was = prevDetailViewRef.current;
     prevDetailViewRef.current = isMobileDetailView;
     if (!was || isMobileDetailView || isLgUp()) return;
     const y = listScrollYRef.current;
     const openedId = lastOpenedIdRef.current;
+    // Before paint, so the list does not flash at the top first.
+    window.scrollTo(0, y);
     requestAnimationFrame(() => {
       window.scrollTo(0, y);
       if (openedId) {
@@ -1211,7 +1232,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     <div className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       {/* Header — hidden on the mobile detail view (the back bar is there). */}
       <div
-        className={`px-4 pb-2 pt-5 sm:px-6 lg:px-4 lg:pb-3 lg:pt-4 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
+        className={`px-4 pb-2 pt-5 sm:px-6 lg:pb-3 lg:pt-8 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
       >
         {/* Fintora page header: folder breadcrumb, title, actions on the
             same line. The review source switch leads the toolbar below. */}
@@ -1220,7 +1241,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            <h1 className="text-[28px] font-medium leading-[1.15] tracking-[-0.02em] text-pn-ink sm:text-[32px]">
+            <h1 className="text-[28px] font-medium leading-[1.15] tracking-[-0.02em] text-pn-ink sm:text-[32px] lg:text-[34px]">
               {isTr ? 'Yorumlar' : 'Reviews'}
             </h1>
             <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373]">
@@ -1308,7 +1329,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           the viewport (360 → 420 → 480) and the detail takes the rest. Two
           white cards 10px apart on the canvas; on phones the page is white
           and the rows carry their own fill. */}
-      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-2 lg:pb-2 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
+      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-6 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
         <aside
           className={`min-h-0 px-2 pb-4 sm:mx-6 sm:mb-6 sm:rounded-[24px] sm:bg-white sm:p-2 lg:m-0 lg:overflow-y-auto ${
             isMobileDetailView ? 'hidden lg:block' : ''
@@ -1359,9 +1380,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               aiTone={aiTone}
               setAiTone={setAiTone}
               aiDisabledByAdmin={aiDisabledByAdmin}
-              onRegenerateAi={(tone) => onRegenerateAi(tone)}
+              onRegenerateAi={(tone) => void onRegenerateAi(tone)}
               onUseAiAndSend={onUseAiAndSend}
               onCopyAiToDraft={onCopyAiToDraft}
+              onAiDraftToReply={onAiDraftToReply}
               replyDraft={replyDraft}
               setReplyDraft={setReplyDraft}
               sendEmail={sendEmail}

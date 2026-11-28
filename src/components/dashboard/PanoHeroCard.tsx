@@ -29,6 +29,8 @@ export interface HeroRow {
 export interface HeroAction {
   href: string;
   label: string;
+  /** One-word caption under the pill (falls back to `label`). */
+  short?: string;
   icon: ReactNode;
 }
 
@@ -175,14 +177,20 @@ export function PanoHeroCard({
       {actions.length > 0 && (
         <div className="mt-6 grid gap-2" style={{ gridTemplateColumns: `repeat(${actions.length}, minmax(0, 1fr))` }}>
           {actions.map((action) => (
+            // Icon pill with a one-word caption: an icon alone left the
+            // owner guessing where each shortcut goes.
             <Link
               key={action.href}
               href={action.href}
-              className="pn-action-pill"
+              className="pn-action group flex min-w-0 flex-col items-stretch gap-1.5 rounded-[14px] outline-none"
               aria-label={action.label}
-              title={action.label}
             >
-              {action.icon}
+              <span className="pn-action-pill" aria-hidden="true">
+                {action.icon}
+              </span>
+              <span className="truncate text-center text-[12px] text-[#737373] transition-colors duration-200 group-hover:text-pn-ink">
+                {action.short ?? action.label}
+              </span>
             </Link>
           ))}
         </div>

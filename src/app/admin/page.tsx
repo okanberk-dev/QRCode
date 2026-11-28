@@ -80,7 +80,7 @@ function PanelPreview() {
             ))}
           </div>
           <svg viewBox="0 0 120 36" preserveAspectRatio="none" className="mt-3 h-9 w-full">
-            <path d="M0 30 C 14 26, 22 18, 36 20 S 60 28, 74 16 S 100 8, 120 6 L120 36 L0 36 Z" fill="#F1FDF3" />
+            <path d="M0 30 C 14 26, 22 18, 36 20 S 60 28, 74 16 S 100 8, 120 6 L120 36 L0 36 Z" fill="#F4FBDC" />
             <path d="M0 30 C 14 26, 22 18, 36 20 S 60 28, 74 16 S 100 8, 120 6" fill="none" stroke="#111110" strokeWidth="2" vectorEffect="non-scaling-stroke" />
           </svg>
         </div>

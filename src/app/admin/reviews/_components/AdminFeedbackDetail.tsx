@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, UserPlus } from 'lucide-react';
 import { PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
@@ -83,6 +84,13 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
     sentLoading,
   } = props;
 
+  // Another review → both scroll areas start at the top (owner parity).
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+    if (dockRef.current) dockRef.current.scrollTop = 0;
+  }, [active.id]);
   const titleId = `feedback-detail-title-${active.id}`;
   const pLabel = platformLabel(active.platform, isTr);
   const iconId = platformIconId(active.platform);
@@ -180,7 +188,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
         </div>
       )}
 
-      <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+      <div ref={bodyRef} className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-7 lg:pb-8">
           {/* Header. The badge + text block keeps at least 260px; when the
               pane is narrower than that plus the desktop actions, the actions
@@ -415,7 +423,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
           as the owner dock: capped at 48% of the pane with a floor so label →
           Send fits on short screens; only the textarea shrinks. */}
       {canReply && (
-        <div className="bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom,0px))] pt-2 sm:rounded-b-[28px] sm:px-6 lg:flex lg:max-h-[max(48%,240px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-t lg:border-pn-line lg:px-7 lg:pb-4 lg:pt-3 lg:focus-within:max-h-[max(48%,272px)]">
+        <div ref={dockRef} className="bg-white px-4 pb-[calc(20px+env(safe-area-inset-bottom,0px))] pt-2 sm:rounded-b-[28px] sm:px-6 lg:flex lg:max-h-[max(48%,240px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-t lg:border-pn-line lg:px-7 lg:pb-4 lg:pt-3 lg:focus-within:max-h-[max(48%,272px)]">
           <AdminReplyComposerCard
             feedback={active}
             isTr={isTr}

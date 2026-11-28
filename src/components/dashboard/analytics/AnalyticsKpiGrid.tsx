@@ -47,7 +47,7 @@ function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
           tone: kpi.deltaKind === 'up' ? 'good' : kpi.deltaKind === 'down' ? 'bad' : 'neutral',
         }
       : null);
-  const accentLine = !kpi.sparklineColor || kpi.sparklineColor.toUpperCase() === '#78FC90';
+  const accentLine = !kpi.sparklineColor || kpi.sparklineColor.toUpperCase() === '#C6F24E';
   // Fintora KPI card: grey label + ⓘ, medium number with a grey fraction,
   // a soft change pill, a black trend over a light green area, grey caption.
   return (

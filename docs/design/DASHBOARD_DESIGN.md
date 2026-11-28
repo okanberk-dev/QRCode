@@ -170,7 +170,7 @@ butonlar, tarih hapı, siyah ana eylem). Mobilde yol göstergesi gizli.
   sağda ↗ ya da tarih hapı.
 - `PanoHeroCard`: Fintora "Total Portfolio Value" kartı — beyaz; gri etiket
   + ⓘ + ↗; büyük sayı (gri kesir); `pn-change` yumuşak değişim hapı; 4 gri
-  `pn-action-pill`; siyah trend çizgisi + açık dolgu + siyah değer çipi
+  `pn-action-pill` (her birinin altında tek kelimelik ad); siyah trend çizgisi + açık dolgu + siyah değer çipi
   (`pn-chart-tip`); ince siyah ilerleme + taralı gri kalan; gri döküm satırları.
 - Kısayollar: gri satırlar (ikon dairesi + isim + ↗), kutu/fanned kart yok.
 - `pn-row`: gri liste satırı (Fintora "Portfolio Breakdown").
@@ -195,7 +195,10 @@ kapsül içinde iki bölüm; aktif bölüm siyah hap + yeşil ikon dairesi + say
 Owner gelen kutusunda araç çubuğu iki satırdır: [kaynak seçici · arama ·
 "Filtreler" (sayılı, tarih/puan/platform/durum penceresini açar)] ve altında
 sakin durum sekmeleri (`InboxStatusTabs variant="soft"`: pasif gri metin,
-aktif beyaz hap).
+aktif beyaz hap). Başlık, araç çubuğu ve kartlar diğer sayfalarla aynı sol
+çizgidedir (24 px). Yanıt kutusunun başlığında "AI taslağı" (siyah hap, yeşil
+kıvılcım) + "Şablonlar"; yapay zekâ yalnız bu düğmelerle çalışır, yorum
+açılınca kendiliğinden taslak ya da özet üretilmez.
 
 ### 5.8 Menü, popover, komut paleti
 Beyaz, çerçevesiz, 24 px köşe, yumuşak gölge; madde 44 px, 12 px köşe,

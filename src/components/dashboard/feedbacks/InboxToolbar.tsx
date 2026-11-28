@@ -176,11 +176,24 @@ export function InboxToolbar({
   if (filtersMode === 'button') {
     return (
       <div
-        className={`sticky top-[72px] z-20 bg-pn-canvas/95 px-4 py-3 backdrop-blur max-sm:bg-white/95 sm:px-6 lg:static lg:bg-transparent lg:px-4 lg:pb-3 lg:pt-1 lg:backdrop-blur-none ${className}`}
+        className={`sticky top-[72px] z-20 bg-pn-canvas/95 px-4 py-3 backdrop-blur max-sm:bg-white/95 sm:px-6 lg:static lg:bg-transparent lg:pb-3 lg:pt-1 lg:backdrop-blur-none ${className}`}
       >
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          {leading && <div className="flex min-w-0 items-center">{leading}</div>}
-          <div className="flex min-w-0 items-center gap-2 md:ml-auto md:w-[min(460px,52%)]">
+          {leading ? (
+            <div className="flex min-w-0 items-center">{leading}</div>
+          ) : (
+            // Nothing leads the row (admin without a business filter): the
+            // status tabs take the left side and the toolbar is one row.
+            <InboxStatusTabs
+              tabs={tabs}
+              active={activeTab}
+              onChange={onTabChange}
+              ariaLabel={isTr ? 'Yorum durumu' : 'Review status'}
+              controlsId={listId}
+              className="min-w-0 md:flex-1"
+            />
+          )}
+          <div className="flex min-w-0 items-center gap-2 md:ml-auto md:w-[min(460px,52%)] xl:w-[min(460px,40%)]">
             <div className="relative min-w-0 flex-1">
               <Search
                 size={16}
@@ -235,22 +248,24 @@ export function InboxToolbar({
             )}
           </div>
         </div>
-        <InboxStatusTabs
-          tabs={tabs}
-          active={activeTab}
-          onChange={onTabChange}
-          ariaLabel={isTr ? 'Yorum durumu' : 'Review status'}
-          controlsId={listId}
-          variant="soft"
-          className="mt-2"
-        />
+        {leading && (
+          <InboxStatusTabs
+            tabs={tabs}
+            active={activeTab}
+            onChange={onTabChange}
+            ariaLabel={isTr ? 'Yorum durumu' : 'Review status'}
+            controlsId={listId}
+            variant="soft"
+            className="mt-2"
+          />
+        )}
       </div>
     );
   }
 
   return (
     <div
-      className={`sticky top-[72px] z-20 bg-pn-canvas/95 px-4 py-3 backdrop-blur sm:px-6 lg:static lg:bg-transparent lg:px-4 lg:pb-3 lg:pt-1 lg:backdrop-blur-none ${className}`}
+      className={`sticky top-[72px] z-20 bg-pn-canvas/95 px-4 py-3 backdrop-blur sm:px-6 lg:static lg:bg-transparent lg:pb-3 lg:pt-1 lg:backdrop-blur-none ${className}`}
     >
       <div className="flex items-center gap-2">
         <InboxStatusTabs

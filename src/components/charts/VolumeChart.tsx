@@ -17,7 +17,7 @@ const VolumeChartCanvas = dynamic(() => import('./VolumeChartCanvas'), {
 });
 
 // Kept in sync with VolumeChartCanvas (that module loads lazily).
-const COLORS = { feedback: '#111110', redirects: '#78FC90' } as const;
+const COLORS = { feedback: '#111110', redirects: '#C6F24E' } as const;
 
 export interface VolumeRange {
   key: string;

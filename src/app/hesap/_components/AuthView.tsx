@@ -299,7 +299,7 @@ export default function AuthView({
 
   return (
     <section className={CARD}>
-      {intro && <p className="mb-4 inline-flex rounded-full bg-[#F1FDF3] px-3 py-1.5 text-[13px] font-medium text-[#111110]">{intro}</p>}
+      {intro && <p className="mb-4 inline-flex rounded-full bg-[#F4FBDC] px-3 py-1.5 text-[13px] font-medium text-[#111110]">{intro}</p>}
       <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] sm:text-[28px]">{mode === 'login' ? c.loginTitle : c.registerTitle}</h1>
       <p className={`mt-1.5 text-[14.5px] leading-relaxed ${MUTED}`}>{mode === 'login' ? c.loginLead : c.registerLead}</p>
 

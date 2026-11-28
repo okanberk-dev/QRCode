@@ -59,7 +59,7 @@ export function StatCard({
   isTr = true,
 }: StatCardProps) {
   const showSparkline = sparkline !== undefined && sparkline.length >= 2;
-  const isAccentLine = sparklineColor === "var(--color-pn-accent)" || sparklineColor.toUpperCase() === "#78FC90";
+  const isAccentLine = sparklineColor === "var(--color-pn-accent)" || sparklineColor.toUpperCase() === "#C6F24E";
 
   return (
     <div className={`bz-card relative flex min-w-0 flex-col p-5 sm:p-6 ${className}`}>

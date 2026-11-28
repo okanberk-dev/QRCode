@@ -1379,7 +1379,7 @@ function FeatureToggleCard({
   return (
     <div
       className={`rounded-[24px] border p-4 transition-colors ${
-        checked ? 'border-[#CDEFD6] bg-pn-accent-soft/60' : 'border-pn-line bg-white'
+        checked ? 'border-[#E3F4A6] bg-pn-accent-soft/60' : 'border-pn-line bg-white'
       } ${disabled ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start justify-between gap-4">

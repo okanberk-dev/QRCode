@@ -54,7 +54,7 @@ const PLATFORM_META: Record<string, { tone: string; short: string }> = {
 };
 
 /** Segment colours, in order (Fintora breakdown: black, light green, ink, greys). */
-const SEGMENT_COLORS = ['#78FC90', '#111110', '#111110', '#C9C9CF', '#E0E0E0'];
+const SEGMENT_COLORS = ['#C6F24E', '#111110', '#111110', '#C9C9CF', '#E0E0E0'];
 
 /**
  * Where customers were sent (Pano, docs/design/DASHBOARD_DESIGN.md §5.4,

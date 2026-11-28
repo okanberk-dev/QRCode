@@ -76,8 +76,8 @@ const SURVEY_TEXT = '#111110';
 const SURVEY_TEXT_2 = '#737373';
 const SURVEY_LINE = '#EBEBEB';
 const SURVEY_CANVAS = '#F6F6F6';
-const SURVEY_LAVENDER = '#F1FDF3';
-const SURVEY_LAVENDER_LINE = '#CDEFD6';
+const SURVEY_LAVENDER = '#F4FBDC';
+const SURVEY_LAVENDER_LINE = '#E3F4A6';
 const SURVEY_ERROR_TEXT = '#B42318';
 const SURVEY_ERROR = '#D92D20';
 
@@ -207,7 +207,7 @@ const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
 };
 
 // KVKK / Açık Rıza / Ticari İleti links sit INSIDE a ConsentRow, which is
-// white (unchecked) or lavender #F1FDF3 (checked). Purple reads on both
+// white (unchecked) or lavender #F4FBDC (checked). Purple reads on both
 // (7.6:1 on white, 6.2:1 on lavender).
 const LEGAL_LINK_STYLE: React.CSSProperties = {
   color: SURVEY_HERO,

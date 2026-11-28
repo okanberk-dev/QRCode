@@ -264,7 +264,7 @@ export default function CardView({
   if (left) {
     return (
       <div className="py-10 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F1FDF3] text-[#111110]">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F4FBDC] text-[#111110]">
           <Check size={22} />
         </span>
         <p className="mt-4 text-[16px] font-medium">{t.leaveDone}</p>
@@ -355,7 +355,7 @@ export default function CardView({
             const ready = member.balance >= r.cost;
             const pct = Math.min(100, Math.round((member.balance / r.cost) * 100));
             return (
-              <li key={r.id} className={`overflow-hidden rounded-[20px] ${ready ? 'bg-[#F1FDF3] text-[#111110]' : 'bg-[var(--p-bg)]'}`}>
+              <li key={r.id} className={`overflow-hidden rounded-[20px] ${ready ? 'bg-[#F4FBDC] text-[#111110]' : 'bg-[var(--p-bg)]'}`}>
                 <div className="flex items-center justify-between gap-3 px-3.5 py-3">
                   <span className="flex min-w-0 items-center gap-2 text-[14.5px] font-medium">
                     <Gift size={16} className="shrink-0" aria-hidden="true" />

@@ -63,7 +63,7 @@ export function ReviewSourceSwitch({
             <span
               aria-hidden="true"
               className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                on ? 'bg-[#78FC90] text-pn-ink' : 'bg-pn-canvas text-pn-ink max-sm:bg-white'
+                on ? 'bg-[#C6F24E] text-pn-ink' : 'bg-pn-canvas text-pn-ink max-sm:bg-white'
               }`}
             >
               <Icon size={15} strokeWidth={2} />

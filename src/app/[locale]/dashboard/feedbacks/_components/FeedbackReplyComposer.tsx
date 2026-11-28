@@ -32,7 +32,6 @@ export function focusReplyTextarea() {
  * ========================================================================== */
 
 interface PulseAiSuggestionCardProps {
-  feedback: FeedbackRow;
   locale: Locale;
   aiLoading: boolean;
   aiRegenerating: boolean;
@@ -53,7 +52,6 @@ interface PulseAiSuggestionCardProps {
 }
 
 export function PulseAiSuggestionCard({
-  feedback: active,
   locale,
   aiLoading,
   aiRegenerating,
@@ -70,7 +68,6 @@ export function PulseAiSuggestionCard({
   sendingReply,
 }: PulseAiSuggestionCardProps) {
   const isTr = locale === 'tr';
-  const autoDraftEnabled = active.aiAutoDraftEnabled === true;
   const hasSuggestion = !aiLoading && Boolean(aiSuggestion);
   const isTemplate = aiSource === 'template' || aiSource === 'template-fallback';
   // §48 — an AI draft goes through the same gate as a typed reply.
@@ -94,7 +91,7 @@ export function PulseAiSuggestionCard({
       }
       /* Native select as a white pill on the light green AI panel. 16px + 44px
          on mobile (iOS zoom, touch target), 40px from sm. */
-      className="min-h-[44px] w-full cursor-pointer rounded-full border-0 bg-white px-4 py-2 text-[16px] font-medium text-pn-ink outline-none transition-colors duration-200 hover:bg-[#FBFAFE] focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:min-h-10 sm:w-auto sm:py-0 sm:text-[13px]"
+      className="min-h-[44px] w-full cursor-pointer rounded-full border-0 bg-white px-4 py-2 text-[16px] font-medium text-pn-ink outline-none transition-colors duration-200 hover:bg-[#F6F6F6] focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:min-h-10 sm:w-auto sm:py-0 sm:text-[13px]"
     >
       <option value="warm" className="text-pn-ink">
         {isTr ? 'Ton: Samimi' : 'Tone: Warm'}
@@ -165,13 +162,9 @@ export function PulseAiSuggestionCard({
         <p className="mt-3 whitespace-pre-line break-words text-[14px] leading-[1.65] text-[#262626]">
           {aiSuggestion
             ? aiSuggestion
-            : autoDraftEnabled
-              ? isTr
-                ? 'Pulse AI henüz bir taslak üretmedi. "Taslak oluştur" ile hemen bir öneri alabilirsin.'
-                : 'Pulse AI has not produced a draft yet. Use "Generate draft" to get one now.'
-              : isTr
-                ? 'Otomatik taslak kapalı. İstersen "Taslak oluştur" ile manuel taslak oluşturabilirsin.'
-                : 'Auto-drafts are off. You can still create one manually with "Generate draft".'}
+            : isTr
+              ? 'Bu yorum için henüz taslak yok. "Taslak oluştur" dediğinizde Pulse AI bir yanıt önerir; siz göndermeden hiçbir şey gitmez.'
+              : 'No draft for this review yet. "Generate draft" asks Pulse AI for a reply; nothing is sent until you send it.'}
         </p>
       )}
 
@@ -207,7 +200,7 @@ export function PulseAiSuggestionCard({
                 type="button"
                 onClick={onUseAiAndSend}
                 disabled={sendingReply || !confirmResponsibility || suggestionRisk.blocked}
-                className="bz-btn w-full bg-white hover:bg-[#FBFAFE] disabled:bg-white/60 sm:min-h-10 sm:w-auto sm:px-4 sm:text-[13px]"
+                className="bz-btn w-full bg-white hover:bg-[#F6F6F6] disabled:bg-white/60 sm:min-h-10 sm:w-auto sm:px-4 sm:text-[13px]"
                 title={
                   !confirmResponsibility
                     ? isTr
@@ -229,7 +222,7 @@ export function PulseAiSuggestionCard({
                 type="button"
                 onClick={() => onRegenerateAi()}
                 disabled={aiRegenerating}
-                className="bz-btn w-full bg-white hover:bg-[#FBFAFE] disabled:bg-white/60 sm:min-h-10 sm:w-auto sm:px-4 sm:text-[13px]"
+                className="bz-btn w-full bg-white hover:bg-[#F6F6F6] disabled:bg-white/60 sm:min-h-10 sm:w-auto sm:px-4 sm:text-[13px]"
               >
                 <RotateCw
                   size={14}
@@ -292,6 +285,11 @@ interface ReplyComposerCardProps {
   sendingReply: boolean;
   onSendReply: () => void;
   replyNotice: { msg: string; tone: ReplyTone } | null;
+  /** "AI taslağı" in the header; omitted when Pulse AI is not offered. */
+  onAiDraft?: () => void;
+  aiBusy?: boolean;
+  /** A draft already exists: the button only moves it into the reply box. */
+  hasAiDraft?: boolean;
 }
 
 export function ReplyComposerCard({
@@ -306,6 +304,9 @@ export function ReplyComposerCard({
   sendingReply,
   onSendReply,
   replyNotice,
+  onAiDraft,
+  aiBusy = false,
+  hasAiDraft = false,
 }: ReplyComposerCardProps) {
   const isTr = locale === 'tr';
   const customerFirst = (active.customerName ?? (isTr ? 'müşteri' : 'customer')).split(' ')[0];
@@ -340,6 +341,33 @@ export function ReplyComposerCard({
           {isTr ? 'Yanıtınız' : 'Your reply'}
         </label>
         <span className="flex items-center gap-2">
+          {onAiDraft && (
+            <button
+              type="button"
+              onClick={() => {
+                onAiDraft();
+                focusReplyTextarea();
+              }}
+              disabled={aiBusy}
+              title={
+                hasAiDraft
+                  ? isTr
+                    ? 'Hazır taslağı yanıt kutusuna aktarır'
+                    : 'Moves the ready draft into the reply box'
+                  : isTr
+                    ? 'Pulse AI bu yorum için bir yanıt taslağı yazar; siz göndermeden hiçbir şey gitmez'
+                    : 'Pulse AI writes a reply draft for this review; nothing is sent until you send it'
+              }
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-pn-ink px-3.5 text-[13px] font-medium text-white transition-colors duration-200 hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 active:scale-[.97] disabled:opacity-60 max-sm:min-h-[44px]"
+            >
+              {aiBusy ? (
+                <Loader2 size={14} strokeWidth={2} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles size={14} strokeWidth={2} className="text-[#C6F24E]" aria-hidden="true" />
+              )}
+              {hasAiDraft ? (isTr ? 'Taslağı aktar' : 'Use draft') : isTr ? 'AI taslağı' : 'AI draft'}
+            </button>
+          )}
           <ReplyTemplatesMenu
             locale={isTr ? 'tr' : 'en'}
             draft={replyDraft}

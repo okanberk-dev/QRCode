@@ -51,7 +51,7 @@ const TONE_TOKENS: Record<APChipTone, { bg: string; fg: string; dot: string }> =
   warn: { bg: '#FFF6DB', fg: '#8A5A00', dot: '#D99A00' },
   danger: { bg: '#FDECEC', fg: '#B42318', dot: '#E5484D' },
   info: { bg: '#EAF1FD', fg: '#1D4ED8', dot: '#3B82F6' },
-  dark: { bg: 'var(--color-pn-ink)', fg: '#ffffff', dot: '#CDEFD6' },
+  dark: { bg: 'var(--color-pn-ink)', fg: '#ffffff', dot: '#E3F4A6' },
 };
 
 export function APChip({

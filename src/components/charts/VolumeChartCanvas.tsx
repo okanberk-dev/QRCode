@@ -15,9 +15,9 @@ import { useId, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Tooltip, XAxis, YAxis } from 'recharts';
 import type { VolumePoint } from '@/lib/volume-series';
 
-export const VOLUME_COLORS = { feedback: '#111110', redirects: '#78FC90' } as const;
+export const VOLUME_COLORS = { feedback: '#111110', redirects: '#C6F24E' } as const;
 /** Light tints for the bars that are not active (same hue, so the series stay readable). */
-const VOLUME_MUTED = { feedback: '#C4C4C8', redirects: '#CDEFD6' } as const;
+const VOLUME_MUTED = { feedback: '#C4C4C8', redirects: '#E3F4A6' } as const;
 
 interface TipProps {
   active?: boolean;

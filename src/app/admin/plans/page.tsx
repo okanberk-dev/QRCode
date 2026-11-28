@@ -263,7 +263,7 @@ export default async function AdminPlansPage() {
       {/* Ödeme entegrasyonu notu — sade, operatöre yönelik dil (§38.233). */}
       <div
         className="mt-4 p-4 rounded-[20px] flex gap-3 flex-col sm:flex-row"
-        style={{ background: '#F1FDF3', border: '1px solid #111110' }}
+        style={{ background: '#F4FBDC', border: '1px solid #111110' }}
       >
         <CreditCard
           size={18}

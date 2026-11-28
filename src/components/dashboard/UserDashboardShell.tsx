@@ -522,15 +522,29 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       : [],
   );
   const toolSectionItems = panoEntries.flatMap((entry) => (entry.type === 'group' ? entry.children : []));
-  const accountSectionItems = [
-    { href: `/${locale}/dashboard/account`, label: copy.account, icon: UserCircle, active: pathname === `/${locale}/dashboard/account` },
-    { href: `/${locale}/dashboard/account?section=billing`, label: isTr ? 'Faturalama' : 'Billing', icon: CreditCard, active: false },
-  ];
+  // The sidebar is the whole map: the daily pages first (they are also the
+  // top tabs), then management and tools. The account lives in the card at
+  // the foot, so the list fits a 900px-tall screen without scrolling.
+  const dailyItems = topEntries.flatMap((entry) =>
+    entry.type === 'link'
+      ? [{ href: entry.href, label: entry.label, icon: entry.icon, active: entry.active }]
+      : [],
+  );
   const railSections: RailSection[] = [
+    { id: 'daily', label: isTr ? 'Genel' : 'Overview', items: dailyItems },
     { id: 'manage', label: isTr ? 'Yönetim' : 'Manage', items: manageItems },
     { id: 'tools', label: isTr ? 'Araçlar' : 'Tools', items: toolSectionItems },
-    { id: 'account', label: isTr ? 'Hesap' : 'Account', items: accountSectionItems },
   ].filter((section) => section.items.length > 0);
+  const planLine =
+    user.plan === 'trial'
+      ? trialDaysLeft !== null && trialDaysLeft >= 0
+        ? isTr
+          ? `Deneme · ${trialDaysLeft} gün`
+          : `Trial · ${trialDaysLeft} ${trialDaysLeft === 1 ? 'day' : 'days'}`
+        : isTr
+          ? 'Deneme'
+          : 'Trial'
+      : user.email;
   const helpLabel = isTr ? 'Yardım merkezi' : 'Help center';
   const createQrHref = hrefWithActiveRestaurant(`/${locale}/dashboard/qr?new=1`);
   const railBrand = (
@@ -676,6 +690,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         }
         sections={railSections}
         footer={[{ href: `/${locale}/help`, label: helpLabel, icon: Headset, active: false }]}
+        user={{
+          name: displayName,
+          sub: planLine,
+          initial,
+          href: `/${locale}/dashboard/account`,
+          label: copy.account,
+        }}
         ariaLabel={isTr ? 'Yan menü' : 'Side menu'}
         labels={{ fold: isTr ? 'Menüyü daralt' : 'Collapse menu', unfold: isTr ? 'Menüyü genişlet' : 'Expand menu' }}
         newLabel={isTr ? 'Yeni' : 'New'}

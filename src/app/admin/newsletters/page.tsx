@@ -486,7 +486,7 @@ function StatusPill({ cancelled }: { cancelled: boolean }) {
   return cancelled ? (
     <span className="inline-flex items-center gap-1 rounded-full border border-pn-line bg-white px-2 py-0.5 text-[12px] font-medium text-[#737373]">İptal</span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#CDEFD6] px-2 py-0.5 text-[12px] font-medium text-pn-ink">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#E3F4A6] px-2 py-0.5 text-[12px] font-medium text-pn-ink">
       <span className="h-1.5 w-1.5 rounded-full bg-pn-ink" />Aktif
     </span>
   );

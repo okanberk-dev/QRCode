@@ -89,11 +89,11 @@ const RANGE_LABELS: Record<Range, string> = {
 
 // Tier palette — stacked area order follows the snapshot keys (tier sort
 // order from the server), `other` = paid subscriptions without a tier link.
-const TIER_AREA_COLORS = ['#78FC90', '#111110', '#111110', '#CDEFD6', '#737373', '#C4C4C8'];
+const TIER_AREA_COLORS = ['#C6F24E', '#111110', '#111110', '#E3F4A6', '#737373', '#C4C4C8'];
 
 const NPS_PIE_COLORS = {
-  promoters: '#78FC90',
-  passives: '#CDEFD6',
+  promoters: '#C6F24E',
+  passives: '#E3F4A6',
   detractors: '#F04438',
 };
 
@@ -264,7 +264,7 @@ export function AdminBiSection() {
                       tickFormatter={(v) => `$${Number(v ?? 0).toLocaleString('en-US')}`}
                     />
                     <Tooltip
-                      cursor={{ fill: 'rgba(120,252,144,0.06)' }}
+                      cursor={{ fill: 'rgba(198,242,78,0.06)' }}
                       formatter={(v, name) => [formatUsd(Number(v ?? 0)), mrrPlanLabel(String(name ?? ''))]}
                     />
                     {mrrKeys.map((key, i) => (
@@ -320,7 +320,7 @@ export function AdminBiSection() {
                     width={32}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(120,252,144,0.06)' }}
+                    cursor={{ fill: 'rgba(198,242,78,0.06)' }}
                     formatter={(v, name) => {
                       const numericV = typeof v === 'number' ? v : Number(v ?? 0);
                       const labelName = String(name ?? '');
@@ -374,7 +374,7 @@ export function AdminBiSection() {
                       <Cell fill={NPS_PIE_COLORS.detractors} />
                     </Pie>
                     <Tooltip
-                      cursor={{ fill: 'rgba(120,252,144,0.06)' }}
+                      cursor={{ fill: 'rgba(198,242,78,0.06)' }}
                     />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 6, color: '#737373' }} />
                   </PieChart>
@@ -410,9 +410,9 @@ export function AdminBiSection() {
                     width={28}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(120,252,144,0.06)' }}
+                    cursor={{ fill: 'rgba(198,242,78,0.06)' }}
                   />
-                  <Bar dataKey="retainedActive" stackId="a" fill="#78FC90" name="Aktif" radius={[0, 0, 6, 6]} maxBarSize={18} />
+                  <Bar dataKey="retainedActive" stackId="a" fill="#C6F24E" name="Aktif" radius={[0, 0, 6, 6]} maxBarSize={18} />
                   <Bar dataKey="retainedTrial" stackId="a" fill="#111110" name="Deneme" radius={[6, 6, 0, 0]} maxBarSize={18} />
                 </BarChart>
               </ResponsiveContainer>

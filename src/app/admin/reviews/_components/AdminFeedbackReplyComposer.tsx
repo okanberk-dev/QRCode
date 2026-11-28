@@ -119,7 +119,7 @@ export function AdminPulseAiCard({
           aria-label={isTr ? 'Pulse AI yanıt tonu' : 'Pulse AI reply tone'}
           /* Native select as a white pill on the light green AI panel (owner
              parity). 16px + 44px on mobile (iOS zoom, touch target). */
-          className="min-h-[44px] w-full cursor-pointer rounded-full border-0 bg-white px-4 py-2 text-[16px] font-medium text-pn-ink outline-none transition-colors duration-200 hover:bg-[#FBFAFE] focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:min-h-10 sm:w-auto sm:py-0 sm:text-[13px]"
+          className="min-h-[44px] w-full cursor-pointer rounded-full border-0 bg-white px-4 py-2 text-[16px] font-medium text-pn-ink outline-none transition-colors duration-200 hover:bg-[#F6F6F6] focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:min-h-10 sm:w-auto sm:py-0 sm:text-[13px]"
         >
           <option value="warm" className="text-pn-ink">
             {isTr ? 'Ton: Samimi' : 'Tone: Warm'}

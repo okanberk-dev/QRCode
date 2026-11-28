@@ -135,7 +135,7 @@ export function readLoyaltyPortal(value: unknown): LoyaltyPortal {
 // (black text on it) with a black band in the dark theme. A colour the
 // business chose always wins (it is the business's data).
 const INK = '#111110';
-const BUAZE_GREEN = '#78FC90';
+const BUAZE_GREEN = '#C6F24E';
 const DEEP_BAND = '#111110';
 
 function hexToRgb(hex: string): [number, number, number] | null {

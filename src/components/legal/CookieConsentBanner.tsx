@@ -29,6 +29,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart3, Cookie, Lock, Megaphone, SlidersHorizontal, X, type LucideIcon } from 'lucide-react';
 
@@ -114,6 +115,11 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  // Inside the owner panel the card would sit on top of wizard footers and
+  // save bars (it covered "İleri" on phones). No decision = analytics stay
+  // off, so hiding it there grants nothing; it shows again on the site.
+  const pathname = usePathname();
+  const inPanel = /^\/(tr|en)\/dashboard(\/|$)/.test(pathname ?? '');
 
   useEffect(() => {
     setMounted(true);
@@ -128,6 +134,8 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     // ConditionalAnalytics keeps analytics off, so nothing is granted.
     const path = window.location.pathname;
     if (/^\/r\//.test(path) || /^\/s\//.test(path) || /^\/admin(\/|$)/.test(path)) return;
+    // The owner panel hides the card too (see `inPanel` below); the stored
+    // decision is still read here so the settings dialog opens with it.
 
     setLocale(detectLocaleFromBrowser());
     const existing = readCookieConsent();
@@ -202,7 +210,8 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     };
   }, [showCustomize, closeSettings]);
 
-  if (!mounted || (!visible && !showCustomize)) return null;
+  const cardVisible = visible && !inPanel;
+  if (!mounted || (!cardVisible && !showCustomize)) return null;
 
   const acceptAll = () => {
     writeCookieConsent({ analytics: true, marketing: true, personalization: true });
@@ -235,7 +244,7 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
 
   return (
     <>
-      {visible ? (
+      {cardVisible ? (
         <div
           role="region"
           aria-labelledby="cookie-banner-title"

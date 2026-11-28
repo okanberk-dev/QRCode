@@ -996,10 +996,10 @@ async function renderDashboardPage({
           openLabel={isTr ? 'Analitiği aç' : 'Open analytics'}
           isTr={isTr}
           actions={[
-            { href: scopedHref(`/${locale}/dashboard/qr?new=1`), label: isTr ? 'QR oluştur' : 'Create QR', icon: <QrCode size={18} aria-hidden="true" /> },
-            { href: scopedHref(`/${locale}/dashboard/feedbacks`), label: isTr ? 'Yorumlar' : 'Reviews', icon: <Inbox size={18} aria-hidden="true" /> },
-            { href: scopedHref(`/${locale}/dashboard/google-reviews`), label: isTr ? 'Google yorumları' : 'Google reviews', icon: <Star size={18} aria-hidden="true" /> },
-            { href: scopedHref(`/${locale}/dashboard/analytics`), label: isTr ? 'Analitik' : 'Analytics', icon: <BarChart3 size={18} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/qr?new=1`), label: isTr ? 'QR oluştur' : 'Create QR', short: 'QR', icon: <QrCode size={18} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/feedbacks`), label: isTr ? 'Yorumlar' : 'Reviews', short: isTr ? 'Yorumlar' : 'Reviews', icon: <Inbox size={18} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/google-reviews`), label: isTr ? 'Google yorumları' : 'Google reviews', short: 'Google', icon: <Star size={18} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/analytics`), label: isTr ? 'Analitik' : 'Analytics', short: isTr ? 'Analitik' : 'Analytics', icon: <BarChart3 size={18} aria-hidden="true" /> },
           ]}
           trend={heroTrend}
           trendCaption={isTr ? `Ortalamanın seyri · ${scopeLabel}` : `Average over time · ${scopeLabel}`}
@@ -1081,7 +1081,11 @@ async function renderDashboardPage({
             ]}
             isTr={isTr}
             footer={
+              // Keyed: a server element passed as a prop is rendered next to
+              // siblings in the client card, and React's dev key check
+              // otherwise flags it as an unkeyed list child.
               <Link
+                key="analytics-link"
                 href={scopedHref(`/${locale}/dashboard/analytics`)}
                 className="inline-flex min-h-[32px] items-center gap-1 rounded-full text-[13px] font-medium text-[#404040] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover"
               >
@@ -1151,7 +1155,7 @@ async function renderDashboardPage({
                             aria-label={topicSentimentText(pos, neg, isTr)}
                           >
                             {pos > 0 && <div className="h-full rounded-full bg-pn-accent" style={{ width: `${pos}%` }} />}
-                            {neu > 0 && <div className="h-full rounded-full bg-[#CDEFD6]" style={{ width: `${neu}%` }} />}
+                            {neu > 0 && <div className="h-full rounded-full bg-[#E3F4A6]" style={{ width: `${neu}%` }} />}
                             {neg > 0 && <div className="h-full rounded-full bg-[#D92D20]" style={{ width: `${neg}%` }} />}
                           </div>
                           <p className="text-[12px] text-[#737373]">{topicSentimentText(pos, neg, isTr)}</p>

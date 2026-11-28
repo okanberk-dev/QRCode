@@ -46,7 +46,7 @@ const POLARITY_META: Record<
   positive: {
     arrow: '↑',
     arrowColor: '#23863A',
-    barColor: '#78FC90',
+    barColor: '#C6F24E',
   },
   negative: {
     arrow: '↓',
