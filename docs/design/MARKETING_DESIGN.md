@@ -20,11 +20,11 @@
 1. **Tek ağırlık, büyük başlık.** Başlıklar `400` ağırlıkta, büyük puntoda (64/64, 48/52.8). Hiyerarşiyi boyut kurar.
 2. **Sıkı satır yüksekliği.** Görüntü başlıklarında satır yüksekliği puntoya eşit ya da küçük (100/80, 64/64).
 3. **Sıcak nötrler.** Saf gri yok: metin `#252525`, ikincil `#565352`, krem zemin `#F9F5F3`.
-4. **Tek güçlü marka rengi.** Butonlar, vurgular, ürün kartları ve alt bilgi aynı rampadan (açık → ana → koyu).
+4. **Pulse renkleri.** Grafit dolgu, lime vurgu ve birincil buton, beyaz zemin; alt bilgi grafit çerçeve.
 5. **Hap butonlar.** Buton ve inputlar `border-radius: 100px`. Birincil buton içe gölgeli.
 6. **Büyük yuvarlak paneller.** Bölüm panelleri ve alt bilgi kartı 48 px, kartlar 20–24 px.
 7. **Fotoğraf + marka örtüsü.** Ürün kartında fotoğrafın altına marka gradyanı; beyaz, ortalı metin.
-8. **El yazısı vurgu.** Bazı başlıklarda el yazısı (Caveat) satır ya da kelimeyi saran çizim halkası (`Scribble`).
+8. **Vurgu kelime.** Bazı başlıklarda alt yarısı lime vurgulu kelime (`rt-script`) ya da lime çizim halkası (`Scribble`).
 9. **Krem/beyaz katmanlar.** Beyaz bölümler alt köşeleri 48 px "yaprak" gibi krem zeminin üstüne biner (`.rt-sheet`).
 10. **Sakin hareket.** Bölümler kaydırınca 24 px aşağıdan belirir; hover 300 ms `cubic-bezier(.4,0,.2,1)`.
 
@@ -32,42 +32,40 @@
 
 ## 2. Renkler (`--rt-*`, `ritim.css` en üstte)
 
-### 2.1 Marka rampası — değiştirmek için yalnız bu 7 satır
+### 2.1 Marka rampası — Pulse (2026-11-28, kullanıcı kararı)
+Düzen ve ölçüler Ritim paketinden kalır; renkler ve yazı tipleri Pulse'tır (CLAUDE.md §11).
+
 | Token | Değer | Kullanım |
 |---|---|---|
-| `--rt-brand-300` | `#3CC99A` | Gradyan başlangıcı, koyu zeminde vurgu, sektör kartı başlığı |
-| `--rt-brand-500` | `#0B9B6D` | Parlak dolgu, ikon, aktif segment, onay işareti |
-| `--rt-brand-600` | `#08875E` | **Birincil buton** (beyaz metin 4.53:1) |
-| `--rt-brand-700` | `#067A55` | Link, çerçeveli buton, ürün kartı zemini |
-| `--rt-brand-800` | `#045C40` | Gradyan bitişi |
-| `--rt-brand-950` | `#023A28` | Alt bilgi koyu gradyanı |
-| `--rt-brand-50` | `#E7F6EF` | Açık ton, hover, rozet |
+| `--rt-brand-300` | `#C6F24E` | Lime: koyu zeminde vurgu, el çizimi halka, seçim |
+| `--rt-brand-500` | `#0A0A0A` | Grafit: ikon, aktif segment, onay işareti, odak |
+| `--rt-brand-600` | `#C6F24E` | **Birincil buton** lime, yazı grafit (hover `--rt-brand-hover` `#A8D62E`) |
+| `--rt-brand-700` | `#0A0A0A` | Link, çerçeveli buton, koyu ürün kartı |
+| `--rt-brand-800` | `#1A1A1A` | Koyu panel, kapanış örtüsü |
+| `--rt-brand-950` | `#0A0A0A` | Alt bilgi çerçevesi |
+| `--rt-brand-50` | `#EAF9B8` | Lime soft: rozet, ikon kutusu |
 
-> Beyaz metin yalnız `600`+ tonlarda ya da örtülü fotoğrafta.
+> Lime zeminde yazı grafit; beyaz zeminde lime yazı yok (okunmaz). `rt-btn--solid` grafit + beyaz.
 
 ### 2.2 Nötrler
 | Token | Değer | Kullanım |
 |---|---|---|
-| `--rt-ink-900` | `#252525` | Ana metin, başlık, açık SSS satırı |
-| `--rt-ink-700` | `#565352` | İkincil metin, lead, alt bilgi linkleri |
-| `--rt-ink-500` | `#99928E` | Soluk metin, pasif sekme |
-| `--rt-ink-300` | `#D0CAC6` | Yapışkan listede pasif madde |
-| `--rt-line` | `#E7E2DF` | Kart çerçevesi, ayraç |
-| `--rt-line-2` | `#E5E7EB` | Form çerçevesi |
-| `--rt-line-3` | `#C0C0C0` | Hero e-posta input çerçevesi |
-| `--rt-cream` | `#F9F5F3` | Krem zemin (bölüm, kart, hap) |
-| `--rt-cream-2` | `#F6F1EE` | Duyuru şeridi |
-| `--rt-cream-3` | `#F7F5F2` | Sohbet balonu |
+| `--rt-ink-900` | `#0A0A0A` | Ana metin, başlık |
+| `--rt-ink-700` | `#525252` | İkincil metin, lead |
+| `--rt-ink-500` | `#737373` | Soluk metin |
+| `--rt-ink-300` | `#D4D4D4` | Pasif madde |
+| `--rt-line` / `--rt-line-2` | `#EDEDED` / `#E5E5E5` | Kart / form çerçevesi |
+| `--rt-cream` / `-2` / `-3` | `#FAFAFA` / `#F5F5F5` / `#FAFAFA` | Açık gri yüzeyler (adlar paketten kaldı) |
 
 ### 2.3 Destek renkleri ve gradyanlar
 | Token | Değer | Nerede |
 |---|---|---|
-| `--rt-lime` | `#AFE26C` | Varsayılan rozet ("ÜCRETSİZ ARAÇ") |
+| `--rt-lime` | `#C6F24E` | Varsayılan rozet ("ÜCRETSİZ ARAÇ") |
 | `--rt-sky` | `#9FC5F0` | "ÖNE ÇIKAN" rozeti, önerilen paket bayrağı |
 | `--rt-sun` | `#FED850` | "Yeni" rozeti (koyu kartlar) |
-| `--rt-grad-brand` | `130deg, 300 %2.95 → 500 %46.45 → 800 %101.77` | Güven paneli, özellik "bir bakışta" paneli, CTA bandı |
-| `--rt-grad-plan-card` | `0deg, #F9F9F9 → #F8F6F4` | Fiyat kartları, ticari kartlar |
-| `--rt-grad-dark-card` | `#252525 → #413E3D` | Koyu "yorumların ötesinde" kartları |
+| `--rt-grad-brand` | `130deg, #262626 → #0A0A0A` (grafit) | Güven paneli, özellik "bir bakışta" paneli, CTA bandı |
+| `--rt-grad-plan-card` | `0deg, #FAFAFA → #FFFFFF` | Fiyat kartları, ticari kartlar |
+| `--rt-grad-dark-card` | `#0A0A0A → #262626` | Koyu "yorumların ötesinde" kartları |
 | `--rt-grad-ai` | sarı → turuncu → pembe → mor → lacivert → açık mavi | Pulse AI başlığı ve sohbet çerçevesi |
 
 ---
@@ -76,14 +74,14 @@
 
 | Rol | Font | Değişken |
 |---|---|---|
-| Başlık + gövde | **Figtree** (OFL, Google Fonts) | `--rt-font-sans` |
-| Menü, form etiketi, eyebrow | **Source Sans 3** (OFL) | `--rt-font-ui` |
-| El yazısı vurgu | **Caveat** (OFL) | `--rt-font-script` |
+| Başlık (h1–h6, `rt-t-display…rt-t-h5`) | **Clash Display** 500 (Pulse, §11) | `--rt-font-display` |
+| Gövde, menü, form etiketi | **Inter** | `--rt-font-sans`, `--rt-font-ui` |
+| Eyebrow (büyük harf etiket) | **JetBrains Mono** 500, 0,18em | `--rt-font-mono` |
+| Vurgu kelime (`rt-script`) | Clash Display + alt yarısı lime vurgu | `--rt-font-script` |
 
-Fontlar `src/components/root/fonts.ts`'te (`preload: false`, `latin` + `latin-ext`).
-Pazarlama sayfasında `body` üzerinde `--font-heading`, `--font-body`, `--font-mono`
-bu fontlara döner; eski sayfa kodu da Figtree/Source Sans 3 ile görünür.
-**Clash Display pazarlama sayfalarında kullanılmaz** (lisans sorunu yok, tasarım kararı).
+Fontlar `src/components/root/fonts.ts`'te. Pazarlama sayfasında `body` üzerinde
+`--font-heading` Clash Display, `--font-body` Inter, `--font-mono` JetBrains Mono olur.
+Figtree, Source Sans 3 ve Caveat 2026-11-28'de kaldırıldı.
 
 ### Ölçek (masaüstü / mobil ≤767 px)
 | Sınıf | Masaüstü | Mobil | Kullanım |
@@ -171,7 +169,7 @@ tüm hareket kapanır.
 | SSS | `RtFaqList` (buton) · `FaqList` / `.rt-faqd` (`<details>`, çapalı) | Krem hap satır, açık satır koyu |
 | Dikey sekmeler | `RtVTabs` | 590×600 görsel + çizgili sekmeler |
 | Kapanış | `HomeFinalCta` (`.rt-closing`) | 1320 px, üst köşeler 48 px, alt bilgiye 40 px biner, 80 px başlık + halka |
-| Alt bilgi | `MarketingFooter` | Düz `--rt-brand-950` koyu yeşil çerçeve (40 px; mobil 24/12 px) içinde 1260 px beyaz kart (48 px köşe, `64px 90px`). Kartın altında hiçbir şey yok: gradyan, nokta deseni, "yapay zekâya sor" simgeleri ve dev logo 2026-11-27'de kaldırıldı (kullanıcı: yapay zekâ işi gibi duruyor) |
+| Alt bilgi | `MarketingFooter` | Düz `--rt-brand-950` grafit çerçeve (40 px; mobil 24/12 px) içinde 1260 px beyaz kart (48 px köşe, `64px 90px`). Kartın altında hiçbir şey yok: gradyan, nokta deseni, "yapay zekâya sor" simgeleri ve dev logo 2026-11-27'de kaldırıldı (kullanıcı: yapay zekâ işi gibi duruyor) |
 | Plan kartı | `PricingPlans` | 24 px köşe, `grad-plan-card`; önerilen: 2 px marka çerçeve + `sky` bayrak |
 | Uzun metin | `.rt-prose` | 18/30 (mobil 16/26), h2 32, h3 26 |
 

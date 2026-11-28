@@ -208,7 +208,7 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
               }}
               aria-invalid={consentInvalid || undefined}
               aria-describedby={consentInvalid ? errorId : undefined}
-              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded accent-[var(--rt-brand-600)]"
+              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded accent-[var(--rt-brand-700)]"
             />
             <label htmlFor={consentId} className="cursor-pointer text-[12px] leading-[18px] text-[var(--rt-ink-700)]">
               {copy.consentBefore}

@@ -1,7 +1,8 @@
 # Pazarlama sitesi görselleri
 
-Tüm fotoğraflar **Unsplash** ücretsiz stok görselleridir (tasarım paketi
-`ritim-pos-paketi` ile geldi). Unsplash Lisansı ticari kullanıma izin verir,
+Tüm fotoğraflar **Unsplash** ücretsiz stok görselleridir (çoğu tasarım paketi
+`ritim-pos-paketi` ile geldi; `qr-telefon`, `musteri-telefon`, `menu-telefon`
+2026-11-28'de eklendi). Unsplash Lisansı ticari kullanıma izin verir,
 atıf zorunlu değildir; görselleri olduğu gibi satmak ya da benzer bir stok
 hizmeti kurmak yasaktır: https://unsplash.com/license
 
@@ -37,7 +38,9 @@ Referans sitenin (Toast) fotoğrafları, logoları ve videoları **kullanılmam�
 | `kahve.jpg` | 1000×800 | [Unsplash](https://images.unsplash.com/photo-1509042239860-f550ce710b93) |
 | `market.jpg` | 800×950 | [Unsplash](https://images.unsplash.com/photo-1580913428735-bd3c269d6a82) |
 | `masa-ustten.jpg` | 1200×1200 | [Unsplash](https://images.unsplash.com/photo-1466978913421-dad2ebd01d17) |
+| `menu-telefon.jpg` | 1600×2399 | [Unsplash](https://images.unsplash.com/photo-1601972599720-36938d4ecd31) |
 | `misafirler.jpg` | 1800×1200 | [Unsplash](https://images.unsplash.com/photo-1592861956120-e524fc739696) |
+| `musteri-telefon.jpg` | 1600×1067 | [Unsplash](https://images.unsplash.com/photo-1512428559087-560fa5ceab42) |
 | `mutfak-ekip.jpg` | 1600×1200 | [Unsplash](https://images.unsplash.com/photo-1428515613728-6b4607e44363) |
 | `mutfak-pisirme.jpg` | 1400×1000 | [Unsplash](https://images.unsplash.com/photo-1556910103-1c02745aae4d) |
 | `odeme-kart.jpg` | 1600×1200 | [Unsplash](https://images.unsplash.com/photo-1563013544-824ae1b704d3) |
@@ -45,6 +48,7 @@ Referans sitenin (Toast) fotoğrafları, logoları ve videoları **kullanılmam�
 | `pazarlama-misafir.jpg` | 1600×1200 | [Unsplash](https://images.unsplash.com/photo-1533777857889-4be7c70b33f7) |
 | `pizza.jpg` | 800×950 | [Unsplash](https://images.unsplash.com/photo-1574071318508-1cdbab80d002) |
 | `pos-kasa.jpg` | 1600×1200 | [Unsplash](https://images.unsplash.com/photo-1556740738-b6a63e27c4df) |
+| `qr-telefon.jpg` | 1600×1067 | [Unsplash](https://images.unsplash.com/photo-1595079676339-1534801ad6cf) |
 | `restoran-aksam.jpg` | 2000×1167 | [Unsplash](https://images.unsplash.com/photo-1590846406792-0adc7f938f1d) |
 | `restoran-aydinlik.jpg` | 2000×1200 | [Unsplash](https://images.unsplash.com/photo-1555396273-367ea4eb4db5) |
 | `restoran-ic.jpg` | 2000×1167 | [Unsplash](https://images.unsplash.com/photo-1517248135467-4c7edcad34c4) |
