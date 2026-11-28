@@ -256,12 +256,16 @@ mobilde tam ekran.
 
 ## 7. Mobil (<1024)
 
-- Sol menü ve sekme satırı yok; beyaz bar (logo + bildirim + siyah menü
-  dairesi) ve tam ekran çekmece. Çekmece işletme seçici, tüm sayfalar
+- Sol menü ve sekme satırı yok; üstte beyaz bar (logo + bildirim + siyah menü
+  dairesi), altta sekme çubuğu ve tam ekran çekmece. Çekmece işletme seçici, tüm sayfalar
   (araçlar dahil), "QR oluştur" ve hesap bağlantılarını listeler.
 - Telefonda (<640) tuval beyaz, kartlar gri `#F6F6F6`; kart içindeki
   butonlar ve satırlar beyaz. Menüler alttan açılır, üstte tutamaç.
-- Alt sekme çubuğu yok; `--dash-bottom-nav-h` yalnız güvenli alan.
+- Alt sekme çubuğu (`pn-bottomnav`, 2026-11-28): ekranın altında yüzen "liquid glass" hap (buzlu yarı saydam beyaz, 24 px bulanıklık, üstte ışık yansıması; desteklenmezse opak beyaz)
+  (64 px, kenarlardan 12 px, en çok 480 px); günlük 4 sayfa + "Menü" (çekmeceyi açar).
+  Simge + kısa ad, pasif gri, aktif siyah yazı + lime daire içinde simge.
+  Görünürken `--dash-bottom-nav-h` 84 px + güvenli alan olur; yapışkan çubuklar,
+  bildirimler ve sayfa sonu bunun üstünde kalır. Çekmece açıkken gizlenir.
 
 ---
 

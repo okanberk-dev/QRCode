@@ -197,7 +197,10 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
       <PanelMobileNav
         brand={brand}
         entries={entries}
+        bottomEntries={topEntries}
         labels={{
+          more: isEn ? 'Menu' : 'Menü',
+          bottom: isEn ? 'Bottom menu' : 'Alt menü',
           open: isEn ? 'Open menu' : 'Menüyü aç',
           close: isEn ? 'Close menu' : 'Menüyü kapat',
           dialog: isEn ? 'Admin menu' : 'Yönetim menüsü',

@@ -1245,3 +1245,105 @@
     background: #D6D6D6;
   }
 }
+
+/* ── Mobile bottom tab bar (below 1024px) ───────────────────────────────
+ * Floating "liquid glass" pill (user request 2026-11-28): frosted, heavily
+ * blurred white glass with a top sheen and a hairline rim; icon + short
+ * label, the active tab sits in a lime circle. Strong blur + a 62% white
+ * tint keep labels readable over any content; without backdrop-filter it
+ * falls back to near-opaque white. --dash-bottom-nav-h grows so sticky
+ * bars, toasts and the page end clear it. */
+@media (max-width: 1023.98px) {
+  :root:has(.pn-bottomnav) {
+    --dash-bottom-nav-h: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+  :root:has(.pn-bottomnav) #panel-main-content {
+    padding-bottom: calc(var(--dash-bottom-nav-h) + 12px);
+  }
+  .pn-bottomnav {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    align-items: center;
+    height: 64px;
+    max-width: 480px;
+    margin-inline: auto;
+    padding: 0 6px;
+    border-radius: 999px;
+    isolation: isolate;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+      0 0 0 0.5px rgba(0, 0, 0, 0.08),
+      0 18px 36px -14px rgba(0, 0, 0, 0.28),
+      0 4px 12px -4px rgba(0, 0, 0, 0.1);
+    font-family: var(--font-body);
+  }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .pn-bottomnav {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.58) 100%);
+      -webkit-backdrop-filter: blur(24px) saturate(185%);
+      backdrop-filter: blur(24px) saturate(185%);
+    }
+  }
+  /* Sheen: a soft specular highlight across the top half of the glass. */
+  .pn-bottomnav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background:
+      radial-gradient(120% 90% at 20% -30%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 55%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 48%);
+    pointer-events: none;
+  }
+  .pn-bottomnav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    height: 56px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #525252;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
+  }
+  .pn-bottomnav-item:active { transform: scale(0.94); }
+  .pn-bottomnav-item:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-pn-ink); }
+  .pn-bottomnav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 30px;
+    border-radius: 999px;
+    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease);
+  }
+  .pn-bottomnav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 2px; }
+  .pn-bottomnav-item[data-active="true"] { color: var(--color-pn-ink); font-weight: 600; }
+  .pn-bottomnav-item[data-active="true"] .pn-bottomnav-icon {
+    background: var(--pn-green);
+    color: var(--color-pn-ink);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pn-bottomnav-item, .pn-bottomnav-icon { transition: none; }
+}

@@ -713,10 +713,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <PanelMobileNav
         brand={brand}
         entries={panoEntries}
+        bottomEntries={topEntries}
         labels={{
           open: isTr ? 'Menüyü aç' : 'Open menu',
           close: isTr ? 'Menüyü kapat' : 'Close menu',
           dialog: isTr ? 'Panel menüsü' : 'Panel menu',
+          more: isTr ? 'Menü' : 'Menu',
+          bottom: isTr ? 'Alt menü' : 'Bottom menu',
         }}
         actions={
           <>
