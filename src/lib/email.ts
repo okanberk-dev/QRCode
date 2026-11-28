@@ -1,4 +1,5 @@
 import { SYSTEM_FEEDBACK } from './constants';
+import { hasReplyChannel } from '@/lib/feedback-metrics';
 import {
   renderForgotPassword,
   renderWelcome,
@@ -140,6 +141,8 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
       submittedAt: data.submittedAt ?? null,
       timeZone: data.timeZone ?? null,
       source,
+      // §58: Buaze feedback without a customer e-mail cannot be answered.
+      canReply: source === 'google' || hasReplyChannel(data.email),
     }, locale);
   }
 

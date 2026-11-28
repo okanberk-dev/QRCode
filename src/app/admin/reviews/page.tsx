@@ -9,6 +9,8 @@ import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider
 import { buildReplyTemplate } from '@/lib/reply-template';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { InboxToolbar } from '@/components/dashboard/feedbacks/InboxToolbar';
+import { useInboxWheelForward } from '@/components/dashboard/feedbacks/inbox-wheel';
+import { needsReply } from '@/lib/feedback-metrics';
 import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';
 
 import type {
@@ -70,7 +72,7 @@ function applyClientFilters(
   isTr: boolean,
 ): FeedbackRow[] {
   let out = rows;
-  if (tab === 'new') out = out.filter((r) => !r.isReplied || keptInNewTab.has(r.id));
+  if (tab === 'new') out = out.filter((r) => needsReply(r) || keptInNewTab.has(r.id));
   else if (tab === 'attention') out = out.filter((r) => r.rating <= 3);
   else if (tab === 'replied') out = out.filter((r) => r.isReplied);
   const q = search.trim().toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US');
@@ -912,7 +914,7 @@ function AdminReviewsContent() {
   const allLoaded = countsReady && !hasMore;
   const localCounts = useMemo(
     () => ({
-      new: rows.filter((r) => !r.isReplied).length,
+      new: rows.filter((r) => needsReply(r)).length,
       attention: rows.filter((r) => r.rating <= 3).length,
       replied: rows.filter((r) => r.isReplied).length,
     }),
@@ -965,13 +967,19 @@ function AdminReviewsContent() {
   // ============================================================
   // Render
   // ============================================================
+  // Desktop: a wheel over the header / toolbar scrolls the list card
+  // (owner parity; the page itself is locked to the viewport).
+  const listPaneRef = useRef<HTMLElement>(null);
+  const detailPaneRef = useRef<HTMLDivElement>(null);
+  const onInboxWheel = useInboxWheelForward(listPaneRef, detailPaneRef);
+
   return (
     // Full-bleed inbox (owner parity, §38.62): header and toolbar carry their
     // own padding, the split panes run edge to edge and scroll internally on
     // lg. `w-full min-w-0` keeps the root at the viewport width on mobile —
     // the old `mx-auto` wrapper shrank to its min-content width (490px at
     // 390), clipping the right edge of every row.
-    <div className={ADMIN_REVIEWS_ROOT_CLASS}>
+    <div className={ADMIN_REVIEWS_ROOT_CLASS} onWheel={onInboxWheel}>
       <AdminReviewsHeader isTr={isTr} className={isMobileDetailView ? 'hidden lg:block' : ''} />
 
       <InboxToolbar
@@ -1007,7 +1015,7 @@ function AdminReviewsContent() {
 
       {/* Split view: list | detail. */}
       <div className={ADMIN_REVIEWS_SPLIT_CLASS}>
-        <aside className={`${ADMIN_REVIEWS_LIST_CLASS} ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
+        <aside ref={listPaneRef} className={`${ADMIN_REVIEWS_LIST_CLASS} ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
           <AdminFeedbackList
             isTr={isTr}
             loading={loading}
@@ -1030,7 +1038,7 @@ function AdminReviewsContent() {
           />
         </aside>
 
-        <div className={`${ADMIN_REVIEWS_DETAIL_CLASS} ${isMobileDetailView ? 'flex' : 'hidden'}`}>
+        <div ref={detailPaneRef} className={`${ADMIN_REVIEWS_DETAIL_CLASS} ${isMobileDetailView ? 'flex' : 'hidden'}`}>
           {active ? (
             <AdminFeedbackDetail
               feedback={active}

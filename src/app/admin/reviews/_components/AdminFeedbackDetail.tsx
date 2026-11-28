@@ -1,7 +1,8 @@
 'use client';
 
 import { useLayoutEffect, useRef } from 'react';
-import { ArrowLeft, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, UserPlus } from 'lucide-react';
+import { ArrowLeft, Check, Flag, Loader2, Mail, MailX, MessageSquare, QrCode, Sparkles, UserPlus } from 'lucide-react';
+import { hasReplyChannel } from '@/lib/feedback-metrics';
 import { PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
@@ -102,8 +103,12 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
   // (owner inbox parity).
   const lastReplyFailed =
     sentReplies.length > 0 && sentReplies[sentReplies.length - 1]?.status === 'failed';
-  const canReply = !isHigh && (!active.isReplied || lastReplyFailed);
-  const showAiCard = !isHigh && !active.isReplied;
+  // Replies go out by e-mail only (§58): no customer e-mail → no composer,
+  // no AI card, a short note instead (owner parity).
+  const hasEmail = hasReplyChannel(active.customerEmail);
+  const canReply = !isHigh && hasEmail && (!active.isReplied || lastReplyFailed);
+  const showAiCard = !isHigh && hasEmail && !active.isReplied;
+  const noReplyChannel = !isHigh && !hasEmail && !active.isReplied;
 
   const flagLabel = isTr
     ? isFlagged
@@ -380,6 +385,23 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                   : isTr
                     ? 'Yüksek puanlı bir QR geri bildirimi. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.'
                     : 'This is high-rated QR feedback. You can still flag or assign it to follow up.'}
+              </p>
+            </div>
+          ) : noReplyChannel ? (
+            <div role="note" className="mt-6 flex items-start gap-3 rounded-[20px] bg-[#F6F6F6] p-4">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink"
+              >
+                <MailX size={16} strokeWidth={2} />
+              </span>
+              <p className="min-w-0 pt-0.5 text-[14px] leading-[1.55] text-[#525252]">
+                <strong className="block font-medium text-pn-ink">
+                  {isTr ? 'Müşteri e-posta bırakmadı.' : 'No customer e-mail.'}
+                </strong>
+                {isTr
+                  ? 'Yanıtlar e-postayla gittiği için bu geri bildirime yanıt gönderilemez. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.'
+                  : 'Replies go out by e-mail, so this feedback cannot be answered. You can flag or assign it to follow up.'}
               </p>
             </div>
           ) : lastReplyFailed ? null : (

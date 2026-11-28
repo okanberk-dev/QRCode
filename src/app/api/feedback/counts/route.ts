@@ -5,6 +5,7 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { normalizeRestaurantParam } from '@/lib/active-business';
 import { NextRequest, NextResponse } from 'next/server';
 import { withServerTiming } from '@/lib/server-timing';
+import { NEEDS_REPLY } from '@/lib/feedback-metrics';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,14 +73,21 @@ async function handleGET(req: NextRequest) {
     // Replied count joins the FeedbackReply table which may not exist on
     // environments where schema migration has not run yet. Fall back to 0
     // so the counts strip still renders instead of blanking the page.
+    // `new` ("Yanıtsız") = feedback that needs a reply (§58): 1–3★, no reply,
+    // a customer e-mail. It used to be `all - replied`, which also counted
+    // high ratings and feedback without an e-mail — neither can get a reply.
     let replied = 0;
+    let needsReply = 0;
     try {
-      replied = await prisma.feedback.count({
-        where: {
-          ...baseWhere,
-          replies: { some: {} },
-        },
-      });
+      [replied, needsReply] = await prisma.$transaction([
+        prisma.feedback.count({
+          where: {
+            ...baseWhere,
+            replies: { some: {} },
+          },
+        }),
+        prisma.feedback.count({ where: { ...baseWhere, ...NEEDS_REPLY } }),
+      ]);
     } catch (err) {
       console.warn(
         '[feedback/counts] replied fallback — did schema migration run?',
@@ -90,7 +98,7 @@ async function handleGET(req: NextRequest) {
     return NextResponse.json(
       {
         all,
-        new: Math.max(0, all - replied),
+        new: needsReply,
         attention,
         replied,
         lowUnread,

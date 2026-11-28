@@ -32,7 +32,7 @@ export const ADMIN_REVIEWS_DETAIL_CLASS =
 
 export function AdminReviewsHeader({ isTr, className = '' }: { isTr: boolean; className?: string }) {
   return (
-    <div className={`px-4 pb-2 pt-5 sm:px-7 lg:pb-2 lg:pt-8 ${className}`}>
+    <div className={`px-4 pb-2 pt-5 sm:px-7 lg:pb-1 lg:pt-5 ${className}`}>
       <PageHeader
         className="mb-0"
         titleScale="compact"

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Bookmark, Check, Flag, Reply, Sparkles, UserCheck } from 'lucide-react';
 import { Badge, type BadgeKind } from '@/components/ui';
+import { hasReplyChannel } from '@/lib/feedback-metrics';
 
 /**
  * Prioritised, sentence-case status chips for a review (owner + admin, list
@@ -14,6 +15,9 @@ import { Badge, type BadgeKind } from '@/components/ui';
  *   5. AI draft ready     lime    Sparkles       — low rating, not replied
  *   6. Needs reply        danger  Reply          — low rating, nothing else set
  *
+ * 5 and 6 need a customer e-mail: replies go out by e-mail, so feedback
+ * without one can never be answered and must not say it is waiting (§58).
+ *
  * "Needs reply" replaces the old cryptic "● !" low-rating badge.
  */
 
@@ -24,6 +28,7 @@ export interface FeedbackStatusSource {
   isFlagged?: boolean;
   isAssigned?: boolean;
   hasPendingAiDraft?: boolean;
+  customerEmail?: string | null;
 }
 
 interface FeedbackStatusChipsProps {
@@ -53,6 +58,7 @@ export function getFeedbackStatusChips(
   const chips: Chip[] = [];
   const iconProps = { size: 11, strokeWidth: 2.2, 'aria-hidden': true } as const;
   const isLow = f.rating <= lowRatingThreshold;
+  const canReply = hasReplyChannel(f.customerEmail);
   if (f.isReplied) {
     chips.push({ key: 'replied', kind: 'ok', icon: <Check {...iconProps} />, label: isTr ? 'Yanıtlandı' : 'Replied' });
   }
@@ -65,10 +71,10 @@ export function getFeedbackStatusChips(
   if (showAssigned && f.isAssigned) {
     chips.push({ key: 'assigned', kind: 'ghost', icon: <UserCheck {...iconProps} />, label: isTr ? 'Atandı' : 'Assigned' });
   }
-  if (f.hasPendingAiDraft && !f.isReplied && isLow) {
+  if (f.hasPendingAiDraft && !f.isReplied && isLow && canReply) {
     chips.push({ key: 'ai', kind: 'lime', icon: <Sparkles {...iconProps} />, label: isTr ? 'AI taslağı hazır' : 'AI draft ready' });
   }
-  if (isLow && !f.isReplied && !f.isPending && !f.hasPendingAiDraft) {
+  if (isLow && canReply && !f.isReplied && !f.isPending && !f.hasPendingAiDraft) {
     chips.push({ key: 'needs-reply', kind: 'danger', icon: <Reply {...iconProps} />, label: isTr ? 'Yanıt bekliyor' : 'Needs reply' });
   }
   return chips;

@@ -25,6 +25,10 @@ export function replyErrorMessage(data: unknown, isTr: boolean, status?: number)
         : 'Replies can be at most 2,000 characters.';
     case 'empty_body':
       return isTr ? 'Boş yanıt gönderilemez.' : "A reply can't be empty.";
+    case 'no_customer_email':
+      return isTr
+        ? 'Müşteri e-posta bırakmadığı için bu geri bildirime yanıt gönderilemez.'
+        : 'The customer left no e-mail, so this feedback cannot be answered.';
     case 'rate_limited':
       return isTr
         ? 'Çok fazla yanıt gönderildi. Lütfen biraz sonra tekrar deneyin.'

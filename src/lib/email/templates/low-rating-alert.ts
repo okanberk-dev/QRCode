@@ -15,6 +15,12 @@ export interface LowRatingAlertParams {
   branch?: string | null;
   tableNumber?: string | null;
   reviewUrl: string;
+  /**
+   * The owner can answer this review: always for Google, and for Buaze
+   * feedback only when the customer left an e-mail (replies go out by
+   * e-mail, §58). False → no "reply within 1 hour" push, no AI box.
+   */
+  canReply?: boolean;
   /** Optional already-generated AI reply suggestion. When omitted the AI box
    *  is hidden — alert still fires with the customer block + quick actions. */
   aiDraft?: string | null;
@@ -43,6 +49,8 @@ export async function renderLowRatingAlert(
   // Subject deliverability §21.23: emoji çıkarıldı (⚠ spam tetikçi).
   // "★" rating'in görsel sinyalini koruyor.
   const source = normalizeReviewSource(params.source);
+  const canReply = params.canReply !== false;
+  const aiDraft = canReply ? params.aiDraft ?? null : null;
   const sourceCopy = reviewSourceCopy(source, locale);
   const subject = reviewAlertSubject({
     source,
@@ -54,8 +62,8 @@ export async function renderLowRatingAlert(
   });
   const where = source === 'google' ? (isTr ? "Google'da" : 'on Google') : isTr ? "Buaze QR formunuzda" : 'on your Buaze QR form';
   const preheader = isTr
-    ? `${params.customerName ?? 'Bir müşteri'} ${where} ${params.rating} yıldız bıraktı. ${params.aiDraft ? 'AI yanıt taslağı hazır.' : 'Yanıtlamak için panele gidin.'}`
-    : `${params.customerName ?? 'A customer'} left ${params.rating} stars ${where}. ${params.aiDraft ? 'AI reply draft inside.' : 'Open the panel to reply.'}`;
+    ? `${params.customerName ?? 'Bir müşteri'} ${where} ${params.rating} yıldız bıraktı. ${!canReply ? 'Müşteri e-posta bırakmadı; yorumu panelde görebilirsiniz.' : aiDraft ? 'AI yanıt taslağı hazır.' : 'Yanıtlamak için panele gidin.'}`
+    : `${params.customerName ?? 'A customer'} left ${params.rating} stars ${where}. ${!canReply ? 'No customer e-mail; see the review in the panel.' : aiDraft ? 'AI reply draft inside.' : 'Open the panel to reply.'}`;
 
   const customerName = params.customerName ? escapeHtml(params.customerName) : (isTr ? 'Anonim' : 'Anonymous');
   const customerInitial = (params.customerName || '?').trim().charAt(0).toUpperCase() || '?';
@@ -79,9 +87,9 @@ export async function renderLowRatingAlert(
     aiApprove: 'Onayla & Yanıtla →',
     quickEyebrow: 'Hızlı aksiyon',
     quickActions: [
-      { l: 'Şefle paylaş', s: 'Mutfak Slack' },
-      { l: 'Vardiya notu', s: 'Servis ekibi' },
-      { l: 'Tüm yorumlar', s: 'Panele git' },
+      { l: 'Yorumu aç', s: 'Panelde' },
+      { l: 'Tüm yorumlar', s: 'Gelen kutusu' },
+      { l: 'Bildirim ayarları', s: 'E-posta tercihleri' },
     ],
     noComment: 'Yorum bırakılmadı.',
   } : {
@@ -95,9 +103,9 @@ export async function renderLowRatingAlert(
     aiApprove: 'Approve & Reply →',
     quickEyebrow: 'Quick actions',
     quickActions: [
-      { l: 'Share with chef', s: 'Kitchen Slack' },
-      { l: 'Shift note', s: 'Service team' },
-      { l: 'All reviews', s: 'Open panel' },
+      { l: 'Open the review', s: 'In the panel' },
+      { l: 'All reviews', s: 'Inbox' },
+      { l: 'Notification settings', s: 'E-mail preferences' },
     ],
     noComment: 'No comment left.',
   };
@@ -143,7 +151,7 @@ export async function renderLowRatingAlert(
 
   // AI Draft card — dark editor card. Buttons are `bz-btn` so on phones they go
   // full width and stack (edit above approve).
-  const aiBlock = params.aiDraft ? `
+  const aiBlock = aiDraft ? `
         ${spacer(32)}
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr>
@@ -155,7 +163,7 @@ export async function renderLowRatingAlert(
         </table>
         ${spacer(14)}
         <div style="background:${PULSE.graphite};border-radius:14px;padding:24px;color:${PULSE.pure};">
-          ${renderP(escapeHtml(params.aiDraft).replace(/\n/g, '<br>'), { size: 14, color: PULSE.n300 })}
+          ${renderP(escapeHtml(aiDraft).replace(/\n/g, '<br>'), { size: 14, color: PULSE.n300 })}
           <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${PULSE.n700};">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
               <tr>
@@ -174,7 +182,11 @@ export async function renderLowRatingAlert(
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const localePath = isTr ? 'tr' : 'en';
   const inboxPath = source === 'google' ? 'dashboard/google-reviews' : 'dashboard/feedbacks';
-  const quickHrefs = [reviewHref, reviewHref, escapeHtml(`${baseAppUrl}/${localePath}/${inboxPath}`)];
+  const quickHrefs = [
+    reviewHref,
+    escapeHtml(`${baseAppUrl}/${localePath}/${inboxPath}`),
+    escapeHtml(`${baseAppUrl}/${localePath}/dashboard/notifications`),
+  ];
   const quickCards = copy.quickActions.map((a, i) => `
     <td class="stack-col" valign="top" style="width:33.33%;padding:0 ${i === 0 ? '6px 0 0' : i === copy.quickActions.length - 1 ? '0 0 6px' : '6px'};">
       <a href="${quickHrefs[i]}" style="display:block;padding:16px;border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
@@ -207,7 +219,14 @@ export async function renderLowRatingAlert(
       </tr>
       <tr>
         <td class="bz-pad" style="padding:36px 40px 44px;">
-          ${renderEyebrow(copy.eyebrowAction, PULSE.warning)}
+          ${renderEyebrow(
+            canReply
+              ? copy.eyebrowAction
+              : isTr
+                ? 'Müşteri e-posta bırakmadı · yanıt gönderilemez'
+                : 'No customer e-mail · no reply possible',
+            canReply ? PULSE.warning : PULSE.n500,
+          )}
           ${spacer(14)}
           <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
             ${copy.title}<br/>

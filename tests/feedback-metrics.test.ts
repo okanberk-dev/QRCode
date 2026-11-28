@@ -6,6 +6,8 @@ import {
   describeChange,
   describeRatingChange,
   formatDuration,
+  hasReplyChannel,
+  needsReply,
   redirectBadgeLabel,
   topicSentimentText,
 } from '../src/lib/feedback-metrics';
@@ -110,5 +112,22 @@ describe('buildVolumeSeries', () => {
   it('weekly buckets after 92 days', () => {
     const pts = buildVolumeSeries([], { windowDays: 140, end: new Date('2026-11-25T12:00:00Z'), timeZone: 'UTC', locale: 'en' });
     assert.equal(pts.length, 20);
+  });
+});
+
+describe('needsReply (§58: replies go out by e-mail)', () => {
+  it('needs an e-mail', () => {
+    assert.equal(hasReplyChannel('a@b.co'), true);
+    assert.equal(hasReplyChannel('   '), false);
+    assert.equal(hasReplyChannel(''), false);
+    assert.equal(hasReplyChannel(null), false);
+    assert.equal(hasReplyChannel(undefined), false);
+  });
+  it('low, unreplied, with e-mail only', () => {
+    assert.equal(needsReply({ rating: 2, isReplied: false, customerEmail: 'a@b.co' }), true);
+    assert.equal(needsReply({ rating: 3, customerEmail: 'a@b.co' }), true);
+    assert.equal(needsReply({ rating: 2, isReplied: false, customerEmail: null }), false);
+    assert.equal(needsReply({ rating: 4, isReplied: false, customerEmail: 'a@b.co' }), false);
+    assert.equal(needsReply({ rating: 1, isReplied: true, customerEmail: 'a@b.co' }), false);
   });
 });

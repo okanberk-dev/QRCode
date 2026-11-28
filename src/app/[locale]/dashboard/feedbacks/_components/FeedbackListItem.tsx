@@ -1,6 +1,6 @@
 'use client';
 
-import { redirectBadgeLabel } from '@/lib/feedback-metrics';
+import { needsReply, redirectBadgeLabel } from '@/lib/feedback-metrics';
 import { QrCode } from 'lucide-react';
 import { PlatformChip } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
@@ -49,9 +49,11 @@ export function FeedbackListItem({
         ? isTr
           ? 'okunmamış'
           : 'unread'
-        : isTr
-          ? 'yanıt bekliyor'
-          : 'awaiting reply';
+        : needsReply(r)
+          ? isTr
+            ? 'yanıt bekliyor'
+            : 'awaiting reply'
+          : null;
   const iconId = platformIconId(r.platform);
   const pLabel = platformLabel(r.platform, isTr);
 
@@ -62,7 +64,7 @@ export function FeedbackListItem({
         type="button"
         role="option"
         aria-selected={isActive}
-        aria-label={`${customerLabel}, ${r.rating}/5, ${stateLabel}`}
+        aria-label={[customerLabel, `${r.rating}/5`, stateLabel].filter(Boolean).join(', ')}
         onClick={() => onSelect(r.id)}
         className={`group flex w-full items-start gap-3 rounded-[16px] p-3 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent ${
           isActive

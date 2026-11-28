@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withCronGuard } from '@/lib/cron-guard';
 import { prisma } from '@/lib/prisma';
 import { autoDraftAllowed, generateAiDraftBackground, type AiDraftTone } from '@/lib/ai-draft';
+import { HAS_EMAIL } from '@/lib/feedback-metrics';
 import * as Sentry from '@sentry/nextjs';
 
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,8 @@ async function runFeedbackAutoDraft(): Promise<FeedbackAutoDraftSummary> {
       },
       aiDraft: null,
       replies: { none: {} },
+      // §58: only feedback that can get a reply (customer e-mail) is worth a draft.
+      ...HAS_EMAIL,
     },
     take: BATCH_SIZE,
     orderBy: { createdAt: 'desc' },

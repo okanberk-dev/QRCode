@@ -177,14 +177,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch (error) {
     console.error('Sitemap help articles fetch error:', error);
   }
+  // Static TR/EN pairs share a slug (§22.9). The article page emits hreflang
+  // only when both locales are served from the static array, so the sitemap
+  // annotates exactly those pairs (same rule, reciprocal on both rows).
+  const staticServed = new Set(
+    STATIC_HELP_ARTICLES.filter((a) => !seenArticleKeys.has(`${a.locale}:${a.slug}`)).map(
+      (a) => `${a.locale}:${a.slug}`,
+    ),
+  );
   STATIC_HELP_ARTICLES.forEach((a) => {
     const key = `${a.locale}:${a.slug}`;
     if (seenArticleKeys.has(key)) return;
+    const paired = staticServed.has(`tr:${a.slug}`) && staticServed.has(`en:${a.slug}`);
     sitemapEntries.push({
       url: `${BASE_URL}/${a.locale}/help/${a.slug}`,
       lastModified: a.updatedAt,
       changeFrequency: 'monthly',
       priority: a.locale === 'tr' ? 0.7 : 0.6,
+      ...(paired
+        ? {
+            alternates: {
+              languages: {
+                tr: `${BASE_URL}/tr/help/${a.slug}`,
+                en: `${BASE_URL}/en/help/${a.slug}`,
+                'x-default': `${BASE_URL}/tr/help/${a.slug}`,
+              },
+            },
+          }
+        : {}),
     });
   });
 

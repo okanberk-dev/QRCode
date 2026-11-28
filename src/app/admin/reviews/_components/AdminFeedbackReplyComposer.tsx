@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, Mail, RotateCw, Send, Sparkles } from 'lucide-react';
 import { ReplyRiskNotice, useReplyRisk } from '@/components/reply/ReplyRiskNotice';
@@ -183,22 +183,39 @@ export function AdminReplyComposerCard({
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    if (!draft) return; // empty → back to the rows/min-height size
+    if (!draft) {
+      el.style.height = ''; // empty → back to the class size (rows / lg idle)
+      return;
+    }
     const cap =
       window.innerWidth >= 1024 ? 200 : Math.min(480, Math.round(window.innerHeight * 0.5));
     el.style.height = `${Math.min(el.scrollHeight + 2, cap)}px`;
   }, [draft]);
 
+  // lg idle (owner parity): label row + one-line box until the first touch;
+  // the e-mail row, consent and Send appear then and stay open.
+  const [engaged, setEngaged] = useState(false);
+  useEffect(() => {
+    setEngaged(false);
+  }, [active.id]);
+  const idle = !engaged && !draft && !notice && !sending;
+  const hideIdle = idle ? 'lg:hidden' : '';
+
   return (
     // lg: column flex item of the docked footer — only the textarea shrinks
     // (min 44px, it then scrolls internally), so Send stays visible however
     // long the draft gets.
-    <div className="lg:flex lg:min-h-0 lg:flex-col">
+    <div
+      className="lg:flex lg:min-h-0 lg:flex-col"
+      data-composer-idle={idle ? 'true' : undefined}
+      onFocus={() => setEngaged(true)}
+      onPointerDown={() => setEngaged(true)}
+    >
       <div className="flex items-center justify-between gap-2 lg:shrink-0">
         <label htmlFor={ADMIN_REPLY_TEXTAREA_ID} className="text-[14px] font-medium text-pn-ink">
           {isTr ? 'Yanıtınız' : 'Your reply'}
         </label>
-        <span className="text-[12px] tabular-nums text-[#9A9A9A]" aria-live="polite">
+        <span className={`text-[12px] tabular-nums text-[#9A9A9A] ${hideIdle}`} aria-live="polite">
           {draft.length} / {ADMIN_REPLY_MAX_LENGTH}
         </span>
       </div>
@@ -224,7 +241,9 @@ export function AdminReplyComposerCard({
         enterKeyHint="send"
         autoCorrect="on"
         spellCheck={true}
-        className="mt-2 max-h-[480px] min-h-[96px] w-full resize-none overflow-y-auto rounded-[20px] border-0 bg-[#F6F6F6] px-4 py-3 text-[16px] leading-[1.55] text-pn-ink transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:outline-none focus:shadow-[0_0_0_2px_#111110] sm:text-[14px] lg:max-h-[200px] lg:min-h-[48px] lg:shrink"
+        className={`mt-2 max-h-[480px] min-h-[96px] w-full resize-none overflow-y-auto rounded-[20px] border-0 bg-[#F6F6F6] px-4 py-3 text-[16px] leading-[1.55] text-pn-ink transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:outline-none focus:shadow-[0_0_0_2px_#111110] sm:text-[14px] lg:max-h-[200px] lg:min-h-[48px] lg:shrink ${
+          idle ? 'lg:h-12' : ''
+        }`}
       />
       <ReplyRiskNotice risk={risk} locale={isTr ? 'tr' : 'en'} className="mt-2 lg:shrink-0" />
       <p id="admin-reply-textarea-hint" className="sr-only">
@@ -233,37 +252,27 @@ export function AdminReplyComposerCard({
           : 'Press Cmd or Ctrl + Enter to send. Up to 2,000 characters.'}
       </p>
 
-      <div className="mt-2 rounded-[16px] bg-[#F6F6F6] px-3.5 py-2.5 text-[13px] lg:shrink-0 lg:py-2">
-        {active.customerEmail ? (
-          <label className="flex cursor-pointer items-start gap-2 text-pn-ink">
-            <input
-              type="checkbox"
-              checked={sendEmail}
-              onChange={(e) => setSendEmail(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-pn-accent"
-            />
-            <Mail size={14} className="mt-0.5 shrink-0 text-[#737373]" aria-hidden="true" />
-            <span className="min-w-0 break-words">
-              {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
-              <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
-            </span>
-          </label>
-        ) : (
-          <p className="flex items-start gap-2 text-[#737373]">
-            <Mail size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <span>
-              {isTr
-                ? `Müşteri e-posta bırakmamış${active.rating >= 4 ? ' (yüksek puanlılar yönlendirildiği için bu beklenir)' : ''} — yanıt sadece dahili olarak kaydedilir.`
-                : `No customer email${active.rating >= 4 ? ' (expected for high-rating redirects)' : ''} — reply saved internally only.`}
-            </span>
-          </p>
-        )}
+      {/* Mounted only when the customer left an e-mail (FeedbackDetail canReply, §58). */}
+      <div className={`mt-2 rounded-[16px] bg-[#F6F6F6] px-3.5 py-2.5 text-[13px] lg:shrink-0 lg:py-2 ${hideIdle}`}>
+        <label className="flex cursor-pointer items-start gap-2 text-pn-ink">
+          <input
+            type="checkbox"
+            checked={sendEmail}
+            onChange={(e) => setSendEmail(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-pn-accent"
+          />
+          <Mail size={14} className="mt-0.5 shrink-0 text-[#737373]" aria-hidden="true" />
+          <span className="min-w-0 break-words">
+            {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
+            <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
+          </span>
+        </label>
       </div>
 
       {/* §45 — Per-message responsibility acknowledgement. Must be ticked for
           every send (the page resets it after a successful send and on every
           review switch). Wording and link verbatim. */}
-      <label className="mt-2.5 flex cursor-pointer items-start gap-2 px-0.5 text-[12px] leading-[1.5] text-[#737373] lg:shrink-0">
+      <label className={`mt-2.5 flex cursor-pointer items-start gap-2 px-0.5 text-[12px] leading-[1.5] text-[#737373] lg:shrink-0 ${hideIdle}`}>
         <input
           type="checkbox"
           checked={confirmResponsibility}
@@ -303,7 +312,7 @@ export function AdminReplyComposerCard({
         </span>
       </label>
 
-      <div className="mt-3 flex items-center justify-between gap-3 lg:shrink-0">
+      <div className={`mt-3 flex items-center justify-between gap-3 lg:shrink-0 ${hideIdle}`}>
         <p
           role="status"
           aria-live="polite"

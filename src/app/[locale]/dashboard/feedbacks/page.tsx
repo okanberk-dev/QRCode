@@ -1,6 +1,8 @@
 'use client';
 
 import { ReviewSourceSwitch } from '@/components/dashboard/feedbacks/ReviewSourceSwitch';
+import { useInboxWheelForward } from '@/components/dashboard/feedbacks/inbox-wheel';
+import { hasReplyChannel, needsReply } from '@/lib/feedback-metrics';
 import { PanelBreadcrumb } from '@/components/panel/pano/PanelBreadcrumb';
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode, useLayoutEffect } from 'react';
 import { replyErrorMessage } from '@/components/reply/reply-errors';
@@ -346,7 +348,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     // Legacy tab literals (deep-link backwards-compat, §38.56).
     else if (tab === 'high') rows = rows.filter((r) => r.rating >= 4);
     else if (tab === 'redirected') rows = rows.filter((r) => !!r.platform);
-    else if (tab === 'unreplied') rows = rows.filter((r) => r.isReplied !== true);
+    else if (tab === 'unreplied') rows = rows.filter((r) => needsReply(r));
     else if (tab === 'today') {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
@@ -396,7 +398,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       low: feedbacks.filter((r) => r.rating <= 3).length,
       replied: feedbacks.filter((r) => r.isReplied === true).length,
       pending: feedbacks.filter((r) => r.isPending === true).length,
-      aiReady: feedbacks.filter((r) => r.hasPendingAiDraft === true).length,
+      aiReady: feedbacks.filter((r) => r.hasPendingAiDraft === true && needsReply(r)).length,
     }),
     [feedbacks],
   );
@@ -588,7 +590,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setAiSource(null);
     setAiFromBackground(false);
     setAiDisabledByAdmin(false);
-    if (activeRating >= 4 || activeIsReplied) {
+    // No customer e-mail → no reply, so no draft to show (§58).
+    if (activeRating >= 4 || activeIsReplied || !hasReplyChannel(activeCustomerEmail)) {
       setAiLoading(false);
       return;
     }
@@ -998,7 +1001,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     // Low ratings only — the inbox never offers a draft for 4–5★, and every
     // draft spends the same daily quota as "Taslak oluştur".
     const targetIds = filteredList
-      .filter((f) => !f.isReplied && f.rating <= 3)
+      .filter((f) => needsReply(f))
       .slice(0, 50)
       .map((f) => f.id);
     if (targetIds.length === 0) {
@@ -1068,7 +1071,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   }, [bulkNotice]);
 
   const bulkEligibleCount = useMemo(
-    () => filteredList.filter((f) => !f.isReplied && f.rating <= 3).slice(0, 50).length,
+    () => filteredList.filter((f) => needsReply(f)).slice(0, 50).length,
     [filteredList],
   );
 
@@ -1222,6 +1225,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // List highlight only where the detail is visible next to it (§0.4).
   const listActiveId = isDesktop ? active?.id ?? null : null;
 
+  // Desktop: a wheel over the header / toolbar scrolls the list card
+  // (the page itself is locked to the viewport).
+  const listPaneRef = useRef<HTMLElement>(null);
+  const detailPaneRef = useRef<HTMLDivElement>(null);
+  const onInboxWheel = useInboxWheelForward(listPaneRef, detailPaneRef);
+
   // ============================================================
   // Render
   // ============================================================
@@ -1229,22 +1238,27 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     // §38.62 — full-bleed inbox (no outer max-width wrapper). Fintora
     // layout: header and toolbar sit on the grey canvas; the list and the
     // detail are two white cards (24 / 28px) that scroll internally on lg.
-    <div className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
-      {/* Header — hidden on the mobile detail view (the back bar is there). */}
+    <div
+      className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden"
+      onWheel={onInboxWheel}
+    >
+      {/* Header — hidden on the mobile detail view (the back bar is there).
+          lg: one compact row (title + summary left, actions right) so the
+          two cards get the height on laptop screens. */}
       <div
-        className={`px-4 pb-2 pt-5 sm:px-7 lg:pb-3 lg:pt-8 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
+        className={`px-4 pb-2 pt-5 sm:px-7 lg:pb-1 lg:pt-5 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
       >
         {/* Fintora page header: folder breadcrumb, title, actions on the
             same line. The review source switch leads the toolbar below. */}
         <div className="hidden sm:block">
           <PanelBreadcrumb current={isTr ? 'Yorumlar' : 'Reviews'} />
         </div>
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-[28px] font-medium leading-[1.15] tracking-[-0.02em] text-pn-ink sm:text-[32px] lg:text-[34px]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between lg:items-center">
+          <div className="min-w-0 lg:flex lg:items-baseline lg:gap-4">
+            <h1 className="text-[28px] font-medium leading-[1.15] tracking-[-0.02em] text-pn-ink sm:text-[32px] lg:shrink-0 lg:text-[30px]">
               {isTr ? 'Yorumlar' : 'Reviews'}
             </h1>
-            <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373]">
+            <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373] lg:mt-0">
               {summary}
             </div>
           </div>
@@ -1331,6 +1345,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           and the rows carry their own fill. */}
       <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-7 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
         <aside
+          ref={listPaneRef}
           className={`min-h-0 px-2 pb-4 sm:mx-6 sm:mb-6 sm:rounded-[24px] sm:bg-white sm:p-2 lg:m-0 lg:overflow-y-auto ${
             isMobileDetailView ? 'hidden lg:block' : ''
           }`}
@@ -1359,6 +1374,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         </aside>
 
         <div
+          ref={detailPaneRef}
           className={`min-w-0 flex-col bg-white sm:mx-6 sm:mb-6 sm:rounded-[28px] lg:m-0 lg:flex lg:min-h-0 lg:overflow-hidden ${isMobileDetailView ? 'flex' : 'hidden'}`}
         >
           {active ? (

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 import { sendCustomerReplyEmail } from '@/lib/email';
+import { hasReplyChannel } from '@/lib/feedback-metrics';
 import { isValidEmail } from '@/lib/validations';
 import { moderateReplyContent } from '@/lib/content-safety';
 import { loadReplyAllowedHosts } from '@/lib/reply-allowed-hosts';
@@ -87,6 +88,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     body = parsed;
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  // Replies go out by e-mail (§58): feedback without a customer e-mail has
+  // no composer in the panel, so the API refuses it too.
+  if (!hasReplyChannel(access.feedback.email)) {
+    return NextResponse.json({ error: 'no_customer_email' }, { status: 422 });
   }
 
   const text = typeof body.body === 'string' ? body.body.trim() : '';
