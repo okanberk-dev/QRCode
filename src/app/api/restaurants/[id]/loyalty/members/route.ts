@@ -46,7 +46,8 @@ const EnrolBody = z
   .object({
     firstName: z.string().trim().max(LOYALTY_LIMITS.memberNameMax).optional().nullable(),
     lastName: z.string().trim().max(LOYALTY_LIMITS.memberNameMax).optional().nullable(),
-    phone: z.string().trim().min(7).max(30),
+    // Optional since 2026-11-28: a name or a phone identifies the card.
+    phone: z.string().trim().max(30).optional().nullable(),
     email: z.string().trim().max(160).optional().nullable(),
     birthMonth: z.number().int().min(1).max(12).optional().nullable(),
     birthDay: z.number().int().min(1).max(31).optional().nullable(),
@@ -68,8 +69,8 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!parsed.ok) return parsed.response;
   const d = parsed.data;
 
-  const phone = normalizePhone(d.phone);
-  if (!phone) return NextResponse.json({ error: 'INVALID_PHONE', code: 'INVALID_PHONE' }, { status: 400 });
+  const phone = d.phone ? normalizePhone(d.phone) : null;
+  if (d.phone && !phone) return NextResponse.json({ error: 'INVALID_PHONE', code: 'INVALID_PHONE' }, { status: 400 });
   const email = d.email ? d.email.toLowerCase() : null;
   if (email && !isValidEmail(email)) {
     return NextResponse.json({ error: 'INVALID_EMAIL', code: 'INVALID_EMAIL' }, { status: 400 });
@@ -81,6 +82,7 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
   const firstName = d.firstName?.replace(/\s+/g, ' ').trim() || null;
   const lastName = d.lastName?.replace(/\s+/g, ' ').trim() || null;
   const name = [firstName, lastName].filter(Boolean).join(' ');
+  if (!name && !phone) return NextResponse.json({ error: 'NAME_REQUIRED', code: 'NAME_REQUIRED' }, { status: 400 });
   if (name && moderateText(name)) {
     return NextResponse.json({ error: 'content_blocked', code: 'CONTENT_BLOCKED' }, { status: 422 });
   }

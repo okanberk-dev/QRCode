@@ -59,7 +59,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         paragraphs: [
           'QR anketi, müşterinin telefonuyla bir karekodu okutarak açtığı kısa bir soru formudur. Uygulama indirmek ya da hesap açmak gerekmez; anket tarayıcıda açılır.',
           'Anket yorum akışından farklıdır: yanıtlar herkese açık bir platformda yayımlanmaz, yalnızca size ulaşır. Bu yüzden ziyaretin ayrıntılarını, örneğin servisin hızını ya da işletmenizi tavsiye edip etmeyeceğini sormak için uygundur.',
-          'Tavsiye sorusu 0–10 ölçeğindedir ve yanıtlardan NPS hesaplanır. Müşteri soruları telefonunda tek tek, adım adım yanıtlar.',
+          'Tavsiye sorusu 0–10 ölçeğindedir; yanıtlardan tavsiye skoru (NPS) hesaplanır: tavsiye eden oranından tavsiye etmeyen oranı çıkarılır. Müşteri soruları telefonunda tek tek, adım adım yanıtlar.',
         ],
       },
       capabilities: {
@@ -94,7 +94,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: BarChart3,
             title: 'Sonuçlar ve CSV',
-            body: 'Yanıtları soru soru panelde inceleyin: yıldız ortalamasını, tavsiye sorusundan NPS’i ve seçeneklerin dağılımını görün, tüm yanıtları CSV olarak indirin.',
+            body: 'Yanıtları soru soru panelde inceleyin: yıldız ortalamasını, tavsiye sorusundan tavsiye skorunu ve seçeneklerin dağılımını görün, tüm yanıtları CSV olarak indirin.',
           },
         ],
       },
@@ -116,7 +116,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             title: 'Sonuçları okuyun',
-            body: 'Yanıtlar geldikçe panelde soru bazında sonuçları ve NPS’i görün, istediğinizde CSV olarak indirin.',
+            body: 'Yanıtlar geldikçe panelde soru bazında sonuçları ve tavsiye skorunu görün, istediğinizde CSV olarak indirin.',
           },
         ],
       },
@@ -195,7 +195,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       paragraphs: [
         'A QR survey is a short form of questions that the customer opens by scanning a code with their phone. No app or account is needed; the survey opens in the browser.',
         'A survey is different from the review flow: answers are not published on any public platform and reach only you. That makes it the right place to ask about the details of a visit, such as how fast the service was or whether they would recommend you.',
-        'The recommend question uses a 0–10 scale, and NPS is calculated from the answers. The customer answers the questions one at a time, step by step, on their phone.',
+        'The recommend question uses a 0–10 scale; the recommend score (NPS) is the share who would recommend minus the share who would not. The customer answers the questions one at a time, step by step, on their phone.',
       ],
     },
     capabilities: {
@@ -230,7 +230,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: BarChart3,
           title: 'Results and CSV',
-          body: 'Review the answers question by question in the panel: the star average, NPS from the recommend question and how the options split. Export every answer as CSV.',
+          body: 'Review the answers question by question in the panel: the star average, the recommend score from the recommend question and how the options split. Export every answer as CSV.',
         },
       ],
     },
@@ -252,7 +252,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           title: 'Read the results',
-          body: 'As answers come in, see the results per question and the NPS in the panel, and export them as CSV whenever you like.',
+          body: 'As answers come in, see the results per question and the recommend score in the panel, and export them as CSV whenever you like.',
         },
       ],
     },

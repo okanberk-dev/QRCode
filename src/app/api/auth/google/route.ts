@@ -33,7 +33,12 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = getClientIp(req.headers);
-    const { idToken, recaptchaToken, locale } = await req.json();
+    const { idToken, recaptchaToken, locale, intent } = await req.json();
+    // The sign-in page sends `intent: 'login'`: an unknown Google e-mail is
+    // then not turned into a business account (it may be a loyalty
+    // customer, CLAUDE.md §61); the page offers "Kartlarıma git" or
+    // "İşletme hesabı aç" (which calls again with `intent: 'register'`).
+    const allowCreate = intent !== 'login';
     const captchaLocale = locale === 'en' ? 'en' : 'tr';
 
     // Latency optimization (CLAUDE.md §34.4): rate-limit lookup, reCAPTCHA
@@ -91,11 +96,22 @@ export async function POST(req: NextRequest) {
       now: () => new Date(),
     };
 
-    const result = await handleOAuthSignIn({ idToken }, deps);
+    const result = await handleOAuthSignIn({ idToken, allowCreate }, deps);
 
     if (!result.ok) {
       const body: Record<string, unknown> = { error: result.error };
       if (result.trialExpired) body.trialExpired = true;
+      if (result.code === 'NO_BUSINESS_ACCOUNT' && result.email) {
+        const claims = await verifiedClaims.catch(() => null);
+        const customer = await prisma.customerAccount
+          .findFirst({
+            where: { OR: [{ email: result.email }, ...(claims?.sub ? [{ googleUid: claims.sub }] : [])] },
+            select: { id: true },
+          })
+          .catch(() => null);
+        body.code = result.code;
+        body.customerAccount = Boolean(customer);
+      }
       return NextResponse.json(body, { status: result.status });
     }
 

@@ -36,6 +36,7 @@ export type MetricKey =
   | 'customers'
   | 'segment'
   | 'returning'
+  | 'satisfaction'
   | 'atRisk';
 
 export const METRICS: Record<MetricKey, { tr: string; en: string; infoTr: string; infoEn: string }> = {
@@ -112,10 +113,17 @@ export const METRICS: Record<MetricKey, { tr: string; en: string; infoTr: string
     infoEn: 'Distinct people who left an email or phone and gave privacy consent. Repeat feedback from one person counts once.',
   },
   segment: {
-    tr: 'Segment',
-    en: 'Segment',
+    tr: 'Müşteri grubu',
+    en: 'Customer group',
     infoTr: 'VIP: 5+ değerlendirme, ortalama 4★ ve üstü. Risk: 2+ değerlendirme, ortalama 3★ altı. Kayıp: 2+ değerlendirme, 90 günden uzun süredir gelmedi.',
     infoEn: 'VIP: 5+ ratings, average 4★ or more. At risk: 2+ ratings, average below 3★. Churned: 2+ ratings, not back for over 90 days.',
+  },
+  // Plain-language stand-in for "NPS" (2026-11-28): 5★ share minus 1–3★ share.
+  satisfaction: {
+    tr: 'Memnuniyet farkı',
+    en: 'Happy vs unhappy',
+    infoTr: '5★ veren müşterilerin oranından 1–3★ verenlerin oranı çıkarılır. Artıdaysa memnun müşteri daha fazladır; 4★ iki tarafa da sayılmaz. −100 ile +100 arasındadır.',
+    infoEn: 'The share of 5★ ratings minus the share of 1–3★ ratings. Above zero means more happy customers than unhappy ones; 4★ counts for neither. Ranges from −100 to +100.',
   },
   returning: {
     tr: 'Tekrar gelen',

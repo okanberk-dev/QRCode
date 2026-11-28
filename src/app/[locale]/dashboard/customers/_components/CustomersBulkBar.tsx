@@ -232,7 +232,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
     } else {
       setNotice({
         tone: 'error',
-        text: body?.error || (isTr ? 'Segment güncellemesi başarısız' : 'Segment update failed'),
+        text: body?.error || (isTr ? 'Müşteri grubu güncellenemedi' : 'Customer group update failed'),
       });
     }
   }
@@ -255,7 +255,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
               ? [
                   {
                     key: 'segment',
-                    label: isTr ? 'Segmentle' : 'Set segment',
+                    label: isTr ? 'Gruba ekle' : 'Set group',
                     icon: <Tag size={13} strokeWidth={2.2} />,
                     onClick: () => setSegmentOpen(true),
                     disabled: busy !== null,
@@ -340,7 +340,7 @@ function SegmentPickerModal({
 }) {
   const [picked, setPicked] = useState<CustomerSegment>('loyal');
   return (
-    <Modal onClose={onClose} size={420} title={isTr ? 'Segmente ekle' : 'Set segment'}>
+    <Modal onClose={onClose} size={420} title={isTr ? 'Müşteri grubuna ekle' : 'Set customer group'}>
       <div className="space-y-3">
         <p className="text-[13px] text-[#525252]">
           {isTr

@@ -83,3 +83,21 @@ export function calculateNPSFromCounts(
 export function calculateNPS(feedbacks: NpsInput[]): NpsResult {
   return calculateNPSFromCounts(feedbacks.map((f) => ({ rating: f.rating, count: 1 })));
 }
+
+/**
+ * "Memnuniyet farkı" card (2026-11-28): the NPS-style score in plain words.
+ * Value is signed ("+31", "−12", "0"); the line under it shows the two
+ * shares the score comes from. `null` when there are no ratings.
+ */
+export function satisfactionDisplay(result: NpsResult, isTr: boolean): { value: string; subtitle: string } | null {
+  if (result.total <= 0) return null;
+  const s = result.npsScore;
+  const value = `${s > 0 ? '+' : s < 0 ? '−' : ''}${Math.abs(s)}`;
+  const happy = Math.round((result.promoters / result.total) * 100);
+  const unhappy = Math.round((result.detractors / result.total) * 100);
+  // Star bands are in the card's ⓘ; the line stays short enough for one row.
+  const subtitle = isTr
+    ? `%${happy}\u00a0memnun · %${unhappy}\u00a0memnun\u00a0değil`
+    : `${happy}%\u00a0happy · ${unhappy}%\u00a0unhappy`;
+  return { value, subtitle };
+}

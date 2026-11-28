@@ -368,7 +368,7 @@ export default async function AdminDashboardPage() {
           icon={<Store size={18} />}
         />
         <StatCard
-          label="Aylık MRR (tahmini)"
+          label="Aylık gelir (tahmini)"
           value={formatUsd(mrr)}
           delta={mrrDelta}
           deltaKind={mrrDeltaKind}

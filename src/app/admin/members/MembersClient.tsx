@@ -100,7 +100,7 @@ const SEGMENT_OPTIONS: Array<{ key: SegmentPreset; label: string; hint: string }
   { key: 'all', label: 'Tüm aktif sahipler', hint: 'isActive=true tüm hesaplar' },
   { key: 'trial_expiring_3d', label: 'Trial 3g kalan', hint: 'Conversion fırsatı' },
   { key: 'inactive_14d', label: 'Pasif (14g+)', hint: 'updatedAt 14+ gün önce' },
-  { key: 'high_volume', label: 'Yüksek hacim (>50 yorum)', hint: 'Engagement > tipik' },
+  { key: 'high_volume', label: 'Yüksek hacim (>50 yorum)', hint: 'Ortalamanın üstünde yorum alan' },
 ];
 
 interface MembersClientProps {

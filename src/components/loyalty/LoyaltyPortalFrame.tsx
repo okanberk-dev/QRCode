@@ -62,6 +62,8 @@ export interface LoyaltyPortalFrameProps {
   programName: string;
   /** Signed-in Buaze customer (first name) or null. */
   account?: { firstName: string } | null;
+  /** Join page: the join form already signs in with Google; no second sign-in link. */
+  hideSignIn?: boolean;
   /** Owner preview: links do nothing, no sticky positioning. */
   preview?: boolean;
   /** Extra block after the offers (rewards, how it works …). */
@@ -104,6 +106,7 @@ export default function LoyaltyPortalFrame({
   accentColor,
   programName,
   account,
+  hideSignIn = false,
   preview = false,
   info,
   headerStart,
@@ -158,6 +161,7 @@ export default function LoyaltyPortalFrame({
             style={{ top: preview ? '12px' : 'max(12px, env(safe-area-inset-top))' }}
           >
             <div>{headerStart}</div>
+            {(account || !hideSignIn) && (
             <a
               href={link(accountHref)}
               className="bzl-tap inline-flex h-11 items-center gap-1.5 rounded-full bg-black/35 px-4 text-[14px] font-medium text-white backdrop-blur-md transition-colors duration-200 hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -165,6 +169,7 @@ export default function LoyaltyPortalFrame({
               <UserRound size={15} aria-hidden />
               {account ? account.firstName : c.signIn}
             </a>
+            )}
           </div>
         </header>
 

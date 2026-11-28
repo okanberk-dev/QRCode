@@ -20,7 +20,7 @@ export const ADMIN_REVIEWS_ROOT_CLASS =
   'flex min-h-full w-full min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden';
 
 export const ADMIN_REVIEWS_SPLIT_CLASS =
-  'lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-6 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]';
+  'lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-2.5 lg:overflow-hidden lg:px-7 lg:pb-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]';
 
 /** List card (aside): white card on sm+, plain rows on phones. */
 export const ADMIN_REVIEWS_LIST_CLASS =
@@ -32,7 +32,7 @@ export const ADMIN_REVIEWS_DETAIL_CLASS =
 
 export function AdminReviewsHeader({ isTr, className = '' }: { isTr: boolean; className?: string }) {
   return (
-    <div className={`px-4 pb-2 pt-5 sm:px-6 lg:pb-2 lg:pt-8 ${className}`}>
+    <div className={`px-4 pb-2 pt-5 sm:px-7 lg:pb-2 lg:pt-8 ${className}`}>
       <PageHeader
         className="mb-0"
         titleScale="compact"
@@ -53,7 +53,7 @@ export function AdminReviewsSkeleton({ isTr }: { isTr: boolean }) {
       <AdminReviewsHeader isTr={isTr} />
 
       {/* Toolbar — same rows as InboxToolbar (button mode). */}
-      <div className="px-4 py-3 sm:px-6 lg:pb-3 lg:pt-1" aria-hidden="true">
+      <div className="px-4 py-3 sm:px-7 lg:pb-3 lg:pt-1" aria-hidden="true">
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <div className="flex min-w-0 gap-1.5 overflow-hidden md:flex-1">
             {['w-20', 'w-36', 'w-32', 'w-32'].map((w, i) => (

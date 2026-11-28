@@ -89,12 +89,12 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'feedback',
     name: { tr: 'Analitik ve raporlar', en: 'Analytics and reports' },
     summary: {
-      tr: 'Son 7, 30 ya da 90 gün, son 12 ay veya seçtiğiniz bir aralık için yorum sayısını, ortalama puanı, yanıt süresini ve puanlardan tahmini NPS’i izleyin. Geri bildirimlerin hangi gün ve saatlerde yoğunlaştığını görün, raporu CSV olarak indirin; her pazartesi haftalık özet e-postası gelir.',
-      en: 'Track review count, average rating, reply time and NPS estimated from ratings for the last 7, 30 or 90 days, the last 12 months or a range you pick. See the days and hours when feedback peaks, export the report as CSV and get a weekly summary e-mail every Monday.',
+      tr: 'Son 7, 30 ya da 90 gün, son 12 ay veya seçtiğiniz bir aralık için yorum sayısını, ortalama puanı, yanıt süresini ve memnun ile memnun olmayan müşteri oranını izleyin. Geri bildirimlerin hangi gün ve saatlerde yoğunlaştığını görün, raporu CSV olarak indirin; her pazartesi haftalık özet e-postası gelir.',
+      en: 'Track review count, average rating, reply time and the share of happy versus unhappy customers for the last 7, 30 or 90 days, the last 12 months or a range you pick. See the days and hours when feedback peaks, export the report as CSV and get a weekly summary e-mail every Monday.',
     },
     short: {
-      tr: 'Yorum sayısı, ortalama puan, yanıt süresi ve tahmini NPS; CSV rapor ve haftalık özet.',
-      en: 'Review count, average rating, reply time and estimated NPS, with CSV export and a weekly summary.',
+      tr: 'Yorum sayısı, ortalama puan, yanıt süresi ve memnuniyet farkı; CSV rapor ve haftalık özet.',
+      en: 'Review count, average rating, reply time and happy vs unhappy, with CSV export and a weekly summary.',
     },
     linkLabel: { tr: 'Analitiği inceleyin', en: 'Explore analytics' },
   },

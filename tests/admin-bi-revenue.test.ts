@@ -205,9 +205,9 @@ test('buildBiCsv: USD header, per-tier columns from snapshot keys (untiered last
   assert.equal(lines[2], '"2026-09","40","30","0","10"');
   assert.equal(lines[3], '"2026-10","141","40","100","1"');
   assert.ok(!csv.includes('TRY'), 'no TRY header over USD values');
-  assert.ok(lines.includes('"Destekçi (5★)","Nötr (4★)","Eleştiren (1-3★)","Toplam","Skor","Pencere (gün)"'));
+  assert.ok(lines.includes('"Memnun (5★)","Orta (4★)","Memnun değil (1–3★)","Toplam","Memnuniyet farkı","Pencere (gün)"'));
   assert.ok(lines.includes('"3","2","5","10","-20","90"'));
-  assert.ok(lines.includes('# KURULUM HUNİSİ (son 90 günde kaydolan işletme sahipleri)'));
+  assert.ok(lines.includes('# KURULUM ADIMLARI (son 90 günde kaydolan işletme sahipleri)'));
   assert.ok(lines.includes('"Kayıt oldu","2","100"'));
   assert.ok(lines.includes('"QR oluşturdu","1","50"'));
   assert.ok(lines.includes('"İlk müşteri puanını aldı","0","0"'));

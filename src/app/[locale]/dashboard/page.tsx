@@ -51,6 +51,8 @@ import { PageHeader, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
+import SinceBuazeCard from '@/components/dashboard/SinceBuazeCard';
+import { buildSinceBuaze } from '@/lib/since-buaze';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
 // minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
@@ -699,6 +701,81 @@ async function renderDashboardPage({
   // En yüksek positive diff'li restoranı al; null-safe (null → strip gizli).
   const googleImpact = impactStats.length > 0 ? impactStats[0] : null;
 
+  // ---- "Buaze ile" card (lib/since-buaze.ts): since the first rating, plus
+  // the Google Business Profile baseline taken at connect (§43). One
+  // business at a time; Places data is never stored (§5.1.2).
+  const sinceBusinessId = selectedRestaurantId;
+  const lastWindowStart = new Date(now - 30 * 86400000);
+  const [sinceStatsRows, sinceBaseline, sinceGoogleCache] = sinceBusinessId
+    ? await readAll([
+        prisma.$queryRaw<
+          Array<{
+            first_at: Date | null;
+            total: number;
+            redirects: number;
+            first_avg: number | null;
+            first_count: number;
+            last_avg: number | null;
+            last_count: number;
+          }>
+        >(Prisma.sql`
+          WITH f AS (
+            SELECT rating, redirected, created_at FROM feedback
+            WHERE restaurant_id = ${sinceBusinessId} AND rating BETWEEN 1 AND 5
+          ), s AS (SELECT min(created_at) AS first_at FROM f)
+          SELECT s.first_at,
+            count(f.*)::int AS total,
+            count(f.*) FILTER (WHERE f.redirected)::int AS redirects,
+            avg(f.rating) FILTER (WHERE f.created_at < s.first_at + interval '30 days')::float AS first_avg,
+            count(f.*) FILTER (WHERE f.created_at < s.first_at + interval '30 days')::int AS first_count,
+            avg(f.rating) FILTER (WHERE f.created_at >= ${lastWindowStart})::float AS last_avg,
+            count(f.*) FILTER (WHERE f.created_at >= ${lastWindowStart})::int AS last_count
+          FROM s LEFT JOIN f ON true
+          GROUP BY s.first_at
+        `),
+        prisma.restaurantHealthSnapshot.findFirst({
+          where: { restaurantId: sinceBusinessId, kind: 'baseline' },
+          orderBy: { capturedAt: 'asc' },
+          select: { capturedAt: true, googleRating: true, googleReviewCount: true },
+        }),
+        prisma.googleReviewCache.findUnique({
+          where: { restaurantId: sinceBusinessId },
+          select: { averageRating: true, totalReviewCount: true, fetchedAt: true },
+        }),
+      ])
+    : [[], null, null];
+  const sinceStats = sinceStatsRows[0] ?? null;
+  const sinceBusiness = selectedRestaurant;
+  const sinceView = sinceBusinessId
+    ? buildSinceBuaze(
+        {
+          now: new Date(now),
+          firstRatingAt: sinceStats?.first_at ?? null,
+          google:
+            sinceBaseline || sinceBusiness?.initialGoogleRating != null
+              ? {
+                  baseRating: sinceBaseline?.googleRating ?? sinceBusiness?.initialGoogleRating ?? null,
+                  baseCount: sinceBaseline?.googleReviewCount ?? null,
+                  baseAt: sinceBaseline?.capturedAt ?? null,
+                  currentRating: sinceGoogleCache?.averageRating ?? sinceBusiness?.currentGoogleRating ?? null,
+                  currentCount: sinceGoogleCache?.fetchedAt ? sinceGoogleCache.totalReviewCount : null,
+                }
+              : null,
+          qr: sinceStats
+            ? {
+                firstAvg: sinceStats.first_avg,
+                firstCount: sinceStats.first_count,
+                lastAvg: sinceStats.last_avg,
+                lastCount: sinceStats.last_count,
+              }
+            : null,
+          totals: { ratings: sinceStats?.total ?? 0, redirects: sinceStats?.redirects ?? 0 },
+        },
+        isTr,
+        resolveDisplayTimeZone(),
+      )
+    : null;
+
   // §38.31 — CANLI AKIŞ event union build. 4 source helper'a geçirilir,
   // helper sort + slice + sentiment derive yapar (saf fonksiyon, test edilebilir).
   // Who sent each reply (owner, team member or admin): the feed names the
@@ -1102,6 +1179,12 @@ async function renderDashboardPage({
           shortcuts, channels, topics, activity. */}
       <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
         <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-2.5">
+          {sinceView && (
+            <div className="order-3 lg:order-none">
+              <SinceBuazeCard view={sinceView} isTr={isTr} />
+            </div>
+          )}
+
           {showChannels && (
             <section className="order-3 lg:order-none" aria-label={isTr ? 'Platformlar' : 'Platforms'}>
               <ChannelDistribution

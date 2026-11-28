@@ -42,11 +42,25 @@ export interface OAuthDeps {
 
 export interface OAuthInput {
   idToken: string;
+  /**
+   * `false` on the sign-in page: an unknown Google e-mail does not open a
+   * business account by itself (it may be a loyalty customer, CLAUDE.md
+   * §61). The result is `code: 'NO_BUSINESS_ACCOUNT'` and the page lets the
+   * person choose. Default `true` (sign-up page, old callers).
+   */
+  allowCreate?: boolean;
 }
 
 export type OAuthResult =
   | { ok: true; token: string; user: OAuthUserRecord; isNewUser: boolean }
-  | { ok: false; status: number; error: string; trialExpired?: true };
+  | {
+      ok: false;
+      status: number;
+      error: string;
+      trialExpired?: true;
+      code?: 'NO_BUSINESS_ACCOUNT';
+      email?: string;
+    };
 
 const TRIAL_DAYS = 14;
 
@@ -78,6 +92,16 @@ export async function handleOAuthSignIn(
 
   let user = await deps.findUser(email);
   let isNewUser = false;
+
+  if (!user && input.allowCreate === false) {
+    return {
+      ok: false,
+      status: 409,
+      code: 'NO_BUSINESS_ACCOUNT',
+      email,
+      error: 'Bu Google hesabıyla açılmış bir işletme hesabı yok.',
+    };
+  }
 
   if (!user) {
     isNewUser = true;

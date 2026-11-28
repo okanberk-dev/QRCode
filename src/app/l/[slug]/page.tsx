@@ -1,6 +1,7 @@
 // Loyalty join page = the business's customer panel (CLAUDE.md §60, §61):
-// cover, logo, welcome text, offers, contact, and the way in — one tap with
-// the Buaze customer account, or a short guest form. Linked from the
+// cover, logo, welcome text, offers, contact, and the way in — "Google ile
+// katıl" (one tap: account + card), the signed-in account, or a name-only
+// guest form. No separate sign-in step: the header has no sign-in link here. Linked from the
 // counter QR (`?source=qr`) and NFC tags (`?source=nfc`). Not indexed.
 //
 // Returning customers skip the form: when the signed-in account or this
@@ -118,6 +119,7 @@ export default async function LoyaltyJoinPage({ params, searchParams }: PageProp
         accentColor={program.accentColor}
         programName={program.name}
         account={account ? { firstName: account.firstName } : null}
+        hideSignIn
         headerStart={<SoundToggle locale={locale} />}
         info={
           <PortalRewardsInfo
@@ -138,7 +140,13 @@ export default async function LoyaltyJoinPage({ params, searchParams }: PageProp
           source={source ?? 'link'}
           account={
             account
-              ? { firstName: account.firstName, lastName: account.lastName, phone: account.phone, email: account.email }
+              ? {
+                  firstName: account.firstName,
+                  lastName: account.lastName,
+                  phone: account.phone,
+                  email: account.email,
+                  hasBirthday: account.birthMonth != null && account.birthDay != null,
+                }
               : null
           }
           program={{

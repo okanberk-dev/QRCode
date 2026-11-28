@@ -670,7 +670,7 @@ export function buildBiCsv(snapshot: BiSnapshot): string {
 
   // Section 1: MRR trend (USD, per-tier columns from the snapshot keys)
   const planKeys = biMrrPlanKeys(snapshot.mrr);
-  lines.push('# AYLIK TEKRARLAYAN GELİR (MRR, USD)');
+  lines.push('# AYLIK TEKRARLAYAN GELİR (USD)');
   lines.push(['Ay', 'Toplam (USD)', ...planKeys.map(biMrrPlanLabel)].map(csvCell).join(','));
   for (const p of snapshot.mrr) {
     lines.push([
@@ -691,9 +691,9 @@ export function buildBiCsv(snapshot: BiSnapshot): string {
 
   // Section 3: NPS (5★ destekçi, 4★ nötr, 1-3★ eleştiren — admin-bi.ts)
   const npsWindow = snapshot.nps.windowDays;
-  lines.push(`# NPS DAĞILIMI (son ${npsWindow} gün)`);
+  lines.push(`# MÜŞTERİ MEMNUNİYETİ (son ${npsWindow} gün)`);
   lines.push(
-    ['Destekçi (5★)', 'Nötr (4★)', 'Eleştiren (1-3★)', 'Toplam', 'Skor', 'Pencere (gün)']
+    ['Memnun (5★)', 'Orta (4★)', 'Memnun değil (1–3★)', 'Toplam', 'Memnuniyet farkı', 'Pencere (gün)']
       .map(csvCell)
       .join(','),
   );
@@ -708,15 +708,15 @@ export function buildBiCsv(snapshot: BiSnapshot): string {
   lines.push('');
 
   // Section 4: Cohort retention
-  lines.push('# KOHORT ELDE TUTMA (kayıt ayı bazlı)');
-  lines.push(['Kohort ayı', 'Kayıt', 'Aktif (ücretli)', 'Deneme', 'Elde tutma %'].map(csvCell).join(','));
+  lines.push('# KAYIT AYINA GÖRE DEVAM EDENLER');
+  lines.push(['Kayıt ayı', 'Kayıt', 'Aktif (ücretli)', 'Deneme', 'Devam eden %'].map(csvCell).join(','));
   for (const p of snapshot.cohort) {
     lines.push([p.cohortMonth, p.signups, p.retainedActive, p.retainedTrial, p.retentionPct].map(csvCell).join(','));
   }
   lines.push('');
 
   // Section 5: Setup funnel
-  lines.push(`# KURULUM HUNİSİ (son ${snapshot.funnel.windowDays} günde kaydolan işletme sahipleri)`);
+  lines.push(`# KURULUM ADIMLARI (son ${snapshot.funnel.windowDays} günde kaydolan işletme sahipleri)`);
   lines.push(['Adım', 'İşletme sahibi', 'Kaydolanların %'].map(csvCell).join(','));
   for (const step of snapshot.funnel.steps) {
     lines.push([step.label, step.count, step.pctOfSignups].map(csvCell).join(','));

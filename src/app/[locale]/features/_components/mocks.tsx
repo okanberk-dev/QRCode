@@ -254,12 +254,12 @@ export function AnalyticsMock({ locale }: { locale: Locale }) {
     ? [
         { label: 'Toplam yorum', value: '126', sub: 'önceki dönem 112' },
         { label: 'Ortalama puan', value: '4,4', sub: 'hedef 4,5' },
-        { label: 'Tahmini NPS', value: '31', sub: 'puanlardan' },
+        { label: 'Memnuniyet farkı', value: '+31', sub: '5★ − 1–3★' },
       ]
     : [
         { label: 'Total reviews', value: '126', sub: 'previous 112' },
         { label: 'Avg rating', value: '4.4', sub: 'target 4.5' },
-        { label: 'Est. NPS', value: '31', sub: 'from ratings' },
+        { label: 'Happy vs unhappy', value: '+31', sub: '5★ − 1–3★' },
       ];
 
   return (

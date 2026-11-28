@@ -522,7 +522,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-6 xl:grid-cols-5">
         <StatCard
           className="col-span-2 md:col-span-3 xl:col-span-1"
-          label={isTr ? 'Toplam misafir' : 'Total guests'}
+          label={isTr ? 'Misafir' : 'Guests'}
           info={isTr ? 'Puanla birlikte e-posta ya da telefon bırakan, KVKK onaylı farklı kişiler. İsimsiz puanlar listelenmez.' : 'People who left an email or phone with a rating and gave consent. Anonymous ratings are not listed.'}
           isTr={isTr}
           value={totalCustomers.toLocaleString(intLocale)}
@@ -653,7 +653,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   <th className="text-left sticky left-10 z-10 bg-white">
                     {isTr ? 'Misafir' : 'Guest'}
                   </th>
-                  <th className="text-left">Segment</th>
+                  <th className="text-left">{isTr ? 'Grup' : 'Group'}</th>
                   <th className="text-right">{isTr ? 'Ziyaret' : 'Visits'}</th>
                   <th className="text-right">{isTr ? 'Ort. puan' : 'Avg rating'}</th>
                   <th className="text-left">{isTr ? 'Son konu' : 'Last topic'}</th>

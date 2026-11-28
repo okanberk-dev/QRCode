@@ -269,13 +269,13 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
               )}
               {summary.nps && (
                 <StatCard
-                  label={isTr ? 'Tavsiye skoru (NPS)' : 'Recommend score (NPS)'}
+                  label={isTr ? 'Tavsiye skoru' : 'Recommend score'}
                   value={summary.nps.score > 0 ? `+${summary.nps.score}` : String(summary.nps.score)}
                   icon={<ThumbsUp size={14} />}
                   delta={
                     isTr
-                      ? `%${summary.nps.promoterPct} destekçi · %${summary.nps.detractorPct} eleştirmen`
-                      : `${summary.nps.promoterPct}% promoters · ${summary.nps.detractorPct}% detractors`
+                      ? `%${summary.nps.promoterPct} tavsiye eder · %${summary.nps.detractorPct} tavsiye etmez`
+                      : `${summary.nps.promoterPct}% would recommend · ${summary.nps.detractorPct}% would not`
                   }
                   deltaKind="neutral"
                 />
@@ -460,21 +460,21 @@ function NpsBlock({ pq, isTr }: { pq: QuestionStats; isTr: boolean }) {
     {
       key: 'detractor',
       color: NPS_COLORS.detractor,
-      label: isTr ? 'Eleştirmen (0–6)' : 'Detractors (0–6)',
+      label: isTr ? 'Tavsiye etmez (0–6)' : 'Would not recommend (0–6)',
       count: nps.detractors,
       pct: nps.detractorPct,
     },
     {
       key: 'passive',
       color: NPS_COLORS.passive,
-      label: isTr ? 'Tarafsız (7–8)' : 'Passives (7–8)',
+      label: isTr ? 'Kararsız (7–8)' : 'Unsure (7–8)',
       count: nps.passives,
       pct: nps.passivePct,
     },
     {
       key: 'promoter',
       color: NPS_COLORS.promoter,
-      label: isTr ? 'Destekçi (9–10)' : 'Promoters (9–10)',
+      label: isTr ? 'Tavsiye eder (9–10)' : 'Would recommend (9–10)',
       count: nps.promoters,
       pct: nps.promoterPct,
     },
@@ -486,8 +486,8 @@ function NpsBlock({ pq, isTr }: { pq: QuestionStats; isTr: boolean }) {
         <span className="bz-h-tight text-[30px] leading-none">{score}</span>
         <span className="text-xs text-[#737373]">
           {isTr
-            ? `%${nps.promoterPct} destekçi − %${nps.detractorPct} eleştirmen`
-            : `${nps.promoterPct}% promoters − ${nps.detractorPct}% detractors`}
+            ? `%${nps.promoterPct} tavsiye eder − %${nps.detractorPct} tavsiye etmez (−100 ile +100 arası)`
+            : `${nps.promoterPct}% would recommend − ${nps.detractorPct}% would not (−100 to +100)`}
         </span>
       </div>
       <div
