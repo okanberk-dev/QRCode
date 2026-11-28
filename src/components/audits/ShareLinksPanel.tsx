@@ -160,7 +160,8 @@ export default function ShareLinksPanel({
   }
 
   function askRevoke(link: AuditAssignmentRow) {
-    const copy = revokeLinkConfirmCopy(locale);
+    // Yalnız gerçek bir ad varsa başlıkta göster ("Adsız link" gibi yedek etiketler başlığa girmez).
+    const copy = revokeLinkConfirmCopy(locale, link.assigneeName?.trim() || link.assigneeEmail?.trim() || null);
     askConfirm({
       title: copy.title,
       body: copy.body,
@@ -215,7 +216,7 @@ export default function ShareLinksPanel({
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            className="bz-btn-primary min-h-11 sm:min-h-0"
+            className="bz-btn-primary"
             onClick={() => void controller.publishAndGetLink()}
             disabled={busy !== null || questionCount === 0}
           >
@@ -278,7 +279,7 @@ export default function ShareLinksPanel({
         <div className="space-y-2">
           <button
             type="button"
-            className="bz-btn-primary min-h-11 sm:min-h-0"
+            className="bz-btn-primary"
             onClick={() => void controller.createLink({ once: false })}
             disabled={busy !== null}
           >
@@ -306,7 +307,7 @@ export default function ShareLinksPanel({
               ref={copyBtnRef}
               id={SHARE_COPY_BUTTON_ID}
               type="button"
-              className="bz-btn-primary min-h-11 shrink-0 sm:min-h-0"
+              className="bz-btn-primary shrink-0"
               onClick={() => void copy(defaultLink.id, defaultUrl, inputRef.current)}
             >
               {copiedId === defaultLink.id ? (
@@ -478,7 +479,7 @@ export default function ShareLinksPanel({
                   </p>
                 )}
               </div>
-              <button type="submit" className="bz-btn-primary min-h-11 sm:min-h-0" disabled={busy !== null}>
+              <button type="submit" className="bz-btn-primary" disabled={busy !== null}>
                 {busy === 'create' ? (isTr ? 'Oluşturuluyor…' : 'Creating…') : isTr ? 'Link oluştur' : 'Create link'}
               </button>
             </form>

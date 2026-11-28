@@ -206,14 +206,14 @@ export default async function FranchiseReportPage({
       };
 
   return (
-    <div className="bz-print-area mx-auto max-w-[1440px] space-y-4 px-4 py-6 sm:px-7 lg:py-8">
+    <div className="bz-print-area mx-auto max-w-[1440px] space-y-2.5 px-4 py-6 sm:px-6 lg:py-8">
       <PageHeader
         eyebrow={t.eyebrow}
         title={t.title}
         description={t.description}
         actions={
           <div className="bz-print-hide flex flex-wrap items-center gap-2">
-            <Link href={`/${locale}/dashboard/restaurants`} className="bz-btn-ghost">
+            <Link href={`/${locale}/dashboard/restaurants`} className="bz-btn-ghost max-sm:bg-[#F6F6F6]">
               {t.back}
             </Link>
             <PrintButton label={t.print} />
@@ -227,8 +227,10 @@ export default async function FranchiseReportPage({
             key={d}
             href={`/${locale}/dashboard/restaurants/report?days=${d}`}
             aria-current={d === days ? 'page' : undefined}
-            className={`rounded-full border px-3 py-1.5 text-[12px] font-medium ${
-              d === days ? 'border-pn-accent bg-pn-accent text-white' : 'border-pn-line bg-white text-[#525252]'
+            className={`inline-flex h-11 items-center rounded-full px-[18px] text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 sm:h-10 ${
+              d === days
+                ? 'bg-pn-accent text-white'
+                : 'bg-white text-pn-ink hover:bg-[#EDEDED] max-sm:bg-[#F6F6F6]'
             }`}
           >
             {t.days(d)}
@@ -239,7 +241,79 @@ export default async function FranchiseReportPage({
       {rows.length === 0 ? (
         <p className="bz-card p-6 text-[13px] text-[#737373]">{t.empty}</p>
       ) : (
-        <div className="bz-card overflow-x-auto">
+        <>
+        {/* Phones: one card per branch — the 8-column table needed a
+            sideways scroll at 375px. Print always uses the table. */}
+        <ul className="space-y-2.5 sm:hidden print:hidden" role="list">
+          {[
+            ...rows.map((r) => ({
+              key: r.id,
+              name: r.name,
+              paused: !r.isActive,
+              avg: r.avg,
+              change: delta(r.avg, r.prevAvg),
+              reviews: r.reviews,
+              low: r.low,
+              lowReplied: r.lowReplied,
+              scans: r.scans,
+              redirects: r.redirects,
+              brokenLinks: r.brokenLinks,
+            })),
+            ...(rows.length > 1
+              ? [
+                  {
+                    key: 'total',
+                    name: t.total,
+                    paused: false,
+                    avg: totals.reviews > 0 ? totals.ratingSum / totals.reviews : null,
+                    change: null,
+                    reviews: totals.reviews,
+                    low: totals.low,
+                    lowReplied: totals.lowReplied,
+                    scans: totals.scans,
+                    redirects: totals.redirects,
+                    brokenLinks: totals.brokenLinks,
+                  },
+                ]
+              : []),
+          ].map((c) => (
+            <li key={c.key} className="bz-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 text-[15px] font-medium leading-snug text-pn-ink [overflow-wrap:anywhere]">
+                  {c.name}
+                  {c.paused && <span className="ml-2 text-[12px] font-normal text-[#737373]">· {t.paused}</span>}
+                </p>
+                <p className="shrink-0 text-right">
+                  <span className="block text-[12px] text-[#737373]">{t.cols[2]}</span>
+                  <span className="text-[18px] font-medium tabular-nums text-pn-ink">{fmtAvg(c.avg)}</span>
+                  {c.change && (
+                    <span className={`ml-1.5 text-[12px] tabular-nums ${c.change.up ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
+                      {c.change.text}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-pn-line pt-3 text-[13px]">
+                {(
+                  [
+                    [t.cols[1], nf.format(c.reviews), false],
+                    [t.cols[3], nf.format(c.low), false],
+                    [t.cols[4], pct(c.lowReplied, c.low), false],
+                    [t.cols[5], nf.format(c.scans), false],
+                    [t.cols[6], nf.format(c.redirects), false],
+                    [t.cols[7], nf.format(c.brokenLinks), c.brokenLinks > 0],
+                  ] as Array<[string, string, boolean]>
+                ).map(([label, value, alert]) => (
+                  <div key={label} className="min-w-0">
+                    <dt className="text-[12px] leading-snug text-[#737373]">{label}</dt>
+                    <dd className={`mt-0.5 font-medium tabular-nums ${alert ? 'text-[#B91C1C]' : 'text-pn-ink'}`}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          ))}
+        </ul>
+        <div className="bz-card hidden overflow-x-auto sm:block print:block">
           <table className="bz-table w-full min-w-[860px]">
             <thead>
               <tr>
@@ -293,8 +367,9 @@ export default async function FranchiseReportPage({
             </tfoot>
           </table>
         </div>
+        </>
       )}
-      <p className="text-[12px] text-[#737373]">{t.generated}</p>
+      <p className="px-1 pt-1 text-[12px] text-[#737373]">{t.generated}</p>
     </div>
   );
 }

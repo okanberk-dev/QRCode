@@ -5,7 +5,7 @@ import { QrGridSkeleton } from './_components/QrGridSkeleton';
  * Owner QR codes — header (title + two/three-line description, one
  * "Yeni QR oluştur" action, no eyebrow), the toolbar row and the QR card
  * grid. Heights follow the real page: title 26px → 33px, description 2
- * lines (3 on phones), action 44px on phones / 40px above, toolbar row 50px
+ * lines (3 on phones), action 44px, toolbar row 50px
  * on phones (44px tabs + strip padding) / 38px above. The toolbar is one
  * row; it only wraps to a second row on phones for owners with several
  * businesses whose QR codes use 2+ platforms. The create wizard is a modal,
@@ -13,7 +13,7 @@ import { QrGridSkeleton } from './_components/QrGridSkeleton';
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440} space={4}>
+    <SkPageShell max={1440} space={2.5}>
       <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end md:gap-4">
         <div className="min-w-0 flex-1">
           <SkBox className="mt-1 h-[26px] w-40 lg:h-[33px]" />
@@ -23,7 +23,7 @@ export default function Loading() {
             <SkBox className="h-[14px] w-1/2 md:hidden" />
           </div>
         </div>
-        <SkBox className="h-11 w-[146px] shrink-0 sm:h-10" />
+        <SkBox className="h-11 w-[146px] shrink-0 rounded-full" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

@@ -249,13 +249,13 @@ export default function AuditBuilderClient({
   const askLeave = useCallback(
     (href: string) => {
       askConfirm({
-        title: isTr ? 'Kaydedilmemiş değişiklikler var' : 'You have unsaved changes',
+        title: isTr ? 'Kaydetmeden ayrılmak istiyor musun?' : 'Leave without saving?',
         body: isTr
-          ? 'Sayfadan ayrılırsan yaptığın değişiklikler kaybolur.'
-          : 'If you leave this page, your changes will be lost.',
+          ? 'Bu denetimde yaptığın değişiklikler kaydedilmedi. Ayrılırsan kaybolur ve geri getirilemez.'
+          : "Your changes to this audit haven't been saved. If you leave, they are lost and can't be recovered.",
         variant: 'danger',
-        confirmLabel: isTr ? 'Ayrıl' : 'Leave',
-        cancelLabel: isTr ? 'Burada kal' : 'Stay',
+        confirmLabel: isTr ? 'Kaydetmeden ayrıl' : 'Leave without saving',
+        cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
         onConfirm: () => {
           setNavigating(true);
           router.push(href);

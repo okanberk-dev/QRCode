@@ -78,9 +78,10 @@ function ItemEditor({
       />
       <ReplyRiskNotice risk={risk} locale={locale} />
       {item.bannedFound.length > 0 && (
-        <p className="text-[12px] text-[#D92D20]">
-          {isTr ? 'Yasaklı ifade: ' : 'Banned phrase: '}
+        <p className="text-[12px] leading-relaxed text-[#D92D20]">
+          {isTr ? 'Yanıt ayarlarında yasakladığın ifade geçiyor: ' : 'Contains a phrase you banned in the reply settings: '}
           {item.bannedFound.join(', ')}
+          {isTr ? '. Metinden çıkar.' : '. Remove it from the text.'}
         </p>
       )}
       {item.problem && <p role="alert" className="text-[12px] text-[#D92D20]">{item.problem}</p>}
@@ -151,7 +152,11 @@ export function BulkReplyDialog({
           setItems((prev) => [...prev, ...next]);
           setDrafted((n) => n + chunk.length);
         } catch {
-          setError(isTr ? 'Taslaklar hazırlanırken bağlantı kesildi.' : 'Connection lost while preparing drafts.');
+          setError(
+            isTr
+              ? 'Taslaklar hazırlanırken bağlantı kesildi. Hazır olanları gönderebilir ya da pencereyi kapatıp kalanlar için yeniden deneyebilirsin.'
+              : 'The connection dropped while preparing drafts. You can send the ones that are ready, or close this window and try again for the rest.',
+          );
           break;
         }
       }
@@ -214,7 +219,11 @@ export function BulkReplyDialog({
             return { ...i, problem: r.phrases?.length ? `${text} (${r.phrases.join(', ')})` : text };
           }),
         );
-        setError(isTr ? 'İşaretli yanıtları düzelt ya da listeden çıkar.' : 'Fix or remove the marked replies.');
+        setError(
+          isTr
+            ? 'Hiçbir yanıt gönderilmedi. Kırmızı notlu yanıtları düzelt ya da listeden çıkar, sonra yeniden gönder.'
+            : 'Nothing was sent. Fix the replies with a red note or remove them from the list, then send again.',
+        );
         setPhase('review');
         return;
       }
@@ -226,7 +235,11 @@ export function BulkReplyDialog({
       setJobId(data.jobId);
       setPhase('sending');
     } catch {
-      setError(isTr ? 'Bağlantı hatası. Tekrar dene.' : 'Connection error. Try again.');
+      setError(
+        isTr
+          ? 'Bağlanılamadı. İnternet bağlantını kontrol edip yeniden dene.'
+          : 'Could not connect. Check your internet connection and try again.',
+      );
       setPhase('review');
     }
   };
@@ -244,7 +257,11 @@ export function BulkReplyDialog({
       finishedRef.current = false;
       setPhase('sending');
     } catch {
-      setError(isTr ? 'Bağlantı hatası. Tekrar dene.' : 'Connection error. Try again.');
+      setError(
+        isTr
+          ? 'Bağlanılamadı. İnternet bağlantını kontrol edip yeniden dene.'
+          : 'Could not connect. Check your internet connection and try again.',
+      );
     }
   };
 
@@ -259,19 +276,34 @@ export function BulkReplyDialog({
 
   return (
     <Modal
-      title={isTr ? 'Toplu yanıt' : 'Bulk reply'}
+      title={isTr ? 'Yorumlara toplu yanıt gönder' : 'Reply to reviews in bulk'}
+      description={
+        isTr
+          ? "Taslaklar sen okuyup onaylamadan gönderilmez. Gönderilen yanıtlar Google'da herkese açık yayınlanır."
+          : 'No draft is sent until you have read and confirmed it. Sent replies are published publicly on Google.'
+      }
       onClose={onClose}
       size={720}
       closeGuard={() => editable && items.length > 0}
       closeConfirm={
         isTr
-          ? { title: 'Taslaklar kapatılsın mı?', body: 'Gönderilmemiş taslaklar kaydedildi; yorumların üzerinde de görünür.', confirm: 'Kapat', cancel: 'Vazgeç' }
-          : { title: 'Close the drafts?', body: 'Unsent drafts are saved and shown on the reviews too.', confirm: 'Close', cancel: 'Keep editing' }
+          ? {
+              title: 'Göndermeden kapatılsın mı?',
+              body: 'Hiçbir yanıt gönderilmez. Hazırlanan taslaklar yorumların üzerinde kalır; burada yaptığın düzeltmeler kaydedilmez.',
+              confirm: 'Göndermeden kapat',
+              cancel: 'Vazgeç',
+            }
+          : {
+              title: 'Close without sending?',
+              body: 'No reply is sent. The prepared drafts stay on the reviews; edits you made here are not saved.',
+              confirm: 'Close without sending',
+              cancel: 'Cancel',
+            }
       }
       footer={
         editable ? (
-          <div className="space-y-3">
-            <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#737373]">
+          <div className="w-full space-y-3">
+            <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-[12px] leading-relaxed text-[#737373]">
               <input
                 type="checkbox"
                 checked={confirmed}
@@ -299,16 +331,16 @@ export function BulkReplyDialog({
                 className="bz-btn-primary min-h-11 disabled:opacity-60 sm:min-h-9"
               >
                 <Send size={14} aria-hidden="true" />
-                {isTr ? `Seçilenleri Google'a gönder (${sendable})` : `Send selected to Google (${sendable})`}
+                {isTr ? `${sendable} yanıtı Google'a gönder` : `Send ${sendable} ${sendable === 1 ? 'reply' : 'replies'} to Google`}
               </button>
             </div>
           </div>
         ) : phase === 'done' ? (
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             {failedItems.length > 0 && (
               <button type="button" onClick={() => void retryFailed()} className="bz-btn min-h-11 sm:min-h-10">
                 <RotateCcw size={14} aria-hidden="true" />
-                {isTr ? `Başarısızları tekrar dene (${failedItems.length})` : `Retry failed (${failedItems.length})`}
+                {isTr ? `Gönderilemeyen ${failedItems.length} yanıtı yeniden dene` : `Retry the ${failedItems.length} failed ${failedItems.length === 1 ? 'reply' : 'replies'}`}
               </button>
             )}
             <button type="button" onClick={onClose} className="bz-btn-primary min-h-11 sm:min-h-10">
@@ -316,11 +348,9 @@ export function BulkReplyDialog({
             </button>
           </div>
         ) : phase === 'sending' ? (
-          <div className="flex justify-end">
-            <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-10">
-              {isTr ? 'Arka planda devam etsin' : 'Keep going in the background'}
-            </button>
-          </div>
+          <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-10">
+            {isTr ? 'Kapat, gönderim sürsün' : 'Close and keep sending'}
+          </button>
         ) : undefined
       }
     >
@@ -334,14 +364,14 @@ export function BulkReplyDialog({
                 {phase === 'drafting'
                   ? isTr ? `Taslaklar hazırlanıyor… ${drafted}/${reviewIds.length}` : `Preparing drafts… ${drafted}/${reviewIds.length}`
                   : phase === 'submitting'
-                    ? isTr ? 'Kontrol ediliyor…' : 'Checking…'
+                    ? isTr ? 'Yanıtlar kontrol ediliyor…' : 'Checking the replies…'
                     : progress
                       ? isTr
                         ? `Gönderilen ${progress.sent} · Başarısız ${progress.failed} · Atlanan ${progress.skipped} · Toplam ${progress.total}`
                         : `Sent ${progress.sent} · Failed ${progress.failed} · Skipped ${progress.skipped} · Total ${progress.total}`
-                      : isTr ? 'Sıraya alındı…' : 'Queued…'}
+                      : isTr ? 'Yanıtlar gönderim sırasına alındı…' : 'The replies are queued for sending…'}
               </span>
-              <span className="tabular-nums">%{percent}</span>
+              <span className="tabular-nums">{isTr ? `%${percent}` : `${percent}%`}</span>
             </div>
             <div
               className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/[0.06]"
@@ -349,6 +379,11 @@ export function BulkReplyDialog({
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={percent}
+              aria-label={
+                phase === 'drafting'
+                  ? isTr ? 'Taslak hazırlama ilerlemesi' : 'Draft preparation progress'
+                  : isTr ? 'Gönderim ilerlemesi' : 'Sending progress'
+              }
             >
               <div className="h-full rounded-full bg-pn-accent transition-[width] duration-300" style={{ width: `${percent}%` }} />
             </div>
@@ -364,13 +399,15 @@ export function BulkReplyDialog({
                 {progress.status === 'paused' ? (
                   <AlertBanner kind="warn">
                     {isTr
-                      ? 'Gönderim durakladı (Google bağlantısı ya da günlük sınır). Kalanlar sonra otomatik gönderilir; bağlantı koptuysa yeniden bağlayıp "Tekrar dene"ye bas.'
-                      : 'Sending paused (Google connection or daily limit). The rest is sent automatically later; if the connection broke, reconnect and press "Retry".'}
+                      ? 'Gönderim durakladı: Google bağlantısı koptu ya da günlük gönderim sınırı doldu. Onayladığın kalan yanıtlar sınır yenilenince kendiliğinden gönderilir; bağlantı koptuysa Google hesabını yeniden bağla.'
+                      : 'Sending paused: the Google connection dropped or the daily sending limit was reached. The remaining replies you approved are sent once the limit resets; if the connection dropped, reconnect your Google account.'}
                   </AlertBanner>
                 ) : (
                   <p className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#23863A]">
                     <CheckCircle2 size={14} aria-hidden="true" />
-                    {isTr ? `${progress.sent} yanıt yayınlandı.` : `${progress.sent} replies published.`}
+                    {isTr
+                      ? `${progress.sent} yanıt Google'da yayınlandı.`
+                      : `${progress.sent} ${progress.sent === 1 ? 'reply' : 'replies'} published on Google.`}
                   </p>
                 )}
                 {failedItems.length > 0 && (
@@ -408,7 +445,11 @@ export function BulkReplyDialog({
           </>
         )}
         {phase === 'review' && items.length === 0 && (
-          <p className="text-[13px] text-[#737373]">{isTr ? 'Gönderilecek yanıt kalmadı.' : 'No replies left to send.'}</p>
+          <p className="text-[13px] leading-relaxed text-[#737373]">
+            {isTr
+              ? 'Gönderilecek yanıt kalmadı. Pencereyi kapatıp listeden yeniden yorum seçebilirsin.'
+              : 'No replies left to send. Close this window and pick reviews from the list again.'}
+          </p>
         )}
         {phase === 'drafting' && items.length === 0 && (
           <div className="flex items-center gap-2 text-[13px] text-[#737373]">

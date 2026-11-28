@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { Plus, Pencil, Trash2, Megaphone, Save, Loader2 } from 'lucide-react';
 import {
   AlertBanner,
+  APSwitch,
   Badge,
   type BadgeKind,
   EmptyState,
@@ -62,6 +63,9 @@ const EMPTY_FORM: FormState = {
   ctaLink: '',
   isDismissible: true,
 };
+
+const FIELD_LABEL = 'mb-2 block text-[14px] font-medium leading-[1.3] text-pn-ink';
+const FIELD_HINT = 'mt-1.5 text-[12px] leading-[1.45] text-[#737373]';
 
 const SEVERITY_META: Record<Severity, { label: string; kind: BadgeKind }> = {
   info: { label: 'Bilgi', kind: 'info' },
@@ -182,7 +186,7 @@ export default function AnnouncementsClient({
       return;
     }
     if (form.ctaText.trim() && !form.ctaLink.trim()) {
-      setFormError('CTA metni için bir bağlantı gerekli.');
+      setFormError('Buton metni yazdın; butonun açacağı bağlantıyı da ekle.');
       return;
     }
     setSaving(true);
@@ -210,7 +214,7 @@ export default function AnnouncementsClient({
             ? err
             : typeof err?.message === 'string' && err.message
               ? err.message
-              : 'İşlem başarısız.',
+              : 'Duyuru kaydedilemedi. Biraz sonra yeniden dene.',
         );
         return;
       }
@@ -219,7 +223,7 @@ export default function AnnouncementsClient({
       fetchAnnouncements();
       setTimeout(() => setSuccess(''), 3000);
     } catch {
-      setFormError('Kaydetme sırasında hata oluştu.');
+      setFormError('Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.');
     } finally {
       setSaving(false);
     }
@@ -228,9 +232,9 @@ export default function AnnouncementsClient({
   const handleDelete = (id: string, title: string) => {
     askConfirm({
       variant: 'danger',
-      title: 'Bu duyuruyu sil',
-      body: `"${title}" duyurusunu kalıcı olarak silmek istediğinden emin misin? Bu işlem geri alınamaz.`,
-      confirmLabel: 'Sil',
+      title: `"${title}" duyurusu silinsin mi?`,
+      body: 'Duyuru işletme panellerinden kalkar ve geri getirilemez.',
+      confirmLabel: 'Duyuruyu sil',
       cancelLabel: 'Vazgeç',
       onConfirm: async () => {
         try {
@@ -241,10 +245,10 @@ export default function AnnouncementsClient({
             setTimeout(() => setSuccess(''), 3000);
           } else {
             const data = await res.json().catch(() => ({}));
-            setError(data.error || 'Silme başarısız.');
+            setError(data.error || 'Duyuru silinemedi. Biraz sonra yeniden dene.');
           }
         } catch {
-          setError('Silme başarısız.');
+          setError('Duyuru silinemedi. İnternetini kontrol edip yeniden dene.');
         }
       },
     });
@@ -407,216 +411,219 @@ export default function AnnouncementsClient({
         <Modal
           size={760}
           onClose={() => setShowForm(false)}
-          title={
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 shrink-0 bg-pn-accent-soft rounded-[20px] flex items-center justify-center">
-                {editing ? <Pencil size={18} className="text-pn-ink" strokeWidth={2} /> : <Plus size={18} className="text-pn-ink" strokeWidth={2} />}
+          icon={editing ? <Pencil size={18} strokeWidth={2} /> : <Megaphone size={18} strokeWidth={2} />}
+          title={editing ? 'Duyuruyu düzenle' : 'Yeni duyuru oluştur'}
+          description="Duyuru, işletme sahiplerinin panelinin üstünde bir şerit olarak görünür. Müşteriler görmez."
+        >
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Title */}
+            <div>
+              <label htmlFor={`${fid}-title`} className={FIELD_LABEL}>
+                Başlık
+                <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>
+              </label>
+              <input
+                id={`${fid}-title`}
+                type="text"
+                required
+                maxLength={160}
+                value={form.title}
+                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="Örn: Yeni QR tasarımları yayında"
+                className="bz-input"
+              />
+            </div>
+
+            {/* Message */}
+            <div>
+              <label htmlFor={`${fid}-message`} className={FIELD_LABEL}>
+                Mesaj
+                <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>
+              </label>
+              <textarea
+                id={`${fid}-message`}
+                required
+                rows={4}
+                maxLength={2000}
+                value={form.message}
+                onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                placeholder="Ne değişti, işletme sahibi ne yapmalı? Bir iki cümle yeter."
+                className="bz-input resize-none"
+              />
+            </div>
+
+            {/* Severity & Locale */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <p id={`${fid}-severity`} className={FIELD_LABEL}>Önem derecesi</p>
+                <div role="group" aria-labelledby={`${fid}-severity`} className="grid grid-cols-2 gap-1.5 rounded-[18px] bg-pn-canvas p-1.5 sm:grid-cols-4">
+                  {(Object.keys(SEVERITY_META) as Severity[]).map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      aria-pressed={form.severity === s}
+                      onClick={() => setForm(f => ({ ...f, severity: s }))}
+                      className={`min-h-11 rounded-[14px] px-2 text-[13px] font-medium transition-colors ${
+                        form.severity === s ? 'bg-pn-accent text-white' : 'text-[#737373] hover:text-pn-ink'
+                      }`}
+                    >
+                      {SEVERITY_META[s].label}
+                    </button>
+                  ))}
+                </div>
+                <p className={FIELD_HINT}>Şeridin rengini belirler.</p>
               </div>
-              <div className="min-w-0">
-                <h2 className="text-[18px] font-medium tracking-[-0.015em] text-pn-ink truncate">
-                  {editing ? 'Duyuruyu düzenle' : 'Yeni duyuru'}
-                </h2>
-                <p className="text-[13px] font-medium text-[#737373] mt-0.5">
-                  İşletme panellerinde gösterilecek
-                </p>
+              <div>
+                <p id={`${fid}-locale`} className={FIELD_LABEL}>Kimler görsün</p>
+                <div role="group" aria-labelledby={`${fid}-locale`} className="grid grid-cols-3 gap-1.5 rounded-[18px] bg-pn-canvas p-1.5">
+                  {(['all', 'tr', 'en'] as Locale[]).map(l => (
+                    <button
+                      key={l}
+                      type="button"
+                      aria-pressed={form.locale === l}
+                      onClick={() => setForm(f => ({ ...f, locale: l }))}
+                      className={`min-h-11 rounded-[14px] px-2 text-[13px] font-medium transition-colors ${
+                        form.locale === l ? 'bg-pn-accent text-white' : 'text-[#737373] hover:text-pn-ink'
+                      }`}
+                    >
+                      {l === 'all' ? 'Herkes' : l === 'tr' ? 'Türkçe' : 'İngilizce'}
+                    </button>
+                  ))}
+                </div>
+                <p className={FIELD_HINT}>Paneli seçtiğin dilde kullananlara gösterilir.</p>
               </div>
             </div>
-          }
-        >
-            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-              {/* Title */}
+
+            {/* Dates & Priority */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               <div>
-                <label htmlFor={`${fid}-title`} className="block text-[12px] font-medium text-[#6B7280] mb-3">BAŞLIK</label>
+                <label htmlFor={`${fid}-start`} className={FIELD_LABEL}>Başlangıç</label>
                 <input
-                  id={`${fid}-title`}
-                  type="text"
-                  required
-                  maxLength={160}
-                  value={form.title}
-                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder="Örn: Yeni QR tasarımları yayında!"
-                  className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
+                  id={`${fid}-start`}
+                  type="datetime-local"
+                  value={form.startDate}
+                  onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                  aria-describedby={`${fid}-start-hint`}
+                  className="bz-input"
                 />
+                <p id={`${fid}-start-hint`} className={FIELD_HINT}>Boş bırakırsan yayınlanınca başlar.</p>
               </div>
-
-              {/* Message */}
               <div>
-                <label htmlFor={`${fid}-message`} className="block text-[12px] font-medium text-[#6B7280] mb-3">MESAJ</label>
-                <textarea
-                  id={`${fid}-message`}
-                  required
-                  rows={4}
-                  maxLength={2000}
-                  value={form.message}
-                  onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                  placeholder="Detayları buraya yazın..."
-                  className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all resize-none"
+                <label htmlFor={`${fid}-end`} className={FIELD_LABEL}>Bitiş</label>
+                <input
+                  id={`${fid}-end`}
+                  type="datetime-local"
+                  value={form.endDate}
+                  onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                  aria-describedby={`${fid}-end-hint`}
+                  className="bz-input"
+                />
+                <p id={`${fid}-end-hint`} className={FIELD_HINT}>Boş bırakırsan sen kaldırana kadar kalır.</p>
+              </div>
+              <div>
+                <label htmlFor={`${fid}-priority`} className={FIELD_LABEL}>Öncelik</label>
+                <input
+                  id={`${fid}-priority`}
+                  type="number"
+                  value={form.priority}
+                  onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))}
+                  aria-describedby={`${fid}-priority-hint`}
+                  className="bz-input"
+                />
+                <p id={`${fid}-priority-hint`} className={FIELD_HINT}>Büyük sayı listede üstte durur.</p>
+              </div>
+            </div>
+
+            {/* Optional button */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor={`${fid}-ctatext`} className={FIELD_LABEL}>Buton metni</label>
+                <input
+                  id={`${fid}-ctatext`}
+                  type="text"
+                  maxLength={60}
+                  value={form.ctaText}
+                  onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))}
+                  placeholder="Detayları gör"
+                  aria-describedby={`${fid}-ctatext-hint`}
+                  className="bz-input"
+                />
+                <p id={`${fid}-ctatext-hint`} className={FIELD_HINT}>İsteğe bağlı. Boşsa buton gösterilmez.</p>
+              </div>
+              <div>
+                <label htmlFor={`${fid}-ctalink`} className={FIELD_LABEL}>Buton bağlantısı</label>
+                <input
+                  id={`${fid}-ctalink`}
+                  type="url"
+                  value={form.ctaLink}
+                  onChange={e => setForm(f => ({ ...f, ctaLink: e.target.value }))}
+                  placeholder="https://..."
+                  aria-describedby={`${fid}-ctalink-hint`}
+                  className="bz-input"
+                />
+                <p id={`${fid}-ctalink-hint`} className={FIELD_HINT}>Buton metni yazdıysan gerekli.</p>
+              </div>
+            </div>
+
+            {/* Dismissible + status */}
+            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+              <div className="rounded-[20px] bg-pn-canvas p-4">
+                <APSwitch
+                  checked={form.isDismissible}
+                  onChange={() => setForm(f => ({ ...f, isDismissible: !f.isDismissible }))}
+                  label="Kapatılabilsin"
+                  sublabel={
+                    form.isDismissible
+                      ? 'İşletme sahibi duyuruyu kapatabilir.'
+                      : 'Duyuru bitiş tarihine kadar hep görünür.'
+                  }
                 />
               </div>
-
-              {/* Severity & Locale */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p id={`${fid}-severity`} className="block text-[12px] font-medium text-[#6B7280] mb-3">ÖNEM DERECESİ</p>
-                  <div role="group" aria-labelledby={`${fid}-severity`} className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
-                    {(Object.keys(SEVERITY_META) as Severity[]).map(s => (
-                      <button
-                        key={s}
-                        type="button"
-                        aria-pressed={form.severity === s}
-                        onClick={() => setForm(f => ({ ...f, severity: s }))}
-                        className={`py-2.5 rounded-[20px] text-[12px] font-medium transition-all ${
-                          form.severity === s ? 'bg-pn-accent text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
-                        }`}
-                      >
-                        {SEVERITY_META[s].label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p id={`${fid}-locale`} className="block text-[12px] font-medium text-[#6B7280] mb-3">DİL</p>
-                  <div role="group" aria-labelledby={`${fid}-locale`} className="grid grid-cols-3 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
-                    {(['all', 'tr', 'en'] as Locale[]).map(l => (
-                      <button
-                        key={l}
-                        type="button"
-                        aria-pressed={form.locale === l}
-                        onClick={() => setForm(f => ({ ...f, locale: l }))}
-                        className={`py-2.5 rounded-[20px] text-[12px] font-medium transition-all ${
-                          form.locale === l ? 'bg-pn-accent text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
-                        }`}
-                      >
-                        {l === 'all' ? 'TÜMÜ' : l.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div className="rounded-[20px] bg-pn-canvas p-4">
+                <APSwitch
+                  checked={form.status === 'published'}
+                  onChange={() => setForm(f => ({ ...f, status: f.status === 'published' ? 'draft' : 'published' }))}
+                  label="Yayınla"
+                  sublabel={
+                    form.status === 'published'
+                      ? 'Kaydedince işletme panellerinde görünür.'
+                      : 'Taslak kalır; yalnız yöneticiler görür.'
+                  }
+                />
               </div>
+            </div>
 
-              {/* Dates & Priority */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label htmlFor={`${fid}-start`} className="block text-[12px] font-medium text-[#6B7280] mb-3">BAŞLANGIÇ</label>
-                  <input
-                    id={`${fid}-start`}
-                    type="datetime-local"
-                    value={form.startDate}
-                    onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`${fid}-end`} className="block text-[12px] font-medium text-[#6B7280] mb-3">BİTİŞ</label>
-                  <input
-                    id={`${fid}-end`}
-                    type="datetime-local"
-                    value={form.endDate}
-                    onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`${fid}-priority`} className="block text-[12px] font-medium text-[#6B7280] mb-3">ÖNCELİK</label>
-                  <input
-                    id={`${fid}-priority`}
-                    type="number"
-                    value={form.priority}
-                    onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))}
-                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
-                  />
-                </div>
-              </div>
+            {formError && (
+              <AlertBanner kind="danger" onDismiss={() => setFormError('')}>
+                {formError}
+              </AlertBanner>
+            )}
 
-              {/* CTA */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor={`${fid}-ctatext`} className="block text-[12px] font-medium text-[#6B7280] mb-3">CTA METNİ (OPSİYONEL)</label>
-                  <input
-                    id={`${fid}-ctatext`}
-                    type="text"
-                    maxLength={60}
-                    value={form.ctaText}
-                    onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))}
-                    placeholder="Detayları gör"
-                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`${fid}-ctalink`} className="block text-[12px] font-medium text-[#6B7280] mb-3">CTA BAĞLANTISI</label>
-                  <input
-                    id={`${fid}-ctalink`}
-                    type="url"
-                    value={form.ctaLink}
-                    onChange={e => setForm(f => ({ ...f, ctaLink: e.target.value }))}
-                    placeholder="https://..."
-                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
-                  />
-                </div>
-              </div>
-
-              {/* Dismissible + status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-[20px] border border-pn-line">
-                  <div className="space-y-0.5">
-                    <p className="text-pn-ink text-[13px] font-medium tracking-tight">{form.isDismissible ? 'KAPATILABİLİR' : 'HER ZAMAN GÖRÜNÜR'}</p>
-                    <p className="text-[#6B7280] text-[12px] font-medium">{form.isDismissible ? 'Kullanıcı banner\u2019ı kapatabilir.' : 'Banner kapatılamaz.'}</p>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={form.isDismissible}
-                    aria-label="Kullanıcı duyuruyu kapatabilsin"
-                    onClick={() => setForm(f => ({ ...f, isDismissible: !f.isDismissible }))}
-                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isDismissible ? 'bg-pn-accent' : 'bg-[#C9D0DB]'}`}
-                  >
-                    <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.isDismissible ? 'translate-x-5.5' : ''}`} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-[20px] border border-pn-line">
-                  <div className="space-y-0.5">
-                    <p className="text-pn-ink text-[13px] font-medium tracking-tight">{form.status === 'published' ? 'YAYINDA' : 'TASLAK'}</p>
-                    <p className="text-[#6B7280] text-[12px] font-medium">{form.status === 'published' ? 'Tüm işletme panellerinde görünür.' : 'Sadece admin panelinde.'}</p>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={form.status === 'published'}
-                    aria-label="Duyuruyu yayınla"
-                    onClick={() => setForm(f => ({ ...f, status: f.status === 'published' ? 'draft' : 'published' }))}
-                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-pn-accent' : 'bg-[#C9D0DB]'}`}
-                  >
-                    <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.status === 'published' ? 'translate-x-5.5' : ''}`} />
-                  </button>
-                </div>
-              </div>
-
-              {formError && (
-                <AlertBanner kind="danger" onDismiss={() => setFormError('')}>
-                  {formError}
-                </AlertBanner>
-              )}
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2 pt-5 border-t border-pn-line">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="bz-btn-ghost"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="bz-btn-primary disabled:opacity-50"
-                >
-                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {editing ? 'Güncelle' : 'Kaydet'}
-                </button>
-              </div>
-            </form>
+            {/* Actions */}
+            <div className="flex flex-col-reverse gap-2 border-t border-pn-line pt-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="bz-btn-ghost"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="bz-btn-primary disabled:opacity-50"
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {saving
+                  ? 'Kaydediliyor…'
+                  : editing
+                    ? 'Değişiklikleri kaydet'
+                    : form.status === 'published'
+                      ? 'Duyuruyu yayınla'
+                      : 'Taslağı kaydet'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
       {confirmDialog}

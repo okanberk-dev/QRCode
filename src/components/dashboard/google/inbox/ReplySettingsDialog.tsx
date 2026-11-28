@@ -44,7 +44,11 @@ export function ReplySettingsDialog({
       .catch(() => {
         if (!cancelled) {
           setSettings(DEFAULT_GOOGLE_REPLY_SETTINGS);
-          setError(isTr ? 'Ayarlar yüklenemedi; varsayılanlar gösteriliyor.' : 'Settings could not be loaded; showing defaults.');
+          setError(
+            isTr
+              ? 'Kayıtlı ayarların yüklenemedi; varsayılanlar gösteriliyor. Şimdi kaydedersen eski ayarlarının yerine bunlar geçer. Emin değilsen pencereyi kapatıp yeniden aç.'
+              : 'Your saved settings could not be loaded; the defaults are shown. Saving now replaces your old settings with these. If unsure, close this window and open it again.',
+          );
         }
       });
     return () => {
@@ -77,13 +81,21 @@ export function ReplySettingsDialog({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.settings) {
-        setError(isTr ? 'Ayarlar kaydedilemedi. Alanları kontrol edip tekrar dene.' : 'Settings could not be saved. Check the fields and try again.');
+        setError(
+          isTr
+            ? 'Ayarlar kaydedilemedi. İmzayı ve yasaklı ifadeleri kontrol edip yeniden dene.'
+            : 'The settings could not be saved. Check the signature and the banned phrases, then try again.',
+        );
         return;
       }
       onSaved(data.settings);
       onClose();
     } catch {
-      setError(isTr ? 'Bağlantı hatası. Tekrar dene.' : 'Connection error. Try again.');
+      setError(
+        isTr
+          ? 'Bağlanılamadı. İnternet bağlantını kontrol edip yeniden dene.'
+          : 'Could not connect. Check your internet connection and try again.',
+      );
     } finally {
       setSaving(false);
     }
@@ -92,43 +104,56 @@ export function ReplySettingsDialog({
   return (
     <Modal
       title={isTr ? 'Yanıt ayarları' : 'Reply settings'}
+      description={
+        isTr
+          ? 'Bu işletmenin Google yanıt taslakları bu ayarlarla yazılır ve her zaman yorumun dilinde olur. Taslaklar sen göndermeden yayınlanmaz.'
+          : "This business's Google reply drafts follow these settings and always use the review's language. Nothing is published until you send it."
+      }
       onClose={onClose}
       size={560}
       closeGuard={() => dirty}
       closeConfirm={
         isTr
-          ? undefined
-          : { title: 'Discard changes?', body: 'Your changes will not be saved.', confirm: 'Discard', cancel: 'Keep editing' }
+          ? { title: 'Kaydetmeden kapatılsın mı?', body: 'Yaptığın değişiklikler kaydedilmez.', confirm: 'Kaydetmeden kapat', cancel: 'Vazgeç' }
+          : { title: 'Close without saving?', body: 'Your changes will not be saved.', confirm: 'Close without saving', cancel: 'Cancel' }
       }
       footer={
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        canWrite ? (
+          <>
+            <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-10">
+              {isTr ? 'Vazgeç' : 'Cancel'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void save()}
+              disabled={!settings || saving}
+              className="bz-btn-primary min-h-11 disabled:opacity-60 sm:min-h-10"
+            >
+              {saving && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+              {saving ? (isTr ? 'Kaydediliyor…' : 'Saving…') : isTr ? 'Ayarları kaydet' : 'Save settings'}
+            </button>
+          </>
+        ) : (
           <button type="button" onClick={onClose} className="bz-btn min-h-11 sm:min-h-10">
-            {isTr ? 'Vazgeç' : 'Cancel'}
+            {isTr ? 'Kapat' : 'Close'}
           </button>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={!settings || saving || !canWrite}
-            className="bz-btn-primary min-h-11 disabled:opacity-60 sm:min-h-9"
-          >
-            {saving && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-            {isTr ? 'Kaydet' : 'Save'}
-          </button>
-        </div>
+        )
       }
     >
       {!settings ? (
-        <div className="flex items-center gap-2 py-6 text-[13px] text-[#737373]">
+        <div className="flex items-center gap-2 py-6 text-[13px] text-[#737373]" role="status">
           <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-          {isTr ? 'Yükleniyor…' : 'Loading…'}
+          {isTr ? 'Ayarlar yükleniyor…' : 'Loading the settings…'}
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-[13px] leading-[1.6] text-[#525252]">
-            {isTr
-              ? 'AI taslakları bu ayarlarla yazılır ve her zaman yorumun dilinde olur (Rusça yoruma Rusça). Taslaklar sen göndermeden yayınlanmaz.'
-              : "AI drafts follow these settings and always use the review's language (Russian review → Russian reply). Nothing is published until you send it."}
-          </p>
+          {!canWrite && (
+            <AlertBanner kind="info">
+              {isTr
+                ? 'Bu ayarları yalnız görüntüleyebilirsin. Değiştirmek için işletme sahibinden yetki iste.'
+                : 'You can only view these settings. Ask the business owner for access to change them.'}
+            </AlertBanner>
+          )}
           {error && <AlertBanner kind="warn">{error}</AlertBanner>}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -160,7 +185,7 @@ export function ReplySettingsDialog({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Hitap (Türkçe)' : 'Address (Turkish)'}</span>
+              <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Hitap (Türkçe yanıtlarda)' : 'Address form (Turkish replies)'}</span>
               <PulseSelect
                 value={settings.addressForm}
                 onChange={(v) => update('addressForm', v as GoogleReplySettings['addressForm'])}
@@ -183,7 +208,7 @@ export function ReplySettingsDialog({
           />
 
           <label className="block space-y-1">
-            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'İmza' : 'Signature'}</span>
+            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'İmza (isteğe bağlı)' : 'Signature (optional)'}</span>
             <input
               className="bz-input text-[16px] sm:text-[14px]"
               value={settings.signature}
@@ -192,10 +217,15 @@ export function ReplySettingsDialog({
               placeholder={isTr ? 'ör. L’Affogato ekibi' : 'e.g. The L’Affogato team'}
               disabled={!canWrite}
             />
+            <span className="block text-[12px] text-[#737373]">
+              {isTr
+                ? 'Her taslağın sonuna ayrı satırda eklenir. Boş bırakırsan imza eklenmez.'
+                : 'Added on its own line at the end of every draft. Leave it empty for no signature.'}
+            </span>
           </label>
 
           <label className="block space-y-1">
-            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Yasaklı ifadeler' : 'Banned phrases'}</span>
+            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'Yasaklı ifadeler (isteğe bağlı)' : 'Banned phrases (optional)'}</span>
             <textarea
               className="bz-input min-h-[88px] text-[16px] sm:text-[14px]"
               value={banned}
@@ -208,8 +238,8 @@ export function ReplySettingsDialog({
             />
             <span className="block text-[12px] text-[#737373]">
               {isTr
-                ? `En çok ${MAX_BANNED_PHRASES} ifade. Bu ifadeleri içeren yanıt gönderilmez; AI da kullanmaz.`
-                : `Up to ${MAX_BANNED_PHRASES} phrases. A reply containing them cannot be sent; the AI avoids them too.`}
+                ? `En çok ${MAX_BANNED_PHRASES} ifade. Bu ifadeleri içeren yanıt gönderilemez; taslaklarda da kullanılmaz.`
+                : `Up to ${MAX_BANNED_PHRASES} phrases. A reply containing one cannot be sent, and drafts avoid them too.`}
             </span>
           </label>
 

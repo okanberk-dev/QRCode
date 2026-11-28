@@ -75,32 +75,32 @@ const PLAN_OPTIONS = [
 const STATUS_OPTIONS = [
   { v: 'active', l: 'Aktif' },
   { v: 'past_due', l: 'Ödeme bekliyor' },
-  { v: 'canceled', l: 'İptal' },
+  { v: 'canceled', l: 'İptal edildi' },
 ];
 const CURRENCY_OPTIONS = ['TRY', 'USD', 'EUR', 'GBP'];
 const CYCLE_OPTIONS = [
-  { v: '', l: '— Seçilmedi —' },
+  { v: '', l: 'Seçilmedi' },
   { v: 'monthly', l: 'Aylık' },
   { v: 'yearly', l: 'Yıllık' },
 ];
 
 const ERROR_LABELS: Record<string, string> = {
-  invalid_plan: 'Geçersiz plan değeri.',
-  invalid_subscription_plan_id: 'Seçili paket artık aktif değil — listeden yeniden seçin.',
-  invalid_status: 'Geçersiz durum değeri.',
-  invalid_renews_at: 'Geçersiz yenileme tarihi.',
-  invalid_payment_brand: 'Ödeme markası 50 karakteri aşamaz.',
-  invalid_payment_last4: 'Kart son 4 hanesi tam 4 rakam olmalı.',
-  invalid_amount: 'Geçersiz tutar (0 - 9.999.999,99 arası).',
-  invalid_currency: 'Geçersiz para birimi.',
-  invalid_billing_cycle: 'Geçersiz fatura periyodu.',
-  invalid_company_name: 'Şirket adı 200 karakteri aşamaz.',
-  invalid_tax_number: 'VKN/TCKN 10 veya 11 hanelik rakam olmalı.',
-  invalid_billing_address: 'Adres 500 karakteri aşamaz.',
-  invalid_billing_city: 'Şehir 100 karakteri aşamaz.',
-  invalid_admin_notes: 'Admin notu 2000 karakteri aşamaz.',
-  forbidden: 'Yetkisiz erişim.',
-  user_not_found: 'Kullanıcı bulunamadı.',
+  invalid_plan: 'Plan türünü listeden seç.',
+  invalid_subscription_plan_id: 'Seçili paket artık satışta değil. Listeden başka bir paket seç.',
+  invalid_status: 'Durumu listeden seç.',
+  invalid_renews_at: 'Yenileme tarihi geçerli değil. Takvimden bir gün seç.',
+  invalid_payment_brand: 'Kart markası en çok 50 karakter olabilir.',
+  invalid_payment_last4: 'Kartın son 4 hanesini 4 rakam olarak yaz.',
+  invalid_amount: 'Tutar 0 ile 9.999.999,99 arasında olmalı.',
+  invalid_currency: 'Para birimini listeden seç.',
+  invalid_billing_cycle: 'Ödeme dönemini listeden seç.',
+  invalid_company_name: 'Fatura unvanı en çok 200 karakter olabilir.',
+  invalid_tax_number: 'Vergi no 10, TC kimlik no 11 rakam olmalı.',
+  invalid_billing_address: 'Fatura adresi en çok 500 karakter olabilir.',
+  invalid_billing_city: 'Şehir en çok 100 karakter olabilir.',
+  invalid_admin_notes: 'Yönetici notu en çok 2000 karakter olabilir.',
+  forbidden: 'Aboneliği düzenleme yetkin yok.',
+  user_not_found: 'Hesap bulunamadı. Sayfayı yenileyip yeniden dene.',
 };
 
 function formatCurrency(value: number | null, currency: string): string {
@@ -130,7 +130,7 @@ export default function MemberBillingModal({
   const amountTouchedRef = useRef(false);
 
   const tabs: TabItem[] = [
-    { id: 'plan', label: 'Plan & Adres' },
+    { id: 'plan', label: 'Abonelik ve fatura bilgisi' },
     { id: 'invoices', label: 'Faturalar' },
   ];
 
@@ -169,7 +169,7 @@ export default function MemberBillingModal({
         });
         amountTouchedRef.current = sub?.amount != null;
       } catch {
-        if (!cancelled) setError('Faturalandırma bilgileri yüklenemedi.');
+        if (!cancelled) setError('Abonelik bilgileri yüklenemedi. Pencereyi kapatıp yeniden aç.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -284,15 +284,15 @@ export default function MemberBillingModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(ERROR_LABELS[data.error] || data.error || 'Kaydetme başarısız.');
+        setError(ERROR_LABELS[data.error] || data.error || 'Kaydedilemedi. Biraz sonra yeniden dene.');
       } else {
-        setSuccess('Faturalandırma güncellendi.');
+        setSuccess('Abonelik kaydedildi.');
         onSaved();
         // Auto-close after a brief success flash
         setTimeout(onClose, 800);
       }
     } catch {
-      setError('Bağlantı hatası.');
+      setError('Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.');
     } finally {
       setSaving(false);
     }
@@ -302,23 +302,23 @@ export default function MemberBillingModal({
     <Modal
       size={580}
       onClose={onClose}
-      title={
-        <div>
-          <p className="text-[13px] font-medium text-[#737373]">FATURALANDIRMA</p>
-          <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
-            {name || email}
-          </h2>
-          <p className="mt-1 text-[12px] text-[#525252]">{email}</p>
-        </div>
+      title="Aboneliği düzenle"
+      description={
+        <>
+          <strong className="break-words font-medium text-pn-ink">{name || email}</strong>
+          {name ? ` (${email})` : ''} hesabının paketini, tutarını ve fatura bilgilerini elle düzenlersin.
+          Hesap sahibi bunları panelinde görür ama değiştiremez.
+        </>
       }
     >
       {loading ? (
-        <div className="flex items-center gap-2 py-10 justify-center text-[13px] text-[#737373]">
+        <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-[#737373]" role="status">
           <Loader2 size={14} className="animate-spin" />
-          Yükleniyor…
+          Abonelik bilgileri yükleniyor…
         </div>
       ) : (
         <div className="space-y-5">
+
           <Tabs
             items={tabs}
             active={activeTab}
@@ -346,15 +346,15 @@ export default function MemberBillingModal({
               elle override edebilir (RotateCcw → kanonik tutara dön).
               Boş = legacy/enterprise/free → manuel akış. */}
           <Field
-            label="Paket (marketing tier)"
-            hint="/pricing sayfasındaki tier'lardan birini bağla → tutar otomatik doldurulur."
+            label="Paket"
+            hint="Fiyat sayfasındaki paketlerden birini seçersen tutar kendiliğinden dolar."
           >
             <select
               value={form.subscriptionPlanId}
               onChange={(e) => applyTier(e.target.value)}
               className="bz-input"
             >
-              <option value="">— Tier bağlı değil (legacy / manuel) —</option>
+              <option value="">Paket seçilmedi (tutarı elle yaz)</option>
               {catalog.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.nameTr || t.nameEn}
@@ -365,8 +365,8 @@ export default function MemberBillingModal({
           </Field>
 
           {/* Plan + Status — legacy bucket */}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Plan (lifecycle bucket)" hint="trial / monthly / yearly / enterprise / free">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
+            <Field label="Plan türü" hint="Hesabın deneme, ücretli ya da ücretsiz olduğunu belirler.">
               <select
                 value={form.plan}
                 onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value }))}
@@ -395,16 +395,17 @@ export default function MemberBillingModal({
           </div>
 
           {/* Amount + Currency + Cycle — tier bağlı ise canonical auto-fill */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3">
+            <div className="col-span-2 sm:col-span-1">
             <Field
               label="Tutar"
               hint={
                 expectedAmount != null && !amountTouchedRef.current
-                  ? `Otomatik (${form.billingCycle === 'yearly' ? 'yıllık toplam' : 'aylık'}): ${formatCurrency(expectedAmount, form.currency)}`
+                  ? `Paket fiyatı (${form.billingCycle === 'yearly' ? 'yıllık toplam' : 'aylık'}): ${formatCurrency(expectedAmount, form.currency)}`
                   : expectedAmount != null && amountTouchedRef.current
-                    ? `Beklenen (tier'dan): ${formatCurrency(expectedAmount, form.currency)} — admin override'da`
+                    ? `Paket fiyatı ${formatCurrency(expectedAmount, form.currency)}. Sen farklı bir tutar yazdın.`
                     : selectedTier && form.currency !== canonicalCurrency
-                      ? `Paket fiyatları ${canonicalCurrency} tanımlı — ${form.currency} için tutarı elle gir.`
+                      ? `Paket fiyatları ${canonicalCurrency}. ${form.currency} için tutarı elle yaz.`
                       : undefined
               }
             >
@@ -423,20 +424,22 @@ export default function MemberBillingModal({
                       ? String(expectedAmount)
                       : '0.00'
                   }
-                  className="bz-input flex-1"
+                  className="bz-input min-w-0 flex-1"
                 />
                 {selectedTier && expectedAmount != null && amountTouchedRef.current ? (
                   <button
                     type="button"
                     onClick={resetAmountToCanonical}
-                    title="Tier+cycle'a göre kanonik tutara dön"
+                    title="Paket fiyatına dön"
+                    aria-label="Paket fiyatına dön"
                     className="bz-btn-ghost shrink-0 px-3"
                   >
-                    <RotateCcw size={13} />
+                    <RotateCcw size={13} aria-hidden="true" />
                   </button>
                 ) : null}
               </div>
             </Field>
+            </div>
             <Field label="Para birimi">
               <select
                 value={form.currency}
@@ -450,7 +453,7 @@ export default function MemberBillingModal({
                 ))}
               </select>
             </Field>
-            <Field label="Periyot">
+            <Field label="Ödeme dönemi">
               <select
                 value={form.billingCycle}
                 onChange={(e) => applyCycle(e.target.value)}
@@ -468,10 +471,10 @@ export default function MemberBillingModal({
           {/* Canonical preview — tier+cycle seçildiğinde marketing /pricing'de
               gözükecek tutarı admin'e göster (parity reassurance). */}
           {selectedTier && form.billingCycle ? (
-            <div className="rounded-[20px] bg-pn-canvas border border-pn-line px-3 py-2 text-[12px] text-[#525252] flex items-center gap-2">
-              <ShieldCheck size={12} strokeWidth={2} className="text-pn-ink shrink-0" />
-              <span>
-                Marketing /pricing eşi:{' '}
+            <div className="flex items-start gap-2 rounded-[16px] bg-pn-canvas px-3 py-2.5 text-[13px] leading-[1.45] text-[#525252]">
+              <ShieldCheck size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-pn-ink" aria-hidden="true" />
+              <span className="min-w-0">
+                Fiyat sayfasındaki karşılığı:{' '}
                 <strong className="text-pn-ink">
                   {selectedTier.nameTr || selectedTier.nameEn}
                 </strong>{' '}
@@ -490,7 +493,7 @@ export default function MemberBillingModal({
             </div>
           ) : null}
 
-          <Field label="Yenileme tarihi">
+          <Field label="Yenileme tarihi" hint="Mevcut dönemin biteceği gün. Boş bırakabilirsin.">
             <input
               type="date"
               value={form.renewsAt}
@@ -501,17 +504,17 @@ export default function MemberBillingModal({
 
           {/* Payment method */}
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Kart markası" hint="Visa, Mastercard, Troy…">
+            <Field label="Kart markası">
               <input
                 type="text"
                 maxLength={50}
                 value={form.paymentBrand}
                 onChange={(e) => setForm((f) => ({ ...f, paymentBrand: e.target.value }))}
-                placeholder="Visa"
+                placeholder="Visa, Mastercard, Troy…"
                 className="bz-input"
               />
             </Field>
-            <Field label="Son 4 hane" hint="Sadece rakam">
+            <Field label="Kartın son 4 hanesi">
               <input
                 type="text"
                 inputMode="numeric"
@@ -529,7 +532,7 @@ export default function MemberBillingModal({
           </div>
 
           {/* Billing address */}
-          <Field label="Şirket / fatura unvanı">
+          <Field label="Fatura unvanı">
             <input
               type="text"
               maxLength={200}
@@ -541,7 +544,7 @@ export default function MemberBillingModal({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="VKN / TCKN" hint="10 veya 11 hane">
+            <Field label="Vergi no / TC kimlik no" hint="10 ya da 11 rakam">
               <input
                 type="text"
                 inputMode="numeric"
@@ -567,7 +570,7 @@ export default function MemberBillingModal({
             </Field>
           </div>
 
-          <Field label="Adres">
+          <Field label="Fatura adresi">
             <textarea
               rows={2}
               maxLength={500}
@@ -579,7 +582,7 @@ export default function MemberBillingModal({
             />
           </Field>
 
-          <Field label="Admin notu" hint="Sadece admin panelde görünür · 2000 karakter">
+          <Field label="Yönetici notu" hint="Yalnız yöneticiler görür. En çok 2000 karakter.">
             <textarea
               rows={2}
               maxLength={2000}
@@ -591,14 +594,11 @@ export default function MemberBillingModal({
             />
           </Field>
 
-          <div className="flex items-start gap-1.5 text-[12px] text-[#737373] leading-[1.55]">
-            <ShieldCheck size={12} className="mt-0.5 shrink-0" strokeWidth={2} />
-            <span>
-              Değişiklikler audit log&apos;a kaydedilir (admin.billing.update). Müşteri yalnızca okuma erişimine sahiptir.
-            </span>
-          </div>
+          <p className="text-[12px] leading-[1.5] text-[#737373]">
+            Kaydettiğin değişiklik işlem kaydına yazılır.
+          </p>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
@@ -613,7 +613,7 @@ export default function MemberBillingModal({
               className="bz-btn-primary flex-1 disabled:opacity-50"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
-              Kaydet
+              {saving ? 'Kaydediliyor…' : 'Aboneliği kaydet'}
             </button>
           </div>
             </div>
@@ -634,10 +634,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-[13px] font-medium text-[#737373] block">{label}</label>
+    <label className="block space-y-1.5">
+      <span className="block text-[13px] font-medium text-pn-ink">{label}</span>
       {children}
-      {hint && <p className="text-[12px] text-[#A3A3A3] leading-[1.55]">{hint}</p>}
-    </div>
+      {hint && <span className="block text-[12px] leading-[1.5] text-[#737373]">{hint}</span>}
+    </label>
   );
 }

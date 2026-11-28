@@ -2,13 +2,12 @@
 
 // CLAUDE.md §42 — Audit seed result modal.
 //
-// Tek satır AlertBanner notice'ten daha zengin görsel feedback. 3 stat
-// tile (kategori / şablon / soru) + duration mono pill + 2 CTA
-// ("Şablonları gör" / "İstatistiklere git"). Pulse §23.3 Modal primitive
-// reuse — focus trap + ESC + body scroll lock built-in.
+// Varsayılan içerik yüklendikten sonra ne yüklendiğini gösterir: 3 sayı
+// (kategori / şablon / soru) + "Şablonları gör". Modal primitive'inin başlık,
+// açıklama, ikon ve alt çubuk yuvalarını kullanır (odak tuzağı + ESC hazır).
 
 import Link from 'next/link';
-import { ArrowRight, BarChart3, CheckCircle2, ClipboardCheck } from 'lucide-react';
+import { CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { Modal } from '@/components/ui';
 
 export interface SeedResult {
@@ -24,72 +23,43 @@ interface Props {
 }
 
 export default function SeedResultModal({ result, onClose }: Props) {
+  const tiles: Array<{ label: string; value: number }> = [
+    { label: 'Kategori', value: result.categories },
+    { label: 'Şablon', value: result.templates },
+    { label: 'Soru', value: result.questions },
+  ];
+
   return (
-    <Modal onClose={onClose} size={520} ariaLabel="Varsayılan içerik yükleme sonucu">
-      <div className="space-y-5">
-        <div className="flex items-start gap-3">
-          <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft"
-            aria-hidden="true"
-          >
-            <CheckCircle2 size={20} strokeWidth={2.25} className="text-pn-ink" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="bz-h-tight text-[18px]">Varsayılan içerik yüklendi</h2>
-            <p className="text-[13px] text-[#525252] mt-1">
-              Denetim Merkezi kategorileri ve şablonları güncellendi. İşletme panelinde aynı şablon
-              kataloğu görünür.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bz-card-soft p-3">
-            <div className="text-[13px] font-medium text-[#525252]">Kategori</div>
-            <div className="bz-h-tight text-[24px] mt-1">{result.categories}</div>
-          </div>
-          <div className="bz-card-soft p-3">
-            <div className="text-[13px] font-medium text-[#525252]">Şablon</div>
-            <div className="bz-h-tight text-[24px] mt-1">{result.templates}</div>
-          </div>
-          <div className="bz-card-soft p-3">
-            <div className="text-[13px] font-medium text-[#525252]">Soru</div>
-            <div className="bz-h-tight text-[24px] mt-1">{result.questions}</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-[12px] text-[#737373]">
-          <span className="bz-mono">{(result.durationMs / 1000).toFixed(1)} sn</span>
-          <span>·</span>
-          <span>Tekrar yüklersen mevcut içerik güncellenir, kopya oluşmaz.</span>
-        </div>
-
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
-          <button
-            type="button"
-            className="bz-btn-ghost"
-            onClick={onClose}
-          >
+    <Modal
+      onClose={onClose}
+      size={520}
+      title="Varsayılan içerik yüklendi"
+      description="Kategoriler ve şablonlar güncellendi. İşletmeler bu şablonları Denetim Merkezi'ndeki hazır şablonlar listesinde görür."
+      icon={<CheckCircle2 size={18} strokeWidth={2.25} />}
+      footer={
+        <>
+          <button type="button" className="bz-btn-ghost" onClick={onClose}>
             Kapat
           </button>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Link
-              href="/admin/audits/templates"
-              className="bz-btn-ghost"
-              onClick={onClose}
-            >
-              <ClipboardCheck size={14} /> Şablonları gör
-            </Link>
-            <Link
-              href="/admin/audits/stats"
-              className="bz-btn-primary"
-              onClick={onClose}
-            >
-              <BarChart3 size={14} /> İstatistiklere git
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
+          <Link href="/admin/audits/templates" className="bz-btn-primary" onClick={onClose}>
+            <ClipboardCheck size={14} aria-hidden="true" /> Şablonları gör
+          </Link>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <dl className="grid grid-cols-3 gap-2">
+          {tiles.map((tile) => (
+            <div key={tile.label} className="min-w-0 rounded-[16px] bg-pn-canvas p-3">
+              <dt className="truncate text-[13px] text-[#737373]">{tile.label}</dt>
+              <dd className="mt-1 text-[24px] font-medium leading-none tabular-nums text-pn-ink">{tile.value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <p className="text-[13px] leading-[1.5] text-[#737373]">
+          Yeniden yüklersen aynı içerik güncellenir, kopya oluşmaz.
+        </p>
       </div>
     </Modal>
   );

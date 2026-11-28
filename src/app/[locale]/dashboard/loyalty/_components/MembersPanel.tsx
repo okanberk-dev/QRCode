@@ -257,25 +257,27 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
           size={760}
           footer={
             access.manage ? (
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 {confirmDelete ? (
                   <>
-                    <span className="text-[13px] text-[#991B1B]">
-                      {tr ? 'Kart, bakiye ve geçmiş kalıcı olarak silinecek.' : 'The card, balance and history will be deleted for good.'}
-                    </span>
-                    <span className="flex gap-2">
-                      <button type="button" className="bz-btn-ghost" onClick={() => setConfirmDelete(false)}>
+                    <p className="min-w-0 text-[13px] leading-relaxed text-[#991B1B]" role="status" aria-live="polite">
+                      {tr
+                        ? `${open.name ? `“${open.name}”` : 'Bu üye'} silinsin mi? Kartı, bakiyesi ve geçmişi kalıcı olarak silinir; geri alınamaz. Müşteri yeniden katılırsa sıfırdan başlar.`
+                        : `Delete ${open.name ? `“${open.name}”` : 'this member'}? The card, balance and history are deleted for good; this cannot be undone. If the customer joins again they start from zero.`}
+                    </p>
+                    <span className="flex shrink-0 gap-2">
+                      <button type="button" className="bz-btn-ghost flex-1 sm:flex-none" onClick={() => setConfirmDelete(false)}>
                         {tr ? 'Vazgeç' : 'Cancel'}
                       </button>
-                      <button type="button" className="bz-btn-primary !bg-[#B91C1C]" disabled={deleting} onClick={() => void remove()}>
+                      <button type="button" className="bz-btn-danger flex-1 sm:flex-none" disabled={deleting} onClick={() => void remove()}>
                         {deleting && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
-                        {tr ? 'Sil' : 'Delete'}
+                        {deleting ? (tr ? 'Siliniyor…' : 'Deleting…') : tr ? 'Üyeyi sil' : 'Delete member'}
                       </button>
                     </span>
                   </>
                 ) : (
-                  <button type="button" className="bz-btn-ghost inline-flex items-center gap-1.5 text-[#B91C1C]" onClick={() => setConfirmDelete(true)}>
-                    <Trash2 size={14} /> {tr ? 'Üyeyi sil (KVKK talebi)' : 'Delete member (privacy request)'}
+                  <button type="button" className="bz-btn-danger inline-flex items-center gap-1.5 sm:mr-auto" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 size={14} aria-hidden="true" /> {tr ? 'Üyeyi sil (KVKK talebi)' : 'Delete member (privacy request)'}
                   </button>
                 )}
               </div>
@@ -292,6 +294,13 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
             onChange={update}
             withHistory
           />
+          {confirmDelete && error && (
+            <div className="mt-4">
+              <AlertBanner kind="danger" onDismiss={() => setError(null)}>
+                {error}
+              </AlertBanner>
+            </div>
+          )}
           <p className="mt-4 text-[12px] text-[#A3A3A3]">
             {tr ? 'Katılım' : 'Joined'}: {new Date(open.createdAt).toLocaleDateString(tr ? 'tr-TR' : 'en-GB')} ·{' '}
             {joinedViaLabel(open.joinedVia, tr)} ·{' '}

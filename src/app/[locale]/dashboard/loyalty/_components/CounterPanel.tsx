@@ -310,16 +310,26 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
           onClose={() => setEnrolOpen(false)}
           size={480}
           closeGuard={() => Boolean(enrol.firstName || enrol.lastName || enrol.phone || enrol.email)}
+          closeConfirm={
+            tr
+              ? { title: 'Kart açılmadan kapatılsın mı?', body: 'Yazdığınız bilgiler silinir, kart açılmaz.', confirm: 'Kaydetmeden kapat', cancel: 'Vazgeç' }
+              : { title: 'Close without opening the card?', body: 'What you typed is discarded and no card is opened.', confirm: 'Close without saving', cancel: 'Cancel' }
+          }
+          description={
+            tr
+              ? 'Kart müşterinin telefon numarasına açılır. Numara kayıtlıysa yeni kart açılmaz, mevcut kart gösterilir.'
+              : 'The card is opened for the customer’s phone number. If the number is already registered, no new card is opened and the existing one is shown.'
+          }
           footer={
-            <div className="flex justify-end gap-2">
+            <>
               <button type="button" className="bz-btn-ghost" onClick={() => setEnrolOpen(false)}>
                 {tr ? 'Vazgeç' : 'Cancel'}
               </button>
-              <button type="button" className="bz-btn-lime" disabled={enrolBusy} onClick={() => void submitEnrol()}>
-                {enrolBusy && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
-                {tr ? 'Kartı aç' : 'Open card'}
+              <button type="button" className="bz-btn-primary" disabled={enrolBusy} onClick={() => void submitEnrol()}>
+                {enrolBusy && <Loader2 size={14} className="mr-1.5 inline animate-spin" aria-hidden="true" />}
+                {enrolBusy ? (tr ? 'Kart açılıyor…' : 'Opening the card…') : tr ? 'Kartı aç' : 'Open card'}
               </button>
-            </div>
+            </>
           }
         >
           <div className="space-y-3">
@@ -334,28 +344,42 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
                 <input id="enrol-last" value={enrol.lastName} onChange={(e) => setEnrol((s) => ({ ...s, lastName: e.target.value }))} className="bz-input w-full" autoCapitalize="words" autoComplete="off" enterKeyHint="next" />
               </Field>
             </div>
-            <Field label={tr ? 'E-posta (kart bağlantısı için, isteğe bağlı)' : 'E-mail (optional)'} htmlFor="enrol-email">
+            <Field
+              label={tr ? 'E-posta (isteğe bağlı)' : 'E-mail (optional)'}
+              hint={tr ? 'Müşteri kartını kaybederse kart bağlantısı bu adrese gönderilir.' : 'If the customer loses their card, the card link is sent to this address.'}
+              htmlFor="enrol-email"
+            >
               <input id="enrol-email" type="email" value={enrol.email} onChange={(e) => setEnrol((s) => ({ ...s, email: e.target.value }))} className="bz-input w-full" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
             </Field>
             {program.birthdayReward && (
-              <Field label={tr ? 'Doğum günü (gün / ay, isteğe bağlı)' : 'Birthday (day / month, optional)'}>
+              <Field
+                label={tr ? 'Doğum günü (isteğe bağlı)' : 'Birthday (optional)'}
+                hint={tr ? 'Gün ve ay yeterli; doğum günü hediyesi için kullanılır.' : 'Day and month are enough; used for the birthday gift.'}
+              >
                 <div className="flex gap-2">
                   <input value={enrol.birthDay} onChange={(e) => setEnrol((s) => ({ ...s, birthDay: e.target.value }))} className="bz-input w-20" inputMode="numeric" placeholder={tr ? 'Gün' : 'Day'} aria-label={tr ? 'Gün' : 'Day'} />
                   <input value={enrol.birthMonth} onChange={(e) => setEnrol((s) => ({ ...s, birthMonth: e.target.value }))} className="bz-input w-20" inputMode="numeric" placeholder={tr ? 'Ay' : 'Month'} aria-label={tr ? 'Ay' : 'Month'} />
                 </div>
               </Field>
             )}
-            <label className="flex items-start gap-2 text-[13px] text-[#262626]">
-              <input type="checkbox" className="mt-0.5 h-4 w-4" checked={enrol.notice} onChange={(e) => setEnrol((s) => ({ ...s, notice: e.target.checked }))} />
+            <label className="flex min-h-11 cursor-pointer items-start gap-2.5 rounded-[14px] bg-pn-canvas p-3 text-[13px] leading-relaxed text-[#262626]">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink" checked={enrol.notice} aria-required="true" onChange={(e) => setEnrol((s) => ({ ...s, notice: e.target.checked }))} />
               <span>
                 {tr
-                  ? 'Müşteri, bilgilerinin sadakat kartı için işleneceğini öğrendi ve kabul etti (aydınlatma metni katılım sayfasında).'
-                  : 'The customer was told their details are used for the loyalty card and agreed (notice on the join page).'}
+                  ? 'Müşteri, bilgilerinin sadakat kartı için işleneceğini öğrendi ve kabul etti. Aydınlatma metni katılım sayfasında.'
+                  : 'The customer was told their details are used for the loyalty card and agreed. The privacy notice is on the join page.'}
+                <span className="ml-1 text-[#E5484D]" aria-hidden="true">
+                  *
+                </span>
               </span>
             </label>
-            <label className="flex items-start gap-2 text-[13px] text-[#262626]">
-              <input type="checkbox" className="mt-0.5 h-4 w-4" checked={enrol.marketing} onChange={(e) => setEnrol((s) => ({ ...s, marketing: e.target.checked }))} />
-              <span>{tr ? 'Müşteri kampanya mesajı almayı da kabul etti (isteğe bağlı).' : 'The customer also agreed to marketing messages (optional).'}</span>
+            <label className="flex min-h-11 cursor-pointer items-start gap-2.5 rounded-[14px] bg-pn-canvas p-3 text-[13px] leading-relaxed text-[#262626]">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink" checked={enrol.marketing} onChange={(e) => setEnrol((s) => ({ ...s, marketing: e.target.checked }))} />
+              <span>
+                {tr
+                  ? 'Müşteri kampanya e-postası almayı da kabul etti (isteğe bağlı). İşaretlemezseniz kampanya gönderilmez.'
+                  : 'The customer also agreed to receive campaign e-mails (optional). Leave it unticked and no campaigns are sent.'}
+              </span>
             </label>
             {enrolError && <AlertBanner kind="danger">{enrolError}</AlertBanner>}
           </div>
@@ -363,19 +387,34 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
       )}
 
       {newCard && (
-        <Modal title={tr ? 'Kart açıldı' : 'Card opened'} onClose={() => setNewCard(null)} size={380}>
+        <Modal
+          title={tr ? 'Kart açıldı' : 'Card opened'}
+          onClose={() => setNewCard(null)}
+          size={380}
+          footer={
+            <button type="button" className="bz-btn-primary" onClick={() => setNewCard(null)}>
+              {tr ? 'Kapat' : 'Close'}
+            </button>
+          }
+        >
           <div className="text-center">
             <img
               src={`/api/restaurants/${restaurantId}/loyalty/qr?member=${newCard.id}`}
               alt={tr ? 'Kart bağlantısının QR kodu' : 'QR code of the card link'}
               width={240}
               height={240}
-              className="mx-auto h-[240px] w-[240px]"
+              className="mx-auto h-auto w-full max-w-[240px]"
             />
-            <p className="mt-3 text-[13px] text-[#525252]">
+            <p className="mt-3 text-[13px] leading-relaxed text-[#525252]">
               {tr
-                ? `Müşteri bu QR’ı telefonuyla okutup kartını kaydetsin. Kart kodu: ${formatMemberCode(newCard.code)}`
-                : `Ask the customer to scan this QR to save their card. Card code: ${formatMemberCode(newCard.code)}`}
+                ? 'Müşteri bu QR’ı telefonunun kamerasıyla okutsun; kartı telefonunda açılır. Kartı ana ekranına ekleyebilir.'
+                : 'Ask the customer to scan this QR with their phone camera; the card opens on their phone. They can add it to their home screen.'}
+            </p>
+            <p className="mt-2 text-[13px] text-[#525252]">
+              {tr ? 'Kart kodu' : 'Card code'}: <strong className="font-medium text-pn-ink">{formatMemberCode(newCard.code)}</strong>
+              <span className="block text-[12px] text-[#737373]">
+                {tr ? 'QR okutulamazsa üyeyi kasada bu kodla bulursunuz.' : 'If the QR cannot be scanned, find the member at the counter with this code.'}
+              </span>
             </p>
           </div>
         </Modal>

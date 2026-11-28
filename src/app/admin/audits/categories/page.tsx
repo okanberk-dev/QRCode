@@ -13,6 +13,7 @@ import {
   Field,
   Modal,
   PageHeader,
+  PulseSelect,
   useConfirmDialog,
 } from '@/components/ui';
 import { AUDIT_SECTORS, type AuditSector } from '@/lib/audits/types';
@@ -141,21 +142,24 @@ export default function AuditCategoriesPage() {
 
   function runSeed() {
     askConfirm({
-      title: 'Varsayılan içeriği yükle',
+      title: 'Varsayılan içerik yüklensin mi?',
       body: (
-        <div className="space-y-2 text-[13px] text-[#525252]">
+        <div className="space-y-2">
           <p>
-            Denetim Merkezi için <strong className="text-pn-ink">18 kategori</strong>,{' '}
-            <strong className="text-pn-ink">24 şablon</strong> ve{' '}
-            <strong className="text-pn-ink">~120 soru</strong> yüklenir veya güncellenir.
+            <strong className="font-medium text-pn-ink">18 kategori</strong>,{' '}
+            <strong className="font-medium text-pn-ink">24 şablon</strong> ve yaklaşık{' '}
+            <strong className="font-medium text-pn-ink">120 soru</strong> yüklenir. İşletmeler bu şablonları
+            hazır şablonlar listesinde görür.
           </p>
           <p>
-            Mevcut <em>slug</em> ile eşleşen kategoriler güncellenir; admin tarafından elle eklenen
-            kategoriler etkilenmez.
+            Daha önce yüklenen varsayılan içerik ilk haline döner: kategorilerin adı ve sırası, şablonların
+            açıklaması ve soruları sıfırlanır. Kendi eklediğin kategoriler ve şablonlar ile işletmelerin kendi
+            denetimleri etkilenmez.
           </p>
+          <p>Adını değiştirdiğin bir varsayılan şablona dokunulmaz; aslı listeye yeniden eklenir.</p>
         </div>
       ),
-      confirmLabel: 'Yükle',
+      confirmLabel: 'İçeriği yükle',
       cancelLabel: 'Vazgeç',
       onConfirm: async () => {
         setSeeding(true);
@@ -211,7 +215,7 @@ export default function AuditCategoriesPage() {
       });
       if (!res.ok) {
         if (res.status === 409) {
-          setFormError('Bu slug zaten kullanılıyor.');
+          setFormError('Bu kısa ad başka bir kategoride kullanılıyor. Farklı bir kısa ad yaz.');
           return;
         }
         const parsed = await parseAuditErrorResponse(res, 'tr');
@@ -231,9 +235,12 @@ export default function AuditCategoriesPage() {
 
   function handleDelete(cat: Category) {
     askConfirm({
-      title: 'Kategoriyi sil',
-      body: `"${cat.labelTr}" kategorisini silmek istediğine emin misin? Bu kategoride ${cat._count.templates} şablon var; şablonlar silinmez ama kategori bağı kopar.`,
-      confirmLabel: 'Sil',
+      title: `"${cat.labelTr}" silinsin mi?`,
+      body:
+        cat._count.templates > 0
+          ? `Kategori kalıcı olarak silinir. İçindeki ${cat._count.templates} şablon silinmez, kategorisiz kalır; sonra başka bir kategoriye bağlayabilirsin.`
+          : 'Bu kategoride şablon yok. Kategori kalıcı olarak silinir; gerekirse yeniden ekleyebilirsin.',
+      confirmLabel: 'Kategoriyi sil',
       cancelLabel: 'Vazgeç',
       variant: 'danger',
       onConfirm: async () => {
@@ -370,67 +377,14 @@ export default function AuditCategoriesPage() {
       {modalOpen && <Modal
         onClose={() => setModalOpen(false)}
         title={form.id ? 'Kategoriyi düzenle' : 'Yeni kategori'}
+        description={
+          form.id
+            ? 'Ad ve sıra değişikliği bu kategorideki şablonları silmez; işletmeler yeni adı görür.'
+            : 'Kategoriler hazır şablonları sektör ve konuya göre gruplar. İşletmeler adı kendi dilinde görür.'
+        }
         size={480}
-      >
-        <div className="space-y-3">
-          {formError && <AlertBanner kind="danger">{formError}</AlertBanner>}
-          <Field label="Slug" hint="URL-uyumlu, küçük harf + tire" required>
-            <input
-              className="bz-input"
-              value={form.slug}
-              disabled={Boolean(form.id)}
-              onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-              placeholder="ornek-kategori"
-            />
-          </Field>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Türkçe başlık" required>
-              <input
-                className="bz-input"
-                value={form.labelTr}
-                onChange={(e) => setForm((f) => ({ ...f, labelTr: e.target.value }))}
-              />
-            </Field>
-            <Field label="English label" required>
-              <input
-                className="bz-input"
-                value={form.labelEn}
-                onChange={(e) => setForm((f) => ({ ...f, labelEn: e.target.value }))}
-              />
-            </Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Sektör">
-              <select
-                className="bz-input"
-                value={form.sector}
-                onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value as AuditSector }))}
-              >
-                {AUDIT_SECTORS.map((s) => (
-                  <option key={s} value={s}>
-                    {SECTOR_LABEL[s]}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Sıralama">
-              <input
-                className="bz-input"
-                type="number"
-                value={form.order}
-                onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))}
-              />
-            </Field>
-          </div>
-          <Field label="İkon adı (opsiyonel)" hint="Örn. UserPlus. Boş bırakılabilir.">
-            <input
-              className="bz-input"
-              value={form.iconKey}
-              onChange={(e) => setForm((f) => ({ ...f, iconKey: e.target.value }))}
-              placeholder="UserPlus"
-            />
-          </Field>
-          <div className="flex justify-end gap-2 pt-2">
+        footer={
+          <>
             <button
               type="button"
               className="bz-btn-ghost"
@@ -445,9 +399,74 @@ export default function AuditCategoriesPage() {
               onClick={handleSave}
               disabled={saving}
             >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Kaydet
+              {saving ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Save size={14} aria-hidden="true" />
+              )}
+              {saving ? 'Kaydediliyor…' : form.id ? 'Değişiklikleri kaydet' : 'Kategoriyi ekle'}
             </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          {formError && <AlertBanner kind="danger">{formError}</AlertBanner>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Türkçe ad" required>
+              <input
+                className="bz-input"
+                value={form.labelTr}
+                onChange={(e) => setForm((f) => ({ ...f, labelTr: e.target.value }))}
+                placeholder="Örn. Açılış kontrolü"
+              />
+            </Field>
+            <Field label="İngilizce ad" required>
+              <input
+                className="bz-input"
+                value={form.labelEn}
+                onChange={(e) => setForm((f) => ({ ...f, labelEn: e.target.value }))}
+                placeholder="Örn. Opening check"
+              />
+            </Field>
+          </div>
+          <Field
+            label="Kısa ad"
+            hint={
+              form.id
+                ? 'Kategori oluşturulduktan sonra değiştirilemez.'
+                : 'Küçük harf, rakam ve tire; boşluk ve Türkçe harf yok. Sonradan değiştirilemez.'
+            }
+            required
+          >
+            <input
+              className="bz-input"
+              value={form.slug}
+              disabled={Boolean(form.id)}
+              onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+              placeholder="acilis-kontrolu"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Sektör">
+              <PulseSelect
+                className="w-full"
+                value={form.sector}
+                onChange={(v) => setForm((f) => ({ ...f, sector: v as AuditSector }))}
+                options={AUDIT_SECTORS.map((s) => ({ value: s, label: SECTOR_LABEL[s] }))}
+              />
+            </Field>
+            <Field label="Sıra" hint="Küçük sayı listede önce görünür.">
+              <input
+                className="bz-input"
+                type="number"
+                inputMode="numeric"
+                value={form.order}
+                onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))}
+              />
+            </Field>
           </div>
         </div>
       </Modal>}

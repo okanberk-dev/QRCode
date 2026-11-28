@@ -175,7 +175,6 @@ export function CreateQRWizard({
   const [restaurantId, setRestaurantId] = useState(
     defaultRestaurantId || restaurants[0]?.id || "",
   );
-  const [name, setName] = useState("");
   const [tableNumber, setTableNumber] = useState("");
   const [linkType, setLinkType] = useState<"default" | "platform">("default");
   const [platform, setPlatform] = useState("google");
@@ -411,20 +410,22 @@ export function CreateQRWizard({
   // ─── Final submission ──────────────────────────────────────────────────
   const submit = useCallback(async () => {
     if (!restaurantId) {
-      setError(isTr ? "Lütfen bir işletme seçin." : "Please select a location.");
+      setError(isTr ? "Önce ilk adımdan bir işletme seç." : "Pick a location in the first step.");
       return;
     }
     if (!colorsValid) {
       setError(
-        isTr ? "Renk kodları geçersiz. #RRGGBB formatı kullan." : "Invalid colour code.",
+        isTr
+          ? "Renk kodu geçersiz. Renk adımına dönüp #RRGGBB biçiminde yaz (örn. #111110)."
+          : "Invalid colour code. Go back to the colour step and use the #RRGGBB format (e.g. #111110).",
       );
       return;
     }
     if (contrastRisky) {
       setError(
         isTr
-          ? "Renk kontrastı çok düşük — QR taranamayabilir."
-          : "Contrast too low — the QR may fail to scan.",
+          ? "Kod ile arka plan rengi birbirine çok yakın; QR okunmayabilir. Renk adımından daha koyu bir kod rengi seç."
+          : "The code and background colours are too close; the QR may not scan. Pick a darker code colour in the colour step.",
       );
       return;
     }
@@ -455,18 +456,18 @@ export function CreateQRWizard({
         // actionable than the bare "oluşturulamadı."
         const data = await res.json().catch(() => null);
         if (res.status === 401) {
-          setError(isTr ? "Oturumunuz sona erdi." : "Session expired.");
+          setError(isTr ? "Oturumun sona erdi. Yeniden giriş yapıp tekrar dene." : "Your session expired. Sign in again and retry.");
         } else if (res.status === 409) {
           setError(
             isTr
-              ? "Bu işletme pasif. Önce aktifleştirin."
-              : "This location is inactive. Activate it first.",
+              ? "Bu işletme duraklatılmış. QR oluşturmak için önce işletmeyi yeniden etkinleştir."
+              : "This location is paused. Reactivate it before creating a QR.",
           );
         } else if (res.status === 429) {
           setError(
             isTr
-              ? "Çok fazla istek. Lütfen biraz bekleyin."
-              : "Too many requests. Please wait.",
+              ? "Art arda çok fazla QR oluşturuldu. Bir dakika bekleyip yeniden dene."
+              : "Too many QR codes were created in a row. Wait a minute and try again.",
           );
         } else if (data?.error) {
           // Server-formatted message (includes Prisma code / sharp error
@@ -477,8 +478,8 @@ export function CreateQRWizard({
           // 5xx HTML). Surface the status code so ops can pivot to logs.
           setError(
             isTr
-              ? `QR oluşturulamadı (HTTP ${res.status}). Sayfayı yenileyip tekrar deneyin; sorun sürerse destek ile iletişime geçin.`
-              : `QR generation failed (HTTP ${res.status}). Refresh and retry; contact support if the issue persists.`,
+              ? `QR oluşturulamadı (hata kodu ${res.status}). Sayfayı yenileyip yeniden dene; sürerse bu kodla desteğe yaz.`
+              : `The QR could not be created (error code ${res.status}). Refresh the page and try again; if it keeps failing, send this code to support.`,
           );
         }
         return;
@@ -508,7 +509,9 @@ export function CreateQRWizard({
       onClose();
     } catch {
       setError(
-        isTr ? "Bağlantı hatası. İnternet bağlantınızı kontrol edin." : "Network error.",
+        isTr
+          ? "Bağlanılamadı. İnternet bağlantını kontrol edip yeniden dene."
+          : "Could not connect. Check your internet connection and try again.",
       );
     } finally {
       setSubmitting(false);
@@ -560,11 +563,13 @@ export function CreateQRWizard({
 
   return (
     <Modal
-      title={
-        <span className="inline-flex items-center gap-1.5">
-          <Wand2 size={14} strokeWidth={2.2} className="text-pn-ink" />
-          {isTr ? "QR sihirbazı" : "QR wizard"}
-        </span>
+      title={isTr ? "Yeni QR oluştur" : "Create a QR code"}
+      ariaLabel={isTr ? "Yeni QR oluştur" : "Create a QR code"}
+      icon={<Wand2 size={18} strokeWidth={2} />}
+      description={
+        isTr
+          ? "Müşteri bu QR'ı okutunca işletmenin puan verme sayfası açılır."
+          : "When a customer scans this QR, the business's rating page opens."
       }
       onClose={onClose}
       size={620}
@@ -577,10 +582,10 @@ export function CreateQRWizard({
             disabled={submitting}
           >
             {stepIndex === 0 ? (
-              isTr ? "İptal" : "Cancel"
+              isTr ? "Vazgeç" : "Cancel"
             ) : (
               <>
-                <ArrowLeft size={15} strokeWidth={2} />
+                <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
                 {isTr ? "Geri" : "Back"}
               </>
             )}
@@ -598,8 +603,8 @@ export function CreateQRWizard({
               }
               className={WIZARD_NEXT_CLASS}
             >
-              {isTr ? "Devam et" : "Continue"}
-              <ArrowRight size={15} strokeWidth={2} />
+              {isTr ? "İleri" : "Next"}
+              <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
             </button>
           ) : (
             <button
@@ -609,9 +614,9 @@ export function CreateQRWizard({
               className={WIZARD_NEXT_CLASS}
             >
               {submitting ? (
-                <Loader2 size={15} className="animate-spin" />
+                <Loader2 size={15} className="animate-spin" aria-hidden="true" />
               ) : (
-                <QrCode size={15} strokeWidth={2} />
+                <QrCode size={15} strokeWidth={2} aria-hidden="true" />
               )}
               {submitting
                 ? isTr
@@ -664,50 +669,40 @@ export function CreateQRWizard({
               </p>
             )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label={isTr ? "QR adı (opsiyonel)" : "QR name (optional)"}
-                hint={isTr ? "Sadece sen göreceksin" : "Internal label only"}
-              >
-                <input
-                  className="bz-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={isTr ? "Örn. Vitrin masası" : "e.g. Window seat"}
-                  maxLength={60}
-                />
-              </Field>
-              <Field
-                label={
-                  <span className="inline-flex items-center gap-1.5">
-                    <Hash size={11} strokeWidth={2.2} />
-                    {isTr ? "Masa numarası" : "Table number"}
-                  </span>
+            <Field
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <Hash size={12} strokeWidth={2.2} aria-hidden="true" />
+                  {isTr ? "Masa numarası (isteğe bağlı)" : "Table number (optional)"}
+                </span>
+              }
+              hint={
+                isTr
+                  ? "Yorumun hangi masadan geldiğini görürsün. Harf, rakam, - ve _ yazabilirsin (örn. A1, VIP-3)."
+                  : "Shows which table a review came from. Letters, digits, - and _ only (e.g. A1, VIP-3)."
+              }
+            >
+              <input
+                className="bz-input bz-mono"
+                value={tableNumber}
+                onChange={(e) =>
+                  setTableNumber(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))
                 }
-                hint={isTr ? "Boş bırakılabilir (örn. A1, VIP-3)" : "Optional (e.g. A1, VIP-3)"}
-              >
-                <input
-                  className="bz-input bz-mono"
-                  value={tableNumber}
-                  onChange={(e) =>
-                    setTableNumber(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))
-                  }
-                  placeholder={isTr ? "Boş bırakılabilir" : "Optional"}
-                  maxLength={20}
-                  inputMode="text"
-                  autoCapitalize="characters"
-                  autoCorrect="off"
-                  spellCheck={false}
-                />
-              </Field>
-            </div>
+                placeholder="A1"
+                maxLength={20}
+                inputMode="text"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </Field>
 
             <Field
               label={isTr ? "Yüksek puan yönlendirmesi" : "High-rating redirect"}
               hint={
                 isTr
-                  ? "Eşiğin altındaki puanlar önce işletmenize özel forma düşer."
-                  : "Ratings below your threshold go to your private form first."
+                  ? "Yüksek puan veren müşteriye hangi yorum sayfası açılsın? Eşiğin altında puan veren önce sana özel geri bildirim yazabilir."
+                  : "Which review page should open for a customer who gives a high rating? Below your threshold, they can write private feedback to you first."
               }
             >
               <div className="flex flex-col gap-2">
@@ -721,8 +716,8 @@ export function CreateQRWizard({
                   title={isTr ? "Varsayılan platforma gönder" : "Use default platform"}
                   description={
                     isTr
-                      ? "İşletme ayarlarındaki varsayılan platform kullanılır"
-                      : "Uses the default platform from business settings"
+                      ? "İşletme ayarlarındaki varsayılan platform kullanılır; ayarı değiştirirsen bu QR da değişir"
+                      : "Uses the default platform from business settings; change the setting and this QR follows"
                   }
                 />
                 <WizardChoice
@@ -735,8 +730,8 @@ export function CreateQRWizard({
                   title={isTr ? "Belirli bir platforma sabitle" : "Pin to specific platform"}
                   description={
                     isTr
-                      ? "Bu QR'ı tarayan müşteri yalnızca bu platforma yönlendirilir"
-                      : "Customer scanning this QR is sent only to this platform"
+                      ? "Bu QR'ı okutan müşteri her zaman seçtiğin platforma yönlendirilir"
+                      : "A customer scanning this QR is always sent to the platform you pick"
                   }
                 />
                 {linkType === "platform" && availablePlatforms.length > 0 && (
@@ -767,20 +762,20 @@ export function CreateQRWizard({
                   <div className="mt-1 rounded-[18px] border border-dashed border-pn-line-strong px-4 py-3.5 text-[13px] leading-relaxed text-[#525252]">
                     <p className="font-medium text-pn-ink">
                       {isTr
-                        ? "Bu işletme için yapılandırılmış platform yok."
-                        : "No platform configured for this location yet."}
+                        ? "Bu işletmeye henüz yorum platformu eklenmemiş."
+                        : "This location has no review platform yet."}
                     </p>
                     <p className="mt-1">
                       {isTr
-                        ? "Önce işletme ayarlarından en az bir platform URL'si ekleyin."
-                        : "Add at least one platform URL from the location settings first."}
+                        ? "Önce işletmeye en az bir platform linki ekle; sonra QR'ı o platforma sabitleyebilirsin. Sayfadan ayrılınca buradaki seçimlerin silinir."
+                        : "Add at least one platform link to the location first; then you can pin the QR to it. Leaving this page discards your choices here."}
                     </p>
                     <Link
                       href={`${panelBase}/restaurants/${activeRestaurant.id}`}
-                      className="mt-2.5 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-pn-accent-soft px-3.5 text-[13px] font-medium text-pn-accent transition-colors hover:bg-[#EAF9B8]"
+                      className="mt-2.5 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-pn-accent-soft px-4 text-[13px] font-medium text-pn-accent transition-colors hover:bg-[#EAF9B8]"
                     >
                       <Link2 size={12} />
-                      {isTr ? "Platform URL'lerini düzenle" : "Edit platform URLs"}
+                      {isTr ? "Platform linki ekle" : "Add a platform link"}
                     </Link>
                   </div>
                 )}
@@ -911,7 +906,7 @@ export function CreateQRWizard({
                   <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                     <label className="flex min-w-0 flex-col gap-1.5">
                       <span className="text-[13px] font-medium text-pn-ink">
-                        {isTr ? "Ön plan (modüller)" : "Foreground (modules)"}
+                        {isTr ? "Kod rengi" : "Code colour"}
                       </span>
                       <div className="flex items-center gap-2">
                         <input
@@ -922,7 +917,7 @@ export function CreateQRWizard({
                             // Native picker = custom palette intent.
                             if (presetId !== "custom") setPresetId("custom");
                           }}
-                          aria-label={isTr ? "Ön plan rengi" : "Foreground colour"}
+                          aria-label={isTr ? "Kod rengini seç" : "Pick the code colour"}
                           className="h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-full border border-pn-line bg-white p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
                         />
                         <input
@@ -933,6 +928,7 @@ export function CreateQRWizard({
                             if (presetId !== "custom") setPresetId("custom");
                           }}
                           placeholder="#000000"
+                          aria-label={isTr ? "Kod rengi (#RRGGBB)" : "Code colour (#RRGGBB)"}
                           maxLength={7}
                           spellCheck={false}
                           autoCapitalize="off"
@@ -954,7 +950,7 @@ export function CreateQRWizard({
                             setLight(e.target.value.toUpperCase());
                             if (presetId !== "custom") setPresetId("custom");
                           }}
-                          aria-label={isTr ? "Arka plan rengi" : "Background colour"}
+                          aria-label={isTr ? "Arka plan rengini seç" : "Pick the background colour"}
                           className="h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-full border border-pn-line bg-white p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
                         />
                         <input
@@ -965,6 +961,7 @@ export function CreateQRWizard({
                             if (presetId !== "custom") setPresetId("custom");
                           }}
                           placeholder="#FFFFFF"
+                          aria-label={isTr ? "Arka plan rengi (#RRGGBB)" : "Background colour (#RRGGBB)"}
                           maxLength={7}
                           spellCheck={false}
                           autoCapitalize="off"
@@ -977,8 +974,8 @@ export function CreateQRWizard({
                   </div>
                   <p className="mt-2.5 text-[12px] leading-[1.5] text-[#525252]">
                     {isTr
-                      ? "Renk kodunu doğrudan yazabilir veya sol kareye tıklayıp grafik seçici kullanabilirsin."
-                      : "Type the hex code directly or tap the swatch to use the graphical picker."}
+                      ? "Renk kodunu (#RRGGBB) yazabilir ya da soldaki daireye dokunup renk seçebilirsin. Koyu kod, açık arka plan en kolay okunur."
+                      : "Type the colour code (#RRGGBB) or tap the circle on the left to pick one. A dark code on a light background scans best."}
                   </p>
                 </div>
               )}
@@ -1009,7 +1006,7 @@ export function CreateQRWizard({
                       <span className="tabular-nums">{contrast.ratio.toFixed(2)}:1</span>
                       {contrast.level === "risky" && (
                         <span className="ml-1 text-[#991B1B]">
-                          {isTr ? "· Devam edemezsin" : "· Cannot proceed"}
+                          {isTr ? "· İlerlemek için daha koyu bir kod rengi seç" : "· Pick a darker code colour to continue"}
                         </span>
                       )}
                     </p>
@@ -1048,8 +1045,8 @@ export function CreateQRWizard({
               </div>
               <p className="text-center text-[12px] leading-[1.5] text-[#737373]">
                 {isTr
-                  ? "Sadece görsel önizleme. Gerçek QR oluşturulduğunda kaydedilir."
-                  : "Visual preview only. The real QR is saved on creation."}
+                  ? "Örnek önizleme; yalnız renkleri gösterir. QR son adımda kaydedilir."
+                  : "Sample preview; it only shows the colours. The QR is saved in the last step."}
               </p>
             </div>
           </div>
@@ -1084,8 +1081,8 @@ export function CreateQRWizard({
               </div>
               <p className="text-center text-[13px] leading-[1.55] text-[#737373]">
                 {isTr
-                  ? "Bu, oluşturulacak QR'ın görsel önizlemesidir. «QR oluştur»a basınca panelinde kayıtlı olur ve indirebilirsin."
-                  : "This is a preview of the QR. Press “Generate QR” to save it to your panel and download."}
+                  ? "Bu önizleme örnektir; ekran görüntüsünü yazdırma. «QR oluştur»a basınca QR listene eklenir, oradan indirip yazdırabilirsin."
+                  : "This preview is a sample; do not print a screenshot of it. Press “Generate QR” to add it to your QR list, then download and print it from there."}
               </p>
             </div>
 
@@ -1141,18 +1138,10 @@ export function CreateQRWizard({
                   </span>
                 }
               />
-              {name.trim() && (
-                <WizardSummaryRow
-                  tone="plain"
-                  icon={<QrCode size={16} strokeWidth={1.8} />}
-                  label={isTr ? "İç ad" : "Internal name"}
-                  value={<span className="truncate">{name.trim()}</span>}
-                />
-              )}
             </div>
 
             {error && (
-              <div className="rounded-[18px] bg-[#FDECEC] px-4 py-3 text-[13px] text-[#B42318]">
+              <div role="alert" className="rounded-[18px] bg-[#FDECEC] px-4 py-3 text-[13px] leading-relaxed text-[#B42318]">
                 {error}
               </div>
             )}

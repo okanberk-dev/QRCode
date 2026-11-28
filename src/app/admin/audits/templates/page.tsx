@@ -218,23 +218,24 @@ export default function AuditTemplatesPage() {
 
   function runSeed() {
     askConfirm({
-      title: 'Varsayılan içeriği yükle',
+      title: 'Varsayılan içerik yüklensin mi?',
       body: (
-        <div className="space-y-2 text-[13px] text-[#525252]">
+        <div className="space-y-2">
           <p>
-            Denetim Merkezi için <strong className="text-pn-ink">18 kategori</strong>,{' '}
-            <strong className="text-pn-ink">24 şablon</strong> ve{' '}
-            <strong className="text-pn-ink">~120 soru</strong> yüklenir veya güncellenir.
+            <strong className="font-medium text-pn-ink">18 kategori</strong>,{' '}
+            <strong className="font-medium text-pn-ink">24 şablon</strong> ve yaklaşık{' '}
+            <strong className="font-medium text-pn-ink">120 soru</strong> yüklenir. İşletmeler bu şablonları
+            hazır şablonlar listesinde görür.
           </p>
           <p>
-            Mevcut <em>title</em> değiştirilmemiş şablonlar güncellenir; manuel olarak başlık
-            değiştirdiğin satırlar dokunulmadan korunur — seed kendi orijinalini ayrı bir satır
-            olarak ekler.
+            Daha önce yüklenen varsayılan içerik ilk haline döner: kategorilerin adı ve sırası, şablonların
+            açıklaması ve soruları sıfırlanır. Kendi eklediğin kategoriler ve şablonlar ile işletmelerin kendi
+            denetimleri etkilenmez.
           </p>
-          <p className="text-[#737373]">İşlem birkaç saniye sürer. Operatör trafiğini etkilemez.</p>
+          <p>Adını değiştirdiğin bir varsayılan şablona dokunulmaz; aslı listeye yeniden eklenir.</p>
         </div>
       ),
-      confirmLabel: 'Yükle',
+      confirmLabel: 'İçeriği yükle',
       cancelLabel: 'Vazgeç',
       onConfirm: async () => {
         setSeeding(true);

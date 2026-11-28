@@ -114,27 +114,58 @@ export default function NfcDialog({
               ? 'Telefonunuzun arkasını etikete yaklaştırın.'
               : 'Hold the back of your phone to the tag.';
 
+  // One line under the status: what the tap does and what to do next.
+  const help =
+    phase === 'waiting' && !(mode === 'write' && !url)
+      ? mode === 'read'
+        ? tr
+          ? 'Müşterinin NFC anahtarlığı ya da kartı okununca üye kasada açılır.'
+          : 'When the customer’s NFC fob or card is read, the member opens at the counter.'
+        : target === 'tag'
+          ? tr
+            ? 'Etikete katılım bağlantısı yazılır; müşteri telefonunu dokundurunca katılım sayfası açılır. Etiketteki eski bağlantı silinir.'
+            : 'The join link is written to the tag; a customer taps their phone to open the join page. Any link already on the tag is replaced.'
+          : tr
+            ? 'Anahtarlığa bu müşterinin kart bağlantısı yazılır. Anahtarlıktaki eski bağlantı silinir.'
+            : 'This customer’s card link is written to the fob. Any link already on the fob is replaced.'
+      : phase === 'done' && mode === 'write' && canLock && !locked
+        ? tr
+          ? 'İsterseniz şimdi kilitleyin: bağlantı bir daha değiştirilemez. Kilit geri alınamaz.'
+          : 'You can lock it now: the link can never be changed again. Locking cannot be undone.'
+        : null;
+
   return (
     <Modal
       onClose={onClose}
       title={title}
       size={420}
       footer={
-        <div className="flex flex-wrap justify-end gap-2">
-          {phase === 'error' && (
-            <button type="button" className="bz-btn-ghost" onClick={retry}>
-              {written && lock ? (tr ? 'Kilitlemeyi tekrar dene' : 'Retry locking') : tr ? 'Tekrar dene' : 'Try again'}
-            </button>
-          )}
+        <>
           {phase === 'done' && mode === 'write' && canLock && !locked && (
-            <button type="button" className="bz-btn-ghost inline-flex items-center gap-1.5" onClick={lockNow}>
-              <Lock size={14} aria-hidden="true" /> {tr ? 'Şimdi kilitle' : 'Lock it now'}
+            <button type="button" className="bz-btn-ghost inline-flex items-center justify-center gap-1.5" onClick={lockNow}>
+              <Lock size={14} aria-hidden="true" />{' '}
+              {target === 'fob' ? (tr ? 'Anahtarlığı kilitle' : 'Lock the fob') : tr ? 'Etiketi kilitle' : 'Lock the tag'}
             </button>
           )}
-          <button type="button" className="bz-btn-primary" onClick={onClose}>
-            {phase === 'done' ? (tr ? 'Tamam' : 'Done') : tr ? 'Kapat' : 'Close'}
+          <button type="button" className={phase === 'done' ? 'bz-btn-primary' : 'bz-btn-ghost'} onClick={onClose}>
+            {phase === 'waiting' || phase === 'locking' ? (tr ? 'Vazgeç' : 'Cancel') : tr ? 'Kapat' : 'Close'}
           </button>
-        </div>
+          {phase === 'error' && (
+            <button type="button" className="bz-btn-primary" onClick={retry}>
+              {written && lock
+                ? tr
+                  ? 'Kilitlemeyi tekrar dene'
+                  : 'Retry locking'
+                : mode === 'read'
+                  ? tr
+                    ? 'Yeniden okut'
+                    : 'Read again'
+                  : tr
+                    ? 'Yeniden yaz'
+                    : 'Write again'}
+            </button>
+          )}
+        </>
       }
     >
       <div className="flex flex-col items-center py-4 text-center">
@@ -146,11 +177,12 @@ export default function NfcDialog({
         <p className="mt-4 text-[15px] font-medium text-pn-ink" role="status" aria-live="polite">
           {message}
         </p>
+        {help && <p className="mt-1.5 max-w-[320px] text-[13px] leading-relaxed text-[#525252]">{help}</p>}
         {mode === 'write' && url && phase === 'waiting' && (
           <p className="mt-2 max-w-full break-all text-[12px] text-[#737373]">{url}</p>
         )}
         {canLock && phase === 'waiting' && (
-          <label className="mt-4 flex w-full cursor-pointer items-start gap-2.5 rounded-[18px] bg-[#F6F6F6] p-3 text-left">
+          <label className="mt-4 flex min-h-11 w-full cursor-pointer items-start gap-2.5 rounded-[18px] bg-pn-canvas p-3 text-left">
             <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink" checked={lock} onChange={(e) => setLock(e.target.checked)} />
             <span className="text-[13px] leading-relaxed text-[#404040]">
               <strong className="text-pn-ink">{tr ? 'Yazdıktan sonra kilitle' : 'Lock after writing'}</strong>{' '}

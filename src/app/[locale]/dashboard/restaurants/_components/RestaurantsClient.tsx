@@ -163,7 +163,7 @@ export default function RestaurantsClient({
         subtitle: isTeamMember
           ? 'Sahibin sana atadığı lokasyonlar. Erişimin bu listeyle sınırlıdır.'
           : 'Tüm şubelerini tek tabloda izle; bir işletmeye geçmek için "Panele geç"e bas.',
-        add: 'Yeni İşletme',
+        add: 'Yeni işletme',
         emptyTitle: isTeamMember ? 'Henüz lokasyon atanmamış' : 'Henüz işletme yok',
         emptyText: isTeamMember
           ? 'İşletme sahibinden bir lokasyon yetkisi bekliyorsun. Atama yapıldığında burada görünür.'
@@ -190,7 +190,7 @@ export default function RestaurantsClient({
         subtitle: isTeamMember
           ? 'Locations assigned to you by the owner. Your access is scoped to this list.'
           : 'Watch every branch in one table; press "Open dashboard" to switch to a business.',
-        add: 'New Business',
+        add: 'New business',
         emptyTitle: isTeamMember ? 'No locations assigned yet' : 'No business yet',
         emptyText: isTeamMember
           ? 'Waiting for the owner to grant access to a location. Assignments appear here.'
@@ -299,11 +299,12 @@ export default function RestaurantsClient({
   const publicBase =
     envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : 'https://www.buaze.com';
   const attentionCount = totals.needsAttention;
+  const pausedCount = totals.businesses - totals.active;
   const statusTabs: TabItem[] = [
     { id: 'active', label: copy.active, count: totals.active },
     { id: 'attention', label: copy.attention, count: attentionCount },
     { id: 'all', label: copy.all, count: totals.businesses },
-    { id: 'passive', label: copy.inactive, count: totals.businesses - totals.active },
+    { id: 'passive', label: copy.inactive, count: pausedCount },
   ];
   const number = (value: number) => value.toLocaleString(collatorLocale);
 
@@ -336,7 +337,7 @@ export default function RestaurantsClient({
     return (
       <Link
         href={href}
-        className="inline-flex items-center gap-2.5 rounded-full px-1 py-0.5 text-[13px] text-[#525252] transition-colors hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
+        className="relative inline-flex items-center gap-2.5 rounded-full px-1 py-0.5 text-[13px] text-[#525252] transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
         aria-label={
           isTr
             ? `${row.name} platform linkleri: ${connected} bağlı, ${issue} sorunlu, ${missing} eksik`
@@ -479,7 +480,7 @@ export default function RestaurantsClient({
           <span className="truncate">{categoryLabel(restaurant.category)}</span>
           <span aria-hidden="true">·</span>
           <span className="truncate tabular-nums text-[12px]">/r/{restaurant.slug}</span>
-          <CopyUrlButton url={`${publicBase}/r/${restaurant.slug}`} locale={locale} className="!h-6 !w-6 shrink-0" />
+          <CopyUrlButton url={`${publicBase}/r/${restaurant.slug}`} locale={locale} className="relative !h-6 !w-6 shrink-0 after:absolute after:-inset-2.5 after:content-['']" />
         </span>
         {reasonsLine(row)}
       </div>
@@ -487,7 +488,7 @@ export default function RestaurantsClient({
   );
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-2.5 px-4 sm:px-6 py-6 lg:py-8">
       <PageHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -517,27 +518,51 @@ export default function RestaurantsClient({
 
       {rows.length > 0 && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {/* Every card carries a grey caption line, so the four stay the
+              same height and no label has to squeeze the period in (the
+              "… · 30 gün" labels wrapped to two lines at 375px). */}
           <StatCard
             label={isTr ? 'Aktif işletme' : 'Active businesses'}
             value={`${number(totals.active)}/${number(totals.businesses)}`}
+            caption={
+              pausedCount > 0
+                ? isTr ? `${number(pausedCount)} devre dışı` : `${number(pausedCount)} disabled`
+                : isTr ? 'Hepsi açık' : 'All open'
+            }
             icon={<Store size={14} />}
+            isTr={isTr}
           />
           <StatCard
-            label={isTr ? 'Yorum · 30 gün' : 'Reviews · 30 days'}
+            label={isTr ? 'Yorum' : 'Reviews'}
             value={number(totals.reviews30d)}
+            caption={isTr ? 'Son 30 gün' : 'Last 30 days'}
             icon={<MessageSquareText size={14} />}
+            isTr={isTr}
           />
           <StatCard
-            label={isTr ? 'Ortalama puan · 30 gün' : 'Avg rating · 30 days'}
+            label={isTr ? 'Ortalama puan' : 'Average rating'}
             value={totals.avgRating30d === null ? '—' : totals.avgRating30d.toLocaleString(collatorLocale, { minimumFractionDigits: 1 })}
+            caption={isTr ? 'Son 30 gün' : 'Last 30 days'}
             icon={<Star size={14} />}
+            isTr={isTr}
           />
           <StatCard
             label={isTr ? 'Dikkat gereken' : 'Need a look'}
             value={number(attentionCount)}
-            delta={totals.unread > 0 ? (isTr ? `${number(totals.unread)} bekleyen düşük puan` : `${number(totals.unread)} low ratings waiting`) : undefined}
-            deltaKind="neutral"
+            caption={
+              totals.unread > 0
+                ? isTr ? `${number(totals.unread)} düşük puan bekliyor` : `${number(totals.unread)} low ratings waiting`
+                : attentionCount === 0
+                  ? isTr ? 'Her şey yolunda' : 'All good'
+                  : isTr ? 'Aktif işletmelerde' : 'Among active ones'
+            }
+            info={
+              isTr
+                ? 'Sorunlu ya da eksik platform linki, açılmamış düşük puan ya da 30 gündür yorum almayan aktif işletmelerin sayısı.'
+                : 'Active businesses with a broken or missing platform link, unopened low ratings, or no reviews in 30 days.'
+            }
             icon={<AlertTriangle size={14} />}
+            isTr={isTr}
           />
         </div>
       )}
@@ -695,7 +720,7 @@ export default function RestaurantsClient({
                       type="button"
                       onClick={() => openDashboard(row.id)}
                       disabled={!row.isActive}
-                      className="bz-btn-primary bz-btn-sm shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="bz-btn-primary bz-btn-sm min-h-[44px] shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {copy.open}
                     </button>

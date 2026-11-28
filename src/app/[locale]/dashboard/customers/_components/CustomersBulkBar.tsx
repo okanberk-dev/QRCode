@@ -165,11 +165,12 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
 
   function onArchiveClick() {
     askConfirm({
-      title: isTr ? 'Müşteri arşivle' : 'Archive customers',
+      title: isTr ? `${count} müşteri arşivlensin mi?` : `Archive ${count} customer${count === 1 ? '' : 's'}?`,
       body: isTr
-        ? `${count} müşteri arşivlenecek ve listeden gizlenecek. "Arşiv" düğmesiyle yeniden görebilirsin.`
-        : `Archive ${count} customer${count === 1 ? '' : 's'}? They'll be hidden from the list; use the "Archived" button to see them again.`,
-      confirmLabel: isTr ? 'Arşivle' : 'Archive',
+        ? 'Seçtiğin müşteriler listeden gizlenir; bilgileri ve yorumları silinmez. Müşterilere bildirim gitmez. "Arşiv" düğmesiyle görüp istediğin zaman geri alabilirsin.'
+        : 'The selected customers are hidden from the list; their details and feedback are kept. Customers are not notified. Use the "Archived" button to see them and restore them anytime.',
+      confirmLabel: isTr ? (count === 1 ? 'Müşteriyi arşivle' : 'Müşterileri arşivle') : count === 1 ? 'Archive customer' : 'Archive customers',
+      cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
       variant: 'default',
       onConfirm: async () => {
         setBusy('archive');
@@ -340,21 +341,41 @@ function SegmentPickerModal({
 }) {
   const [picked, setPicked] = useState<CustomerSegment>('loyal');
   return (
-    <Modal onClose={onClose} size={420} title={isTr ? 'Segmente ekle' : 'Set segment'}>
+    <Modal
+      onClose={onClose}
+      size={420}
+      title={isTr ? `${count} müşteriye segment ata` : `Set a segment for ${count} customer${count === 1 ? '' : 's'}`}
+      description={
+        isTr
+          ? 'Seçtiğin segment, sistemin kendiliğinden belirlediğinin yerine gösterilir. Müşterilere bildirim gitmez; sonradan aynı yoldan değiştirebilirsin.'
+          : 'The segment you pick is shown instead of the one worked out automatically. Customers are not notified; you can change it again the same way.'
+      }
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={busy} className="bz-btn-ghost">
+            {isTr ? 'Vazgeç' : 'Cancel'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onPick(picked)}
+            disabled={busy}
+            className="bz-btn-primary inline-flex items-center justify-center gap-1.5"
+          >
+            {busy && <Loader2 size={13} className="animate-spin" aria-hidden="true" />}
+            {busy ? (isTr ? 'Atanıyor…' : 'Setting…') : isTr ? 'Segmenti ata' : 'Set segment'}
+          </button>
+        </>
+      }
+    >
       <div className="space-y-3">
-        <p className="text-[13px] text-[#525252]">
-          {isTr
-            ? `${count} müşteri için manuel segment ataması yapılır. Otomatik segment yerine bu değer gösterilir.`
-            : `Manual segment for ${count} customer${count === 1 ? '' : 's'}. Replaces the auto-derived segment.`}
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div role="group" aria-label="Segment" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {SEGMENT_OPTIONS.map((opt) => (
             <button
               key={opt.key}
               type="button"
               onClick={() => setPicked(opt.key)}
               aria-pressed={picked === opt.key}
-              className={`min-h-[44px] rounded-[14px] border px-3 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:min-h-[36px] ${
+              className={`min-h-[44px] rounded-[14px] border px-3 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${
                 picked === opt.key
                   ? 'border-pn-accent bg-pn-accent text-white'
                   : 'border-pn-line bg-white text-[#525252] hover:border-[#A3A3A3]'
@@ -363,25 +384,6 @@ function SegmentPickerModal({
               {isTr ? opt.tr : opt.en}
             </button>
           ))}
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={busy}
-            className="bz-btn-ghost"
-          >
-            {isTr ? 'Vazgeç' : 'Cancel'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onPick(picked)}
-            disabled={busy}
-            className="bz-btn-primary inline-flex items-center gap-1.5"
-          >
-            {busy && <Loader2 size={13} className="animate-spin" />}
-            {isTr ? 'Uygula' : 'Apply'}
-          </button>
         </div>
       </div>
     </Modal>

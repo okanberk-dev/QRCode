@@ -95,7 +95,12 @@ export function FeedbackFiltersModal({
 
   return (
     <Modal
-      title={isTr ? 'Filtreler' : 'Filters'}
+      title={isTr ? 'Yorumları filtrele' : 'Filter reviews'}
+      description={
+        isTr
+          ? 'Seçtiklerin listeye anında uygulanır.'
+          : 'Your choices apply to the list right away.'
+      }
       onClose={onClose}
       size={460}
       footer={
@@ -103,11 +108,11 @@ export function FeedbackFiltersModal({
           {hasActiveFilter && (
             <button type="button" onClick={onResetFilters} className="bz-btn-ghost">
               <RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
-              {isTr ? 'Temizle' : 'Clear'}
+              {isTr ? 'Filtreleri temizle' : 'Clear filters'}
             </button>
           )}
           <button type="button" onClick={onClose} className="bz-btn-primary">
-            {isTr ? 'Bitti' : 'Done'}
+            {isTr ? 'Sonuçları göster' : 'Show results'}
           </button>
         </>
       }
@@ -131,7 +136,7 @@ export function FeedbackFiltersModal({
         {/* State — reply + flag toggles (server-side filters). */}
         <div className="space-y-1.5">
           <span className="block text-[13px] font-medium text-[#737373]">
-            {isTr ? 'Durum' : 'State'}
+            {isTr ? 'Durum' : 'Status'}
           </span>
           <div className="flex flex-wrap gap-2">
             <button
@@ -156,16 +161,18 @@ export function FeedbackFiltersModal({
                 onClick={() => setRedirectsOnly(!redirectsOnly)}
                 className={`${redirectsOnly ? 'bz-btn-lime' : 'bz-btn'} sm:min-h-10 sm:px-4 sm:text-[13px]`}
                 aria-pressed={Boolean(redirectsOnly)}
-                title={
-                  isTr
-                    ? 'Yüksek puanla platforma yönlendirilen müşteriler (metin yok)'
-                    : 'Customers sent to a platform with a high rating (no text)'
-                }
               >
                 {isTr ? 'Yönlendirmeler' : 'Redirects'}
               </button>
             )}
           </div>
+          {setRedirectsOnly && (
+            <p className="text-[12px] leading-relaxed text-[#737373]">
+              {isTr
+                ? 'Yönlendirmeler: yüksek puan verip yorum platformuna gönderilen müşteriler. Yorum metni olmaz.'
+                : 'Redirects: customers who gave a high rating and were sent to a review platform. There is no review text.'}
+            </p>
+          )}
         </div>
       </div>
     </Modal>

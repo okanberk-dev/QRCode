@@ -286,48 +286,40 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
 
       {customOpen && (
         <Modal
-          title={isTr ? 'Özel tarih aralığı' : 'Custom date range'}
-          ariaLabel={isTr ? 'Özel tarih aralığı' : 'Custom date range'}
+          title={isTr ? 'Özel tarih aralığı seç' : 'Pick a custom date range'}
+          ariaLabel={isTr ? 'Özel tarih aralığı seç' : 'Pick a custom date range'}
+          description={
+            isTr
+              ? `Analitik yalnız bu iki tarih arasını gösterir. En fazla ${MAX_CUSTOM_DAYS} gün seçebilirsin.`
+              : `Analytics shows only the days between these two dates. You can pick up to ${MAX_CUSTOM_DAYS} days.`
+          }
           onClose={() => setCustomOpen(false)}
           size={420}
           footer={
-            <div className="flex w-full items-center justify-between gap-3">
-              {range === 'custom' ? (
-                <button type="button" onClick={clearCustom} className="bz-btn-ghost text-[12px]">
-                  {isTr ? 'Temizle' : 'Clear'}
+            <>
+              {range === 'custom' && (
+                <button type="button" onClick={clearCustom} className="bz-btn-ghost sm:mr-auto">
+                  {isTr ? 'Aralığı kaldır' : 'Remove range'}
                 </button>
-              ) : (
-                <span />
               )}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCustomOpen(false)}
-                  className="bz-btn-ghost text-[12px]"
-                >
-                  {isTr ? 'Vazgeç' : 'Cancel'}
-                </button>
-                <button
-                  type="button"
-                  onClick={applyCustom}
-                  disabled={!canApply}
-                  className="bz-btn-primary text-[12px] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isTr ? 'Uygula' : 'Apply'}
-                </button>
-              </div>
-            </div>
+              <button type="button" onClick={() => setCustomOpen(false)} className="bz-btn-ghost">
+                {isTr ? 'Vazgeç' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={applyCustom}
+                disabled={!canApply}
+                className="bz-btn-primary disabled:cursor-not-allowed"
+              >
+                {isTr ? 'Aralığı uygula' : 'Apply range'}
+              </button>
+            </>
           }
         >
-          <p className="mb-4 text-[13px] text-[#737373]">
-            {isTr
-              ? `Başlangıç ve bitiş tarihini seç (en fazla ${MAX_CUSTOM_DAYS} gün).`
-              : `Pick a start and end date (up to ${MAX_CUSTOM_DAYS} days).`}
-          </p>
           <div className="flex flex-col gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-[12px] font-medium text-[#525252]">
-                {isTr ? 'Başlangıç' : 'Start'}
+              <span className="text-[14px] font-medium text-pn-ink">
+                {isTr ? 'Başlangıç tarihi' : 'Start date'}
               </span>
               <input
                 type="date"
@@ -338,8 +330,8 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-[12px] font-medium text-[#525252]">
-                {isTr ? 'Bitiş' : 'End'}
+              <span className="text-[14px] font-medium text-pn-ink">
+                {isTr ? 'Bitiş tarihi' : 'End date'}
               </span>
               <input
                 type="date"
@@ -354,7 +346,7 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
                 <span
                   id="analytics-custom-range-error"
                   role="alert"
-                  className="text-[12px] text-[#DC2626]"
+                  className="text-[13px] text-[#D92D20]"
                 >
                   {draftError}
                 </span>

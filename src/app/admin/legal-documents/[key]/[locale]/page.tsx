@@ -10,7 +10,6 @@ import {
   RotateCcw,
   Save,
   Trash2,
-  X,
 } from 'lucide-react';
 import {
   AlertBanner,
@@ -170,7 +169,7 @@ export default function LegalDocumentEditorPage({
 
   const onResetToDefault = () => {
     if (!defaults && !doc) return;
-    if (!confirm('Düzenlenen değişiklikler kaybolacak. Varsayılan içeriği yüklemek istediğine emin misin?')) return;
+    if (!confirm('Varsayılan metin yüklensin mi? Kaydetmediğin değişiklikler silinir. Kaydet\'e basana kadar sitedeki metin değişmez.')) return;
     if (defaults) {
       setTitle(defaults.title);
       setContent(defaults.content);
@@ -223,7 +222,7 @@ export default function LegalDocumentEditorPage({
   };
 
   const onRevert = async (revisionId: string) => {
-    if (!confirm('Bu sürüme geri dönmek istediğine emin misin? Yeni bir versiyon eklenecek.')) return;
+    if (!confirm('Bu sürüme dönülsün mü? Seçtiğin metin yeni bir sürüm olarak kaydedilir; hiçbir sürüm silinmez.')) return;
     setReverting(revisionId);
     try {
       const res = await fetch(
@@ -454,112 +453,118 @@ export default function LegalDocumentEditorPage({
       )}
 
       {showPreview && (
-        <Modal onClose={() => setShowPreview(false)} size="lg">
-          <div className="flex items-center justify-between border-b border-pn-line px-5 py-3">
-            <h3 className="bz-h-tight text-[15px]">Ön izleme — {title}</h3>
-            <button
-              type="button"
-              className="bz-btn-icon"
-              onClick={() => setShowPreview(false)}
-              aria-label="Kapat"
-            >
-              <X size={16} />
+        <Modal
+          onClose={() => setShowPreview(false)}
+          size={760}
+          title={`Önizleme: ${title || 'Hukuki metin'}`}
+          description="Ziyaretçiler metni böyle görür. Kaydedene kadar sitede eski sürüm kalır."
+          footer={
+            <button type="button" className="bz-btn" onClick={() => setShowPreview(false)}>
+              Kapat
             </button>
-          </div>
-          <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
-            <article className="prose-legal">{previewBlocks}</article>
-          </div>
+          }
+        >
+          <article className="prose-legal">{previewBlocks}</article>
         </Modal>
       )}
 
       {showHistory && (
-        <Modal onClose={() => setShowHistory(false)} size="lg">
-          <div className="flex items-center justify-between border-b border-pn-line px-5 py-3">
-            <h3 className="bz-h-tight text-[15px]">Versiyon geçmişi</h3>
-            <button
-              type="button"
-              className="bz-btn-icon"
-              onClick={() => setShowHistory(false)}
-              aria-label="Kapat"
-            >
-              <X size={16} />
+        <Modal
+          onClose={() => setShowHistory(false)}
+          size={640}
+          title="Sürüm geçmişi"
+          description="Bir sürüme dönersen o metin yeni bir sürüm olarak kaydedilir. Hiçbir sürüm silinmez."
+          footer={
+            <button type="button" className="bz-btn" onClick={() => setShowHistory(false)}>
+              Kapat
             </button>
-          </div>
-          <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
-            {revisionsLoading ? (
-              <div className="flex items-center gap-2 text-[#737373]">
-                <Loader2 size={18} className="animate-spin" />
-                Yükleniyor...
-              </div>
-            ) : !revisions || revisions.length === 0 ? (
-              <p className="text-[13px] text-[#737373]">Henüz geçmiş yok.</p>
-            ) : (
-              <ul className="divide-y divide-pn-line">
-                {revisions.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge kind="lime">v{r.version}</Badge>
-                        <Badge kind={EDIT_TYPE_KIND[r.editType] ?? 'ghost'}>
-                          {EDIT_TYPE_LABEL[r.editType] ?? r.editType}
-                        </Badge>
-                      </div>
-                      <div className="mt-1 truncate text-[13px] text-pn-ink">{r.title}</div>
-                      <div className="mt-0.5 text-[12px] text-[#737373]">
-                        {new Date(r.createdAt).toLocaleString('tr-TR')}
-                        {r.editor && ` · ${r.editor.username}`}
-                      </div>
+          }
+        >
+          {revisionsLoading ? (
+            <div className="flex items-center gap-2 py-3 text-[13px] text-[#737373]" role="status">
+              <Loader2 size={18} className="animate-spin" />
+              Sürümler yükleniyor…
+            </div>
+          ) : !revisions ? (
+            <p className="py-3 text-[13px] leading-[1.5] text-[#737373]">
+              Sürümler yüklenemedi. Pencereyi kapatıp yeniden aç.
+            </p>
+          ) : revisions.length === 0 ? (
+            <p className="py-3 text-[13px] leading-[1.5] text-[#737373]">
+              Henüz kayıtlı sürüm yok. Belgeyi ilk kez kaydettiğinde burada görünür.
+            </p>
+          ) : (
+            <ul className="divide-y divide-pn-line">
+              {revisions.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge kind="lime">v{r.version}</Badge>
+                      <Badge kind={EDIT_TYPE_KIND[r.editType] ?? 'ghost'}>
+                        {EDIT_TYPE_LABEL[r.editType] ?? r.editType}
+                      </Badge>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => onRevert(r.id)}
-                      disabled={reverting === r.id}
-                      className="bz-btn-ghost shrink-0"
-                    >
-                      {reverting === r.id ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <RotateCcw size={14} />
-                      )}
-                      Bu sürüme dön
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    <div className="mt-1 truncate text-[13px] text-pn-ink">{r.title}</div>
+                    <div className="mt-0.5 text-[12px] text-[#737373]">
+                      {new Date(r.createdAt).toLocaleString('tr-TR')}
+                      {r.editor && ` · ${r.editor.username}`}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRevert(r.id)}
+                    disabled={reverting === r.id}
+                    className="bz-btn-ghost shrink-0 self-start sm:self-auto"
+                  >
+                    {reverting === r.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <RotateCcw size={14} />
+                    )}
+                    Bu sürüme dön
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </Modal>
       )}
 
       {showDelete && (
-        <Modal onClose={() => !deleting && setShowDelete(false)} size="sm">
-          <div className="px-5 py-4">
-            <h3 className="bz-h-tight text-[15px]">Belgeyi sil?</h3>
-            <p className="mt-2 text-[13px] leading-[1.6] text-[#525252]">
-              Bu işlem belgeyi siler ve public surface&apos;lerde kod default&apos;una düşürür.
-              Versiyon geçmişi audit için korunur. Geri almak için &quot;Geçmiş&quot; üzerinden eski
-              sürüme dönebilirsin.
-            </p>
-            <div className="mt-4 flex items-center justify-end gap-2">
+        <Modal
+          onClose={() => !deleting && setShowDelete(false)}
+          size={440}
+          title="Belge silinsin mi?"
+          footer={
+            <>
               <button
                 type="button"
-                className="bz-btn-ghost"
+                className="bz-btn"
                 onClick={() => setShowDelete(false)}
                 disabled={deleting}
               >
-                İptal
+                Vazgeç
               </button>
               <button
                 type="button"
                 onClick={onDelete}
                 disabled={deleting}
-                className="bz-btn-primary bg-[#991B1B] hover:bg-[#7f1414]"
+                className="bz-btn-danger"
               >
                 {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                Sil
+                {deleting ? 'Siliniyor…' : 'Belgeyi sil'}
               </button>
-            </div>
-          </div>
+            </>
+          }
+        >
+          <p className="text-[14px] leading-[1.55] text-[#525252]">
+            <strong className="font-medium text-pn-ink">{title || 'Bu belge'}</strong> silinir; sitede
+            yerine varsayılan metin gösterilir. Sürüm geçmişi saklanır, &quot;Geçmiş&quot;ten
+            eski bir sürüme dönebilirsin.
+          </p>
         </Modal>
       )}
     </div>

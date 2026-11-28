@@ -402,43 +402,57 @@ export default function AdminApiPage() {
         <Modal
           size={440}
           onClose={() => setShowKey(false)}
-          title={
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-pn-ink" />
-              <span>{isTr ? 'Yeni API anahtarı' : 'New API key'}</span>
-            </div>
+          title={isTr ? 'Yeni API anahtarı oluştur' : 'Create an API key'}
+          description={
+            isTr
+              ? 'Anahtar yalnız yorumları okuyabilir; hiçbir şeyi değiştiremez. Oluşturulunca bir kez gösterilir, hemen kopyala.'
+              : 'The key can only read reviews; it cannot change anything. It is shown once after you create it, so copy it right away.'
+          }
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setShowKey(false)}
+                className="bz-btn"
+              >
+                {isTr ? 'Vazgeç' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={onCreate}
+                disabled={creatingKey || !newKeyName.trim()}
+                className="bz-btn-primary"
+              >
+                {creatingKey ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+                {creatingKey
+                  ? isTr
+                    ? 'Oluşturuluyor…'
+                    : 'Creating…'
+                  : isTr
+                    ? 'Anahtarı oluştur'
+                    : 'Create key'}
+              </button>
+            </>
           }
         >
           <label className="block">
-            <span className="text-[13px] font-medium text-[#737373]">{isTr ? 'AÇIKLAMA' : 'LABEL'}</span>
+            <span className="mb-2 block text-[14px] font-medium leading-[1.3] text-pn-ink">
+              {isTr ? 'Anahtarın adı' : 'Key name'}
+              <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>
+            </span>
+            <span className="mb-2 block text-[13px] leading-[1.45] text-[#737373]">
+              {isTr
+                ? 'Nerede kullanacağını yaz; listede bu adla görünür.'
+                : 'Say where you will use it; the list shows this name.'}
+            </span>
             <input
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder={isTr ? 'örn. Retool prod dashboard' : 'e.g. Retool prod dashboard'}
-              className="mt-1 w-full rounded-[14px] border border-pn-line bg-white px-3 py-2 text-[13px] outline-none focus:border-pn-ink"
+              placeholder={isTr ? 'örn. Raporlama aracı' : 'e.g. Reporting tool'}
+              aria-required="true"
+              className="bz-input w-full"
             />
           </label>
-          <p className="mt-3 text-[12px] text-[#737373]">
-            {isTr
-              ? 'Yeni anahtarlar yalnızca yorumları okuma yetkisiyle oluşturulur (feedback:read).'
-              : 'New keys are created with read-only access to reviews (feedback:read).'}
-          </p>
-          <div className="mt-5 flex items-center justify-end gap-2">
-            <button
-              onClick={() => setShowKey(false)}
-              className="bz-btn"
-            >
-              {isTr ? 'İptal' : 'Cancel'}
-            </button>
-            <button
-              onClick={onCreate}
-              disabled={creatingKey || !newKeyName.trim()}
-              className="bz-btn-lime disabled:opacity-40"
-            >
-              {creatingKey ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-              {isTr ? 'Oluştur' : 'Create'}
-            </button>
-          </div>
         </Modal>
       )}
     </div>

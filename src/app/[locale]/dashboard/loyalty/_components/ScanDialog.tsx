@@ -143,7 +143,16 @@ export default function ScanDialog({
   }, [supported]);
 
   return (
-    <Modal title={tr ? 'Kartı okut' : 'Scan the card'} onClose={onClose} size={420}>
+    <Modal
+      title={tr ? 'Kart QR’ını okut' : 'Scan the card QR'}
+      onClose={onClose}
+      size={420}
+      footer={
+        <button type="button" className="bz-btn-ghost" onClick={onClose}>
+          {!supported || denied ? (tr ? 'Kapat' : 'Close') : tr ? 'Vazgeç' : 'Cancel'}
+        </button>
+      }
+    >
       {!supported || denied ? (
         <ScanHelp locale={locale} denied={denied} />
       ) : (
@@ -167,7 +176,7 @@ export default function ScanDialog({
                     className="bzl-scan-sweep absolute inset-x-0 top-0 h-full"
                     style={{
                       background:
-                        'linear-gradient(180deg, rgba(166, 143, 235, 0) 0%, rgba(166, 143, 235, 0) 62%, rgba(166, 143, 235, 0.3) 94%, #C6F24E 100%)',
+                        'linear-gradient(180deg, rgba(198, 242, 78, 0) 0%, rgba(198, 242, 78, 0) 62%, rgba(198, 242, 78, 0.3) 94%, #C6F24E 100%)',
                     }}
                   />
                 </span>
@@ -194,15 +203,22 @@ export default function ScanDialog({
               </>
             )}
           </div>
-          <p className="mt-3 text-[13px] text-[#525252]" role="status" aria-live="polite">
+          <p className="mt-3 text-[14px] font-medium text-pn-ink" role="status" aria-live="polite">
             {found
               ? tr
-                ? 'Kart okundu.'
-                : 'Card read.'
+                ? 'Kart okundu, üye aranıyor…'
+                : 'Card read, finding the member…'
               : tr
                 ? 'Müşterinin telefonundaki kart QR’ını çerçeveye getirin.'
                 : 'Hold the QR on the customer’s phone inside the frame.'}
           </p>
+          {!found && (
+            <p className="mt-1 text-[13px] leading-relaxed text-[#737373]">
+              {tr
+                ? 'Okununca üye kendiliğinden açılır. Okutamazsanız kartın altındaki 6 haneli kodu arama kutusuna yazın.'
+                : 'The member opens by itself once the QR is read. If it will not scan, type the 6-character code under the card into the search box.'}
+            </p>
+          )}
         </div>
       )}
     </Modal>
@@ -220,10 +236,10 @@ function ScanHelp({ locale, denied }: { locale: 'tr' | 'en'; denied: boolean }) 
             ? 'Kameraya izin verilmedi. Tarayıcı ayarlarından kamera iznini açabilir ya da aşağıdaki yollardan birini kullanabilirsiniz.'
             : 'Camera access was denied. Allow it in the browser settings, or use one of the ways below.'
           : tr
-            ? 'Bu tarayıcı kameraya erişemiyor.'
-            : 'This browser cannot open the camera.'}
+            ? 'Bu tarayıcı kamerayı açamıyor. Kartı aşağıdaki iki yoldan biriyle bulabilirsiniz.'
+            : 'This browser cannot open the camera. You can find the card in one of the two ways below.'}
       </p>
-      <div className="flex gap-3 rounded-[18px] bg-[#F6F6F6] p-3">
+      <div className="flex gap-3 rounded-[18px] bg-pn-canvas p-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent text-white">
           <Camera size={17} aria-hidden="true" />
         </span>
@@ -234,7 +250,7 @@ function ScanHelp({ locale, denied }: { locale: 'tr' | 'en'; denied: boolean }) 
             : 'If you are signed in to the panel on this phone, the customer’s card opens straight in staff mode: add stamps and give rewards there.'}
         </p>
       </div>
-      <div className="flex gap-3 rounded-[18px] bg-[#F6F6F6] p-3">
+      <div className="flex gap-3 rounded-[18px] bg-pn-canvas p-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-white text-[#525252] ring-1 ring-pn-line">
           <Keyboard size={17} aria-hidden="true" />
         </span>

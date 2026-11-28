@@ -43,26 +43,41 @@ export default function TemplatePreviewModal({
 
   return (
     <Modal
-      title={isTr ? 'Önizleme' : 'Preview'}
+      title={isTr ? 'Hazır şablon önizlemesi' : 'Ready-made template preview'}
+      description={
+        canWrite
+          ? isTr
+            ? "'Şablonu kullan' bu şablonu olduğu gibi denetimlerine ekler, yayınlar ve paylaşım linkini hazırlar. Önce maddeleri değiştirmek için 'Kopyala ve düzenle'yi seç."
+            : "'Use template' adds this template to your audits as it is, publishes it and prepares the share link. To change the items first, choose 'Copy and edit'."
+          : isTr
+            ? 'Bu şablonu yalnız görüntüleyebilirsin. Kullanmak için işletmede düzenleme yetkisi gerekir.'
+            : 'You can only view this template. Using it needs edit access to the business.'
+      }
       onClose={onClose}
       size={600}
       footer={
         canWrite ? (
           <>
-            <Link href={copyEditHref} className="bz-btn-ghost min-h-11 sm:min-h-0">
+            <Link href={copyEditHref} className="bz-btn-ghost">
               {isTr ? 'Kopyala ve düzenle' : 'Copy and edit'}
             </Link>
             <button
               type="button"
-              className="bz-btn-primary min-h-11 sm:min-h-0"
+              className="bz-btn-primary"
               onClick={onUse}
               disabled={busy}
             >
               {busy && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-              {isTr ? 'Kullan' : 'Use'}
+              {busy
+                ? isTr ? 'Hazırlanıyor…' : 'Preparing…'
+                : isTr ? 'Şablonu kullan' : 'Use template'}
             </button>
           </>
-        ) : undefined
+        ) : (
+          <button type="button" className="bz-btn-ghost" onClick={onClose}>
+            {isTr ? 'Kapat' : 'Close'}
+          </button>
+        )
       }
     >
       <div className="space-y-4">
@@ -111,6 +126,7 @@ export default function TemplatePreviewModal({
             </p>
           )}
         </section>
+
       </div>
     </Modal>
   );

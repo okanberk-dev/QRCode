@@ -100,6 +100,9 @@ function AuditQuestionEditorBody({
   const typeLabel = isTr ? QUESTION_TYPE_LABEL_TR : QUESTION_TYPE_LABEL_EN;
   const [q, setQ] = useState<AuditQuestionDraft>(() => draft ?? defaultDraft());
   const [error, setError] = useState<string | null>(null);
+  // "Ekle" mi "düzenle" mi: taslak yoksa ya da metni boş açıldıysa yeni kayıttır
+  // (yalnız başlık ve düğme metni için; açılışta bir kez hesaplanır).
+  const [isNew] = useState(() => !draft || !(draft.prompt ?? '').trim());
   // Açılışta odaklanacak alan: metin boşsa metin; metin dolu + seçenekler boşsa
   // ilk seçenek ("Seçenekli" hızlı eklemesi). Mount'ta bir kez hesaplanır.
   const focusOptionsFirst = useRef(
@@ -233,14 +236,49 @@ function AuditQuestionEditorBody({
         ? 'Soru metni'
         : 'Question text';
 
+  const isItem = kind === 'checklist';
+  const dialogTitle = isItem
+    ? isNew
+      ? isTr ? 'Madde ekle' : 'Add item'
+      : isTr ? 'Maddeyi düzenle' : 'Edit item'
+    : isNew
+      ? t.audits_question_add
+      : t.audits_question_edit;
+  const saveLabel = isItem
+    ? isNew
+      ? isTr ? 'Maddeyi ekle' : 'Add item'
+      : isTr ? 'Maddeyi güncelle' : 'Update item'
+    : isNew
+      ? isTr ? 'Soruyu ekle' : 'Add question'
+      : isTr ? 'Soruyu güncelle' : 'Update question';
+
   return (
     <Modal
       onClose={onClose}
-      title={draft ? t.audits_question_edit : t.audits_question_add}
+      title={dialogTitle}
+      description={
+        isTr
+          ? 'Değişiklik listeye uygulanır; sayfadaki Kaydet düğmesine basınca kalıcı olur.'
+          : 'The change is applied to the list; it becomes permanent once you press Save on the page.'
+      }
       size={640}
+      footer={
+        // Hata, düğmelerin hemen üstünde: gövde kaydırılmış olsa da görünür kalır.
+        // Telefonda düğmeler alt alta (ana eylem üstte), 640px'ten itibaren sağda yan yana.
+        <div className="flex w-full flex-col gap-2">
+          {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" className="bz-btn-ghost w-full sm:w-auto" onClick={onClose}>
+              {isTr ? 'Vazgeç' : 'Cancel'}
+            </button>
+            <button type="button" className="bz-btn-primary w-full sm:w-auto" onClick={handleSave}>
+              <Save size={14} aria-hidden="true" /> {saveLabel}
+            </button>
+          </div>
+        </div>
+      }
     >
       <div className="space-y-3">
-        {error && <AlertBanner kind="danger">{error}</AlertBanner>}
         {locked && (
           <AlertBanner kind="info" icon={<Lock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />}>
             {lockedHint}
@@ -269,7 +307,15 @@ function AuditQuestionEditorBody({
           />
         </Field>
 
-        <Field label={isTr ? 'Açıklama (isteğe bağlı)' : 'Description (optional)'} htmlFor={`${idBase}-help`}>
+        <Field
+          label={isTr ? 'Açıklama (isteğe bağlı)' : 'Description (optional)'}
+          hint={
+            isTr
+              ? 'Dolduran kişi bunu metnin altında görür. Örn. neye bakılacağı.'
+              : 'The person filling it in sees this under the text. E.g. what to look at.'
+          }
+          htmlFor={`${idBase}-help`}
+        >
           <input
             id={`${idBase}-help`}
             className="bz-input"
@@ -285,7 +331,7 @@ function AuditQuestionEditorBody({
               {(q.options ?? []).map((opt, i) => (
                 <div key={i} className="flex gap-2 items-center">
                   <input
-                    className="bz-input flex-1"
+                    className="bz-input min-w-0 flex-1"
                     value={opt}
                     disabled={locked}
                     onChange={(e) => updateOption(i, e.target.value)}
@@ -301,12 +347,12 @@ function AuditQuestionEditorBody({
                     disabled={locked || (q.options ?? []).length <= 2}
                     aria-label={isTr ? 'Seçeneği sil' : 'Remove option'}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={14} aria-hidden="true" />
                   </button>
                 </div>
               ))}
               <button type="button" className="bz-btn-ghost" onClick={addOption} disabled={locked}>
-                <Plus size={14} /> {isTr ? 'Seçenek ekle' : 'Add option'}
+                <Plus size={14} aria-hidden="true" /> {isTr ? 'Seçenek ekle' : 'Add option'}
               </button>
             </div>
           </Field>
@@ -348,7 +394,7 @@ function AuditQuestionEditorBody({
                 disabled={locked}
                 onChange={(v) => setQ({ ...q, correctAnswer: v ? v : null })}
                 options={[
-                  { value: '', label: '—' },
+                  { value: '', label: isTr ? 'Seçilmedi (puana katılmaz)' : 'Not set (not scored)' },
                   ...effectiveOptions.map((opt) => ({ value: opt, label: opt })),
                 ]}
               />
@@ -403,7 +449,22 @@ function AuditQuestionEditorBody({
           </Field>
         )}
 
-        <Field label={t.audits_question_required}>
+        {q.type === 'file' && (
+          <p className="rounded-[16px] bg-pn-canvas px-3.5 py-3 text-[13px] leading-[1.5] text-[#525252]">
+            {isTr
+              ? 'Dolduran kişi telefonundan fotoğraf ekler. Fotoğraf kayıt içindir, puana katılmaz.'
+              : 'The person filling it in adds a photo from their phone. The photo is for the record and is not scored.'}
+          </p>
+        )}
+
+        <Field
+          label={t.audits_question_required}
+          hint={
+            isTr
+              ? 'Açıkken bu yanıtlanmadan denetim gönderilemez.'
+              : "When on, the audit can't be submitted without answering this."
+          }
+        >
           <APSwitch
             checked={q.isRequired}
             onChange={(v) => setQ({ ...q, isRequired: v })}
@@ -446,14 +507,6 @@ function AuditQuestionEditorBody({
           </div>
         </details>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" className="bz-btn-ghost" onClick={onClose}>
-            {isTr ? 'Vazgeç' : 'Cancel'}
-          </button>
-          <button type="button" className="bz-btn-primary" onClick={handleSave}>
-            <Save size={14} /> {isTr ? 'Kaydet' : 'Save'}
-          </button>
-        </div>
       </div>
     </Modal>
   );

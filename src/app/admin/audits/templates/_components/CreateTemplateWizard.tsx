@@ -98,11 +98,11 @@ const SCORING_LABEL: Record<AuditScoringMode, string> = {
 
 const SCORING_HINT: Record<AuditScoringMode, string> = {
   percentage:
-    'Toplam puan / max puan × 100. Çoğu kalite kontrol / kalibrasyon denetimi için uygun.',
+    'Puanlanan her soru eşit sayılır; sonuç 0-100 arası bir puandır. Çoğu kontrol listesi ve test için uygun.',
   weighted:
-    'Soru başına ağırlık (1-10) ile çarpılır. Kritik adımları öne çıkarmak için iyi seçim.',
+    'Her soru ağırlığı (1-10) kadar sayılır. Önemli adımları öne çıkarmak için.',
   pass_fail:
-    'Tek geçme eşiği. Doğru yanıt veren her soru tam puan, yanlış 0. Hızlı temel kontrol.',
+    'Hesap yüzde ile aynıdır; sonuç geçme puanına göre geçti ya da kaldı diye gösterilir. Aşağıya geçme puanı yaz.',
 };
 
 // Icon circle on each scoring choice (visual only).
@@ -113,9 +113,9 @@ const SCORING_ICON: Record<AuditScoringMode, React.ReactNode> = {
 };
 
 const STEPS = [
-  { label: 'Kimlik' },
+  { label: 'Temel bilgiler', short: 'Bilgiler' },
   { label: 'Sorular' },
-  { label: 'Puanlama & özet', short: 'Özet' },
+  { label: 'Puanlama ve özet', short: 'Özet' },
 ] as const;
 
 const QUICK_INPUT_ID = 'admin-template-quick';
@@ -154,7 +154,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
       if (check.ok) continue;
       out[q.clientKey] =
         check.field === 'prompt'
-          ? 'Soru metni boş olamaz.'
+          ? 'Soru metnini yaz ya da soruyu sil.'
           : 'En az 2 seçenek yaz. "Detay"dan ekleyebilirsin.';
     }
     return out;
@@ -188,7 +188,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
     if (next > step) {
       if (step <= 0 && !canContinueIdentity) {
         setStep(0);
-        setError('Başlık zorunlu.');
+        setError('Devam etmek için şablon adını yaz.');
         return;
       }
       if (step <= 1 && next > 1 && !questionsValid) {
@@ -218,7 +218,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
       return;
     }
     if (!canContinueScoring) {
-      setError('Geçme puanı 0-100 aralığında olmalı veya boş bırakılmalı.');
+      setError('Geçme puanına 0 ile 100 arasında bir sayı yaz ya da boş bırak.');
       return;
     }
     setError(null);
@@ -249,8 +249,8 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
       reset();
       onCreated(
         count > 0
-          ? `Şablon ${count} soruyla taslak olarak oluşturuldu. Detay ekranından yayınlayabilirsin.`
-          : 'Şablon oluşturuldu (taslak). Sorular eklendikten sonra yayınlayabilirsin.',
+          ? `Şablon ${count} soruyla taslak olarak oluşturuldu. İşletmeler görsün diye detay ekranından yayınla.`
+          : 'Şablon taslak olarak oluşturuldu. Detay ekranından soru ekleyip yayınlayabilirsin.',
       );
     } catch {
       setError('Bağlantı hatası');
@@ -266,8 +266,15 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
       size={760}
       onClose={handleClose}
       title="Yeni hazır şablon"
+      description="Taslak olarak oluşturulur; sen yayınlayana kadar işletmeler görmez."
       // Dışarı tıklama / ESC yazılanı sessizce silmesin.
       closeGuard={() => !submitting && (form.title.trim() !== '' || questions.length > 0)}
+      closeConfirm={{
+        title: 'Şablon oluşturulmadan kapatılsın mı?',
+        body: 'Yazdığın ad ve sorular silinir; şablon oluşturulmaz.',
+        confirm: 'Oluşturmadan kapat',
+        cancel: 'Vazgeç',
+      }}
     >
       <div className="space-y-5">
         <WizardSteps
@@ -292,11 +299,11 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
           <div className="space-y-4">
             <StepIntro
               icon={<ClipboardCheck size={18} strokeWidth={2} />}
-              title="Şablon kimliği"
-              body="Sektör, dil ve kategori şablonun işletme kataloğunda nasıl gruplandırılacağını belirler. Hepsi sonradan düzenlenebilir."
+              title="Temel bilgiler"
+              body="Ad, dil, sektör ve kategori şablonun hazır şablonlar listesinde nerede görüneceğini belirler. Hepsini sonradan değiştirebilirsin."
             />
 
-            <Field label="Başlık" required hint="İşletme sahibi şablon listesinde bu metni görür">
+            <Field label="Şablon adı" required hint="İşletmeler hazır şablonlar listesinde bu adı görür.">
               <input
                 className="bz-input text-[16px] sm:text-[14px]"
                 value={form.title}
@@ -307,7 +314,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                     goTo(1);
                   }
                 }}
-                placeholder="Örn. F&B yeni eleman temel quiz"
+                placeholder="Örn. Yeni garson temel bilgi testi"
                 autoFocus
                 enterKeyHint="next"
                 maxLength={120}
@@ -341,12 +348,12 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             </div>
 
             <Field
-              label="Kategori (opsiyonel)"
+              label="Kategori (isteğe bağlı)"
               htmlFor="admin-template-category"
               hint={
                 filteredCategories.length === 0
-                  ? 'Bu sektör için kategori yok. Kategoriler sayfasından ekleyebilirsin.'
-                  : 'Aynı sektör içinde alt-konu gruplaması (örn. "günlük checklist" / "eğitim quiz").'
+                  ? 'Bu sektörde kategori yok. Şimdilik boş bırak; Kategoriler sayfasından ekleyip şablona sonra bağlayabilirsin.'
+                  : 'Şablonu aynı sektördeki benzerleriyle gruplar. Örn. günlük kontrol, eğitim testi.'
               }
             >
               <PulseSelect
@@ -355,7 +362,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                 value={form.categoryId}
                 onChange={(v) => setForm((f) => ({ ...f, categoryId: v }))}
                 options={[
-                  { value: '', label: '— Yok —' },
+                  { value: '', label: 'Kategori yok' },
                   ...filteredCategories.map((c) => ({ value: c.id, label: c.labelTr })),
                 ]}
               />
@@ -369,7 +376,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             <StepIntro
               icon={<ListChecks size={18} strokeWidth={2} />}
               title="Sorular"
-              body='Soruyu yaz, Enter’a bas. Türü çipten seç; seçenekleri, doğru cevabı ve ağırlığı "Detay"dan ayarla. İstersen boş bırakıp sonra detay ekranından ekleyebilirsin.'
+              body='Soruyu yaz ve Enter’a bas; türünü kutunun altından seç. Seçenekleri, doğru cevabı ve ağırlığı "Detay"dan ayarla. Bu adımı boş geçip soruları sonra da ekleyebilirsin.'
             />
             <AuditQuestionList
               locale="tr"
@@ -390,11 +397,11 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             <StepIntro
               icon={<SlidersHorizontal size={18} strokeWidth={2} />}
               title="Puanlama ve özet"
-              body="Skor hesaplama biçimi ve geçme eşiği. Şablon yayına açıldığında işletmeye kopyalanan denetimlere aynen geçer."
+              body="Puanın nasıl hesaplanacağını ve geçme puanını seç. Bir işletme şablonu kullandığında bu ayarlar denetimine aynen geçer."
             />
 
-            <Field label="Puanlama modu">
-              <div role="radiogroup" aria-label="Puanlama modu" className="grid grid-cols-1 gap-2">
+            <Field label="Puanlama biçimi">
+              <div role="radiogroup" aria-label="Puanlama biçimi" className="grid grid-cols-1 gap-2">
                 {AUDIT_SCORING_MODES.map((mode) => {
                   const active = form.scoringMode === mode;
                   return (
@@ -417,8 +424,8 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[200px_minmax(0,1fr)]">
               <Field
                 label="Geçme puanı (0-100)"
-                error={passValid ? null : '0 ile 100 arasında olmalı.'}
-                hint="Boşsa yalnız skor görünür."
+                error={passValid ? null : '0 ile 100 arasında bir sayı yaz.'}
+                hint="Boş bırakırsan geçti / kaldı gösterilmez, yalnız puan görünür."
               >
                 <input
                   className="bz-input text-[16px] tabular-nums sm:text-[14px]"
@@ -428,10 +435,10 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                   onChange={(e) =>
                     setForm((f) => ({ ...f, passingScore: e.target.value.replace(/\D/g, '').slice(0, 3) }))
                   }
-                  placeholder="örn. 70"
+                  placeholder="Örn. 70"
                 />
               </Field>
-              <Field label="Açıklama (opsiyonel)" hint="İşletme sahibi şablon seçim ekranında görür.">
+              <Field label="Açıklama (isteğe bağlı)" hint="İşletmeler şablonu seçerken bu metni görür.">
                 <textarea
                   className="bz-input min-h-[92px] text-[16px] sm:text-[14px]"
                   value={form.description}
@@ -449,8 +456,8 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                 <WizardSummaryRow
                   tone="plain"
                   icon={<ClipboardCheck size={16} />}
-                  label="Başlık"
-                  value={form.title || 'Başlıksız şablon'}
+                  label="Şablon adı"
+                  value={form.title || 'Adsız şablon'}
                 />
                 <WizardSummaryRow
                   tone="plain"
@@ -466,13 +473,19 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                   tone="plain"
                   icon={<ListChecks size={16} />}
                   label="Sorular"
-                  value={filledQuestions > 0 ? `${kindLabel(kind, 'tr')} · ${itemsCount(filledQuestions, 'tr')}` : '—'}
+                  value={
+                    filledQuestions > 0
+                      ? `${kindLabel(kind, 'tr')} · ${itemsCount(filledQuestions, 'tr')}`
+                      : 'Henüz soru yok'
+                  }
                 />
                 <WizardSummaryRow
                   tone="plain"
                   icon={<Target size={16} />}
-                  label="Mod ve geçme"
-                  value={`${SCORING_LABEL[form.scoringMode]} · ${form.passingScore ? `≥ ${form.passingScore}` : '—'}`}
+                  label="Puanlama"
+                  value={`${SCORING_LABEL[form.scoringMode]} · ${
+                    form.passingScore ? `geçme puanı ${form.passingScore}` : 'geçme puanı yok'
+                  }`}
                 />
               </div>
             </div>
@@ -485,12 +498,12 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
               {filledQuestions > 0 ? (
                 <>
                   <strong>Taslak olarak oluşturulur.</strong> Detay ekranından kontrol edip
-                  &quot;Yayınla&quot; ile işletme sahiplerinin kataloğuna açabilirsin.
+                  &quot;Yayınla&quot; ile işletmelerin hazır şablonlar listesine açabilirsin.
                 </>
               ) : (
                 <>
-                  <strong>Henüz soru yok.</strong> Şablon taslak oluşur; yayınlamadan önce detay
-                  ekranından en az 1 soru ekle.
+                  <strong>Henüz soru yok.</strong> Şablon taslak olarak oluşturulur; yayınlamadan önce
+                  detay ekranından en az 1 soru ekle.
                 </>
               )}
             </p>
@@ -543,7 +556,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
               ) : (
                 <>
                   <Save size={15} strokeWidth={2} />
-                  Taslak olarak oluştur
+                  Taslağı oluştur
                 </>
               )}
             </button>

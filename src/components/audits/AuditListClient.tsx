@@ -311,11 +311,10 @@ export default function AuditListClient({
   }
 
   function askPause(row: OwnerAuditTemplateRow) {
-    const copy = pauseConfirmCopy(locale);
+    const copy = pauseConfirmCopy(locale, row.title);
     askConfirm({
       title: copy.title,
       body: copy.body,
-      variant: 'danger',
       confirmLabel: copy.confirm,
       cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
       onConfirm: async () => {
@@ -355,7 +354,7 @@ export default function AuditListClient({
 
   function askDelete(row: OwnerAuditTemplateRow) {
     const hasResponses = row._count.responses > 0;
-    const copy = deleteConfirmCopy(hasResponses, locale);
+    const copy = deleteConfirmCopy(hasResponses, locale, row.title);
     askConfirm({
       title: copy.title,
       body: copy.body,

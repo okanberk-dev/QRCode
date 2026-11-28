@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Copy, Loader2, MailCheck } from 'lucide-react';
-import { AlertBanner, Modal } from '@/components/ui';
+import { AlertBanner, Field, Modal } from '@/components/ui';
 
 interface MemberCreateModalProps {
   onClose: () => void;
@@ -16,10 +16,10 @@ interface InviteResult {
 }
 
 const ERROR_LABELS: Record<string, string> = {
-  invalid_email: 'Geçerli bir email adresi girin.',
-  invalid_name: 'İsim 200 karakteri aşamaz.',
-  email_taken: 'Bu email adresi zaten kayıtlı.',
-  forbidden: 'Yetkisiz erişim.',
+  invalid_email: 'Geçerli bir e-posta adresi yaz (ör. ad@isletme.com).',
+  invalid_name: 'Ad soyad en çok 200 karakter olabilir.',
+  email_taken: 'Bu e-posta adresiyle bir hesap zaten var. Listede arayıp o hesabı aç.',
+  forbidden: 'İşletme sahibi ekleme yetkin yok.',
 };
 
 export default function MemberCreateModal({ onClose, onCreated }: MemberCreateModalProps) {
@@ -43,7 +43,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(ERROR_LABELS[data.error] || data.error || 'Oluşturma başarısız.');
+        setError(ERROR_LABELS[data.error] || data.error || 'Hesap oluşturulamadı. Biraz sonra yeniden dene.');
       } else {
         setInvite({
           email: data.user.email,
@@ -52,12 +52,12 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
         });
         onCreated(
           data.invite?.mailSent
-            ? `Davet maili gönderildi: ${data.user.email}`
+            ? `Davet e-postası gönderildi: ${data.user.email}`
             : `İşletme sahibi oluşturuldu: ${data.user.email}`,
         );
       }
     } catch {
-      setError('Bağlantı hatası.');
+      setError('Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.');
     } finally {
       setSaving(false);
     }
@@ -81,51 +81,63 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
       // Guard accidental close while filling the invite form; once the invite
       // is created (result shown) closing is safe (CLAUDE.md §23.3).
       closeGuard={() => invite === null && (email.trim() !== '' || name.trim() !== '')}
+      closeConfirm={{
+        title: 'Davet gönderilmeden kapatılsın mı?',
+        body: 'Yazdığın bilgiler silinir, hesap oluşturulmaz.',
+        confirm: 'Pencereyi kapat',
+        cancel: 'Vazgeç',
+      }}
       title={
-        <div>
-          <p className="text-[13px] font-medium text-[#737373]">YENİ KAYIT</p>
-          <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
-            Yeni işletme sahibi
-          </h2>
-          <p className="mt-1 text-[12px] text-[#525252]">
-            Email + isim doldur; sistem davet maili gönderir.
-          </p>
-        </div>
+        invite
+          ? invite.mailSent
+            ? 'Davet gönderildi'
+            : 'Hesap oluşturuldu'
+          : 'İşletme sahibi davet et'
+      }
+      description={
+        invite
+          ? undefined
+          : 'Hesabı sen açarsın; kişi e-postasına gelen bağlantıyla kendi şifresini belirler. Bağlantı 30 dakika geçerlidir.'
       }
     >
       {invite ? (
         <div className="space-y-4">
-          <div className="flex items-start gap-2.5 rounded-[24px] border border-pn-accent-soft bg-pn-accent-soft/40 p-4">
-            <MailCheck size={18} className="text-pn-ink mt-0.5 shrink-0" strokeWidth={2} />
-            <div className="text-[13px] text-pn-ink">
-              <p className="font-medium">
-                {invite.mailSent ? 'Davet maili gönderildi' : 'Hesap oluşturuldu'}
-              </p>
-              <p className="mt-1 text-[#525252]">
-                {invite.mailSent
-                  ? `${invite.email} adresine 30 dk geçerli bir şifre belirleme linki gitti.`
-                  : `${invite.email} adresine mail gönderilemedi (env eksik olabilir). Aşağıdaki linki manuel ilet.`}
-              </p>
-            </div>
+          <div className="flex items-start gap-2.5 rounded-[20px] bg-pn-accent-soft p-4">
+            <MailCheck size={18} className="mt-0.5 shrink-0 text-pn-ink" strokeWidth={2} aria-hidden="true" />
+            <p className="min-w-0 break-words text-[13px] leading-[1.5] text-[#525252]">
+              {invite.mailSent ? (
+                <>
+                  <strong className="font-medium text-pn-ink">{invite.email}</strong> adresine şifre
+                  belirleme bağlantısı gitti. Kişi bağlantıya tıklayıp şifresini belirleyince panele girebilir.
+                </>
+              ) : (
+                <>
+                  Hesap açıldı ama <strong className="font-medium text-pn-ink">{invite.email}</strong>{' '}
+                  adresine e-posta gönderilemedi. Aşağıdaki bağlantıyı kopyalayıp kişiye kendin ilet.
+                </>
+              )}
+            </p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-[#737373]">Davet linki</label>
+          <div>
+            <label
+              htmlFor="member-invite-url"
+              className="mb-2 block text-[14px] font-medium leading-[1.3] text-pn-ink"
+            >
+              Davet bağlantısı
+            </label>
             <div className="flex items-center gap-2">
               <input
+                id="member-invite-url"
                 type="text"
                 value={invite.url}
                 readOnly
                 onFocus={(e) => e.target.select()}
-                className="bz-input flex-1 text-[12px]"
+                aria-describedby="member-invite-url-hint"
+                className="bz-input min-w-0 flex-1 text-[12px]"
                 style={{ fontFamily: 'var(--font-mono)' }}
               />
-              <button
-                type="button"
-                onClick={copyInvite}
-                className="bz-btn-ghost shrink-0"
-                title="Kopyala"
-              >
+              <button type="button" onClick={copyInvite} className="bz-btn-ghost shrink-0">
                 {copied ? (
                   <Check size={14} className="text-pn-accent-ink" strokeWidth={2} />
                 ) : (
@@ -134,17 +146,13 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
                 {copied ? 'Kopyalandı' : 'Kopyala'}
               </button>
             </div>
-            <p className="text-[12px] text-[#A3A3A3] leading-[1.55]">
-              Link 30 dakika geçerli. Süre dolarsa detay sayfasından yenisini gönderebilirsin.
+            <p id="member-invite-url-hint" className="mt-2 text-[13px] leading-[1.45] text-[#737373]">
+              Bağlantı 30 dakika geçerli. Süresi dolarsa hesabın detay sayfasından yenisini gönderebilirsin.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="bz-btn-primary w-full"
-          >
-            Tamam
+          <button type="button" onClick={onClose} className="bz-btn-primary w-full">
+            Kapat
           </button>
         </div>
       ) : (
@@ -155,8 +163,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
             </AlertBanner>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-[#737373]">Email *</label>
+          <Field label="E-posta" required>
             <input
               type="email"
               required
@@ -167,10 +174,9 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
               maxLength={256}
               className="bz-input w-full"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-[#737373]">İsim</label>
+          <Field label="Ad soyad" hint="Boş bırakabilirsin; kişi sonra kendi ekler.">
             <input
               type="text"
               value={name}
@@ -179,11 +185,10 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
               maxLength={200}
               className="bz-input w-full"
             />
-          </div>
+          </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-[13px] font-medium text-[#737373]">Plan</label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
+            <Field label="Plan">
               <select
                 value={plan}
                 onChange={(e) => setPlan(e.target.value as typeof plan)}
@@ -194,9 +199,8 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
                 <option value="yearly">Yıllık</option>
                 <option value="free">Ücretsiz</option>
               </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[13px] font-medium text-[#737373]">Panel dili</label>
+            </Field>
+            <Field label="Panel dili">
               <select
                 value={locale}
                 onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
@@ -205,22 +209,11 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
                 <option value="tr">Türkçe</option>
                 <option value="en">English</option>
               </select>
-            </div>
+            </Field>
           </div>
 
-          <div className="flex items-start gap-1.5 text-[12px] text-[#737373] leading-[1.55]">
-            <MailCheck size={12} className="mt-0.5 shrink-0" strokeWidth={2} />
-            <span>
-              Sistem random şifre üretir ve email&apos;e davet linki gönderir. Kullanıcı linkle kendi şifresini belirler. Link 30 dakika geçerli.
-            </span>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bz-btn-ghost flex-1"
-            >
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="bz-btn-ghost flex-1">
               Vazgeç
             </button>
             <button
@@ -232,9 +225,9 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
               {saving ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Check size={16} strokeWidth={2} />
+                <MailCheck size={16} strokeWidth={2} />
               )}
-              Oluştur ve davet gönder
+              {saving ? 'Gönderiliyor…' : 'Daveti gönder'}
             </button>
           </div>
         </div>

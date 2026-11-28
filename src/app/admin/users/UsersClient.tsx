@@ -71,6 +71,9 @@ async function fetchRestaurantOptions(): Promise<Restaurant[] | null> {
   return all.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 }
 
+const USER_FIELD_LABEL = 'mb-2 block text-[14px] font-medium leading-[1.3] text-pn-ink';
+const USER_FIELD_HINT = 'mt-1.5 text-[12px] leading-[1.45] text-[#737373]';
+
 export default function UsersClient({ initialUsers, initialRestaurants, initialTotal }: UsersClientProps) {
   const { locale } = useAdminTranslation();
   const isTr = locale !== 'en';
@@ -221,11 +224,11 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
     
     if (formData.role === 'manager' && !editingId) {
       if (!isNewRestaurant && !formData.restaurantId) {
-        setError('Lütfen mevcut bir restoran seçin veya yeni oluşturun.');
+        setError('Yöneticinin bağlanacağı işletmeyi seç ya da yeni işletme oluştur.');
         return;
       }
       if (isNewRestaurant && (!restaurantData.name || !restaurantData.slug)) {
-        setError('Yeni restoran için mekan adı ve URL zorunludur.');
+        setError('Yeni işletme için ad ve değerlendirme adresi yaz.');
         return;
       }
     }
@@ -249,7 +252,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
       const data = await res.json();
       
       if (!res.ok) {
-        setError(data.error || `Yönetici ${editingId ? 'güncellenemedi' : 'oluşturulamadı'}`);
+        setError(data.error || `Yönetici ${editingId ? 'güncellenemedi' : 'eklenemedi'}. Biraz sonra yeniden dene.`);
       } else {
         setShowModal(false);
         setEditingId(null);
@@ -260,7 +263,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
         fetchData();
       }
     } catch {
-      setError('Bağlantı hatası oluştu, lütfen tekrar deneyin.');
+      setError('Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.');
     }
     setIsSubmitting(false);
   };
@@ -270,22 +273,23 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
       const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) {
-        setPageNotice(data.error || 'Silme işlemi başarısız');
+        setPageNotice(data.error || 'Yönetici silinemedi. Biraz sonra yeniden dene.');
       } else {
         fetchData();
       }
     } catch (e) {
       console.error(e);
-      setPageNotice('Bağlantı hatası oluştu, lütfen tekrar deneyin.');
+      setPageNotice('Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.');
     }
   };
 
   const handleDelete = (id: string) => {
+    const target = users.find((u) => u.id === id);
     askConfirm({
-      title: 'Yöneticiyi sil?',
-      body: 'Bu yöneticinin erişimi geri alınamaz şekilde kapatılacak.',
-      confirmLabel: 'Sil',
-      cancelLabel: 'İptal',
+      title: target?.username ? `"${target.username}" yöneticisi silinsin mi?` : 'Yönetici silinsin mi?',
+      body: 'Hesap silinir ve bu kişi panele bir daha giremez. Geri alınamaz; gerekirse yeni hesap açarsın. İşletme ve yorum verileri etkilenmez.',
+      confirmLabel: 'Yöneticiyi sil',
+      cancelLabel: 'Vazgeç',
       variant: 'danger',
       onConfirm: () => doDelete(id),
     });
@@ -481,146 +485,185 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
         <Modal
           size={640}
           onClose={() => { setShowModal(false); setEditingId(null); setError(''); }}
-          title={
-            <div>
-              <p className="text-[13px] font-medium text-[#737373]">{editingId ? 'Düzenle' : 'Yeni kayıt'}</p>
-              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
-                {editingId ? 'Yöneticiyi düzenle' : 'Yeni yönetici ekle'}
-              </h2>
-              <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
-                {editingId
-                  ? 'Yönetici yetkilerini ve bilgilerini güncelleyin.'
-                  : 'Sisteme yeni bir Buaze yöneticisi veya restoran yöneticisi tanımlayın.'}
-              </p>
-            </div>
+          title={editingId ? 'Yöneticiyi düzenle' : 'Yeni yönetici ekle'}
+          description={
+            editingId
+              ? 'Şifreyi, kurtarma e-postasını ve yetki seviyesini değiştirebilirsin. Kullanıcı adı değişmez.'
+              : 'Buaze ekibinden biri ya da bir işletmenin yöneticisi için yönetim paneline giriş hesabı açarsın.'
           }
         >
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Kullanıcı Adı</label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="admin-user-username" className={USER_FIELD_LABEL}>
+                    Kullanıcı adı
+                    {!editingId && <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>}
+                  </label>
                   <input
+                    id="admin-user-username"
                     type="text"
                     required
                     disabled={!!editingId} // Kullanıcı adı değiştirilemez (Prisma unique constrain)
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase()})}
-                    className={`w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-[20px] border border-pn-line bg-[#FFFFFF] focus:ring-2 focus:ring-pn-accent outline-none text-[15px] font-medium transition-all ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
+                    aria-describedby="admin-user-username-hint"
+                    className="bz-input"
                   />
+                  <p id="admin-user-username-hint" className={USER_FIELD_HINT}>
+                    {editingId ? 'Kullanıcı adı değiştirilemez.' : 'Girişte kullanılır. 3-64 karakter; sonradan değiştirilemez.'}
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[12px] font-medium text-[#6B7280]  ml-1">
-                    {editingId ? 'Şifre (Değiştirmek için)' : 'Yeni Şifre'}
+                <div>
+                  <label htmlFor="admin-user-password" className={USER_FIELD_LABEL}>
+                    {editingId ? 'Yeni şifre' : 'Şifre'}
+                    {!editingId && <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>}
                   </label>
                   <input
+                    id="admin-user-password"
                     type="password"
                     required={!editingId}
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder={editingId ? 'Değişmeyecekse boş bırakın' : '••••••••'}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-[20px] border border-pn-line bg-[#FFFFFF] focus:ring-2 focus:ring-pn-accent outline-none text-[15px] font-medium transition-all placeholder:text-[13px] placeholder:font-medium"
+                    autoComplete="new-password"
+                    aria-describedby="admin-user-password-hint"
+                    className="bz-input"
                   />
+                  <p id="admin-user-password-hint" className={USER_FIELD_HINT}>
+                    {editingId
+                      ? 'Değiştirmeyeceksen boş bırak. En az 8 karakter; harf ve rakam içersin.'
+                      : 'En az 8 karakter; harf ve rakam içersin.'}
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[12px] font-medium text-[#6B7280] ml-1 flex items-center gap-1.5">
-                  <Mail size={11} strokeWidth={2} />
+              <div>
+                <label htmlFor="admin-user-email" className={USER_FIELD_LABEL}>
                   Kurtarma e-postası
-                  <span className="text-[12px] font-normal text-[#A3A3A3] normal-case">
-                    (şifremi unuttum için zorunlu)
-                  </span>
                 </label>
                 <input
+                  id="admin-user-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value.trim()})}
                   placeholder="ornek@buaze.com"
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-[20px] border border-pn-line bg-[#FFFFFF] focus:ring-2 focus:ring-pn-accent outline-none text-[15px] font-medium transition-all placeholder:text-[13px] placeholder:font-medium"
+                  aria-describedby="admin-user-email-hint"
+                  className="bz-input"
                 />
-                <p className="text-[12px] text-[#737373] ml-1 leading-[1.55]">
-                  Bu hesabın şifresini unuttuğunda kurtarma kodu bu adrese gider. Boş
-                  bırakılırsa kullanıcı kendi profilinden ekleyebilir.
+                <p id="admin-user-email-hint" className={USER_FIELD_HINT}>
+                  Şifresini unutursa kurtarma kodu bu adrese gider. Boş bırakırsan kişi şifresini
+                  kendi sıfırlayamaz; adresi sonra profilinden ekleyebilir.
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Sistem Yetki Seviyesi</label>
+              <div>
+                <label htmlFor="admin-user-role" className={USER_FIELD_LABEL}>
+                  Yetki seviyesi
+                </label>
                 <select
+                  id="admin-user-role"
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value, restaurantId: ''})}
-                  className="bz-input w-full cursor-pointer rounded-[20px] py-3.5 text-sm font-medium sm:py-4"
+                  className="bz-input cursor-pointer"
                 >
-                  <option value="manager">RESTORAN YÖNETİCİSİ</option>
-                  <option value="staff">GÖREVLİ (BUAZE — KISITLI)</option>
-                  <option value="superadmin">BUAZE YÖNETİCİSİ (SİSTEM GENELİ)</option>
+                  <option value="manager">Yönetici (tek bir işletme)</option>
+                  <option value="staff">Görevli (Buaze ekibi, kısıtlı)</option>
+                  <option value="superadmin">Superadmin (tüm sistem)</option>
                 </select>
                 {formData.role === 'staff' && (
-                  <p className="text-[12px] text-[#737373] ml-1 leading-[1.55]">
-                    Görevli hesabı varsayılan olarak sadece Dashboard + Profil görür.
-                    Kaydettikten sonra <span className="font-medium text-pn-ink">Yetkileri yönet</span>
-                    {' '}ile hangi bölümleri görüp düzenleyebileceğini tek tek seçin.
+                  <p className={USER_FIELD_HINT}>
+                    Görevli başlangıçta çok az bölüm görür. Kaydettikten sonra listedeki{' '}
+                    <span className="font-medium text-pn-ink">Yetkileri yönet</span> ile görebileceği
+                    ve düzenleyebileceği bölümleri seç.
+                  </p>
+                )}
+                {formData.role === 'superadmin' && (
+                  <p className={USER_FIELD_HINT}>
+                    Superadmin tüm işletmeleri, ödemeleri ve diğer yöneticileri görür ve değiştirebilir.
                   </p>
                 )}
               </div>
 
               {formData.role === 'manager' && (
-                <div className="bg-[#FFFFFF] rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 border border-pn-line space-y-4 sm:space-y-6 md:space-y-8">
-                  <div className="flex gap-4 p-2 bg-white border border-pn-line rounded-[20px]">
-                    <button
-                      type="button"
-                      disabled={!!editingId}
-                      onClick={() => setIsNewRestaurant(false)}
-                      className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${!isNewRestaurant ? 'bg-pn-accent text-white' : 'text-[#6B7280] hover:text-pn-ink disabled:opacity-50'}`}
+                <div className="space-y-4 rounded-[20px] bg-pn-canvas p-4 sm:p-5">
+                  <div>
+                    <p id="admin-user-business-mode" className={USER_FIELD_LABEL}>
+                      Hangi işletmeyi yönetecek?
+                    </p>
+                    <div
+                      role="group"
+                      aria-labelledby="admin-user-business-mode"
+                      className="flex gap-1.5 rounded-[18px] bg-white p-1.5"
                     >
-                      MEVCUT İŞLETME
-                    </button>
-                    {!editingId && (
                       <button
                         type="button"
-                        onClick={() => setIsNewRestaurant(true)}
-                        className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${isNewRestaurant ? 'bg-pn-accent text-white' : 'text-[#6B7280] hover:text-pn-ink'}`}
+                        disabled={!!editingId}
+                        aria-pressed={!isNewRestaurant}
+                        onClick={() => setIsNewRestaurant(false)}
+                        className={`min-h-11 flex-1 rounded-[14px] px-2 text-[13px] font-medium transition-colors ${!isNewRestaurant ? 'bg-pn-accent text-white' : 'text-[#737373] hover:text-pn-ink disabled:opacity-50'}`}
                       >
-                        YENİ OLUŞTUR
+                        Var olan işletme
                       </button>
-                    )}
+                      {!editingId && (
+                        <button
+                          type="button"
+                          aria-pressed={isNewRestaurant}
+                          onClick={() => setIsNewRestaurant(true)}
+                          className={`min-h-11 flex-1 rounded-[14px] px-2 text-[13px] font-medium transition-colors ${isNewRestaurant ? 'bg-pn-accent text-white' : 'text-[#737373] hover:text-pn-ink'}`}
+                        >
+                          Yeni işletme
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {!isNewRestaurant ? (
-                    <div className="space-y-2">
-                      <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Bağlı Olduğu İşletme</label>
+                    <div>
+                      <label htmlFor="admin-user-restaurant" className={USER_FIELD_LABEL}>
+                        İşletme
+                        <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>
+                      </label>
                       <select
+                        id="admin-user-restaurant"
                         required={!isNewRestaurant}
                         value={formData.restaurantId}
                         onChange={(e) => setFormData({...formData, restaurantId: e.target.value})}
-                        className="bz-input w-full cursor-pointer rounded-[20px] py-4 text-sm font-medium"
+                        className="bz-input cursor-pointer"
                       >
-                        <option value="">İŞLETME SEÇİN...</option>
+                        <option value="">İşletme seç</option>
                         {restaurants.map(r => (
-                          <option key={r.id} value={r.id}>{r.name.toUpperCase()}</option>
+                          <option key={r.id} value={r.id}>{r.name}</option>
                         ))}
                       </select>
+                      <p className={USER_FIELD_HINT}>Yönetici yalnız bu işletmenin verilerini görür.</p>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Yeni İşletme Adı *</label>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="admin-user-new-business" className={USER_FIELD_LABEL}>
+                          İşletme adı
+                          <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>
+                        </label>
                         <input
+                          id="admin-user-new-business"
                           type="text"
                           required={isNewRestaurant}
                           value={restaurantData.name}
                           onChange={(e) => handleNameChange(e.target.value)}
                           placeholder="Örn: Gourmet Eats Ankara"
-                          className="w-full px-5 py-4 rounded-[20px] border border-pn-line focus:ring-2 focus:ring-pn-accent bg-white outline-none text-sm font-medium"
+                          className="bz-input"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Sistem URL&apos;i (Otomatik) *</label>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-[#6B7280]">buaze.com/r/</span>
+                      <div>
+                        <label htmlFor="admin-user-new-slug" className={USER_FIELD_LABEL}>
+                          Değerlendirme adresi
+                          <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <span className="shrink-0 text-[13px] text-[#737373]">buaze.com/r/</span>
                           <input
+                            id="admin-user-new-slug"
                             type="text"
                             required={isNewRestaurant}
                             value={restaurantData.slug}
@@ -629,22 +672,27 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                               setIsManualSlug(true);
                             }}
                             placeholder="gourmet-eats"
-                            className="flex-1 px-5 py-4 rounded-[20px] border border-pn-line focus:ring-2 focus:ring-pn-accent bg-white outline-none text-sm font-medium tracking-tight"
+                            aria-describedby="admin-user-new-slug-hint"
+                            className="bz-input min-w-0 flex-1"
                           />
                         </div>
+                        <p id="admin-user-new-slug-hint" className={USER_FIELD_HINT}>
+                          Ada göre kendiliğinden dolar; istersen değiştir. Küçük harf, rakam ve tire kullan.
+                          Müşterilerin QR ile açtığı sayfanın adresidir.
+                        </p>
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 mt-2 border-t border-pn-line">
+              <div className="flex flex-col-reverse justify-end gap-2 border-t border-pn-line pt-4 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}
                   className="bz-btn-ghost"
                 >
-                  İptal
+                  Vazgeç
                 </button>
                 <button
                   type="submit"
@@ -658,7 +706,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                   ) : (
                     <Plus size={14} strokeWidth={2} />
                   )}
-                  {editingId ? 'Güncellemeyi kaydet' : 'Hesabı oluştur'}
+                  {isSubmitting ? 'Kaydediliyor…' : editingId ? 'Değişiklikleri kaydet' : 'Yöneticiyi ekle'}
                 </button>
               </div>
             </form>

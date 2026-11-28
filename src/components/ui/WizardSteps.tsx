@@ -3,17 +3,21 @@
 // Panel wizard kit (Pano, Fintora wizard style). One look for every
 // "sihirbaz" in the owner and admin panels:
 //
-//   • WizardSteps   — the stepper. From 640px a row of pills (number circle +
-//                     label); the current step is a black pill with a white
-//                     number circle, finished steps carry a black check,
-//                     upcoming steps are quiet white pills. On phones it folds
-//                     into "Adım 2 / 3 · Maddeler" with a thin segmented
-//                     progress bar (hatched remainder); the segments stay
-//                     tappable where `canSelect` allows.
+//   • WizardSteps   — the stepper. From 640px one capsule track (white on
+//                     the canvas, grey inside a card) holding every step: the
+//                     current step is a black pill with a lime number circle,
+//                     finished steps carry a lime check circle, upcoming
+//                     steps are quiet; chevrons sit between them and, below
+//                     1024px, only the current step shows its label. On
+//                     phones it folds into a "2 / 3" chip + the step name with
+//                     a segmented bar (done black, current lime, rest
+//                     hatched); the segments stay tappable where `canSelect`
+//                     allows.
 //   • WizardPanel   — the white step card: 20px title, one grey help line.
 //   • WizardChoice  — a choice row (grey, 16px corners, icon circle, title +
-//                     grey sub); the chosen one turns light green with a black
-//                     ring and a black check.
+//                     grey sub); the chosen one turns light lime with a black
+//                     ring, a black icon circle and a black check circle
+//                     (lime glyphs).
 //   • WizardSummaryRow — "what will be created" breakdown row.
 //   • WizardFooter  — the action bar: grey "Geri" pill left, black primary
 //                     pill right. Sticky at the bottom on phones (white,
@@ -22,7 +26,7 @@
 // Visual only: steps, validation and keyboard behaviour live in the callers.
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 
 export interface WizardStep {
   /** Full label. */
@@ -70,32 +74,31 @@ export function WizardSteps({
       : locale === 'tr'
         ? `Adım ${current + 1} / ${total}`
         : `${current + 1} / ${total}`;
-  const idle = surface === 'card' ? 'bg-[#F6F6F6]' : 'bg-white';
-  const idleHover = surface === 'card' ? 'hover:bg-[#EBEBEB]' : 'hover:bg-[#EDEDED]';
+  const track = surface === 'card' ? 'bg-[#F6F6F6]' : 'bg-white';
+  const idleHover = surface === 'card' ? 'hover:bg-white' : 'hover:bg-[#F6F6F6]';
   const idleCircle = surface === 'card' ? 'bg-white' : 'bg-[#F6F6F6]';
   const focus =
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2';
 
   return (
     <nav aria-label={ariaLabel} className={`min-w-0 ${className}`}>
-      {/* Phones: one line + segmented progress. */}
+      {/* Phones: counter chip + step name, then a segmented bar. */}
       <div className="sm:hidden">
-        <p className="flex min-w-0 items-baseline gap-1.5 text-[14px] leading-5">
-          <span className="shrink-0 font-medium tabular-nums text-pn-accent">{counter}</span>
-          <span aria-hidden="true" className="text-[#9A9A9A]">
-            ·
+        <p className="flex min-w-0 items-center gap-2 text-[14px] leading-5">
+          <span className="inline-flex h-7 shrink-0 items-center rounded-full bg-pn-ink px-2.5 text-[12px] font-medium tabular-nums text-[#C6F24E]">
+            {counter}
           </span>
           <span className="min-w-0 truncate font-medium text-pn-ink">{steps[current]?.label}</span>
         </p>
         <ol className="mt-2.5 flex gap-1.5">
           {steps.map((step, i) => {
             const active = i === current;
-            const filled = active || (!active && done(i));
+            const complete = !active && done(i);
             const bar = (
               <span
                 aria-hidden="true"
                 className={`block h-1.5 w-full rounded-full transition-colors duration-300 ${
-                  filled ? 'bg-pn-accent' : 'pn-hatch'
+                  active ? 'bg-[#C6F24E] shadow-[inset_0_0_0_1px_rgba(17,17,16,0.18)]' : complete ? 'bg-pn-ink' : 'pn-hatch'
                 }`}
               />
             );
@@ -126,35 +129,34 @@ export function WizardSteps({
         </ol>
       </div>
 
-      {/* 640px+: pill row. */}
-      <ol className="hidden flex-wrap items-center gap-2 sm:flex">
+      {/* 640px+: one capsule track. */}
+      <ol className={`hidden max-w-full items-center gap-0.5 rounded-full p-1.5 sm:inline-flex ${track}`}>
         {steps.map((step, i) => {
           const active = i === current;
           const complete = !active && done(i);
-          const tone = active
-            ? 'bg-pn-accent text-white'
-            : complete
-              ? `${idle} text-pn-ink`
-              : `${idle} text-[#737373]`;
+          const tone = active ? 'bg-pn-ink text-white' : complete ? 'text-pn-ink' : 'text-[#737373]';
           const circle = active
-            ? 'bg-white text-pn-accent'
+            ? 'bg-[#C6F24E] text-pn-ink'
             : complete
-              ? 'bg-pn-accent text-white'
+              ? 'bg-pn-ink text-[#C6F24E]'
               : `${idleCircle} text-[#737373]`;
           const body = (
             <>
               <span
                 aria-hidden="true"
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-medium tabular-nums ${circle}`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-medium tabular-nums transition-colors duration-200 ${circle}`}
               >
-                {complete ? <Check size={14} strokeWidth={2.4} /> : i + 1}
+                {complete ? <Check size={14} strokeWidth={2.6} /> : i + 1}
               </span>
-              <span className="min-w-0 truncate">{step.label}</span>
+              {/* Below 1024px only the current step keeps its name. */}
+              <span className={`min-w-0 truncate ${active ? '' : 'max-lg:sr-only'}`}>{step.label}</span>
             </>
           );
-          const pill = `inline-flex h-11 min-w-0 max-w-full items-center gap-2.5 rounded-full py-1 pl-2 pr-4 text-[14px] font-medium transition-[background-color,color,transform] duration-200 ${tone}`;
+          const pill = `inline-flex h-10 min-w-0 items-center gap-2 rounded-full py-1 pl-1.5 text-[14px] font-medium transition-[background-color,color,transform] duration-200 ${
+            active ? 'pr-4' : 'pr-1.5 lg:pr-3.5'
+          } ${tone}`;
           return (
-            <li key={i} className="flex min-w-0 items-center gap-2" aria-current={active ? 'step' : undefined}>
+            <li key={i} className="flex min-w-0 items-center gap-0.5" aria-current={active ? 'step' : undefined}>
               {clickable(i) ? (
                 <button
                   type="button"
@@ -166,7 +168,9 @@ export function WizardSteps({
               ) : (
                 <span className={pill}>{body}</span>
               )}
-              {i < total - 1 && <span aria-hidden="true" className="hidden h-px w-5 shrink-0 bg-[#DCDCDC] lg:block" />}
+              {i < total - 1 && (
+                <ChevronRight size={14} strokeWidth={2} aria-hidden="true" className="shrink-0 text-[#C4C4C4]" />
+              )}
             </li>
           );
         })}
@@ -220,7 +224,7 @@ export function WizardPanel({
             {icon && (
               <span
                 aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-[#C6F24E]"
               >
                 {icon}
               </span>
@@ -275,17 +279,17 @@ export function wizardChoiceClass(
 export function wizardChoiceIconClass(selected: boolean, tone: ChoiceTone = 'card'): string {
   const base =
     'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200';
-  if (selected) return `${base} bg-pn-accent text-white`;
+  if (selected) return `${base} bg-pn-ink text-[#C6F24E]`;
   return `${base} ${tone === 'plain' ? 'bg-white' : 'bg-white max-sm:bg-[#F6F6F6]'} text-pn-ink`;
 }
 
-/** Right-hand state mark: black check when chosen, empty ring otherwise. */
+/** Right-hand state mark: black circle with a lime check when chosen, empty ring otherwise. */
 export function WizardCheck({ selected, kind = 'radio' }: { selected: boolean; kind?: 'radio' | 'check' }) {
   if (selected) {
     return (
       <span
         aria-hidden="true"
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pn-ink text-[#C6F24E]"
       >
         <Check size={14} strokeWidth={2.6} />
       </span>
@@ -371,7 +375,7 @@ export function WizardSummaryRow({
       {icon && (
         <span
           aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-[#C6F24E]"
         >
           {icon}
         </span>
@@ -456,18 +460,18 @@ export function WizardStepsSkeleton({
   return (
     <div aria-hidden="true" className={className}>
       <div className="sm:hidden">
-        <div className="h-5 w-48 max-w-full rounded-full bg-pn-line" />
+        <div className="h-7 w-48 max-w-full rounded-full bg-pn-line" />
         <div className="mt-2.5 flex h-3 items-center gap-1.5">
           {Array.from({ length: count }).map((_, i) => (
             <div key={i} className="h-1.5 flex-1 rounded-full bg-pn-line" />
           ))}
         </div>
       </div>
-      <div className="hidden flex-wrap items-center gap-2 sm:flex">
+      <div className={`hidden items-center gap-1.5 rounded-full p-1.5 sm:inline-flex ${pill}`}>
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className={`flex h-11 w-36 items-center gap-2.5 rounded-full pl-2 pr-4 ${i === 0 ? 'bg-pn-line' : pill}`}>
+          <div key={i} className={`flex h-10 items-center gap-2 rounded-full pl-1.5 pr-3.5 ${i === 0 ? 'w-36 bg-pn-line' : 'w-10 lg:w-32'}`}>
             <div className={`h-7 w-7 shrink-0 rounded-full ${i === 0 ? 'bg-white' : 'bg-pn-line'}`} />
-            <div className={`h-3 flex-1 rounded-full ${i === 0 ? 'bg-white/70' : 'bg-pn-line'}`} />
+            <div className={`h-3 flex-1 rounded-full max-lg:hidden ${i === 0 ? 'bg-white/70' : 'bg-pn-line'}`} />
           </div>
         ))}
       </div>

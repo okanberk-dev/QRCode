@@ -428,17 +428,17 @@ export default function MemberActions({
 
       {confirmReward && (
         <Modal
-          title={tr ? 'Ödülü ver' : 'Give reward'}
+          title={tr ? `“${confirmReward.title}” verilsin mi?` : `Give “${confirmReward.title}”?`}
           onClose={() => setConfirmReward(null)}
           size={420}
           footer={
-            <div className="flex justify-end gap-2">
+            <>
               <button type="button" className="bz-btn-ghost" onClick={() => setConfirmReward(null)}>
                 {tr ? 'Vazgeç' : 'Cancel'}
               </button>
               <button
                 type="button"
-                className="bz-btn-lime"
+                className="bz-btn-primary"
                 disabled={busy !== null}
                 onClick={() => {
                   const r = confirmReward;
@@ -450,13 +450,18 @@ export default function MemberActions({
               >
                 {tr ? 'Ödülü ver' : 'Give reward'}
               </button>
-            </div>
+            </>
           }
         >
-          <p className="text-[14px] text-[#262626]">
+          <p className="text-[14px] leading-relaxed text-[#262626]">
             {tr
-              ? `${member.name || 'Üye'} için “${confirmReward.title}” verilecek ve bakiyeden ${confirmReward.cost} ${unitLabel(kind, confirmReward.cost, locale)} düşülecek.`
-              : `“${confirmReward.title}” will be given to ${member.name || 'the member'} and ${confirmReward.cost} ${unitLabel(kind, confirmReward.cost, locale)} taken from the balance.`}
+              ? `${member.name || 'Üye'} için bakiyeden ${confirmReward.cost} ${unitLabel(kind, confirmReward.cost, locale)} düşülür; ${Math.max(0, member.balance - confirmReward.cost)} ${unitLabel(kind, Math.max(0, member.balance - confirmReward.cost), locale)} kalır.`
+              : `${confirmReward.cost} ${unitLabel(kind, confirmReward.cost, locale)} will be taken from ${member.name || 'the member'}’s balance, leaving ${Math.max(0, member.balance - confirmReward.cost)} ${unitLabel(kind, Math.max(0, member.balance - confirmReward.cost), locale)}.`}
+          </p>
+          <p className="mt-2 text-[13px] leading-relaxed text-[#737373]">
+            {tr
+              ? 'Ödülü müşteriye teslim ederken onaylayın. Yanlışlıkla verilirse yönetici “Bakiyeyi düzelt” ile geri ekleyebilir.'
+              : 'Confirm as you hand the reward over. If it was given by mistake, a manager can add it back with “Correct the balance”.'}
           </p>
         </Modal>
       )}
@@ -473,19 +478,28 @@ export default function MemberActions({
       )}
 
       {showQr && (
-        <Modal title={tr ? 'Müşterinin kartı' : 'Customer card'} onClose={() => setShowQr(false)} size={380}>
+        <Modal
+          title={tr ? 'Müşterinin kart QR’ı' : 'Customer card QR'}
+          onClose={() => setShowQr(false)}
+          size={380}
+          footer={
+            <button type="button" className="bz-btn-primary" onClick={() => setShowQr(false)}>
+              {tr ? 'Kapat' : 'Close'}
+            </button>
+          }
+        >
           <div className="text-center">
             <img
               src={`/api/restaurants/${restaurantId}/loyalty/qr?member=${member.id}`}
               alt={tr ? 'Kart bağlantısının QR kodu' : 'QR code of the card link'}
               width={260}
               height={260}
-              className="mx-auto h-[260px] w-[260px]"
+              className="mx-auto h-auto w-full max-w-[260px]"
             />
-            <p className="mt-3 text-[13px] text-[#525252]">
+            <p className="mt-3 text-[13px] leading-relaxed text-[#525252]">
               {tr
-                ? 'Müşteri telefon kamerasıyla okutunca kartı açılır. Kart bağlantısını kendisinden başkası görmesin.'
-                : 'The customer scans it with their phone camera to open their card. Keep the link private to them.'}
+                ? `${member.name || 'Müşteri'} telefonunun kamerasıyla okutunca kartı açılır. Bu QR kartın anahtarıdır; yalnız kart sahibine gösterin.`
+                : `${member.name || 'The customer'} scans it with their phone camera to open the card. This QR is the key to the card; show it only to the card’s owner.`}
             </p>
           </div>
         </Modal>

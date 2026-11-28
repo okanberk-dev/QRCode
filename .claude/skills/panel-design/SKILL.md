@@ -1,6 +1,6 @@
 ---
 name: panel-design
-description: Buaze owner ve admin panellerinde (src/app/admin, src/app/[locale]/dashboard, src/components/{dashboard,admin,panel,ui}) yeni ekran, kart, buton, tablo, grafik ya da form yazarken veya mevcut bir panel ekranını düzenlerken kullan. "Pano" tasarım sisteminin (Fintora + lumin harmanı, siyah + yeşil + beyaz palet) renk tokenlarını, buton ailesini, kart yapısını, gezinme düzenini, hareket kurallarını ve yasaklarını verir.
+description: Buaze owner ve admin panellerinde (src/app/admin, src/app/[locale]/dashboard, src/components/{dashboard,admin,panel,ui}) yeni ekran, kart, buton, tablo, grafik ya da form yazarken veya mevcut bir panel ekranını düzenlerken kullan. "Pano" tasarım sisteminin (Fintora + lumin harmanı, siyah + Pulse lime + beyaz palet) renk tokenlarını, buton ailesini, kart yapısını, gezinme düzenini, hareket kurallarını ve yasaklarını verir.
 ---
 
 # Panel tasarımı — Pano
@@ -22,21 +22,21 @@ Bu dosya yazarken bakılacak kısa kural listesidir.
 | `text-pn-ink` | Metin `#111110` |
 | `bg-pn-accent text-white` | Siyah `#111110`: ana buton, aktif hap/sekme, ikon dairesi |
 | `hover:bg-pn-accent-hover` | Siyah hover / basılı `#2B2B2A` |
-| `bg-pn-accent-soft` | Açık yeşil `#F1FDF3`: seçili liste satırı, sakin not kutusu |
-| `bg-[#78FC90] text-pn-ink` | Yeşil vurgu: siyah üstündeki ikon dairesi, yeşil hap (`bz-btn-lime`), seçili çubuk |
-| `bg-pn-olive` | İkinci veri serisi (yeşil `#78FC90`) |
+| `bg-pn-accent-soft` | Açık lime `#F4FBDC`: seçili liste satırı, sakin not kutusu |
+| `bg-[#C6F24E] text-pn-ink` | Lime vurgu: siyah üstündeki ikon dairesi, lime hap (`bz-btn-lime`), seçili çubuk |
+| `bg-pn-olive` | İkinci veri serisi (lime `#C6F24E`) |
 | `border-pn-line` | Ayraç / input çerçevesi |
 | `text-[#737373]` / `text-[#9A9A9A]` | İkincil / soluk metin |
 
-`#C6F24E`, `#A8D62E`, `#EAF9B8`, `#D7FE03`, `pulse-eyebrow` yazma — `tests/pano-guard.test.ts` kırılır.
-Recharts'a hex gerekirse: siyah `#111110`, yeşil `#78FC90`, açık gri `#E0E0E0`.
+Eski vurgular (`#D7FE03`, `#78FC90`, `#5CF07A`, mor `#5D3EBC` ailesi) ve `pulse-eyebrow` yazma — `tests/pano-guard.test.ts` kırılır.
+Recharts'a hex gerekirse: siyah `#111110`, lime `#C6F24E`, açık gri `#E0E0E0`.
 Durum renkleri anlamını korur: olumlu `#23863A`, olumsuz `#D92D20`.
-Siyah zeminde yazı beyaz (vurgu ikonu yeşil); yeşil zeminde yazı siyah; beyaz zeminde yeşil yazı yok.
+Siyah zeminde yazı beyaz (vurgu ikonu lime); lime zeminde yazı siyah; beyaz zeminde lime yazı yok.
 Mor ya da başka marka rengini panel vurgusu yapma. Müşterinin seçtiği renkler (işletme rengi, menü vurgusu, sadakat kartı, QR, anket vurgusu) veridir, değiştirme.
 
 ## Buton seçimi
 - Ana eylem → `bz-btn-primary` (siyah hap, beyaz yazı). Sayfada en çok bir tane.
-- Siyah yüzey üstünde ya da basılı filtre → `bz-btn-lime` (yeşil hap, siyah yazı).
+- Siyah yüzey üstünde ya da basılı filtre → `bz-btn-lime` (lime hap, siyah yazı).
 - İkincil → `bz-btn` (tuvalde beyaz, kartta otomatik gri; çerçeve yok).
 - Yalnız ikon, kart içinde → `bz-btn-icon` (40 px, kartta gri).
 - Yalnız ikon, sayfa başlığında → `pn-icon-btn` (46 px beyaz daire).
@@ -50,7 +50,7 @@ Mor ya da başka marka rengini panel vurgusu yapma. Müşterinin seçtiği renkl
 - Sihirbaz → `WizardSteps` (+ `surface="card"` kart/pencere içinde, `locale`), adım başına tek beyaz kart, alt çubukta gri "Geri" + siyah ana hap.
 - Liste satırı → `pn-row` (gri, 16 px köşe) ya da tablo.
 - Seçim kartı (tema, şablon, durum) → beyaz kart; seçili olan 2 px siyah halka + `bg-pn-accent-soft`.
-- İlerleme → `ProgressBar` (varsayılan siyah dolgu); siyah yüzeyde yeşil.
+- İlerleme → `ProgressBar` (varsayılan siyah dolgu); siyah yüzeyde lime.
 - Kart başlığı: `<h2 className="pn-card-title">` (20 px / 500) + altında gri tarih, sağda ↗ ya da tarih hapı.
 - Sakin durum sekmeleri (güçlü bir seçicinin altında) → `InboxStatusTabs variant="soft"` (`data-tone="soft"` güvenlik ağından çıkar).
 

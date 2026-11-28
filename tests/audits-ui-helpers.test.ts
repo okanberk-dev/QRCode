@@ -300,16 +300,16 @@ describe('honest confirmation copy', () => {
     const c = deleteConfirmCopy(true, 'tr');
     assert.match(c.body, /arşivlenir/);
     assert.match(c.body, /yanıtlar korunur/);
-    assert.equal(c.confirm, 'Arşivle');
+    assert.equal(c.confirm, 'Denetimi arşivle');
     assert.doesNotMatch(c.body, /kalıcı/);
   });
 
   it('delete without responses is permanent', () => {
     const c = deleteConfirmCopy(false, 'tr');
     assert.match(c.body, /kalıcı olarak silinir/);
-    assert.equal(c.confirm, 'Sil');
-    assert.equal(deleteConfirmCopy(true, 'en').confirm, 'Archive');
-    assert.equal(deleteConfirmCopy(false, 'en').confirm, 'Delete');
+    assert.equal(c.confirm, 'Denetimi sil');
+    assert.equal(deleteConfirmCopy(true, 'en').confirm, 'Archive audit');
+    assert.equal(deleteConfirmCopy(false, 'en').confirm, 'Delete audit');
   });
 });
 

@@ -12,6 +12,10 @@ interface ModalCloseConfirmCopy {
 
 interface ModalProps {
   title?: ReactNode;
+  /** One grey line under the title: what this dialog does / what will happen. */
+  description?: ReactNode;
+  /** Glyph for the black circle left of the title (lime icon). */
+  icon?: ReactNode;
   onClose: () => void;
   children: ReactNode;
   size?: number | string;
@@ -47,8 +51,15 @@ const FOCUSABLE_SELECTOR = [
   "[contenteditable]",
 ].join(",");
 
+/** Page language for the built-in strings (close button). */
+function pageIsEnglish(): boolean {
+  return typeof document !== "undefined" && document.documentElement.lang.toLowerCase().startsWith("en");
+}
+
 export function Modal({
   title,
+  description,
+  icon,
   onClose,
   children,
   size = 480,
@@ -195,8 +206,8 @@ export function Modal({
       // (cookie banner same z-index, later DOM render → topmost).
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       style={{
-        background: "rgba(10,10,10,0.4)",
-        backdropFilter: "blur(8px)",
+        background: "rgba(17,17,16,0.45)",
+        backdropFilter: "blur(6px)",
         // iOS Safari dynamic viewport fix: backdrop tüm görünür alana yayılır,
         // dvh dolduğunda nav'a/safe-area'ya saygılı kalır.
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
@@ -206,7 +217,7 @@ export function Modal({
         ref={dialogRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="bz-fade-in relative bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[28px] sm:rounded-[32px]"
+        className="bz-fade-in relative bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[28px] sm:rounded-[28px]"
         style={{
           width: computedWidth,
           maxWidth: "92vw",
@@ -215,23 +226,43 @@ export function Modal({
           // dvh desteklemeyen eski tarayıcı vh'a düşer (`min` ignore eder).
           maxHeight: "min(92vh, 90dvh)",
           overflow: "hidden",
-          boxShadow: "0 24px 80px -20px rgba(0,0,0,0.4)",
+          boxShadow: "0 28px 80px -24px rgba(17,17,16,0.45)",
         }}
       >
         {/* Bottom-sheet grab handle on phones (Pano §7). */}
         <span aria-hidden="true" className="mx-auto mt-2.5 block h-1 w-10 shrink-0 rounded-full bg-[#D9D9DE] sm:hidden" />
         {(title || !hideCloseButton) && (
-          <div className="flex shrink-0 items-center justify-between gap-3 px-6 pb-2 pt-4 sm:px-7 sm:pt-6">
-            {title && (
-              <div className="truncate pr-3 text-[22px] font-normal leading-tight tracking-[-0.005em] text-pn-ink">
-                {title}
-              </div>
-            )}
+          // Header: optional black icon circle (lime glyph), the title on up
+          // to two lines (never cut mid-word), one grey line under it, and
+          // the round close button.
+          <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-1 pt-4 sm:px-7 sm:pt-6">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              {icon && (
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-[#C6F24E]"
+                >
+                  {icon}
+                </span>
+              )}
+              {(title || description) && (
+                <div className="min-w-0 flex-1 pt-0.5">
+                  {title && (
+                    <div className="break-words text-[20px] font-medium leading-[1.25] tracking-[-0.015em] text-pn-ink">
+                      {title}
+                    </div>
+                  )}
+                  {description && (
+                    <p className="mt-1 text-[14px] leading-[1.5] text-[#737373]">{description}</p>
+                  )}
+                </div>
+              )}
+            </div>
             {!hideCloseButton && (
               <button
                 type="button"
-                aria-label="Close"
-                className="bz-btn-icon-lg shrink-0"
+                aria-label={pageIsEnglish() ? "Close" : "Kapat"}
+                className="bz-btn-icon-lg -mr-1 shrink-0"
                 onClick={onClose}
               >
                 <X size={16} />
@@ -239,11 +270,13 @@ export function Modal({
             )}
           </div>
         )}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 sm:px-7">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
           {children}
         </div>
         {footer && (
-          <div className="flex shrink-0 justify-end gap-2 px-6 pb-6 pt-2 sm:px-7">
+          // Phones: full-width buttons, the main action on top. From 640px a
+          // right-aligned row.
+          <div className="flex shrink-0 flex-col-reverse gap-2 px-5 pb-5 pt-3 sm:flex-row sm:justify-end sm:px-7 sm:pb-6 max-sm:[&>a]:w-full max-sm:[&>button]:w-full">
             {footer}
           </div>
         )}
@@ -252,21 +285,23 @@ export function Modal({
             body (only shown when closeGuard signals dirty input). */}
         {confirmingClose && (
           <div
-            className="absolute inset-0 z-10 flex items-center justify-center rounded-t-[28px] sm:rounded-[32px] bg-white/95 p-6 backdrop-blur-sm"
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-t-[28px] bg-white/95 p-6 backdrop-blur-sm sm:rounded-[28px]"
             role="alertdialog"
             aria-label={confirmCopy.title}
           >
             <div className="w-full max-w-[340px] text-center">
-              <h3 className="bz-h-tight mb-2" style={{ fontSize: 16 }}>
-                {confirmCopy.title}
-              </h3>
-              <p className="mb-5 text-[13px] leading-[1.55] text-[#525252]">
-                {confirmCopy.body}
-              </p>
+              <span
+                aria-hidden="true"
+                className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#FDECEC] text-[#D92D20]"
+              >
+                <X size={18} strokeWidth={2.2} />
+              </span>
+              <h3 className="text-[18px] font-medium leading-snug text-pn-ink">{confirmCopy.title}</h3>
+              <p className="mb-5 mt-1.5 text-[14px] leading-[1.5] text-[#737373]">{confirmCopy.body}</p>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="bz-btn-ghost flex-1"
+                  className="bz-btn flex-1"
                   onClick={() => setConfirmingClose(false)}
                   autoFocus
                 >

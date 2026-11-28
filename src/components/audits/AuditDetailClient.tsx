@@ -168,11 +168,10 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
   }
 
   function askPause() {
-    const copy = pauseConfirmCopy(locale);
+    const copy = pauseConfirmCopy(locale, template.title);
     askConfirm({
       title: copy.title,
       body: copy.body,
-      variant: 'danger',
       confirmLabel: copy.confirm,
       cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
       onConfirm: () =>
@@ -215,7 +214,7 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
   }
 
   function askDelete() {
-    const copy = deleteConfirmCopy(hasResponses, locale);
+    const copy = deleteConfirmCopy(hasResponses, locale, template.title);
     askConfirm({
       title: copy.title,
       body: copy.body,

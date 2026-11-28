@@ -47,11 +47,11 @@ export default function ImpersonateButton({
 
   const handleSubmit = async () => {
     if (reason.trim().length < 20) {
-      setError('Sebep en az 20 karakter olmalı.');
+      setError('Sebebi en az 20 karakterle yaz.');
       return;
     }
     if (!consent) {
-      setError('Devam etmek için KVKK bilgilendirmesini onaylaman gerekiyor.');
+      setError('Oturumu başlatmak için alttaki onay kutusunu işaretle.');
       return;
     }
     setSubmitting(true);
@@ -65,17 +65,17 @@ export default function ImpersonateButton({
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (res.status === 403) {
-          setError('Bu işlem için yetkiniz yok.');
+          setError('Destek oturumu açma yetkin yok.');
         } else if (res.status === 429) {
           const retry = j.retryAfter ? Math.ceil(j.retryAfter / 60) : 60;
-          setError(`Saatte 3 oturumdan fazla açılamaz. ${retry} dk sonra tekrar dene.`);
+          setError(`Saatte en çok 3 oturum açılabilir. ${retry} dk sonra yeniden dene.`);
         } else if (res.status === 400 && j.error === 'target_inactive') {
-          setError('Bu hesap pasifleştirilmiş — önce aktive edin.');
+          setError('Bu hesap silinmiş (arşivde). Önce hesabı geri getir.');
         } else if (res.status === 404) {
-          setError('Hesap bulunamadı. Sayfayı yenileyip tekrar dene.');
+          setError('Hesap bulunamadı. Sayfayı yenileyip yeniden dene.');
         } else {
           // Raw API codes (impersonate_failed, invalid_json…) are not shown.
-          setError('Oturum başlatılamadı. Lütfen tekrar dene.');
+          setError('Oturum başlatılamadı. Biraz sonra yeniden dene.');
         }
         setSubmitting(false);
         return;
@@ -85,7 +85,7 @@ export default function ImpersonateButton({
       const target = typeof j.redirectTo === 'string' ? j.redirectTo : '/tr/dashboard';
       window.location.href = target;
     } catch {
-      setError('Bağlantı hatası.');
+      setError('Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.');
       setSubmitting(false);
     }
   };
@@ -99,7 +99,7 @@ export default function ImpersonateButton({
         className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
         title={
           disabled
-            ? 'Pasifleştirilmiş hesap için kullanılamaz'
+            ? 'Silinmiş (arşivdeki) hesap için kullanılamaz'
             : 'Hesap sahibinin panelini onun gözünden görüntüle'
         }
       >
@@ -111,19 +111,12 @@ export default function ImpersonateButton({
         <Modal
           size={560}
           onClose={handleClose}
-          title={
-            // The Modal title slot truncates to one line; this header is a
-            // multi-line block, so let it wrap.
-            <div className="whitespace-normal">
-              <p className="text-[13px] font-medium text-[#737373]">DESTEK OTURUMU</p>
-              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
-                {targetName || targetEmail} olarak görüntüle
-              </h2>
-              <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
-                Hesap sahibinin paneline 30 dakikalık geçici erişim açılacak.
-                Oturum işlem kaydına yazılır, müşteriye bilgilendirme maili gider.
-              </p>
-            </div>
+          title="Destek oturumu başlat"
+          description={
+            <>
+              <strong className="break-words font-medium text-pn-ink">{targetName || targetEmail}</strong>{' '}
+              hesabının panelini 30 dakika boyunca hesap sahibi gibi görür ve kullanırsın.
+            </>
           }
         >
           <form
@@ -135,65 +128,72 @@ export default function ImpersonateButton({
           >
             {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
-            {/* KVKK disclosure — plain-language summary of what happens */}
-            <div className="rounded-[20px] border border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E]">
-              <div className="flex items-start gap-2">
-                <ShieldAlert size={14} strokeWidth={2} className="shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <strong>Bu oturumda neler olur?</strong>
-                  <ul className="list-disc list-inside space-y-0.5 opacity-90">
-                    <li>30 dakika sonra otomatik kapanır, istediğin an da çıkabilirsin</li>
-                    <li>Müşteriye bilgilendirme maili gider</li>
-                    <li>Başlangıç ve bitiş işlem kaydına yazılır</li>
-                    <li>Saatte en fazla 3 oturum açılabilir</li>
+            {/* Plain-language summary of what the session does */}
+            <div className="rounded-[20px] border border-[#FDE68A] bg-[#FFFBEB] p-4 text-[13px] leading-[1.5] text-[#92400E]">
+              <div className="flex items-start gap-2.5">
+                <ShieldAlert size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
+                <div className="min-w-0 space-y-1.5">
+                  <p className="font-medium">Başlatınca ne olur?</p>
+                  <ul className="list-disc space-y-1 pl-4">
+                    <li>Hesap sahibine bilgilendirme e-postası gider.</li>
+                    <li>Başlangıç, bitiş ve yazdığın sebep işlem kaydına yazılır.</li>
+                    <li>30 dakika sonra kendiliğinden kapanır; üstteki şeritten istediğin an çıkabilirsin.</li>
+                    <li>Saatte en çok 3 oturum açabilirsin.</li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div>
               <label
                 htmlFor="impersonate-reason"
-                className="text-[12px] font-medium text-[#6B7280] ml-1"
+                className="mb-2 block text-[14px] font-medium leading-[1.3] text-pn-ink"
               >
-                Sebep (en az 20 karakter, işlem kaydına yazılır) *
+                Oturumun sebebi
+                <span className="ml-1 text-[#E5484D]" aria-hidden="true">*</span>
               </label>
+              <p id="impersonate-reason-hint" className="mb-2 text-[13px] leading-[1.45] text-[#737373]">
+                En az 20 karakter. Hangi destek talebi için açtığını yaz.
+              </p>
               <textarea
                 id="impersonate-reason"
                 required
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Örn: Destek talebi #4521 — işletme sahibi QR kodunu indirirken hata aldığını bildirdi, kontrol etmek için."
+                placeholder="Örn: Destek talebi #4521. İşletme sahibi QR kodunu indirirken hata aldığını bildirdi, kontrol edeceğim."
                 maxLength={500}
-                className="w-full rounded-[20px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent resize-none"
+                aria-describedby="impersonate-reason-hint impersonate-reason-count"
+                className="w-full resize-none rounded-[20px] border border-pn-line bg-white px-4 py-3 text-[16px] text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent sm:text-[14px]"
               />
-              <p className="text-[12px] text-[#737373] tabular-nums">
-                {reason.trim().length}/500 karakter (minimum 20)
+              <p id="impersonate-reason-count" className="mt-1 text-[12px] tabular-nums text-[#737373]">
+                {reason.trim().length < 20
+                  ? `${reason.trim().length}/500 · ${20 - reason.trim().length} karakter daha yaz`
+                  : `${reason.trim().length}/500`}
               </p>
             </div>
 
-            <label className="flex items-start gap-2 text-[12px] text-pn-ink cursor-pointer">
+            <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-[13px] leading-[1.5] text-pn-ink">
               <input
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-pn-line text-pn-ink focus:ring-pn-accent"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-pn-line text-pn-ink focus:ring-pn-accent"
               />
               <span>
-                Bu oturumun KVKK kapsamında müşteriye mail ile bildirileceğini ve işlem
+                KVKK gereği hesap sahibine e-postayla bildirim gideceğini ve oturumun işlem
                 kaydına yazılacağını onaylıyorum.
               </span>
             </label>
 
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-pn-line">
+            <div className="flex flex-col-reverse justify-end gap-2 pt-2 sm:flex-row">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={submitting}
                 className="bz-btn-ghost"
               >
-                İptal
+                Vazgeç
               </button>
               <button
                 type="submit"
@@ -205,7 +205,7 @@ export default function ImpersonateButton({
                 ) : (
                   <Eye size={14} strokeWidth={2} />
                 )}
-                {submitting ? 'Açılıyor…' : 'Oturumu başlat'}
+                {submitting ? 'Oturum açılıyor…' : 'Oturumu başlat'}
               </button>
             </div>
           </form>

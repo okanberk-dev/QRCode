@@ -163,6 +163,8 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const deletingPlan = deleteId ? plans.find((p) => p.id === deleteId) ?? null : null;
+  const deletingPlanUsers = deleteId ? planUsage[deleteId] ?? 0 : 0;
   const [busyRowId, setBusyRowId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; message: string } | null>(null);
@@ -213,7 +215,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
     if (
       force &&
       !window.confirm(
-        'Başlangıç, Büyüme ve Zincir paketleri önerilen fiyat, işletme sınırı ve modüllerle güncellenecek. Bu paketlerdeki sahiplerin modülleri de yeniden ayarlanır. Devam edilsin mi?',
+        'Başlangıç, Büyüme ve Zincir paketleri önerilen fiyat, işletme sınırı ve özelliklerle güncellensin mi? Paketler ve abonelikler silinmez. Bu paketlerdeki işletme sahiplerinin özellikleri de yeniden ayarlanır.',
       )
     ) {
       return;
@@ -271,22 +273,22 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
   };
 
   const validateForm = (): string | null => {
-    if (!form.nameTr.trim() || !form.nameEn.trim()) return 'TR ve EN paket adı zorunlu.';
+    if (!form.nameTr.trim() || !form.nameEn.trim()) return 'Paket adını Türkçe ve İngilizce yaz.';
     if (!form.descriptionTr.trim() || !form.descriptionEn.trim())
-      return 'TR ve EN açıklama zorunlu.';
+      return 'Açıklamayı Türkçe ve İngilizce yaz.';
     // §38.225 Stage 145 — USD-only. priceTry validation kaldırıldı (form
     // hidden; formToBody içinde '0' fallback). priceUsd primary required.
-    if (form.priceUsd.trim() === '') return 'USD fiyatı zorunlu.';
+    if (form.priceUsd.trim() === '') return 'Aylık USD fiyatını yaz.';
     const usd = parseInt(form.priceUsd, 10);
-    if (isNaN(usd) || usd < 0) return 'USD fiyatı geçersiz.';
+    if (isNaN(usd) || usd < 0) return 'Aylık USD fiyatı 0 ya da daha büyük bir sayı olmalı.';
     // PayNKolay settles in TRY only (§44).
     if (form.paymentProvider === 'paynkolay' && !(parseInt(form.priceTry, 10) > 0)) {
-      return 'PayNKolay ile ödeme için aylık TL fiyatı girin.';
+      return 'Kartla ödeme için aylık TL fiyatını yaz.';
     }
     if (form.discountActive) {
       const v = parseInt(form.discountValue, 10);
       if (isNaN(v) || v <= 0) return 'İndirim değeri sıfırdan büyük olmalı.';
-      if (form.discountType === 'percent' && v > 100) return 'Yüzde indirim 100 ile sınırlı.';
+      if (form.discountType === 'percent' && v > 100) return 'Yüzde indirim en çok 100 olabilir.';
     }
     return null;
   };
@@ -310,7 +312,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.error || 'Kaydedilemedi.');
+        setError(data?.error || 'Paket kaydedilemedi. Biraz sonra yeniden dene.');
         return;
       }
       await refreshPlans();
@@ -320,7 +322,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
         message: editingId ? 'Paket güncellendi.' : 'Paket oluşturuldu.',
       });
     } catch {
-      setError('Bağlantı hatası.');
+      setError('Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.');
     } finally {
       setSaving(false);
     }
@@ -333,13 +335,13 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
       const res = await fetch(`/api/admin/plans/${deleteId}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setNotice({ kind: 'danger', message: data?.error || 'Silinemedi.' });
+        setNotice({ kind: 'danger', message: data?.error || 'Paket silinemedi. Biraz sonra yeniden dene.' });
         return;
       }
       await refreshPlans();
       setNotice({ kind: 'success', message: 'Paket silindi.' });
     } catch {
-      setNotice({ kind: 'danger', message: 'Bağlantı hatası.' });
+      setNotice({ kind: 'danger', message: 'Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene.' });
     } finally {
       setBusyRowId(null);
       setDeleteId(null);
@@ -802,7 +804,14 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
       <Modal
         onClose={closeModal}
         size={720}
-        title={editingId ? `${form.nameTr || 'Paket'} düzenle` : 'Yeni paket oluştur'}
+        title={
+          editingId
+            ? form.nameTr.trim()
+              ? `"${form.nameTr.trim()}" paketini düzenle`
+              : 'Paketi düzenle'
+            : 'Yeni paket oluştur'
+        }
+        description="Kaydedince fiyat sayfasındaki paket kartı güncellenir. Zorunlu alanlar * ile işaretli."
         footer={
           <>
             {editingId && (
@@ -813,9 +822,9 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   setDeleteId(editingId);
                 }}
                 disabled={saving}
-                className="bz-btn-danger mr-auto text-[12px] disabled:opacity-60"
+                className="bz-btn-danger disabled:opacity-60 sm:mr-auto"
               >
-                <Trash2 size={12} /> Bu paketi sil
+                <Trash2 size={14} aria-hidden="true" /> Paketi sil
               </button>
             )}
             <button type="button" onClick={closeModal} disabled={saving} className="bz-btn-ghost">
@@ -828,13 +837,18 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
               className="bz-btn-primary inline-flex items-center gap-2"
             >
               {saving && <Loader2 size={14} className="animate-spin" />}
-              {editingId ? 'Kaydet' : 'Oluştur'}
+              {saving ? 'Kaydediliyor…' : editingId ? 'Paketi kaydet' : 'Paketi oluştur'}
             </button>
           </>
         }
       >
-        <div className="-mx-6 -my-6 max-h-[70vh] space-y-5 overflow-y-auto px-6 py-6">
-          {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+        <div className="space-y-5">
+          {/* Sticky so a validation error stays in view wherever the form is scrolled. */}
+          {error && (
+            <div className="sticky top-0 z-10">
+              <AlertBanner kind="danger">{error}</AlertBanner>
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Paket adı (TR)" required>
@@ -897,7 +911,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 placeholder="örn. 40"
               />
             </Field>
-            <Field label="Periyot">
+            <Field label="Ödeme dönemi">
               <select
                 value={form.period}
                 onChange={(e) =>
@@ -923,8 +937,8 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
               değer girerse override "touched" sayılır ve aylık değişse de
               korunur. */}
           <Field
-            label="Yıllık fiyat (USD, opsiyonel)"
-            hint="Boş bırakılırsa aylık × 12 × 0.8 (≈%20 indirim) hesaplanır."
+            label="Yıllık fiyat (USD)"
+            hint="Boş bırakırsan aylık × 12 × 0,8 (yaklaşık %20 indirim) hesaplanır."
           >
             <div className="flex items-stretch gap-2">
               <input
@@ -935,7 +949,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   yearlyUsdTouchedRef.current = true;
                   setForm((f) => ({ ...f, priceYearlyUsd: e.target.value }));
                 }}
-                className="bz-input flex-1"
+                className="bz-input min-w-0 flex-1"
                 placeholder={(() => {
                   const u = parseInt(form.priceUsd, 10);
                   if (!Number.isFinite(u) || u <= 0) return 'örn. 384';
@@ -950,9 +964,10 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     setForm((f) => ({ ...f, priceYearlyUsd: '' }));
                   }}
                   className="bz-btn-ghost shrink-0 px-3"
-                  title="Otomatik formüle dön (aylık × 12 × 0.8)"
+                  title="Otomatik hesaba dön (aylık × 12 × 0,8)"
+                  aria-label="Otomatik hesaba dön"
                 >
-                  <RotateCcw size={13} />
+                  <RotateCcw size={13} aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -964,7 +979,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
           </Field>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Özellikler (TR) — her satıra bir madde">
+            <Field label="Özellikler (TR)" hint="Her satıra bir madde yaz.">
               <textarea
                 rows={5}
                 value={form.featuresTr}
@@ -973,7 +988,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 placeholder={'Sınırsız QR kod\nBuaze Pulse AI\nÇoklu lokasyon'}
               />
             </Field>
-            <Field label="Özellikler (EN) — one item per line">
+            <Field label="Özellikler (EN)" hint="Her satıra bir madde yaz.">
               <textarea
                 rows={5}
                 value={form.featuresEn}
@@ -1001,7 +1016,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 className="bz-input"
               />
             </Field>
-            <Field label="Buton hedefi (path)">
+            <Field label="Buton bağlantısı" hint="Site içi adres, ör. /auth/register">
               <input
                 type="text"
                 value={form.buttonHref}
@@ -1015,17 +1030,17 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
           <div className="grid gap-4 sm:grid-cols-3">
             <SwitchCard
               label="Yayında"
-              hint="Pasif paketler public sayfada gizli"
+              hint="Kapalıysa paket fiyat sayfasında görünmez"
               value={form.isActive}
               onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
             />
             <SwitchCard
               label="En popüler"
-              hint="Aynı anda tek paket öne çıkarılabilir"
+              hint="Fiyat sayfasında öne çıkar; aynı anda tek paket"
               value={form.isFeatured}
               onChange={(v) => setForm((f) => ({ ...f, isFeatured: v }))}
             />
-            <Field label="Sıralama">
+            <Field label="Sıra" hint="Küçük sayı önce gösterilir.">
               <input
                 type="number"
                 value={form.sortOrder}
@@ -1037,8 +1052,8 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
 
           <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
             <SwitchCard
-              label="İndirim aktif"
-              hint="Yüzde veya sabit tutar indirim"
+              label="İndirim uygula"
+              hint="Yüzde ya da sabit tutar"
               value={form.discountActive}
               onChange={(v) => setForm((f) => ({ ...f, discountActive: v }))}
               flush
@@ -1091,15 +1106,14 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
             {/* ── Ödeme (PayNKolay) + paket modülleri (CLAUDE.md §44, §5.2) ── */}
             <div className="bz-card-soft p-4">
               <div className="mb-3">
-                <p className="text-[13px] font-medium text-pn-ink">Ödeme ve paket modülleri</p>
+                <p className="text-[13px] font-medium text-pn-ink">Ödeme ve paket özellikleri</p>
                 <p className="mt-0.5 text-[12px] text-[#737373]">
-                  <strong>Elle</strong> = admin üyenin faturasını yönetir.{' '}
-                  <strong>PayNKolay</strong> = işletme sahibi kartla öder; TL fiyatı girin
-                  (PayNKolay yalnız TL tahsil eder). Her ödeme bir dönem (ay / yıl) açar,
-                  otomatik çekim yoktur.
+                  <strong>Elle</strong>: aboneliği yönetici düzenler.{' '}
+                  <strong>PayNKolay</strong>: işletme sahibi kartla öder; TL fiyatı yaz (yalnız TL
+                  tahsil edilir). Her ödeme bir ay ya da bir yıl açar; otomatik çekim yoktur.
                 </p>
               </div>
-              <Field label="Ödeme">
+              <Field label="Ödeme yöntemi">
                 <select
                   value={form.paymentProvider}
                   onChange={(e) =>
@@ -1110,7 +1124,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   }
                   className="bz-input"
                 >
-                  <option value="manual">Elle (admin yönetir)</option>
+                  <option value="manual">Elle (yönetici düzenler)</option>
                   <option value="paynkolay">PayNKolay (kartla ödeme)</option>
                 </select>
               </Field>
@@ -1125,7 +1139,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       className="bz-input"
                     />
                   </Field>
-                  <Field label="Yıllık toplam (TL)" hint="Boş: aylık × 12 × 0,8">
+                  <Field label="Yıllık toplam (TL)" hint="Boş bırakırsan aylık × 12 × 0,8 hesaplanır.">
                     <input
                       type="number"
                       min={0}
@@ -1137,7 +1151,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 </div>
               )}
               <div className="mt-4 border-t border-pn-line pt-3">
-                <Field label="İşletme sınırı" hint="Boş: sınırsız. Sahip bu sayıdan fazla işletme ekleyemez.">
+                <Field label="İşletme sınırı" hint="Boş bırakırsan sınırsız. İşletme sahibi bu sayıdan fazla işletme ekleyemez.">
                   <input
                     type="number"
                     min={1}
@@ -1148,24 +1162,32 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 </Field>
               </div>
               <div className="mt-4 border-t border-pn-line pt-3">
-                <label className="flex items-start gap-2 text-[12px] text-pn-ink">
+                <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-[13px] leading-[1.5] text-pn-ink">
                   <input
                     type="checkbox"
                     checked={form.modulesManaged}
                     onChange={(e) => setForm((f) => ({ ...f, modulesManaged: e.target.checked }))}
-                    className="mt-0.5"
+                    className="mt-0.5 h-4 w-4 shrink-0"
                   />
                   <span>
-                    <strong>Modülleri bu paket belirlesin.</strong> Paket atandığında ya da ödendiğinde
-                    sahibin tüm işletmelerindeki özellik anahtarları aşağıdaki seçime göre ayarlanır.
+                    <strong className="font-medium">Özellikleri bu paket belirlesin.</strong> Paket
+                    atandığında ya da ödendiğinde, işletme sahibinin tüm işletmelerinde aşağıda işaretli
+                    özellikler açılır, işaretsizler kapanır.
                   </span>
                 </label>
                 {form.modulesManaged && (
-                  <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                  <p className="mt-1 text-[12px] leading-[1.5] text-[#737373]">
+                    Menü kapanırsa müşteri menüsü yayından kalkar. Pulse AI kapanırsa bekleyen
+                    taslaklar silinir.
+                  </p>
+                )}
+                {form.modulesManaged && (
+                  <div className="mt-2 grid gap-x-3 sm:grid-cols-2">
                     {PLAN_MODULES.map((m) => (
-                      <label key={m.key} className="flex items-center gap-2 text-[12px] text-[#525252]">
+                      <label key={m.key} className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[13px] text-[#525252] sm:min-h-9">
                         <input
                           type="checkbox"
+                          className="h-4 w-4 shrink-0"
                           checked={form.moduleKeys.includes(m.key)}
                           onChange={(e) =>
                             setForm((f) => ({
@@ -1191,8 +1213,12 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
       {deleteId !== null && (
       <Modal
         onClose={() => setDeleteId(null)}
-        size={420}
-        title="Paket silinsin mi?"
+        size={440}
+        title={
+          deletingPlan?.nameTr
+            ? `"${deletingPlan.nameTr}" paketi silinsin mi?`
+            : 'Paket silinsin mi?'
+        }
         footer={
           <>
             <button type="button" onClick={() => setDeleteId(null)} className="bz-btn-ghost">
@@ -1204,13 +1230,17 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
               disabled={busyRowId !== null}
               className="bz-btn-danger disabled:opacity-60"
             >
-              {busyRowId && <Loader2 size={14} className="animate-spin" />} Sil
+              {busyRowId ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} aria-hidden="true" />}
+              {busyRowId ? 'Siliniyor…' : 'Paketi sil'}
             </button>
           </>
         }
       >
-        <p className="text-[13px] text-[#525252]">
-          Bu işlem geri alınamaz. Public sayfada bu paket artık görünmez.
+        <p className="text-[14px] leading-[1.55] text-[#525252]">
+          Paket fiyat sayfasından kalkar ve geri getirilemez.{' '}
+          {deletingPlanUsers > 0
+            ? `Bu paketi kullanan ${deletingPlanUsers} işletmenin aboneliği iptal olmaz; yalnız paket bağlantısı kalkar.`
+            : 'Bu paketi kullanan işletme yok.'}
         </p>
       </Modal>
       )}
@@ -1230,14 +1260,18 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label className="text-[12px] font-medium text-[#525252]">
+    <label className="block">
+      <span className="block text-[13px] font-medium text-pn-ink">
         {label}
-        {required && <span className="ml-1 text-[#DC2626]">*</span>}
-      </label>
-      <div className="mt-1.5">{children}</div>
-      {hint && <p className="mt-1 text-[12px] text-[#737373]">{hint}</p>}
-    </div>
+        {required && (
+          <span className="ml-1 text-[#E5484D]" aria-hidden="true">
+            *
+          </span>
+        )}
+      </span>
+      <span className="mt-1.5 block">{children}</span>
+      {hint && <span className="mt-1 block text-[12px] leading-[1.5] text-[#737373]">{hint}</span>}
+    </label>
   );
 }
 
@@ -1282,18 +1316,20 @@ function YearlyDisplayHint({
     isOverride && hasMonthly && formulaPerMonth > 0 && perMonthYearly < formulaPerMonth * 0.7;
 
   return (
-    <p className={`mt-1 text-[12px] ${stale ? 'text-[#92400E]' : 'text-[#525252]'}`}>
-      Public sayfada gösterilecek: <strong>{formatted}/ay</strong> (yıllık){' '}
+    <span className={`mt-1 block text-[12px] leading-[1.5] ${stale ? 'text-[#92400E]' : 'text-[#525252]'}`}>
+      Fiyat sayfasında görünecek: <strong>{formatted}/ay</strong> (yıllık ödemede){' '}
       <span className="text-[#737373]">
-        — {isOverride ? 'manuel override' : 'aylık × 12 × 0.8'}
+        · {isOverride ? 'elle girilen tutar' : 'otomatik hesap'}
       </span>
       {stale && (
         <>
           {' '}
-          <span className="font-medium">— override aylıktan kopmuş olabilir, sıfırlamayı düşünün.</span>
+          <span className="font-medium">
+            Yıllık tutar aylık fiyata göre çok düşük görünüyor. Kontrol et ya da otomatik hesaba dön.
+          </span>
         </>
       )}
-    </p>
+    </span>
   );
 }
 

@@ -244,8 +244,9 @@ export function SkTabStrip({ count = 5 }: { count?: number }) {
 
 /**
  * Wrapper for a complete page skeleton. Caller passes children which
- * sit inside the canonical `mx-auto w-full max-w-[N] px-... py-...
- * space-y-5` shell.
+ * sit inside the canonical `mx-auto w-full max-w-[N] px-4 sm:px-6 py-6
+ * lg:py-8` shell (24px side padding from `sm` up — the panel standard,
+ * docs/design/DASHBOARD_DESIGN.md §5.7).
  *
  * `max` defaults to `1200px` (most pages); pass `1100` for settings /
  * forms, `1400` for data-dense tables, `640` for narrow error/empty
@@ -262,6 +263,7 @@ export function SkTabStrip({ count = 5 }: { count?: number }) {
  */
 // Literal class map — Tailwind v4 scanner dinamik `space-y-${n}` göremez.
 const SHELL_SPACE_CLASS = {
+  2.5: 'space-y-2.5',
   3: 'space-y-3',
   3.5: 'space-y-3.5',
   4: 'space-y-4',
@@ -281,7 +283,7 @@ export function SkPageShell({
 }) {
   return (
     <div
-      className={`mx-auto w-full px-4 sm:px-7 py-6 lg:py-8 ${SHELL_SPACE_CLASS[space]}`}
+      className={`mx-auto w-full px-4 sm:px-6 py-6 lg:py-8 ${SHELL_SPACE_CLASS[space]}`}
       style={{ maxWidth: `${max}px` }}
     >
       {children}

@@ -283,10 +283,12 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
   };
 
   const handleDeleteQuestion = (id: string) => {
+    const prompt = questions.find((q) => q.id === id)?.prompt.trim() ?? '';
+    const shortPrompt = prompt.length > 80 ? `${prompt.slice(0, 80).trimEnd()}…` : prompt;
     askConfirm({
-      title: 'Soruyu sil',
-      body: 'Bu soru listeden kaldırılacak. Kaydetmediğin sürece geri alabilirsin.',
-      confirmLabel: 'Sil',
+      title: 'Bu soru silinsin mi?',
+      body: `${shortPrompt ? `"${shortPrompt}" listeden kaldırılır.` : 'Soru listeden kaldırılır.'} Silme, sayfadaki Kaydet düğmesine basınca kalıcı olur; kaydetmeden sayfayı yenilersen soru geri gelir.`,
+      confirmLabel: 'Soruyu sil',
       cancelLabel: 'Vazgeç',
       variant: 'danger',
       onConfirm: () => {
@@ -409,9 +411,9 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
   const handleDelete = () => {
     if (!data) return;
     askConfirm({
-      title: `"${data.title}" silinecek`,
-      body: 'Şablonla birlikte soruları, atamaları ve tüm yanıtları da kalıcı olarak silinir. Bu işlem geri alınamaz.',
-      confirmLabel: 'Kalıcı olarak sil',
+      title: `"${data.title}" silinsin mi?`,
+      body: `Şablon; soruları, ${data._count.assignments} ataması (paylaşım linki) ve ${data._count.responses} yanıtıyla birlikte kalıcı olarak silinir. Bu işlem geri alınamaz. İşletmelerin bu şablondan oluşturduğu denetimler silinmez.`,
+      confirmLabel: 'Şablonu sil',
       cancelLabel: 'Vazgeç',
       variant: 'danger',
       onConfirm: doDeleteTemplate,

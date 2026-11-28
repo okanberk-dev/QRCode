@@ -65,7 +65,8 @@ export function AdminFeedbackFiltersModal({
 
   return (
     <Modal
-      title={compact ? (isTr ? 'Diğer filtreler' : 'More filters') : isTr ? 'Filtreler' : 'Filters'}
+      title={compact ? (isTr ? 'Diğer filtreler' : 'More filters') : isTr ? 'Yorumları filtrele' : 'Filter reviews'}
+      description={isTr ? 'Seçtiklerin listeye anında uygulanır.' : 'Your choices apply to the list right away.'}
       onClose={onClose}
       size={460}
       footer={
@@ -73,11 +74,11 @@ export function AdminFeedbackFiltersModal({
           {hasActiveFilter && (
             <button type="button" onClick={onResetFilters} className="bz-btn-ghost">
               <RotateCcw size={12} strokeWidth={2.2} aria-hidden="true" />
-              {isTr ? 'Temizle' : 'Clear'}
+              {isTr ? 'Filtreleri temizle' : 'Clear filters'}
             </button>
           )}
           <button type="button" onClick={onClose} className="bz-btn-primary">
-            {isTr ? 'Uygula' : 'Apply'}
+            {isTr ? 'Sonuçları göster' : 'Show results'}
           </button>
         </>
       }
@@ -120,7 +121,7 @@ export function AdminFeedbackFiltersModal({
                 <button
                   type="button"
                   onClick={() => setPlatformFilter('all')}
-                  className={`${platformFilter === 'all' ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
+                  className={`${platformFilter === 'all' ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
                   aria-pressed={platformFilter === 'all'}
                 >
                   {isTr ? 'Tümü' : 'All'}
@@ -154,7 +155,7 @@ export function AdminFeedbackFiltersModal({
 
         {/* State — reply / flag / assigned to me */}
         <div className="space-y-1.5">
-          <span className="block text-[13px] font-medium text-[#737373]">{isTr ? 'Durum' : 'State'}</span>
+          <span className="block text-[13px] font-medium text-[#737373]">{isTr ? 'Durum' : 'Status'}</span>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
@@ -168,7 +169,7 @@ export function AdminFeedbackFiltersModal({
             <button
               type="button"
               onClick={() => setFlaggedOnly(!flaggedOnly)}
-              className={`${flaggedOnly ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
+              className={`${flaggedOnly ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
               aria-pressed={flaggedOnly}
             >
               <Flag size={12} strokeWidth={2.2} aria-hidden="true" />
@@ -177,7 +178,7 @@ export function AdminFeedbackFiltersModal({
             <button
               type="button"
               onClick={() => setAssignedToMe(!assignedToMe)}
-              className={`${assignedToMe ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
+              className={`${assignedToMe ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
               aria-pressed={assignedToMe}
             >
               <UserPlus size={12} strokeWidth={2.2} aria-hidden="true" />

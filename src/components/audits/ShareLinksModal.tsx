@@ -64,8 +64,22 @@ export default function ShareLinksModal({
   }, []);
 
   return (
-    <Modal title={locale === 'tr' ? 'Linki paylaş' : 'Share link'} onClose={onClose} size={560}>
-      <p className="mb-4 break-words text-[13px] font-medium text-pn-ink">{title}</p>
+    <Modal
+      title={locale === 'tr' ? 'Denetim linkini paylaş' : 'Share the audit link'}
+      description={
+        <>
+          {locale === 'tr' ? 'Denetim: ' : 'Audit: '}
+          <span className="break-words font-medium text-pn-ink">{title}</span>
+        </>
+      }
+      onClose={onClose}
+      size={560}
+      footer={
+        <button type="button" className="bz-btn-ghost" onClick={onClose}>
+          {locale === 'tr' ? 'Kapat' : 'Close'}
+        </button>
+      }
+    >
       <ShareLinksPanel
         controller={controller}
         title={title}

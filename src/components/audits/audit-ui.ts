@@ -299,37 +299,53 @@ export interface ConfirmCopy {
   confirm: string;
 }
 
+/** Onay başlığında adı tırnak içinde gösterir; ad yoksa genel başlığa düşer. */
+function quoted(name: string | null | undefined): string | null {
+  const trimmed = (name ?? '').trim();
+  return trimmed ? `"${trimmed}"` : null;
+}
+
 /** Silme: yanıt varsa "arşivlenir", yoksa "kalıcı silinir". */
-export function deleteConfirmCopy(hasResponses: boolean, locale: UiLocale): ConfirmCopy {
+export function deleteConfirmCopy(hasResponses: boolean, locale: UiLocale, name?: string | null): ConfirmCopy {
+  const q = quoted(name);
   if (locale === 'tr') {
     return hasResponses
       ? {
-          title: 'Denetimi sil',
-          body: 'Bu denetim yanıt aldığı için silinmez, arşivlenir. Linkler kapanır, yanıtlar korunur.',
-          confirm: 'Arşivle',
+          title: q ? `${q} arşivlensin mi?` : 'Denetim arşivlensin mi?',
+          body: 'Bu denetim yanıt aldığı için silinmez, arşivlenir. Paylaştığın linkler kapanır, yanıtlar korunur.',
+          confirm: 'Denetimi arşivle',
         }
-      : { title: 'Denetimi sil', body: 'Bu denetim kalıcı olarak silinir.', confirm: 'Sil' };
+      : {
+          title: q ? `${q} silinsin mi?` : 'Denetim silinsin mi?',
+          body: 'Denetim, soruları ve paylaşım linkleriyle birlikte kalıcı olarak silinir. Bu işlem geri alınamaz.',
+          confirm: 'Denetimi sil',
+        };
   }
   return hasResponses
     ? {
-        title: 'Delete audit',
-        body: 'This audit has responses, so it is archived instead of deleted. Its links close; responses are kept.',
-        confirm: 'Archive',
-      }
-    : { title: 'Delete audit', body: 'This audit will be permanently deleted.', confirm: 'Delete' };
-}
-
-export function pauseConfirmCopy(locale: UiLocale): ConfirmCopy {
-  return locale === 'tr'
-    ? {
-        title: 'Denetimi duraklat',
-        body: 'Duraklatınca paylaştığın linkler açılmaz. İstediğin zaman yeniden başlatabilirsin.',
-        confirm: 'Duraklat',
+        title: q ? `Archive ${q}?` : 'Archive this audit?',
+        body: 'This audit has responses, so it is archived instead of deleted. The links you shared close; responses are kept.',
+        confirm: 'Archive audit',
       }
     : {
-        title: 'Pause audit',
-        body: 'While paused, the links you shared will not open. You can restart it any time.',
-        confirm: 'Pause',
+        title: q ? `Delete ${q}?` : 'Delete this audit?',
+        body: "The audit is permanently deleted along with its items and share links. This can't be undone.",
+        confirm: 'Delete audit',
+      };
+}
+
+export function pauseConfirmCopy(locale: UiLocale, name?: string | null): ConfirmCopy {
+  const q = quoted(name);
+  return locale === 'tr'
+    ? {
+        title: q ? `${q} duraklatılsın mı?` : 'Denetim duraklatılsın mı?',
+        body: 'Paylaştığın linkler duraklatma boyunca açılmaz, ekibin denetimi dolduramaz. Yanıtlar korunur; istediğin zaman yeniden başlatabilirsin.',
+        confirm: 'Denetimi duraklat',
+      }
+    : {
+        title: q ? `Pause ${q}?` : 'Pause this audit?',
+        body: "While paused, the links you shared won't open, so your team can't fill it in. Responses are kept; you can restart it any time.",
+        confirm: 'Pause audit',
       };
 }
 
@@ -337,27 +353,28 @@ export function pauseConfirmCopy(locale: UiLocale): ConfirmCopy {
 export function restoreConfirmCopy(locale: UiLocale): ConfirmCopy {
   return locale === 'tr'
     ? {
-        title: 'Hazır şablona geri dön',
-        body: "Sorular hazır şablonun son haline döner ve denetim duraklatılır; hazır olunca 'Yeniden başlat'a bas. Linkler o zamana kadar açılmaz.",
-        confirm: 'Geri dön',
+        title: 'Hazır şablona geri dönülsün mü?',
+        body: "Sorularda yaptığın değişiklikler silinir, yerine hazır şablonun son hali gelir; denetimin adı ve açıklaması kalır. Denetim duraklatılır: 'Yeniden başlat'a basana kadar linkler açılmaz.",
+        confirm: 'Hazır şablona dön',
       }
     : {
-        title: 'Restore the ready-made version',
-        body: "Items go back to the latest ready-made version and the audit is paused; press 'Restart' when you are ready. Links stay closed until then.",
-        confirm: 'Restore',
+        title: 'Restore the ready-made version?',
+        body: "Your changes to the items are removed and replaced with the latest ready-made version; the audit's name and description stay. The audit is paused: links stay closed until you press 'Restart'.",
+        confirm: 'Restore ready-made version',
       };
 }
 
-export function revokeLinkConfirmCopy(locale: UiLocale): ConfirmCopy {
+export function revokeLinkConfirmCopy(locale: UiLocale, name?: string | null): ConfirmCopy {
+  const q = quoted(name);
   return locale === 'tr'
     ? {
-        title: 'Linki kapat',
-        body: 'Bu link çalışmayı bırakır. Geçmiş yanıtlar korunur.',
+        title: q ? `${q} linki kapatılsın mı?` : 'Link kapatılsın mı?',
+        body: 'Bu link artık açılmaz; linki verdiğin kişi denetimi dolduramaz. Geçmiş yanıtlar korunur. Kapatılan link yeniden açılamaz, gerekirse yeni link oluşturursun.',
         confirm: 'Linki kapat',
       }
     : {
-        title: 'Close link',
-        body: 'This link stops working. Past responses are kept.',
+        title: q ? `Close the ${q} link?` : 'Close this link?',
+        body: "This link stops opening, so whoever has it can't fill in the audit. Past responses are kept. A closed link can't be reopened; create a new one if you need it.",
         confirm: 'Close link',
       };
 }

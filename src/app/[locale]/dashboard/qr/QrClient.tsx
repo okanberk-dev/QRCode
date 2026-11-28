@@ -552,7 +552,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
   const showBranch = effectiveScope === 'all';
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-6 py-6 lg:py-8 space-y-2.5">
       <PageHeader
         title={isTr ? 'QR kodları' : 'QR codes'}
         description={
@@ -566,7 +566,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
             onClick={() => setShowCreate(true)}
             disabled={!canCreate}
             title={allPaused ? pausedText : undefined}
-            className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center gap-1.5 sm:min-h-[36px] disabled:cursor-not-allowed disabled:opacity-60"
+            className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus size={14} />
             {isTr ? 'Yeni QR oluştur' : 'Create QR code'}
@@ -701,6 +701,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
 
       {/* No business yet */}
       {!pending && restaurants.length === 0 && (
+        <div className="bz-card p-5 sm:p-10">
         <EmptyState
           icon={<QrCode size={28} />}
           title={isTr ? 'Henüz işletme eklenmemiş' : 'No business yet'}
@@ -712,13 +713,14 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
           action={
             <Link
               href={`/${locale}/dashboard/restaurants/new`}
-              className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[36px]"
+              className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5"
             >
               <Plus size={14} />
               {isTr ? 'İşletme ekle' : 'Add business'}
             </Link>
           }
         />
+        </div>
       )}
 
       {loadFailed && (
@@ -734,8 +736,10 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
         />
       )}
 
-      {/* No QR codes yet — "Yeni QR oluştur" sits in the header. */}
+      {/* No QR codes yet — the empty card carries the next step itself (the
+          header button is easy to miss, and scrolls away on phones). */}
       {!pending && !loadFailed && restaurants.length > 0 && items.length === 0 && (
+        <div className="bz-card p-5 sm:p-10">
         <EmptyState
           icon={<QrCode size={28} />}
           title={
@@ -751,20 +755,31 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
             allPaused
               ? pausedText
               : isTr
-                ? 'Yeni QR oluştur ile ilk QR kodunu hazırla ve masaya koy; okutan müşteri puan verir.'
-                : 'Use Create QR code to make your first one and put it on the table; customers who scan it give a rating.'
+                ? 'İlk QR kodunu hazırla ve masaya, kasaya ya da fişe koy; okutan müşteri puan verir.'
+                : 'Make your first QR code and put it on the table, the counter or the receipt; customers who scan it give a rating.'
           }
           action={
             allPaused ? (
               <Link
                 href={`/${locale}/dashboard/restaurants`}
-                className="bz-btn-ghost inline-flex min-h-[44px] items-center sm:min-h-[36px]"
+                className="bz-btn-ghost inline-flex min-h-[44px] items-center"
               >
                 {isTr ? 'İşletmelere git' : 'Go to businesses'}
               </Link>
-            ) : undefined
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                disabled={!canCreate}
+                className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Plus size={14} />
+                {isTr ? 'Yeni QR oluştur' : 'Create QR code'}
+              </button>
+            )
           }
         />
+        </div>
       )}
 
       {/* Card view */}
